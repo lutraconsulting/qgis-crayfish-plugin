@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/plugins/crayfish">
+        <file>crayfish_viewer_add_layer.png</file>
+        <file>crayfish.png</file>
+        <file>crayfish_128px.png</file>
+        <file>lutra_logo.png</file>
+    </qresource>
+</RCC>

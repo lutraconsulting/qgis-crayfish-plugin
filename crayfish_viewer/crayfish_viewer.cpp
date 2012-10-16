@@ -1,0 +1,1107 @@
+/*
+Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
+Copyright (C) 2012 Peter Wells for Lutra Consulting
+
+peter dot wells at lutraconsulting dot co dot uk
+Lutra Consulting
+23 Chestnut Close
+Burgess Hill
+West Sussex
+RH15 8HN
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.from PyQt4.QtCore import *
+*/
+
+#include "crayfish_viewer.h"
+
+CrayfishViewer::~CrayfishViewer(){
+    if(mImage){
+        delete mImage;
+        mImage = 0;
+    }
+    if(mElems){
+        delete[] mElems;
+        mElems = 0;
+    }
+    if(mNodes){
+        delete[] mNodes;
+        mNodes = 0;
+    }
+    if(mRotatedNodes){
+        delete[] mRotatedNodes;
+        mRotatedNodes = 0;
+    }
+}
+
+CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
+
+    // Initialise variables
+    mLoadedSuccessfully = true;
+    mImage = new QImage(0, 0, QImage::Format_ARGB32);
+    mCanvasWidth = 0;
+    mCanvasHeight = 0;
+    mLlX = 0.0;
+    mLlY = 0.0;
+    mUrX = 0.0;
+    mUrY = 0.0;
+    mPixelSize = 0.0;
+
+    QFile file(twoDMFileName);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
+        mLoadedSuccessfully = false;
+        return;
+    }
+
+    mElemCount = 0;
+    mNodeCount = 0;
+
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        if( line.startsWith("E4Q") ){
+            mElemCount += 1;
+        }
+        else if( line.startsWith("ND") ){
+            mNodeCount += 1;
+        }
+    }
+
+    mRotatedNodeCount = mElemCount * 4;
+
+    mElems = new Element[mElemCount];
+    mNodes = new Node[mNodeCount];
+    mRotatedNodes = new Node[mRotatedNodeCount];
+    //mElemCount = 0;
+    //mNodeCount = 0;
+
+    // Create a dataset for the bed elevation
+    DataSet* bedDs = new DataSet;
+    bedDs->contouredAutomatically = true;
+    bedDs->type = Bed;
+    bedDs->name = "Bed Elevation";
+    bedDs->timeVarying = false;
+    bedDs->isBed = true;
+    Output* o = new Output;
+
+    o->time = 0.0;
+    o->statusFlags = new char[mElemCount];
+    memset(o->statusFlags, 1, mElemCount); // All cells active
+    o->values = new float[mNodeCount];
+    bedDs->outputs.push_back(o);
+    mDataSets.push_back(bedDs);
+
+    in.seek(0);
+    QStringList chunks = QStringList();
+
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        if( line.startsWith("E4Q") ){
+            chunks = line.split(" ", QString::SkipEmptyParts);
+            uint index = chunks[1].toInt()-1;
+            if(index >= mElemCount){
+                index += 1;
+                continue;
+            }
+            mElems[index].index = index;
+            // Bear in mind that no check is done to ensure that the the p1-p4 pointers will point to a valid location
+            mElems[index].p1 = &mNodes[ chunks[2].toInt()-1 ]; // -1 (crayfish Dat is 1-based indexing)
+            mElems[index].p2 = &mNodes[ chunks[3].toInt()-1 ];
+            mElems[index].p3 = &mNodes[ chunks[4].toInt()-1 ];
+            mElems[index].p4 = &mNodes[ chunks[5].toInt()-1 ];
+            //mElemCount += 1;
+        }
+        if( line.startsWith("ND") ){
+            chunks = line.split(" ", QString::SkipEmptyParts);
+            uint index = chunks[1].toInt()-1;
+            if(index >= mNodeCount){
+                index += 1;
+                continue;
+            }
+            mNodes[index].index = index;
+            mNodes[index].x = chunks[2].toDouble();
+            mNodes[index].y = chunks[3].toDouble();
+            bedDs->outputs.at(0)->values[index] = chunks[4].toFloat();
+            //mNodeCount += 1;
+        }
+    }
+
+    // Determine stats
+    mXMin = mNodes[0].x;
+    mXMax = mNodes[0].x;
+    mYMin = mNodes[0].y;
+    mYMax = mNodes[0].y;
+
+    float zMin = bedDs->outputs.at(0)->values[0];
+    float zMax = bedDs->outputs.at(0)->values[0];
+    for(int i=0; i<bedDs->outputs.size(); i++){
+        for(int j=0; j<mNodeCount; j++){
+            if( bedDs->outputs.at(i)->values[j] < zMin ){
+                zMin = bedDs->outputs.at(i)->values[j];
+            }
+            if( bedDs->outputs.at(i)->values[j] > zMax ){
+                zMax = bedDs->outputs.at(i)->values[j];
+            }
+        }
+    }
+    bedDs->mZMin = zMin;
+    bedDs->mZMax = zMax;
+
+    //mZMin = mNodes[0].z;
+    //mZMax = mNodes[0].z;
+    //mZMin = bedDs->outputs.at(0)->values[0];
+    //mZMax = bedDs->outputs.at(0)->values[0];
+    for(uint i=0; i<mNodeCount; i++){
+        if(mNodes[i].x > mXMax)
+            mXMax = mNodes[i].x;
+        if(mNodes[i].x < mXMin)
+            mXMin = mNodes[i].x;
+
+        if(mNodes[i].y > mYMax)
+            mYMax = mNodes[i].y;
+        if(mNodes[i].y < mYMin)
+            mYMin = mNodes[i].y;
+
+        //if(bedDs->outputs.at(0)->values[i] > mZMax)
+        //    mZMax = bedDs->outputs.at(0)->values[i];
+        //if(bedDs->outputs.at(0)->values[i] < mZMin)
+        //    mZMin = bedDs->outputs.at(0)->values[i];
+    }
+
+    // Update derrived element values
+    for(uint i=0; i<mElemCount; i++){
+
+        mElems[i].minX = mElems[i].p1->x;
+        mElems[i].minY = mElems[i].p1->y;
+        mElems[i].maxX = mElems[i].p1->x;
+        mElems[i].maxY = mElems[i].p1->y;
+
+        if(mElems[i].p2->x < mElems[i].minX)
+            mElems[i].minX = mElems[i].p2->x;
+        if(mElems[i].p2->x > mElems[i].maxX)
+            mElems[i].maxX = mElems[i].p2->x;
+        if(mElems[i].p2->y < mElems[i].minY)
+            mElems[i].minY = mElems[i].p2->y;
+        if(mElems[i].p2->y > mElems[i].maxY)
+            mElems[i].maxY = mElems[i].p2->y;
+
+        if(mElems[i].p3->x < mElems[i].minX)
+            mElems[i].minX = mElems[i].p3->x;
+        if(mElems[i].p3->x > mElems[i].maxX)
+            mElems[i].maxX = mElems[i].p3->x;
+        if(mElems[i].p3->y < mElems[i].minY)
+            mElems[i].minY = mElems[i].p3->y;
+        if(mElems[i].p3->y > mElems[i].maxY)
+            mElems[i].maxY = mElems[i].p3->y;
+
+        if(mElems[i].p4->x < mElems[i].minX)
+            mElems[i].minX = mElems[i].p4->x;
+        if(mElems[i].p4->x > mElems[i].maxX)
+            mElems[i].maxX = mElems[i].p4->x;
+        if(mElems[i].p4->y < mElems[i].minY)
+            mElems[i].minY = mElems[i].p4->y;
+        if(mElems[i].p4->y > mElems[i].maxY)
+            mElems[i].maxY = mElems[i].p4->y;
+
+        mElems[i].maxSize = std::max( (mElems[i].maxX - mElems[i].minX),
+                                 (mElems[i].maxY - mElems[i].minY) );
+
+        // Now ensure the node references are in the order we expect them (counter-clockwise from top-right)
+
+        Node* tmpPoints[4];
+        Node* t;
+        tmpPoints[0] = mElems[i].p1;
+        tmpPoints[1] = mElems[i].p2;
+        tmpPoints[2] = mElems[i].p3;
+        tmpPoints[3] = mElems[i].p4;
+
+        // Determine if we have rotation (based on how many nodes have x coord == minX)
+        bool haveRotation = false;
+        int numberOfNodesAtMinX = 0;
+        for(int j=0; j<4; j++){
+            if(tmpPoints[j]->x == mElems[i].minX){
+                numberOfNodesAtMinX += 1;
+            }
+        }
+        if(numberOfNodesAtMinX < 2){
+            haveRotation = true;
+        }
+
+        // Sort all by X
+        bool swapped = true;
+        while(swapped){
+            swapped = false;
+            for(int j=0; j<3; j++){
+                if(tmpPoints[j+1]->x < tmpPoints[j]->x){
+                    // swap it
+                    t = tmpPoints[j];
+                    tmpPoints[j] = tmpPoints[j+1];
+                    tmpPoints[j+1] = t;
+                    swapped = true;
+                }
+            }
+        }
+
+        // Now sort by Y depending if we are rotated or not
+        if(haveRotation){
+            if(tmpPoints[2]->y < tmpPoints[1]->y){
+                t = tmpPoints[1];
+                tmpPoints[1] = tmpPoints[2];
+                tmpPoints[2] = t;
+            }
+            mElems[i].p1 = tmpPoints[2];
+            mElems[i].p2 = tmpPoints[0];
+            mElems[i].p3 = tmpPoints[1];
+            mElems[i].p4 = tmpPoints[3];
+        }else{
+            if(tmpPoints[1]->y < tmpPoints[0]->y){
+                t = tmpPoints[0];
+                tmpPoints[0] = tmpPoints[1];
+                tmpPoints[1] = t;
+            }
+            if(tmpPoints[3]->y < tmpPoints[2]->y){
+                t = tmpPoints[2];
+                tmpPoints[2] = tmpPoints[3];
+                tmpPoints[3] = t;
+            }
+            mElems[i].p1 = tmpPoints[3];
+            mElems[i].p2 = tmpPoints[1];
+            mElems[i].p3 = tmpPoints[0];
+            mElems[i].p4 = tmpPoints[2];
+        }
+
+        // At this stage the nodes are ordered anti-clockwise from the top-right node (even with rotation)
+
+        if(haveRotation){
+            mElems[i].hasRotation = true;
+            mElems[i].rotation = atan(   (mElems[i].p3->x - mElems[i].p2->x)
+                                       / (mElems[i].p2->y - mElems[i].p3->y) );
+            mElems[i].cosAlpha = cos(mElems[i].rotation);
+            mElems[i].sinAlpha = sin(mElems[i].rotation);
+            mElems[i].cosNegAlpha = cos(-1.0 * mElems[i].rotation);
+            mElems[i].sinNegAlpha = sin(-1.0 * mElems[i].rotation);
+            double cellSize = (mElems[i].p3->x - mElems[i].p2->x) / mElems[i].sinAlpha;
+            mRotatedNodes[ (i*4) ].index = mElems[i].p1->index;
+            mRotatedNodes[ (i*4) ].x = mElems[i].p2->x + cellSize;
+            mRotatedNodes[ (i*4) ].y = mElems[i].p2->y;
+            mRotatedNodes[ (i*4) ].z = mElems[i].p1->z;
+            mRotatedNodes[ (i*4)+1 ].index = mElems[i].p2->index;
+            mRotatedNodes[ (i*4)+1 ].x = mElems[i].p2->x;
+            mRotatedNodes[ (i*4)+1 ].y = mElems[i].p2->y;
+            mRotatedNodes[ (i*4)+1 ].z = mElems[i].p2->z;
+            mRotatedNodes[ (i*4)+2 ].index = mElems[i].p3->index;
+            mRotatedNodes[ (i*4)+2 ].x = mElems[i].p2->x;
+            mRotatedNodes[ (i*4)+2 ].y = mElems[i].p2->y - cellSize;
+            mRotatedNodes[ (i*4)+2 ].z = mElems[i].p3->z;
+            mRotatedNodes[ (i*4)+3 ].index = mElems[i].p4->index;
+            mRotatedNodes[ (i*4)+3 ].x = mElems[i].p2->x + cellSize;
+            mRotatedNodes[ (i*4)+3 ].y = mElems[i].p2->y - cellSize;
+            mRotatedNodes[ (i*4)+3 ].z = mElems[i].p4->z;
+        }else{
+            mElems[i].hasRotation = false;
+            mElems[i].rotation = 0.0;
+            mElems[i].cosAlpha = 0.0;
+            mElems[i].sinAlpha = 0.0;
+            mElems[i].cosNegAlpha = 0.0;
+            mElems[i].sinNegAlpha = 0.0;
+            mRotatedNodes[ (i*4) ].index = mElems[i].p1->index;
+            mRotatedNodes[ (i*4) ].x = mElems[i].p1->x;
+            mRotatedNodes[ (i*4) ].y = mElems[i].p1->y;
+            mRotatedNodes[ (i*4) ].z = mElems[i].p1->z;
+            mRotatedNodes[ (i*4)+1 ].index = mElems[i].p2->index;
+            mRotatedNodes[ (i*4)+1 ].x = mElems[i].p2->x;
+            mRotatedNodes[ (i*4)+1 ].y = mElems[i].p2->y;
+            mRotatedNodes[ (i*4)+1 ].z = mElems[i].p2->z;
+            mRotatedNodes[ (i*4)+2 ].index = mElems[i].p3->index;
+            mRotatedNodes[ (i*4)+2 ].x = mElems[i].p3->x;
+            mRotatedNodes[ (i*4)+2 ].y = mElems[i].p3->y;
+            mRotatedNodes[ (i*4)+2 ].z = mElems[i].p3->z;
+            mRotatedNodes[ (i*4)+3 ].index = mElems[i].p4->index;
+            mRotatedNodes[ (i*4)+3 ].x = mElems[i].p4->x;
+            mRotatedNodes[ (i*4)+3 ].y = mElems[i].p4->y;
+            mRotatedNodes[ (i*4)+3 ].z = mElems[i].p4->z;
+        }
+
+    }
+
+    /*if(mNodes){
+        delete[] mNodes; // We don't need this any more
+        mNodes = 0;
+    } Yes we do!*/
+
+}
+
+bool CrayfishViewer::loadDataSet(QString datFileName){
+
+    QFile file(datFileName);
+    if (!file.open(QIODevice::ReadOnly)){
+        // Couldn't open the file
+        return false;
+    }
+
+    int card;
+    int version;
+    int objecttype;
+    int sflt;
+    int sflg;
+    int begin;
+    int vectype;
+    int objid;
+    int numdata;
+    int numcells;
+    char name[40];
+    char istat;
+    char statflag;
+    float time;
+
+    QDataStream in(&file);
+
+    card = 0;
+    if( in.readRawData( (char*)&version, 4) != 4 ){
+        return false;
+    }
+    if( version != 3000 ) // Version should be 3000
+        return false;
+
+    DataSet* ds = new DataSet;
+    ds->contouredAutomatically = true;
+    ds->timeVarying = true;
+    ds->isBed = false;
+    ds->lastOutputRendered = 0;
+
+    while(card != 210){
+        if( in.readRawData( (char*)&card, 4) != 4 ){
+            // We've reached the end of the file and there was no ends card
+            break;
+        }
+        switch(card){
+
+        case 100:
+
+            // Object type
+            if( in.readRawData( (char*)&objecttype, 4) != 4 ){
+                delete ds;
+                return false;
+            }
+            if(objecttype != 3){
+                delete ds;
+                return false;
+            }
+            break;
+
+        case 110:
+
+            // Float size
+            if( in.readRawData( (char*)&sflt, 4) != 4 ){
+                delete ds;
+                return false;
+            }
+            if(sflt != 4){
+                delete ds;
+                return false;
+            }
+            break;
+
+        case 120:
+
+            // Flag size
+            if( in.readRawData( (char*)&sflg, 4) != 4 ){
+                delete ds;
+                return false;
+            }
+            if(sflg != 1){
+                delete ds;
+                return false;
+            }
+            break;
+
+        case 130:
+
+            ds->type = Scalar;
+            break;
+
+        case 140:
+
+            ds->type = Vector;
+            break;
+
+        case 150:
+
+            // Vector type
+            if( in.readRawData( (char*)&vectype, 4) != 4 ){
+                delete ds;
+                return false;
+            }
+            if(vectype != 0){
+                delete ds;
+                return false;
+            }
+            break;
+
+        case 160:
+
+            // Object id
+            if( in.readRawData( (char*)&objid, 4) != 4 ){
+                delete ds;
+                return false;
+            }
+            break;
+
+        case 170:
+
+            // Num data
+            if( in.readRawData( (char*)&numdata, 4) != 4 ){
+                delete ds;
+                return false;
+            }
+            if(numdata != mNodeCount){
+                delete ds;
+                return false;
+            }
+            break;
+
+        case 180:
+
+            // Num data
+            if( in.readRawData( (char*)&numcells, 4) != 4 ){
+                delete ds;
+                return false;
+            }
+            if(numcells != mElemCount){
+                delete ds;
+                return false;
+            }
+            break;
+
+        case 190:
+
+            // Name
+            if( in.readRawData( (char*)&name, 40) != 40 ){
+                delete ds;
+                return false;
+            }
+            if(name[39] != 0)
+                name[39] = 0;
+            ds->name.clear();
+            ds->name.append(name);
+            break;
+
+        case 200:
+
+            // Time step!
+            if( in.readRawData( (char*)&istat, 1) != 1 ){
+                return false;
+            }
+            if( in.readRawData( (char*)&time, 4) != 4 ){
+                return false;
+            }
+
+            Output* o = new Output;
+            o->time = time;
+            o->statusFlags = new char[mElemCount];
+            o->values = new float[mNodeCount];
+            if(ds->type == Vector){
+                o->values_x = new float[mNodeCount];
+                o->values_y = new float[mNodeCount];
+            }
+
+            if(istat){
+                for(int i=0; i<mElemCount; i++){
+                    // Read status flags
+                    if( in.readRawData( (char*)&o->statusFlags[i], 1) != 1 ){
+                        delete[] o->statusFlags;
+                        delete[] o->values;
+                        if(ds->type == Vector){
+                            delete[] o->values_x;
+                            delete[] o->values_y;
+                        }
+                        ds->outputs.clear();
+                        delete ds;
+                        return false;
+                    }
+                }
+            }
+
+            for(int i=0; i<mNodeCount; i++){
+                // Read values flags
+                if(ds->type == Vector){
+                    if( in.readRawData( (char*)&o->values_x[i], 4) != 4 ){
+                        delete[] o->statusFlags;
+                        delete[] o->values;
+                        if(ds->type == Vector){
+                            delete[] o->values_x;
+                            delete[] o->values_y;
+                        }
+                        ds->outputs.clear();
+                        delete ds;
+                        return false;
+                    }
+                    if( in.readRawData( (char*)&o->values_y[i], 4) != 4 ){
+                        delete[] o->statusFlags;
+                        delete[] o->values;
+                        if(ds->type == Vector){
+                            delete[] o->values_x;
+                            delete[] o->values_y;
+                        }
+                        ds->outputs.clear();
+                        delete ds;
+                        return false;
+                    }
+                    o->values[i] = sqrt( pow(o->values_x[i],2) + pow(o->values_y[i],2) ); // Determine the magnitude
+                }else{
+                    if( in.readRawData( (char*)&o->values[i], 4) != 4 ){
+                        delete[] o->statusFlags;
+                        delete[] o->values;
+                        if(ds->type == Vector){
+                            delete[] o->values_x;
+                            delete[] o->values_y;
+                        }
+                        ds->outputs.clear();
+                        delete ds;
+                        return false;
+                    }
+                }
+            }
+
+            ds->outputs.push_back(o);
+
+            break;
+
+        }
+    }
+
+    if(ds->outputs.size() > 0){
+
+        bool first = true;
+        float zMin = 0.0;
+        float zMax = 0.0;
+        for(int i=0; i<ds->outputs.size(); i++){
+            for(int j=0; j<mNodeCount; j++){
+                if(ds->outputs.at(i)->values[j] != -9999.0){
+                    // This is not a NULL value
+                    if(first){
+                        first = false;
+                        zMin = ds->outputs.at(i)->values[j];
+                        zMax = ds->outputs.at(i)->values[j];
+                    }
+                    if( ds->outputs.at(i)->values[j] < zMin ){
+                        zMin = ds->outputs.at(i)->values[j];
+                    }
+                    if( ds->outputs.at(i)->values[j] > zMax ){
+                        zMax = ds->outputs.at(i)->values[j];
+                    }
+                }
+            }
+        }
+
+        ds->mZMin = zMin;
+        ds->mZMax = zMax;
+
+        mDataSets.push_back(ds);
+        return true;
+    }
+
+    return false;
+
+    /*DataSet* ds = new DataSet;
+    bedDs->type = Bed;
+    bedDs->outputCount = 1;
+    bedDs->name = "Bed Elevation";
+    bedDs->outputs = new Output;
+    bedDs->outputs[0].time = 0.0;
+    bedDs->outputs[0].statusFlags = new char[mElemCount];
+    memset(bedDs->outputs[0].statusFlags, 1, mElemCount); // All cells active
+    bedDs->outputs[0].values = new float[mNodeCount];
+    mDataSets.push_back(bedDs);*/
+}
+
+QImage* CrayfishViewer::draw(bool renderContours,
+                        bool renderVectors,
+                        int canvasWidth,
+                        int canvasHeight,
+                        double llX,
+                        double llY,
+                        double pixelSize,
+                        int dataSetIdx,
+                        int outputTime,
+
+                        // Contouring options
+                        bool autoContour,
+                        float minContour,
+                        float maxContour,
+
+                        VectorLengthMethod shaftLengthCalculationMethod,
+                        float minShaftLength,
+                        float maxShaftLength,
+                        float scaleFactor,
+                        float fixedShaftLength,
+                        int lineWidth,
+                        float vectorHeadWidthPerc,
+                        float vectorHeadLengthPerc){
+
+    /*
+      Record details of:
+        Canvas width (px)
+        Canvas height (px)
+        Lower left pixel x
+        Lower left pixel y
+        Pixel size
+      */
+
+    // Some sanity checks
+
+    bool invalidRenderParameters = false;
+
+    // If we're looking at bed elevation, ensure the time output is the first (and only)
+    if(mDataSets.at(dataSetIdx)->type == Bed){
+        outputTime = 0;
+    }
+
+    if( dataSetIdx > mDataSets.size() || dataSetIdx < 0 ){
+        invalidRenderParameters = true;
+    }else if( outputTime > mDataSets.at(dataSetIdx)->outputs.size() || outputTime < 0 ){
+        invalidRenderParameters = true;
+    }
+
+    if(canvasWidth != mCanvasWidth || canvasHeight != mCanvasHeight){
+        // The size of the canvas has changed so we need to re-allocate out QImage
+        delete mImage;
+        mImage = new QImage(canvasWidth, canvasHeight, QImage::Format_ARGB32);
+    }
+    mCanvasWidth = canvasWidth;
+    mCanvasHeight = canvasHeight;
+
+    mImage->fill( qRgba(255,255,255,0) );
+
+    mLlX = llX;
+    mLlY = llY;
+    mPixelSize = pixelSize;
+
+    mUrX = mLlX + (mCanvasWidth*mPixelSize);
+    mUrY = mLlY + (mCanvasHeight*mPixelSize);
+
+    if(invalidRenderParameters){
+        return mImage;
+    }
+
+    /*
+      In order to keep track of which output times we used last during a render for a particular
+      dataset, we will store the index of the output time in the dataset structure
+
+      */
+    mDataSets.at(dataSetIdx)->lastOutputRendered = outputTime;
+
+    // Save rendering information
+    if(autoContour){
+        mDataSets.at(dataSetIdx)->contouredAutomatically = true;
+    }else{
+        mDataSets.at(dataSetIdx)->contouredAutomatically = false;
+        mDataSets.at(dataSetIdx)->contourMin = minContour;
+        mDataSets.at(dataSetIdx)->contourMax = maxContour;
+    }
+
+    for(uint i=0; i<mElemCount; i++){
+
+        // For each element
+
+        // If the element's activity flag is off, ignore it
+        if( ! mDataSets.at(dataSetIdx)->outputs.at(outputTime)->statusFlags[i] ){
+            continue;
+        }
+
+        // If the element is outside the view of the canvas, skip it
+        if( elemOutsideView(i) ){
+            continue;
+        }
+
+        //
+        if( mElems[i].maxSize < mPixelSize ){
+            // The element is smaller than the pixel size so there is no point rendering the element properly
+            // Just take the value of the first point associated with the element instead
+            QPoint pp = realToPixel( mRotatedNodes[ (i*4) ].x, mRotatedNodes[ (i*4) ].y );
+            pp.setX( std::min(pp.x(), mCanvasWidth-1) );
+            pp.setX( std::max(pp.x(), 0) );
+            pp.setY( std::min(pp.y(), mCanvasHeight-1) );
+            pp.setY( std::max(pp.y(), 0) );
+
+            QRgb* line = (QRgb*) mImage->scanLine(pp.y());
+            QColor tmpCol;
+            //double val = mRotatedNodes[ (i*4) ].z;
+            float val = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[ (i*4) ].index ];
+            setColorFromVal(val, &tmpCol, dataSetIdx);
+            line[pp.x()] = tmpCol.rgb();
+
+        }else{
+            // Get the BBox of the element in pixels
+            QPoint ll = realToPixel(mElems[i].minX, mElems[i].minY);
+            QPoint ur = realToPixel(mElems[i].maxX, mElems[i].maxY);
+            int topLim = std::max( ur.y(), 0 );
+            int bottomLim = std::min( ll.y(), mCanvasHeight-1 );
+            int leftLim = std::max( ll.x(), 0 );
+            int rightLim = std::min( ur.x(), mCanvasWidth-1 );
+
+            for(int j=topLim; j<=bottomLim; j++){ // FIXME - are we missing the last line?  Should this be j<=bottomLim ?
+                paintRow(i, j, leftLim, rightLim, dataSetIdx, outputTime);
+            }
+        }
+    }
+
+    if(renderVectors && mDataSets.at(dataSetIdx)->type == Vector){
+        /*
+          Here is where we render vector data
+
+          Vectors will either be rendered at nodes or on a grid spacing specified by the user.
+          In the latter case, the X and Y components will need to be interpolated
+
+          In the case of rendering vectors at nodes:
+            Loop through all nodes:
+                If node is within the current screen extent:
+                    Render it:
+                        Get the X and Y components
+                        Turn those compnents into pixel distances
+                        Render an arrow from the node
+        */
+
+        // Set up the render configuration options
+
+        // Determine the min and max magnitudes in this layer
+        float minVal = mDataSets.at(dataSetIdx)->mZMin;
+        float maxVal = mDataSets.at(dataSetIdx)->mZMax;
+
+        // Determine the range of vector sizes specified by the user for
+        // rendering vectors with a min and max length
+        float vectorLengthRange = maxShaftLength - minShaftLength;
+        // Ensure that vectors at 45 degrees do not exceed the max user specified vector length
+        vectorLengthRange *= 0.707106781;
+
+        // Get a list of nodes that are within the current render extent
+        std::vector<Node*> candidateNodes;
+
+        for(int i=0; i<mNodeCount; i++){
+            if( mNodes[i].x > mLlX &&
+                mNodes[i].x < mUrX &&
+                mNodes[i].y > mLlY &&
+                mNodes[i].y < mUrY ){
+
+                candidateNodes.push_back( &mNodes[i] );
+            }
+        }
+
+
+        float userScaleFactor = 20.0;
+
+        QPainter p;
+        // p.setRenderHint( QPainter::Antialiasing );
+        p.begin(mImage);
+        p.setBrush( Qt::SolidPattern );
+        QPen pen = p.pen();
+        pen.setWidth( lineWidth );
+        p.setPen(pen);
+
+        // Make a set of vector head coordinates that we will place at the end of each vector,
+        // scale, translate and rotate.
+        QPointF vectorHeadPoints[3];
+        QPointF finalVectorHeadPoints[3];
+
+        // First head point:  top of ->
+        vectorHeadPoints[0].setX( -1.0 * vectorHeadLengthPerc * 0.01 );
+        vectorHeadPoints[0].setY( vectorHeadWidthPerc * 0.5 * 0.01 );
+
+        // Second head point:  right of ->
+        vectorHeadPoints[1].setX(0.0);
+        vectorHeadPoints[1].setY(0.0);
+
+        // Third head point:  bottom of ->
+        vectorHeadPoints[2].setX( -1.0 * vectorHeadLengthPerc * 0.01 );
+        vectorHeadPoints[2].setY( -1.0 * vectorHeadWidthPerc * 0.5 * 0.01 );
+
+        float defaultVectorLength = 1.0;
+
+        for(int i=0; i<candidateNodes.size(); i++){
+            // Get the value
+            Node* n = candidateNodes.at(i);
+            uint nodeIndex = n->index;
+
+            if(nodeIndex == 16307){
+                int balls = nodeIndex + 2;
+            }
+
+            float xVal = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values_x[nodeIndex];
+            float yVal = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values_y[nodeIndex];
+
+            if(xVal == 0.0 && yVal == 0.0){
+                continue;
+            }
+
+            // Now determine the X and Y distances of the end of the line from the start
+
+            float xDist = 0.0;
+            float yDist = 0.0;
+
+            // Determine the angle of the vector, counter-clockwise, from east
+            // (and associated trigs)
+            double vectorAngle = -1.0 * atan( (-1.0 * yVal) / xVal );
+            double cosAlpha = cos( vectorAngle ) * mag(xVal);
+            double sinAlpha = sin( vectorAngle ) * mag(xVal);
+
+            if(shaftLengthCalculationMethod == DefineMinAndMax){
+                float valRange = ( maxVal - minVal );
+                float percX = (absolute(xVal) - minVal) / valRange;
+                float percY = (absolute(yVal) - minVal) / valRange;
+                xDist = ( minShaftLength + (vectorLengthRange * percX) ) * mag(xVal);
+                yDist = ( minShaftLength + (vectorLengthRange * percY) ) * mag(yVal);
+            }else if(shaftLengthCalculationMethod == Scaled){
+                xDist = scaleFactor * xVal;
+                yDist = scaleFactor * yVal;
+            }else{
+                // We must be using a fixed length
+                xDist = cosAlpha * fixedShaftLength;
+                yDist = sinAlpha * fixedShaftLength;
+            }
+
+            // Flip the Y axis (pixel vs real-world axis)
+            yDist *= -1.0;
+
+            if(absolute(xDist) < 1 && absolute(yDist) < 1){
+                continue;
+            }
+
+            // Determine the line coords
+            QPointF lineStart = realToPixelF( n->x, n->y );
+            QPointF lineEnd = QPointF( lineStart.x() + xDist,
+                                       lineStart.y() + yDist);
+
+            float vectorLength = sqrt( pow(lineEnd.x() - lineStart.x(), 2) + pow(lineEnd.y() - lineStart.y(), 2) );
+
+            // Check to see if any of the coords are outside the QImage area, if so, skip the whole vector
+            if( lineStart.x() < 0 ||
+                lineStart.x() > mCanvasWidth ||
+                lineStart.y() < 0 ||
+                lineStart.y() > mCanvasHeight ||
+                lineEnd.x() < 0 ||
+                lineEnd.x() > mCanvasWidth ||
+                lineEnd.y() < 0 ||
+                lineEnd.y() > mCanvasHeight ){
+
+                continue;
+            }
+
+            // Determine the arrow head coords
+            for(int j=0; j<3; j++){
+
+                finalVectorHeadPoints[j].setX(   lineEnd.x()
+                                               + ( vectorHeadPoints[j].x() * cosAlpha * vectorLength )
+                                               - ( vectorHeadPoints[j].y() * sinAlpha * vectorLength )
+                                             );
+
+                finalVectorHeadPoints[j].setY(   lineEnd.y()
+                                               - ( vectorHeadPoints[j].x() * sinAlpha * vectorLength )
+                                               - ( vectorHeadPoints[j].y() * cosAlpha * vectorLength )
+                                             );
+            }
+
+            // Now actually draw the vector
+            p.drawLine(lineStart, lineEnd);
+            p.drawPolygon( (const QPointF*)&finalVectorHeadPoints, 3);
+            bool debug = false;
+            if(debug){
+                // Write the ID of the node next to the vector...
+                QPointF tp;
+                tp.setX( lineEnd.x() + 10.0 );
+                tp.setY( lineEnd.y() - 10.0 );
+                QString nodeText;
+                nodeText.setNum(nodeIndex);
+                p.drawText( tp, nodeText );
+            }
+
+        }
+        p.end();
+    }
+
+    return mImage;
+}
+
+QPoint CrayfishViewer::realToPixel(double x, double y){
+    int px = (x - mLlX) / mPixelSize;
+    int py = mCanvasHeight - (y - mLlY) / mPixelSize;
+    return QPoint(px, py);
+}
+
+QPointF CrayfishViewer::realToPixelF(double x, double y){
+    int px = (x - mLlX) / mPixelSize;
+    int py = float(mCanvasHeight) - (y - mLlY) / mPixelSize;
+    return QPointF(px, py);
+}
+
+void CrayfishViewer::paintRow(uint elementIdx, int rowIdx, int leftLim, int rightLim, int dataSetIdx, int outputTime){
+    /*
+      Grab the pointer to the row if we do not have it already
+      */
+    QRgb* line = (QRgb*) mImage->scanLine(rowIdx);
+
+    for(int j=leftLim; j<=rightLim; j++){
+        // Determine real-world coords
+        // Interpolate a value from the element
+        // Set the value in the QImage
+        QPointF p = pixelToReal(j, rowIdx);
+
+        double val;
+        if( interpolatValue(elementIdx, p.x(), p.y(), &val, dataSetIdx, outputTime) ){
+            // The supplied point was inside the element
+            // line[j] = qRgba(128,0,0,255);
+            QColor tmpCol;
+            setColorFromVal(val, &tmpCol, dataSetIdx);
+            line[j] = tmpCol.rgb();
+        }
+    }
+}
+
+void CrayfishViewer::setColorFromVal(double val, QColor* col, int dataSetIdx){
+    // If the value is less than min or greater than max, set it to the appropriate end of the
+    // spectrum
+
+    float zMin = 0.0;
+    float zMax = 0.0;
+
+    if( mDataSets.at(dataSetIdx)->contouredAutomatically ){
+        zMin = mDataSets.at(dataSetIdx)->mZMin;
+        zMax = mDataSets.at(dataSetIdx)->mZMax;
+    }else{
+        zMin = mDataSets.at(dataSetIdx)->contourMin;
+        zMax = mDataSets.at(dataSetIdx)->contourMax;
+    }
+
+    if(val < zMin){
+        col->setHsv(240, 255, 255); // Blue
+        return;
+    }
+    if(val > zMax){
+        col->setHsv(0, 255, 255); // Red
+        return;
+    }
+
+    // Else the value lies between so interpolate
+    int h = (1.0-(val-zMin)/(zMax-zMin))*240;
+    col->setHsv(h, 255, 255);
+}
+
+bool CrayfishViewer::elemOutsideView(uint i){
+    // Determine if this element is visible within the view
+    if( mElems[i].maxX < mLlX ||
+        mElems[i].minX > mUrX ||
+        mElems[i].minY > mUrY ||
+        mElems[i].maxY < mLlY ){
+        return true;
+    }
+    return false;
+}
+
+bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, double* interpolatedVal, int dataSetIdx, int outputTime){
+
+    // Sort points by by X coord and then by Y coord
+    // (x1, y1, q11), (_x1, y2, q12), (x2, _y1, q21), (_x2, _y2, q22) = points
+
+    double x1 = mRotatedNodes[(elementIndex*4)+2].x;
+    double y1 = mRotatedNodes[(elementIndex*4)+2].y;
+    //double q11 = mRotatedNodes[(elementIndex*4)+2].z;
+    double q11 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+2].index ];
+
+    //double _x1 = mRotatedNodes[(elementIndex*4)+1].x;
+    double y2 = mRotatedNodes[(elementIndex*4)+1].y;
+    //double q12 = mRotatedNodes[(elementIndex*4)+1].z;
+    double q12 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+1].index ];
+
+    double x2 = mRotatedNodes[(elementIndex*4)+3].x;
+    //double _y1 = mRotatedNodes[(elementIndex*4)+3].y;
+    //double q21 = mRotatedNodes[(elementIndex*4)+3].z;
+    double q21 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+3].index ];
+
+    //double _x2 = mRotatedNodes[(elementIndex*4)+0].x;
+    //double _y2 = mRotatedNodes[(elementIndex*4)+0].y;
+    //double q22 = mRotatedNodes[(elementIndex*4)+0].z;
+    double q22 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+0].index ];
+
+    // If the element has been rotated, rotate the x,y coord around node 2 in the oposite direction
+    if(mElems[elementIndex].hasRotation){
+        double x_ = x - mRotatedNodes[ (elementIndex*4)+1 ].x;
+        double y_ = y - mRotatedNodes[ (elementIndex*4)+1 ].y;
+        x = mRotatedNodes[ (elementIndex*4)+1 ].x + (  x_ * mElems[elementIndex].cosNegAlpha - y_ * mElems[elementIndex].sinNegAlpha );
+        y = mRotatedNodes[ (elementIndex*4)+1 ].y + (  x_ * mElems[elementIndex].sinNegAlpha + y_ * mElems[elementIndex].cosNegAlpha );
+    }
+
+    // At this stage x1, x2, y1, y2 are the rotated coordinates and x and y have also been rotated
+    if( !( x >= x1 && x <= x2 ) ||
+        !( y >= y1 && y <= y2 ) ){
+        // The point is not inside this rectangle
+        return false;
+    }
+
+    *interpolatedVal = (q11 * (x2 - x) * (y2 - y) +
+                        q21 * (x - x1) * (y2 - y) +
+                        q12 * (x2 - x) * (y - y1) +
+                        q22 * (x - x1) * (y - y1) )
+
+                        / ( (x2 - x1) * (y2 - y1) + 0.0 );
+    return true;
+}
+
+QPointF CrayfishViewer::pixelToReal(int i, int j){
+    double x = mLlX + (i * mPixelSize);
+    // double y = mCanvasHeight - (mLlY + (j * mPixelSize));
+    double y = mLlY + mPixelSize * (mCanvasHeight-1-j);
+    return QPointF(x,y);
+}
+
+double CrayfishViewer::valueAtCoord(int dataSetIdx, int timeIndex, double xCoord, double yCoord){
+
+    /*
+      We want to find the value at the given coordinate
+      */
+
+    /*
+        Loop through all the elements in the dataset and make a list of those
+      */
+
+    std::vector<uint> candidateElementIds;
+
+    for(uint i=0; i<mElemCount; i++){
+        if( xCoord >= mElems[i].minX &&
+            xCoord <= mElems[i].maxX &&
+            yCoord >= mElems[i].minY &&
+            yCoord <= mElems[i].maxY ){
+
+            candidateElementIds.push_back(i);
+        }
+    }
+
+    if( candidateElementIds.size() == 0 ){
+        return -9999.0;
+    }
+
+    double value;
+
+    for(int i=0; i<candidateElementIds.size(); i++){
+
+        uint elemIndex = candidateElementIds.at(i);
+        if( ! mDataSets.at(dataSetIdx)->outputs.at(timeIndex)->statusFlags[elemIndex] ){
+            continue;
+        }
+        if( interpolatValue(elemIndex, xCoord, yCoord, &value, dataSetIdx, timeIndex) ){
+            // We successfully got a value, return it and leave
+            return value;
+        }
+    }
+
+    return -9999.0;
+}
