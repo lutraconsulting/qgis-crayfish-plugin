@@ -1,0 +1,37 @@
+; the next section is mandatory
+[general]
+name=Crayfish
+qgisMinimumVersion=1.7.4
+description=A collection of tools for TUFLOW and other hydraulic 
+    modelling packages
+; category=Raster ; Did not know what my available choices where
+version=version 0.1
+author=Peter Wells for Lutra Consulting
+email=peter.wells@lutraconsulting.co.uk
+; end of mandatory metadata
+
+; start of optional metadata
+changelog=0.1 - Initial release
+;    very
+;    very
+;    very
+;    very
+;    very long multiline changelog
+
+; tags are in comma separated value format, spaces are allowed
+tags=hydraulic,hydraulic modelling,flood,analysis,animation,results viewer,tuflow,sms
+
+; these metadata can be empty
+; in a future version of the web application it will
+; be probably possible to create a project on redmine
+; if they are not filled
+homepage=http://www.lutraconsulting.co.uk/resources/crayfish
+; tracker=http://bugs.itopen.it
+repository=https://github.com/lutraconsulting/qgis-crayfish-plugin
+icon=crayfish_128px.png
+
+; experimental flag
+experimental=True
+
+; deprecated flag (applies to the whole plugin and not only to the uploaded version)
+deprecated=False
