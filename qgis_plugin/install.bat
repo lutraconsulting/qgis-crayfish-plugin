@@ -26,5 +26,7 @@ rem Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, U
 
 set PLUGINDIR=%HOMEPATH%\.qgis\python\plugins\crayfish
 md %PLUGINDIR%
+copy *.png %PLUGINDIR%
 copy *.py %PLUGINDIR%
+copy *.txt %PLUGINDIR%
 

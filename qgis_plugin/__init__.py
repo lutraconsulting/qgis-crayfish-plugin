@@ -34,6 +34,10 @@ def qgisMinimumVersion():
     return "1.7"
 def authorName():
     return "Peter Wells for Lutra Consulting"
+def author():
+    return "Peter Wells for Lutra Consulting"
+def email():
+    return "peter.wells@lutraconsulting.co.uk"
 def homepage():
     return "http://www.lutraconsulting.co.uk/resources/crayfish"
 def classFactory(iface):
