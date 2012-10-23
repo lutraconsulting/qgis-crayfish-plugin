@@ -39,7 +39,7 @@ from crayfish_viewer_dock import CrayfishViewerDock
 import crayfish_about_dialog
 
 import platform
-import urllib
+import urllib2
 import os
 import zipfile
 import sip
@@ -82,13 +82,39 @@ class CrayfishPlugin:
                     else:
                         QMessageBox.critical(self.iface.mainWindow(), 'Failed to Determine Installation Path', "The installation location for the Crayfish Viewer library could not be established.  Installation will not continue." )
                     if destFolder is not None:
-                        packageUrl = 'http://www.lutraconsulting.co.uk/resources/crayfish/viewer/binaries/' + platformVersion + '/' + libVersion + '/' + crayfishVersion + '/crayfish_viewer_library.zip'
-                        # QMessageBox.information(self.iface.mainWindow(), 'DEBUG', "Url is " + packageUrl + '\n ... and cwd is ' + os.getcwd() + '\n ... destfolder is ' + destFolder )
-                        destinationFile = os.path.join(destFolder, 'crayfish_viewer_library.zip')
-                        urllib.urlcleanup()
+                        packageUrl = 'resources/crayfish/viewer/binaries/' + platformVersion + '/' + libVersion + '/' + crayfishVersion + '/crayfish_viewer_library.zip'
+                        packageUrl = 'http://www.lutraconsulting.co.uk/' + urllib2.quote(packageUrl)
+                        destinationFileName = os.path.join(destFolder, 'crayfish_viewer_library.zip')
                         try:
-                            urllib.urlretrieve(packageUrl, destinationFile)
-                            z = zipfile.ZipFile(destinationFile)
+                            s = QSettings()
+                            useProxy = s.value("proxy/proxyEnabled").toBool()
+                            if useProxy:
+                                proxyHost = str(s.value("proxy/proxyHost").toString())
+                                proxyPassword = str(s.value("proxy/proxyPassword").toString())
+                                proxyPort = str(s.value("proxy/proxyPort").toString())
+                                proxyType = str(s.value("proxy/proxyType").toString())
+                                if proxyType == 'DefaultProxy':
+                                    proxyType = 'http'
+                                elif proxyType == 'HttpProxy':
+                                    proxyType = 'http'
+                                elif proxyType == 'Socks5Proxy':
+                                    proxyType = 'socks'
+                                elif proxyType == 'HttpCachingProxy':
+                                    proxyType = 'http'
+                                elif proxyType == 'FtpCachingProxy':
+                                    proxyType = 'ftp'
+                                proxyUser = str(s.value("proxy/proxyUser").toString())
+                                proxyString = 'http://' + proxyUser + ':' + proxyPassword + '@' + proxyHost + ':' + proxyPort
+                                proxy = urllib2.ProxyHandler({proxyType : proxyString})
+                                auth = urllib2.HTTPBasicAuthHandler()
+                                opener = urllib2.build_opener(proxy, auth, urllib2.HTTPHandler)
+                                urllib2.install_opener(opener)
+                            conn = urllib2.urlopen(packageUrl)
+                            destinationFile = open(destinationFileName, 'wb')
+                            destinationFile.write( conn.read() )
+                            destinationFile.close()
+
+                            z = zipfile.ZipFile(destinationFileName)
                             z.extractall(destFolder)
                             from crayfishviewer import CrayfishViewer
                             self.crayfishViewerLibFound = True
