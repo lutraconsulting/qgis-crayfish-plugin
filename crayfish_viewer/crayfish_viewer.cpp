@@ -157,6 +157,8 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
     }
     bedDs->mZMin = zMin;
     bedDs->mZMax = zMax;
+    bedDs->contourMin = bedDs->mZMin;
+    bedDs->contourMax = bedDs->mZMax;
 
     //mZMin = mNodes[0].z;
     //mZMax = mNodes[0].z;
@@ -607,6 +609,8 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
 
         ds->mZMin = zMin;
         ds->mZMax = zMax;
+        ds->contourMin = zMin;
+        ds->contourMax = zMax;
 
         mDataSets.push_back(ds);
         return true;
@@ -1104,4 +1108,12 @@ double CrayfishViewer::valueAtCoord(int dataSetIdx, int timeIndex, double xCoord
     }
 
     return -9999.0;
+}
+
+float CrayfishViewer::lastMinContourValue(int dataSet){
+    return mDataSets.at(dataSet)->contourMin;
+}
+
+float CrayfishViewer::lastMaxContourValue(int dataSet){
+    return mDataSets.at(dataSet)->contourMax;
 }

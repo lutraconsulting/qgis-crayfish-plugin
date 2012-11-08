@@ -6,9 +6,7 @@ The Crayfish Plugin for QGIS aspires to be a complete set of pre and post-proces
 Todo
 ====
 
-Prepare a resources page (essentially a manual)
 Fix About section
-Add support for downloading Crayfish Viewer library from behind proxy server
 Anti-aliasing
 Consider removing apply button as it seems redundant
 Implement full sanity checking of user input values in Vector properties dialog and suitable error mesages

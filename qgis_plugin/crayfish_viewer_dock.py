@@ -48,10 +48,14 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         QObject.connect(self.listWidget_2, SIGNAL("currentRowChanged(int)"), self.redraw)
         QObject.connect(self.iface, SIGNAL("currentLayerChanged(QgsMapLayer *)"), self.refresh)
         QObject.connect(self.groupBox, SIGNAL("toggled(bool)"), self.toggleContourOptions)
+        QObject.connect(self.minLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
+        QObject.connect(self.maxLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
         
         
     def __del__(self):
         # Disconnect signals and slots
+        QObject.connect(self.maxLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
+        QObject.connect(self.minLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
         QObject.disconnect(self.groupBox, SIGNAL("toggled(bool)"), self.toggleContourOptions)
         QObject.disconnect(self.iface, SIGNAL("currentLayerChanged(QgsMapLayer *)"), self.refresh)
         QObject.disconnect(self.listWidget_2, SIGNAL("currentRowChanged(int)"), self.redraw)
@@ -117,6 +121,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             dataSetRow = self.listWidget.currentRow()
             self.minLineEdit.setText( str("%.3f" % l.provider.minValue(dataSetRow)) )
             self.maxLineEdit.setText( str("%.3f" % l.provider.maxValue(dataSetRow)) )
+        # Redraw the layer
+        tIndex = self.listWidget_2.currentRow()
+        self.redraw(tIndex)
     
     def showMostRecentDataSet(self):
         lastRow = self.listWidget.count() - 1

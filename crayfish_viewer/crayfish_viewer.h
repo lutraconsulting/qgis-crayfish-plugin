@@ -80,8 +80,8 @@ public:
     bool layerContouredAutomatically(int dataSet){ return mDataSets.at(dataSet)->contouredAutomatically; }
     float minValue(int dataSet){ return mDataSets.at(dataSet)->mZMin; }
     float maxValue(int dataSet){ return mDataSets.at(dataSet)->mZMax; }
-    float lastMinContourValue(int dataSet){ return mDataSets.at(dataSet)->contourMin; }
-    float lastMaxContourValue(int dataSet){ return mDataSets.at(dataSet)->contourMax; }
+    float lastMinContourValue(int dataSet);
+    float lastMaxContourValue(int dataSet);
     bool isBed(int dataSet){ return mDataSets.at(dataSet)->isBed; }
     double valueAtCoord(int dataSetIdx, int timeIndex, double xCoord, double yCoord);
 private:

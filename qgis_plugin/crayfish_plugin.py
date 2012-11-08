@@ -169,7 +169,7 @@ class CrayfishPlugin:
             If not, hide the dock
         """
         loadedCrayfishLayers = self.getCrayfishLayers()
-        if len(loadedCrayfishLayers) == 0:
+        if len(loadedCrayfishLayers) == 0 and self.dock is not None:
             # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Calling Hide")
             self.dock.setHidden(True)
 
