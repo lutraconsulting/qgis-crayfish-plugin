@@ -88,6 +88,8 @@ struct DataSet{
     bool timeVarying;
     int lastOutputRendered;
     bool contouredAutomatically;
+    bool renderContours;
+    bool renderVectors;
     float contourMin;
     float contourMax;
     bool isBed;

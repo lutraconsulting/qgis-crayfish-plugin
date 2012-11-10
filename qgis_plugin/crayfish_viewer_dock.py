@@ -42,6 +42,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.iface = iface
         
         self.setEnabled(False)
+        self.reArranging = False
         
         # Ensure refresh() is called when the layer changes
         QObject.connect(self.listWidget, SIGNAL("currentRowChanged(int)"), self.dataSetChanged)
@@ -50,12 +51,14 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         QObject.connect(self.groupBox, SIGNAL("toggled(bool)"), self.toggleContourOptions)
         QObject.connect(self.minLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
         QObject.connect(self.maxLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
+        QObject.connect(self.displayContoursCheckBox, SIGNAL('toggled(bool)'), self.toggleDisplayContours)
         
         
     def __del__(self):
         # Disconnect signals and slots
-        QObject.connect(self.maxLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
-        QObject.connect(self.minLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
+        QObject.disconnect(self.displayContoursCheckBox, SIGNAL('toggled(bool)'), self.toggleDisplayContours)
+        QObject.disconnect(self.maxLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
+        QObject.disconnect(self.minLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
         QObject.disconnect(self.groupBox, SIGNAL("toggled(bool)"), self.toggleContourOptions)
         QObject.disconnect(self.iface, SIGNAL("currentLayerChanged(QgsMapLayer *)"), self.refresh)
         QObject.disconnect(self.listWidget_2, SIGNAL("currentRowChanged(int)"), self.redraw)
@@ -76,15 +79,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         """
         l = self.iface.mapCanvas().currentLayer()
         if newState:
-            #self.contourOptionsPushButton.setEnabled(True)
             l.rs.renderContours = True
         else:
-            #self.contourOptionsPushButton.setEnabled(False)
             l.rs.renderContours = False
-            # Ensure one or the other is on
-            if not self.displayVectorsCheckBox.isEnabled():
-                self.displayVectorsCheckBox.setCheckState(True)
-                #self.displayVectorsCheckBox.toggled.emit(True)
         self.redrawCurrentLayer()
             
             
@@ -124,6 +121,12 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         # Redraw the layer
         tIndex = self.listWidget_2.currentRow()
         self.redraw(tIndex)
+        
+    def toggleDisplayContours(self, on):
+        if on:
+            self.groupBox.setEnabled(True)
+        else:
+            self.groupBox.setEnabled(False)
     
     def showMostRecentDataSet(self):
         lastRow = self.listWidget.count() - 1
@@ -142,7 +145,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         l.setRenderSettings(dataSetIdx, timeIdx)
         l.setCacheImage(None)
             
-        self.iface.mapCanvas().refresh()
+        if not self.reArranging:
+            self.iface.mapCanvas().refresh()
         
     
         
@@ -163,6 +167,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         l = self.iface.mapCanvas().currentLayer()
         if l.type() != QgsMapLayer.PluginLayer or str(l.pluginLayerType()) != 'crayfish_viewer':
             return
+        
+        self.reArranging = True
         
         self.listWidget_2.clear()
         
@@ -189,6 +195,21 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         else:
             self.minLineEdit.setText( str("%.3f" % l.provider.lastMinContourValue(dataSetRow)) )
             self.maxLineEdit.setText( str("%.3f" % l.provider.lastMaxContourValue(dataSetRow)) )
+            
+        # Get contour / vector render preferences
+        displayContours = l.provider.displayContours(dataSetRow)
+        displayVectors = l.provider.displayVectors(dataSetRow)
+        # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Render settings are " + str(dataSetRow) + ', ' + str(displayContours) + ', ' + str(displayVectors) )
+        self.displayContoursCheckBox.setChecked(displayContours)
+        self.displayVectorsCheckBox.setChecked(displayVectors)
+        
+        # Disable the vector options if we are looking at a scalar dataset
+        isVectorDataSet = l.provider.isVector(dataSetRow)
+        self.displayVectorsCheckBox.setEnabled(isVectorDataSet)
+        
+        self.reArranging = False
+        # self.redraw(lastIdxViewed)
+        self.redrawCurrentLayer()
         
     
     def getRenderOptions(self):
@@ -280,7 +301,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
                 
             # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Done adding datasets in refresh(), setting setCurrentRow")
                 
-            self.listWidget.setCurrentRow(0)
+            self.listWidget.setCurrentRow( l.dataSetIdx )
             
             # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Done setting setCurrentRow")
                 
@@ -295,5 +316,6 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         l = self.iface.mapCanvas().currentLayer()
         if hasattr(l, "setCacheImage"):
             l.setCacheImage(None)
-        self.iface.mapCanvas().refresh()
+        if not self.reArranging:
+            self.iface.mapCanvas().refresh()
         # l.triggerRepaint()

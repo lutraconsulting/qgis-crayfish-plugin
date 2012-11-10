@@ -55,5 +55,8 @@ public:
     float lastMinContourValue(int);
     float lastMaxContourValue(int);
     bool isBed(int);
+    bool isVector(int);
+    bool displayContours(int);
+    bool displayVectors(int);
     double valueAtCoord(int, int, double, double);
 };

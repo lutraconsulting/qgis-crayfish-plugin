@@ -93,6 +93,8 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
     bedDs->name = "Bed Elevation";
     bedDs->timeVarying = false;
     bedDs->isBed = true;
+    bedDs->renderContours = true;
+    bedDs->renderVectors = false;
     Output* o = new Output;
 
     o->time = 0.0;
@@ -611,6 +613,12 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
         ds->mZMax = zMax;
         ds->contourMin = zMin;
         ds->contourMax = zMax;
+        ds->renderContours = true;
+        if(ds->type == Vector){
+            ds->renderVectors = true;
+        }else{
+            ds->renderVectors = false;
+        }
 
         mDataSets.push_back(ds);
         return true;
@@ -707,6 +715,8 @@ QImage* CrayfishViewer::draw(bool renderContours,
     mDataSets.at(dataSetIdx)->lastOutputRendered = outputTime;
 
     // Save rendering information
+    mDataSets.at(dataSetIdx)->renderContours = renderContours;
+    mDataSets.at(dataSetIdx)->renderVectors = renderVectors;
     if(autoContour){
         mDataSets.at(dataSetIdx)->contouredAutomatically = true;
     }else{
@@ -715,48 +725,50 @@ QImage* CrayfishViewer::draw(bool renderContours,
         mDataSets.at(dataSetIdx)->contourMax = maxContour;
     }
 
-    for(uint i=0; i<mElemCount; i++){
+    if(renderContours){
+        for(uint i=0; i<mElemCount; i++){
 
-        // For each element
+            // For each element
 
-        // If the element's activity flag is off, ignore it
-        if( ! mDataSets.at(dataSetIdx)->outputs.at(outputTime)->statusFlags[i] ){
-            continue;
-        }
+            // If the element's activity flag is off, ignore it
+            if( ! mDataSets.at(dataSetIdx)->outputs.at(outputTime)->statusFlags[i] ){
+                continue;
+            }
 
-        // If the element is outside the view of the canvas, skip it
-        if( elemOutsideView(i) ){
-            continue;
-        }
+            // If the element is outside the view of the canvas, skip it
+            if( elemOutsideView(i) ){
+                continue;
+            }
 
-        //
-        if( mElems[i].maxSize < mPixelSize ){
-            // The element is smaller than the pixel size so there is no point rendering the element properly
-            // Just take the value of the first point associated with the element instead
-            QPoint pp = realToPixel( mRotatedNodes[ (i*4) ].x, mRotatedNodes[ (i*4) ].y );
-            pp.setX( std::min(pp.x(), mCanvasWidth-1) );
-            pp.setX( std::max(pp.x(), 0) );
-            pp.setY( std::min(pp.y(), mCanvasHeight-1) );
-            pp.setY( std::max(pp.y(), 0) );
+            //
+            if( mElems[i].maxSize < mPixelSize ){
+                // The element is smaller than the pixel size so there is no point rendering the element properly
+                // Just take the value of the first point associated with the element instead
+                QPoint pp = realToPixel( mRotatedNodes[ (i*4) ].x, mRotatedNodes[ (i*4) ].y );
+                pp.setX( std::min(pp.x(), mCanvasWidth-1) );
+                pp.setX( std::max(pp.x(), 0) );
+                pp.setY( std::min(pp.y(), mCanvasHeight-1) );
+                pp.setY( std::max(pp.y(), 0) );
 
-            QRgb* line = (QRgb*) mImage->scanLine(pp.y());
-            QColor tmpCol;
-            //double val = mRotatedNodes[ (i*4) ].z;
-            float val = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[ (i*4) ].index ];
-            setColorFromVal(val, &tmpCol, dataSetIdx);
-            line[pp.x()] = tmpCol.rgb();
+                QRgb* line = (QRgb*) mImage->scanLine(pp.y());
+                QColor tmpCol;
+                //double val = mRotatedNodes[ (i*4) ].z;
+                float val = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[ (i*4) ].index ];
+                setColorFromVal(val, &tmpCol, dataSetIdx);
+                line[pp.x()] = tmpCol.rgb();
 
-        }else{
-            // Get the BBox of the element in pixels
-            QPoint ll = realToPixel(mElems[i].minX, mElems[i].minY);
-            QPoint ur = realToPixel(mElems[i].maxX, mElems[i].maxY);
-            int topLim = std::max( ur.y(), 0 );
-            int bottomLim = std::min( ll.y(), mCanvasHeight-1 );
-            int leftLim = std::max( ll.x(), 0 );
-            int rightLim = std::min( ur.x(), mCanvasWidth-1 );
+            }else{
+                // Get the BBox of the element in pixels
+                QPoint ll = realToPixel(mElems[i].minX, mElems[i].minY);
+                QPoint ur = realToPixel(mElems[i].maxX, mElems[i].maxY);
+                int topLim = std::max( ur.y(), 0 );
+                int bottomLim = std::min( ll.y(), mCanvasHeight-1 );
+                int leftLim = std::max( ll.x(), 0 );
+                int rightLim = std::min( ur.x(), mCanvasWidth-1 );
 
-            for(int j=topLim; j<=bottomLim; j++){ // FIXME - are we missing the last line?  Should this be j<=bottomLim ?
-                paintRow(i, j, leftLim, rightLim, dataSetIdx, outputTime);
+                for(int j=topLim; j<=bottomLim; j++){ // FIXME - are we missing the last line?  Should this be j<=bottomLim ?
+                    paintRow(i, j, leftLim, rightLim, dataSetIdx, outputTime);
+                }
             }
         }
     }

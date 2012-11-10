@@ -83,6 +83,9 @@ public:
     float lastMinContourValue(int dataSet);
     float lastMaxContourValue(int dataSet);
     bool isBed(int dataSet){ return mDataSets.at(dataSet)->isBed; }
+    bool isVector(int dataSet){ return (mDataSets.at(dataSet)->type == Vector); }
+    bool displayContours(int dataSet){ return mDataSets.at(dataSet)->renderContours; }
+    bool displayVectors(int dataSet){ return mDataSets.at(dataSet)->renderVectors; }
     double valueAtCoord(int dataSetIdx, int timeIndex, double xCoord, double yCoord);
 private:
     bool mLoadedSuccessfully;

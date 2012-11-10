@@ -24,4 +24,5 @@ rem Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, U
 
 mkdir %HOMEPATH%\.qgis\python\plugins\crayfish
 copy /y build\release\crayfishViewer.dll %HOMEPATH%\.qgis\python\plugins\crayfish
+copy /y crayfishviewer.pyd %HOMEPATH%\.qgis\python\plugins\crayfish
 PAUSE
