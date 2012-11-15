@@ -219,8 +219,10 @@ class CrayfishPlugin:
         
         # Get the file name
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Crayfish Dat File', lastFolder, "DAT Results (*.dat);;2DM Mesh Files (*.2dm)")
-        inFileName = str(inFileName)
-        
+        inFileName = str(inFileName) 
+        if len(inFileName) == 0: # If the length is 0 the user pressed cancel 
+            return
+            
         # Store the path we just looked in
         head, tail = os.path.split(inFileName)
         if head <> os.sep and head.lower() <> 'c:\\' and head <> '':
