@@ -46,6 +46,7 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         
         # Populate the various widgets
         self.shaftLengthComboBox.setCurrentIndex( self.rs.shaftLength )
+        self.stackedWidget.setCurrentIndex( self.rs.shaftLength )
         
         self.minimumShaftLineEdit.setText( str(self.rs.shaftLengthMin) )
         self.maximumShaftLineEdit.setText( str(self.rs.shaftLengthMax) )
@@ -75,7 +76,6 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         QObject.connect( self.ySpacingLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
         QObject.connect( self.headWidthLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
         QObject.connect( self.headLengthLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        
 
     def __del__(self):
         QObject.disconnect( self.shaftLengthComboBox, SIGNAL('currentIndexChanged(int)'), self.inputFocusChanged )

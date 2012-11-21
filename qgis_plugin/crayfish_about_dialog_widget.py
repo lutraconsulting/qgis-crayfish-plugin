@@ -2,8 +2,8 @@
 
 # Form implementation generated from reading ui file 'crayfish_about_dialog_widget.ui'
 #
-# Created: Thu Oct 11 21:04:48 2012
-#      by: PyQt4 UI code generator 4.9.1
+# Created: Wed Nov 21 17:41:16 2012
+#      by: PyQt4 UI code generator 4.8.3
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -48,6 +48,7 @@ class Ui_Dialog(object):
         self.verticalLayout.addWidget(self.lutraLogoLabel)
         self.horizontalLayout.addLayout(self.verticalLayout)
         self.aboutBrowser = QtGui.QTextBrowser(Dialog)
+        self.aboutBrowser.setAcceptRichText(False)
         self.aboutBrowser.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByKeyboard|QtCore.Qt.LinksAccessibleByMouse|QtCore.Qt.TextBrowserInteraction|QtCore.Qt.TextSelectableByKeyboard|QtCore.Qt.TextSelectableByMouse)
         self.aboutBrowser.setOpenExternalLinks(True)
         self.aboutBrowser.setOpenLinks(True)
@@ -69,12 +70,8 @@ class Ui_Dialog(object):
         self.aboutBrowser.setHtml(QtGui.QApplication.translate("Dialog", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'Droid Sans\'; font-size:10pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Crayfish Plugin</span></p>\n"
-"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">The Crayfish Plugin is a collection of tools for hydraulic modellers working with TUFLOW and other moddelling packages.</p>\n"
-"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">It aims to use QGIS as an efficient and effective pre and post-processor.</p>\n"
-"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Check out the <a href=\"http://www.lutraconsulting.co.uk/resources/crayfish\"><span style=\" text-decoration: underline; color:#0000ff;\">Crayfish resources page</span></a> on our website for more information.</p></body></html>", None, QtGui.QApplication.UnicodeUTF8))
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\" bgcolor=\"#efe1bb\">\n"
+"<p style=\" margin-top:18px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'FreeSans,Geneva,Arial,sans-serif\'; font-size:8pt; font-weight:600; color:#412824;\">Crayfish Plugin</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'FreeSans,Geneva,Arial,sans-serif\'; font-size:8pt; color:#412824;\">The Crayfish Plugin is a collection of tools for hydraulic modellers working with TUFLOW and other modelling packages. It aims to use QGIS as an efficient and effective pre and post-processor.</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'FreeSans,Geneva,Arial,sans-serif\'; font-size:8pt; color:#412824;\">Check out the </span><a href=\"http://www.lutraconsulting.co.uk/resources/crayfish\"><span style=\" font-family:\'FreeSans,Geneva,Arial,sans-serif\'; font-size:8pt; text-decoration: underline; color:#412824;\">Crayfish resources page</span></a><span style=\" font-family:\'FreeSans,Geneva,Arial,sans-serif\'; font-size:8pt; color:#412824;\"> on our website for more information.</span></p></body></html>", None, QtGui.QApplication.UnicodeUTF8))
 
