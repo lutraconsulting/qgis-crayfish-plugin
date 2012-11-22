@@ -49,6 +49,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
 
     // Initialise variables
     mLoadedSuccessfully = true;
+    mLastError = None;
     mImage = new QImage(0, 0, QImage::Format_ARGB32);
     mCanvasWidth = 0;
     mCanvasHeight = 0;
@@ -61,6 +62,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
     QFile file(twoDMFileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
         mLoadedSuccessfully = false;
+        mLastError = FileNotFound;
         return;
     }
 
@@ -70,12 +72,23 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
     QTextStream in(&file);
     while (!in.atEnd()) {
         QString line = in.readLine();
-        if( line.startsWith("E4Q") ){
+        if( line.isEmpty() || line.startsWith("MESH2D") ){
+            // Do nothing
+        }
+        else if( line.startsWith("E4Q") ){
             mElemCount += 1;
         }
         else if( line.startsWith("ND") ){
             mNodeCount += 1;
         }
+        else{
+            // We have unsupported element types
+            mLastError = UnsupportedMeshObject;
+            mLoadedSuccessfully = false;
+            file.close();
+            return;
+        }
+
     }
 
     mRotatedNodeCount = mElemCount * 4;

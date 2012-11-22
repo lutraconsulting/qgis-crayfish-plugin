@@ -10,9 +10,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     LAYER_TYPE="crayfish_viewer"
 
-    def __init__(self, datFileName):
+    def __init__(self, meshFileName):
         QgsPluginLayer.__init__(self, CrayfishViewerPluginLayer.LAYER_TYPE, "Crayfish Viewer plugin layer")
-        self.provider = CrayfishViewer(datFileName)
+        self.provider = CrayfishViewer(meshFileName)
         if self.provider.loadedOk():
             self.setValid(True)
         else:

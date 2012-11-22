@@ -264,7 +264,7 @@ class CrayfishPlugin:
             if parentLayer is None:
                 # The 2DM has not yet been loaded, load it
                 if not self.addLayer(meshFileName):
-                    QMessageBox.critical(self.iface.mainWindow(), "Failed to Load Mesh", "The mesh file associated with this DAT file (" + meshFileName + ") could not be loaded")
+                    QMessageBox.critical(self.iface.mainWindow(), "Failed to Load Mesh", "The mesh file associated with this DAT file (" + meshFileName + ") could not be loaded.  Please note that triangular (E3T and E6T) elements are unsupported at this time.")
                     return
                 parentLayer = self.getLayerWith2DM(meshFileName)
                 assert( parentLayer is not None)

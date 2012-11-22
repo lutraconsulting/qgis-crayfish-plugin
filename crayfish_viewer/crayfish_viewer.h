@@ -89,6 +89,7 @@ public:
     double valueAtCoord(int dataSetIdx, int timeIndex, double xCoord, double yCoord);
 private:
     bool mLoadedSuccessfully;
+    ViewerError mLastError;
     QImage* mImage;
     int mCanvasWidth;
     int mCanvasHeight;
