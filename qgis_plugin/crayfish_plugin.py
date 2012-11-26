@@ -330,7 +330,7 @@ class CrayfishPlugin:
         if not self.dockInitialised:
             self.initialiseDock()
             self.dockInitialised = True
-            layer.setDock(self.dock)
+        layer.setDock(self.dock)
         self.dock.setHidden(False)
             
         head, tail = os.path.split(twoDMFileName)

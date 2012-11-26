@@ -43,6 +43,23 @@ CrayfishViewer::~CrayfishViewer(){
         delete[] mRotatedNodes;
         mRotatedNodes = 0;
     }
+
+    for(int i=0; i<mDataSets.size(); i++){
+        DataSet* ds = mDataSets.at(i);
+        for(int j=0; j<ds->outputs.size(); j++){
+            Output* o = ds->outputs.at(j);
+            delete[] o->values;
+            delete[] o->statusFlags;
+            if(ds->type == Vector){
+                delete[] o->values_x;
+                delete[] o->values_y;
+            }
+            delete o;
+        }
+        ds->outputs.clear();
+        delete ds;
+    }
+    mDataSets.clear();
 }
 
 CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
