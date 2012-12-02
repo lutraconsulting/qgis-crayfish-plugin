@@ -25,6 +25,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.f
 */
 
 #include "crayfish_viewer.h"
+#include <iostream>
+
 
 CrayfishViewer::~CrayfishViewer(){
     if(mImage){
@@ -110,14 +112,65 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
 
     mRotatedNodeCount = mElemCount * 4;
 
-    mElems = new Element[mElemCount];
-    mNodes = new Node[mNodeCount];
-    mRotatedNodes = new Node[mRotatedNodeCount];
-    //mElemCount = 0;
-    //mNodeCount = 0;
+    // Allocate memory
+    DataSet* bedDs = 0;
+    Output* o = 0;
+    try{
+        mElems = 0;
+        mNodes = 0;
+        mRotatedNodes = 0;
+        mElems = new Element[mElemCount];
+
+        mNodes = new Node[mNodeCount];
+        mRotatedNodes = new Node[mRotatedNodeCount];
+        bedDs = new DataSet;
+        o = new Output;
+        o->statusFlags = 0;
+        o->values = 0;
+        o->statusFlags = new char[mElemCount];
+        o->values = new float[mNodeCount];
+    } catch (const std::bad_alloc &) {
+        /*
+        // At present, QGIS crashes when the following lines are executed
+        // therefore it's been commented for the moment
+        std::cout << "In catch" << std::endl;
+        // Clean up
+        if(mElems){
+            std::cout << "Deleting mElems" << std::endl;
+            delete[] mElems;
+        }
+        if(mNodes){
+            std::cout << "Deleting mNodes" << std::endl;
+            delete[] mNodes;
+        }
+        if(mRotatedNodes){
+            std::cout << "Deleting mRotatedNodes" << std::endl;
+            delete[] mRotatedNodes;
+        }
+        if(o){
+            std::cout << "Had o" << std::endl;
+            if(o->statusFlags){
+                std::cout << "Deleting flags" << std::endl;
+                delete[] o->statusFlags;
+            }
+            if(o->values){
+                delete[] o->values;
+                std::cout << "Deleting values" << std::endl;
+            }
+            std::cout << "Deleting o" << std::endl;
+            delete o;
+        }
+        if(bedDs){
+            std::cout << "Deleting bedDs" << std::endl;
+            delete bedDs;
+        }
+        std::cout << "Done, returning" << std::endl;
+        */
+        mLoadedSuccessfully = false;
+        return;
+    }
 
     // Create a dataset for the bed elevation
-    DataSet* bedDs = new DataSet;
     bedDs->contouredAutomatically = true;
     bedDs->type = Bed;
     bedDs->name = "Bed Elevation";
@@ -125,12 +178,9 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
     bedDs->isBed = true;
     bedDs->renderContours = true;
     bedDs->renderVectors = false;
-    Output* o = new Output;
 
     o->time = 0.0;
-    o->statusFlags = new char[mElemCount];
     memset(o->statusFlags, 1, mElemCount); // All cells active
-    o->values = new float[mNodeCount];
     bedDs->outputs.push_back(o);
     mDataSets.push_back(bedDs);
 
@@ -408,13 +458,16 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
     if( version != 3000 ) // Version should be 3000
         return false;
 
-    DataSet* ds = new DataSet;
+    DataSet* ds = 0;
+    ds = new DataSet;
     ds->contouredAutomatically = true;
     ds->timeVarying = true;
     ds->isBed = false;
     ds->lastOutputRendered = 0;
 
-    while(card != 210){
+    bool allocateErrorEncountered = false;
+
+    while( card != 210 && !(allocateErrorEncountered) ){
         if( in.readRawData( (char*)&card, 4) != 4 ){
             // We've reached the end of the file and there was no ends card
             break;
@@ -541,14 +594,25 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
                 return false;
             }
 
-            Output* o = new Output;
-            o->time = time;
-            o->statusFlags = new char[mElemCount];
-            o->values = new float[mNodeCount];
-            if(ds->type == Vector){
-                o->values_x = new float[mNodeCount];
-                o->values_y = new float[mNodeCount];
+            Output* o = 0;
+            try{
+                o = new Output;
+                o->statusFlags = 0;
+                o->statusFlags = new char[mElemCount];
+                o->values = 0;
+                o->values = new float[mNodeCount];
+                o->values_x = 0;
+                o->values_y = 0;
+                if(ds->type == Vector){
+                    o->values_x = new float[mNodeCount];
+                    o->values_y = new float[mNodeCount];
+                }
+            } catch (const std::bad_alloc &) {
+                allocateErrorEncountered = true;
             }
+
+            o->time = time;
+
 
             if(istat){
                 for(int i=0; i<mElemCount; i++){
@@ -613,6 +677,34 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
             break;
 
         }
+    }
+
+    // If we suffered an allocate error, clean up and return false
+    if(allocateErrorEncountered){
+        /*
+        // At present, QGIS crashes when the following lines are executed
+        // therefore it's been commented for the moment
+        // Clean up
+        for(int j=0; j<ds->outputs.size(); j++){
+            Output* o = ds->outputs.at(j);
+            if(o){
+                if (o->values)
+                    delete[] o->values;
+                if (o->statusFlags)
+                    delete[] o->statusFlags;
+                if(ds->type == Vector){
+                    if (o->values_x)
+                        delete[] o->values_x;
+                    if (o->values_y)
+                        delete[] o->values_y;
+                }
+                delete o;
+            }
+        }
+        ds->outputs.clear();
+        delete ds;
+        */
+        return false;
     }
 
     if(ds->outputs.size() > 0){

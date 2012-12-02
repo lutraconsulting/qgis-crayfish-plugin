@@ -6,8 +6,8 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    QString meshName = "/home/pete/dev/qgis/crayfishViewer/crayfish_viewer/test_data/01.2dm";
-    QString datName = "/home/pete/dev/qgis/crayfishViewer/crayfish_viewer/test_data/01_flow.dat";
+    QString meshName = "C:\\isis\\data\\examples\\ISIS 2D\\Site 1\\DamBreakADI_01\\01.2dm";
+    QString datName = "C:\isis\data\examples\ISIS 2D\Site 1\DamBreakADI_01\01_flow.dat";
     CrayfishViewer* s = new CrayfishViewer(meshName);
     if(! s->loadedOk()){
         return 1;

@@ -5,18 +5,35 @@ qgisMinimumVersion=1.7.4
 description=A collection of tools for TUFLOW and other hydraulic 
     modelling packages
 ; category=Raster ; Did not know what my available choices where
-version=version 0.1
+version=version 1.0
 author=Peter Wells for Lutra Consulting
 email=peter.wells@lutraconsulting.co.uk
 ; end of mandatory metadata
 
 ; start of optional metadata
 changelog=0.1 - Initial release
-;    very
-;    very
-;    very
-;    very
-;    very long multiline changelog
+    
+    1.0 - Bug fixes for issues seen in 0.1
+        Support for downloading viewer library from behind proxy server
+        Fixes for annoying bugs:
+            Error seen when unloading any non-crayfish layer.
+            Layer not automatically redrawn when changing contour 
+            settings.
+            Improved contour options behaviour.
+            Made contours optional.
+            Last rendered dataset now remembered (instead of always 
+            defaulting to bed elevation).
+            Removed unnessisary warning messages.
+            Fixed stacked widget in vector options (min/max line edits 
+            not displayed properly).
+            Updated styles in about page.
+            Better handling of errors when loading layers.
+            Fixed memory leaks.
+            Fixed issue when datasets other than the first loaded do 
+            not behave as expected.
+            Ensured only a single vector options dialog can be opened.
+            Added better support for handing allocation errors for huge 
+            layers.
 
 ; tags are in comma separated value format, spaces are allowed
 tags=hydraulic,hydraulic modelling,flood,analysis,animation,results viewer,tuflow,sms
@@ -31,7 +48,7 @@ repository=https://github.com/lutraconsulting/qgis-crayfish-plugin
 icon=crayfish_128px.png
 
 ; experimental flag
-experimental=True
+experimental=False
 
 ; deprecated flag (applies to the whole plugin and not only to the uploaded version)
 deprecated=False
