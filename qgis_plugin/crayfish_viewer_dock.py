@@ -43,6 +43,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         
         self.setEnabled(False)
         self.reArranging = False
+        self.vectorPropsDialog = None
         
         # Ensure refresh() is called when the layer changes
         QObject.connect(self.listWidget, SIGNAL("currentRowChanged(int)"), self.dataSetChanged)
@@ -66,11 +67,15 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         
         
     def displayVectorPropsDialog(self):
+        if self.vectorPropsDialog is not None:
+            self.vectorPropsDialog.raise_()
+            return
         rs = self.iface.mapCanvas().currentLayer().rs
-        d = crayfish_viewer_vector_options_dialog.CrayfishViewerVectorOptionsDialog(self.iface, rs, self.redrawCurrentLayer)
-        d.show()
-        res = d.exec_()
+        self.vectorPropsDialog = crayfish_viewer_vector_options_dialog.CrayfishViewerVectorOptionsDialog(self.iface, rs, self.redrawCurrentLayer)
+        self.vectorPropsDialog.show()
+        res = self.vectorPropsDialog.exec_()
         self.redrawCurrentLayer()
+        self.vectorPropsDialog = None
 
     
     def displayContoursButtonToggled(self, newState):
