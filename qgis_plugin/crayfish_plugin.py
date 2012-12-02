@@ -43,6 +43,8 @@ import urllib2
 import os
 import zipfile
 import sip
+import sys
+import time
 
 class CrayfishPlugin:
 
@@ -57,16 +59,53 @@ class CrayfishPlugin:
         
     def initGui(self):
         
+        # import pydevd; pydevd.settrace()
+        
         # Try to import the binary library:
+        restartRequired = False
+        
+        platformVersion = platform.system()
+        if platformVersion == 'Windows':
+            # Windows users may have opted to download a pre-compiled lib
+            # In this case, if they already had the DLL loaded (they have 
+            # just uypdated) - they will need to restart QGIS to be able to
+            # delete the old DLL
+            destFolder = None
+            systemWidePluginPath = os.path.join(os.environ['OSGEO4W_ROOT'], 'apps', 'qgis', 'python', 'plugins', 'crayfish')
+            personalPluginPath = os.path.join(os.environ['HOMEPATH'], '.qgis', 'python', 'plugins', 'crayfish')
+            if os.path.isdir( systemWidePluginPath ):
+                destFolder = systemWidePluginPath
+            elif os.path.isdir(personalPluginPath):
+                destFolder = personalPluginPath
+            if destFolder is not None:
+                updateLibraryIndicator = os.path.join(destFolder, 'EXTRACT_DLL')
+                if os.path.isfile(updateLibraryIndicator):
+                    dllFileName = os.path.join(destFolder, 'crayfishViewer.dll')
+                    pydFileName = os.path.join(destFolder, 'crayfishviewer.pyd')
+                    retryCount = 0
+                    while retryCount < 10:
+                        try:
+                            os.unlink( dllFileName )
+                            break
+                        except:
+                            time.sleep(3)
+                    os.unlink( pydFileName )
+                    destinationFileName = os.path.join(destFolder, 'crayfish_viewer_library.zip')
+                    z = zipfile.ZipFile(destinationFileName)
+                    z.extractall(destFolder)
+                    z.close()
+                    os.unlink(updateLibraryIndicator)
+                        
         try:
             from crayfishviewer import CrayfishViewer
+            from crayfishviewer import version as crayfishVersion
+            assert self.version == str( crayfishVersion() )
             self.crayfishViewerLibFound = True
-        except ImportError:
+        except (ImportError, AttributeError):
             # The crayfishviewer binary cannot be found
             # FIXME - does this work from behind a proxy?
             reply = QMessageBox.question(self.iface.mainWindow(), 'Crayfish Viewer Library Not Found', "Crayfish Viewer depends on a platform specific compiled library which was not found.  Would you like to attempt to automatically download and install one from the developer's website?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
             if reply == QMessageBox.Yes:
-                platformVersion = platform.system()
                 libVersion = 'sip ' + sip.SIP_VERSION_STR + ' pyqt ' + PYQT_VERSION_STR
                 crayfishVersion = self.version
                 
@@ -84,7 +123,6 @@ class CrayfishPlugin:
                     if destFolder is not None:
                         packageUrl = 'resources/crayfish/viewer/binaries/' + platformVersion + '/' + libVersion + '/' + crayfishVersion + '/crayfish_viewer_library.zip'
                         packageUrl = 'http://www.lutraconsulting.co.uk/' + urllib2.quote(packageUrl)
-                        destinationFileName = os.path.join(destFolder, 'crayfish_viewer_library.zip')
                         try:
                             s = QSettings()
                             useProxy = s.value("proxy/proxyEnabled").toBool()
@@ -110,15 +148,27 @@ class CrayfishPlugin:
                                 opener = urllib2.build_opener(proxy, auth, urllib2.HTTPHandler)
                                 urllib2.install_opener(opener)
                             conn = urllib2.urlopen(packageUrl)
+                            destinationFileName = os.path.join(destFolder, 'crayfish_viewer_library.zip')
+                            if os.path.isfile(destinationFileName):
+                                os.unlink(destinationFileName)
                             destinationFile = open(destinationFileName, 'wb')
                             destinationFile.write( conn.read() )
                             destinationFile.close()
-
+                            
                             z = zipfile.ZipFile(destinationFileName)
-                            z.extractall(destFolder)
-                            from crayfishviewer import CrayfishViewer
-                            self.crayfishViewerLibFound = True
-                            QMessageBox.information(self.iface.mainWindow(), 'Succeeded', "Download and installation successful." )
+                            try:
+                                z.extractall(destFolder)
+                                z.close()
+                            except IOError:
+                                tmpF = open( os.path.join(destFolder, 'EXTRACT_DLL'), 'w' )
+                                tmpF.write(' ')
+                                tmpF.close()
+                                QMessageBox.information(self.iface.mainWindow(), 'Restart Required', "QGIS needs to be restarted in order to complete an update to the Crayfish Viewer Library.  Please restart QGIS." )
+                                restartRequired = True
+                            if not restartRequired:
+                                from crayfishviewer import CrayfishViewer
+                                self.crayfishViewerLibFound = True
+                                QMessageBox.information(self.iface.mainWindow(), 'Succeeded', "Download and installation successful." )
                         except:
                             QMessageBox.critical(self.iface.mainWindow(), 'Download and Installation Failed', "Failed to download or install the Crayfish Viewer library." )
                 else:
@@ -208,8 +258,6 @@ class CrayfishPlugin:
                 That result is added to a layer already referencing its .2dm
                 Or if no such layer exists, a new layer is created
         """
-        
-        # import pydevd; pydevd.settrace()
         
         # First get the file name of the 'thing' the user wants to view
         

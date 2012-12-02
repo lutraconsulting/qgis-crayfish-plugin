@@ -60,3 +60,9 @@ public:
     bool displayVectors(int);
     double valueAtCoord(int, int, double, double);
 };
+
+%UnitCode
+#include <version.h>
+%End
+
+QString version();

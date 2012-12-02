@@ -119,4 +119,18 @@ private:
     void setColorFromVal(double, QColor *col, int dataSetIdx);
 };
 
+float absolute(float input){
+    if(input < 0.0){
+        input *= -1.0;
+    }
+    return input;
+}
+
+float mag(float input){
+    if(input < 0.0){
+        return -1.0;
+    }
+    return 1.0;
+}
+
 #endif // CRAYFISHVIEWER_H

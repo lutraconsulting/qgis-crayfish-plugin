@@ -64,8 +64,8 @@ makefile = pyqtconfig.QtGuiModuleMakefile(
 # Add the library we are wrapping.  The name doesn't include any platform
 # specific prefixes or extensions (e.g. the "lib" prefix on UNIX, or the
 # ".dll" extension on Windows).
-makefile.extra_lib_dirs = ["build/release"]
-makefile.extra_libs = ["crayfishViewer"]
+# makefile.extra_lib_dirs = ["build/release"]
+makefile.extra_libs = ["build/release/crayfishViewer"]
 
 # Generate the Makefile itself.
 makefile.generate()

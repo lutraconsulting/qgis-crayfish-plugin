@@ -37,8 +37,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.f
 #  define CRAYFISHVIEWERSHARED_EXPORT Q_DECL_IMPORT
 #endif
 
-#endif // CRAYFISHVIEWER_GLOBAL_H
-
 enum ViewerError{
     None,
     FileNotFound,
@@ -101,16 +99,4 @@ struct DataSet{
     bool isBed;
 };
 
-float absolute(float input){
-    if(input < 0.0){
-        input *= -1.0;
-    }
-    return input;
-}
-
-float mag(float input){
-    if(input < 0.0){
-        return -1.0;
-    }
-    return 1.0;
-}
+#endif // CRAYFISHVIEWER_GLOBAL_H
