@@ -27,5 +27,5 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.f
 #include "version.h"
 
 QString CRAYFISHVIEWERSHARED_EXPORT version(){
-    return QString("1.0");
+    return QString("1.0.1");
 }

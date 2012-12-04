@@ -37,16 +37,26 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.f
 #  define CRAYFISHVIEWERSHARED_EXPORT Q_DECL_IMPORT
 #endif
 
-enum ViewerError{
-    None,
-    FileNotFound,
-    UnsupportedMeshObject
+namespace ViewerError{
+    enum Enum{
+        None,
+        FileNotFound
+    };
 };
 
-enum DataSetType{
-    Bed,
-    Scalar,
-    Vector
+namespace ViewerWarning{
+    enum Enum{
+        None,
+        UnsupportedElement
+    };
+};
+
+namespace DataSetType{
+    enum Enum{
+        Bed,
+        Scalar,
+        Vector
+    };
 };
 
 struct Node{
@@ -84,7 +94,7 @@ struct Output{
 };
 
 struct DataSet{
-    DataSetType type;
+    DataSetType::Enum type;
     QString name;
     std::vector<Output*> outputs;
     float mZMin;

@@ -69,6 +69,8 @@ public:
                  int lineWidth, float vectorHeadWidthPerc, float vectorHeadLengthPerc);
 
     bool loadedOk(){ return mLoadedSuccessfully; }
+    bool warningsEncountered(){ return mWarningsEncountered; }
+    int getLastWarning(){ return mLastWarning; }
     QRectF getExtents(){ return QRectF(QPointF(mXMin,mYMax), QPointF(mXMax,mYMin)); }
     bool loadDataSet(QString);
     int dataSetCount(){ return mDataSets.size(); }
@@ -83,13 +85,15 @@ public:
     float lastMinContourValue(int dataSet);
     float lastMaxContourValue(int dataSet);
     bool isBed(int dataSet){ return mDataSets.at(dataSet)->isBed; }
-    bool isVector(int dataSet){ return (mDataSets.at(dataSet)->type == Vector); }
+    bool isVector(int dataSet){ return (mDataSets.at(dataSet)->type == DataSetType::Vector); }
     bool displayContours(int dataSet){ return mDataSets.at(dataSet)->renderContours; }
     bool displayVectors(int dataSet){ return mDataSets.at(dataSet)->renderVectors; }
     double valueAtCoord(int dataSetIdx, int timeIndex, double xCoord, double yCoord);
 private:
     bool mLoadedSuccessfully;
-    ViewerError mLastError;
+    bool mWarningsEncountered;
+    ViewerError::Enum mLastError;
+    ViewerWarning::Enum mLastWarning;
     QImage* mImage;
     int mCanvasWidth;
     int mCanvasHeight;

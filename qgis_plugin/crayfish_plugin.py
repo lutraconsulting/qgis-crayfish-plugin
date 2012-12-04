@@ -51,7 +51,7 @@ class CrayfishPlugin:
     def __init__(self, iface):
         # Save reference to the QGIS interface
         self.iface = iface
-        self.version = '1.0'
+        self.version = '1.0.1'
         self.dock = None
         self.dockInitialised = False # We have not yet created the dock
         self.lr = QgsMapLayerRegistry.instance()
@@ -312,10 +312,14 @@ class CrayfishPlugin:
             if parentLayer is None:
                 # The 2DM has not yet been loaded, load it
                 if not self.addLayer(meshFileName):
-                    QMessageBox.critical(self.iface.mainWindow(), "Failed to Load Mesh", "The mesh file associated with this DAT file (" + meshFileName + ") could not be loaded.  This could be because it contains unsupported features or because it is too large.  Please note that triangular (E3T and E6T) elements are unsupported at this time.")
+                    QMessageBox.critical(self.iface.mainWindow(), "Failed to Load Mesh", "The mesh file associated with this DAT file (" + meshFileName + ") could not be loaded.  This could be because it contains enexpected features or because it is too large.")
                     return
                 parentLayer = self.getLayerWith2DM(meshFileName)
                 assert( parentLayer is not None)
+                if parentLayer.provider.warningsEncountered() and parentLayer.provider.getLastWarning() == 1:
+                    # Unsupported element seen
+                    QMessageBox.warning(self.iface.mainWindow(), "Warning", "It looks like your mesh contains elements that are unsupported at this time.  The following types of elements will be ignored for the time being: E2L, E3L, E3T, E6T, E8Q, E9Q, NS")
+                
             if not parentLayer.provider.loadDataSet( QString(inFileName) ):
                 QMessageBox.critical(self.iface.mainWindow(), "Failed to Load DAT", "Failed to successfully load the .Dat file")
             self.dock.refresh()

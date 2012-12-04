@@ -52,7 +52,7 @@ CrayfishViewer::~CrayfishViewer(){
             Output* o = ds->outputs.at(j);
             delete[] o->values;
             delete[] o->statusFlags;
-            if(ds->type == Vector){
+            if(ds->type == DataSetType::Vector){
                 delete[] o->values_x;
                 delete[] o->values_y;
             }
@@ -68,7 +68,9 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
 
     // Initialise variables
     mLoadedSuccessfully = true;
-    mLastError = None;
+    mWarningsEncountered = false;
+    mLastError = ViewerError::None;
+    mLastWarning = ViewerWarning::None;
     mImage = new QImage(0, 0, QImage::Format_ARGB32);
     mCanvasWidth = 0;
     mCanvasHeight = 0;
@@ -81,7 +83,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
     QFile file(twoDMFileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
         mLoadedSuccessfully = false;
-        mLastError = FileNotFound;
+        mLastError = ViewerError::FileNotFound;
         return;
     }
 
@@ -91,23 +93,22 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
     QTextStream in(&file);
     while (!in.atEnd()) {
         QString line = in.readLine();
-        if( line.isEmpty() || line.startsWith("MESH2D") ){
-            // Do nothing
-        }
-        else if( line.startsWith("E4Q") ){
+        if( line.startsWith("E4Q") ){
             mElemCount += 1;
         }
         else if( line.startsWith("ND") ){
             mNodeCount += 1;
         }
-        else{
-            // We have unsupported element types
-            mLastError = UnsupportedMeshObject;
-            mLoadedSuccessfully = false;
-            file.close();
-            return;
+        else if( line.startsWith("E2L") ||
+                 line.startsWith("E3L") ||
+                 line.startsWith("E3T") ||
+                 line.startsWith("E6T") ||
+                 line.startsWith("E8Q") ||
+                 line.startsWith("E9Q") ||
+                 line.startsWith("NS") ){
+            mLastWarning = ViewerWarning::UnsupportedElement;
+            mWarningsEncountered = true;
         }
-
     }
 
     mRotatedNodeCount = mElemCount * 4;
@@ -172,7 +173,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
 
     // Create a dataset for the bed elevation
     bedDs->contouredAutomatically = true;
-    bedDs->type = Bed;
+    bedDs->type = DataSetType::Bed;
     bedDs->name = "Bed Elevation";
     bedDs->timeVarying = false;
     bedDs->isBed = true;
@@ -515,12 +516,12 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
 
         case 130:
 
-            ds->type = Scalar;
+            ds->type = DataSetType::Scalar;
             break;
 
         case 140:
 
-            ds->type = Vector;
+            ds->type = DataSetType::Vector;
             break;
 
         case 150:
@@ -603,7 +604,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
                 o->values = new float[mNodeCount];
                 o->values_x = 0;
                 o->values_y = 0;
-                if(ds->type == Vector){
+                if(ds->type == DataSetType::Vector){
                     o->values_x = new float[mNodeCount];
                     o->values_y = new float[mNodeCount];
                 }
@@ -620,7 +621,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
                     if( in.readRawData( (char*)&o->statusFlags[i], 1) != 1 ){
                         delete[] o->statusFlags;
                         delete[] o->values;
-                        if(ds->type == Vector){
+                        if(ds->type == DataSetType::Vector){
                             delete[] o->values_x;
                             delete[] o->values_y;
                         }
@@ -633,11 +634,11 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
 
             for(int i=0; i<mNodeCount; i++){
                 // Read values flags
-                if(ds->type == Vector){
+                if(ds->type == DataSetType::Vector){
                     if( in.readRawData( (char*)&o->values_x[i], 4) != 4 ){
                         delete[] o->statusFlags;
                         delete[] o->values;
-                        if(ds->type == Vector){
+                        if(ds->type == DataSetType::Vector){
                             delete[] o->values_x;
                             delete[] o->values_y;
                         }
@@ -648,7 +649,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
                     if( in.readRawData( (char*)&o->values_y[i], 4) != 4 ){
                         delete[] o->statusFlags;
                         delete[] o->values;
-                        if(ds->type == Vector){
+                        if(ds->type == DataSetType::Vector){
                             delete[] o->values_x;
                             delete[] o->values_y;
                         }
@@ -661,7 +662,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
                     if( in.readRawData( (char*)&o->values[i], 4) != 4 ){
                         delete[] o->statusFlags;
                         delete[] o->values;
-                        if(ds->type == Vector){
+                        if(ds->type == DataSetType::Vector){
                             delete[] o->values_x;
                             delete[] o->values_y;
                         }
@@ -736,7 +737,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
         ds->contourMin = zMin;
         ds->contourMax = zMax;
         ds->renderContours = true;
-        if(ds->type == Vector){
+        if(ds->type == DataSetType::Vector){
             ds->renderVectors = true;
         }else{
             ds->renderVectors = false;
@@ -798,7 +799,7 @@ QImage* CrayfishViewer::draw(bool renderContours,
     bool invalidRenderParameters = false;
 
     // If we're looking at bed elevation, ensure the time output is the first (and only)
-    if(mDataSets.at(dataSetIdx)->type == Bed){
+    if(mDataSets.at(dataSetIdx)->type == DataSetType::Bed){
         outputTime = 0;
     }
 
@@ -895,7 +896,7 @@ QImage* CrayfishViewer::draw(bool renderContours,
         }
     }
 
-    if(renderVectors && mDataSets.at(dataSetIdx)->type == Vector){
+    if(renderVectors && mDataSets.at(dataSetIdx)->type == DataSetType::Vector){
         /*
           Here is where we render vector data
 

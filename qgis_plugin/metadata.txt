@@ -5,7 +5,7 @@ qgisMinimumVersion=1.7.4
 description=A collection of tools for TUFLOW and other hydraulic 
     modelling packages
 ; category=Raster ; Did not know what my available choices where
-version=version 1.0
+version=version 1.0.1
 author=Peter Wells for Lutra Consulting
 email=peter.wells@lutraconsulting.co.uk
 ; end of mandatory metadata
@@ -34,6 +34,11 @@ changelog=0.1 - Initial release
             Ensured only a single vector options dialog can be opened.
             Added better support for handing allocation errors for huge 
             layers.
+    1.0.1 - Bug fixes for issues seen in 1.0
+        Resolves issue where TUFLOW tutorial model was not loaded due 
+        to unexpected keywords in 2dm
+        Reader now more robust in terms of reading unexpected items in 
+        .2dm file
 
 ; tags are in comma separated value format, spaces are allowed
 tags=hydraulic,hydraulic modelling,flood,analysis,animation,results viewer,tuflow,sms

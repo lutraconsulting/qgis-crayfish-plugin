@@ -41,6 +41,8 @@ public:
                  float,
                  float);
     bool loadedOk();
+    bool warningsEncountered();
+    int getLastWarning();
     QRectF getExtents();
     bool loadDataSet(QString);
     int dataSetCount();
