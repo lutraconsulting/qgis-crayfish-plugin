@@ -6,8 +6,8 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    QString meshName = "C:\\Users\\pete\\Documents\\tmp\\Crayfish Bugs\\TUTORIAL Model Does Not Work\\M01_5m_001.2dm";
-    QString datName = "C:\\Users\\pete\\Documents\\tmp\\Crayfish Bugs\\TUTORIAL Model Does Not Work\\M01_5m_001_d.dat";
+    QString meshName = "C:\\Users\\pete\\Documents\\tmp\\Crayfish Bugs\\tutorial_run_number_03.2dm";
+    QString datName = "C:\\Users\\pete\\Documents\\tmp\\Crayfish Bugs\\tutorial_run_number_03_d.dat";
     CrayfishViewer* s = new CrayfishViewer(meshName);
     if(! s->loadedOk()){
         return 1;

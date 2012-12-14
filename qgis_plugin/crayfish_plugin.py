@@ -51,7 +51,7 @@ class CrayfishPlugin:
     def __init__(self, iface):
         # Save reference to the QGIS interface
         self.iface = iface
-        self.version = '1.0.1'
+        self.version = '1.0.3'
         self.dock = None
         self.dockInitialised = False # We have not yet created the dock
         self.lr = QgsMapLayerRegistry.instance()
@@ -101,7 +101,7 @@ class CrayfishPlugin:
             from crayfishviewer import version as crayfishVersion
             assert self.version == str( crayfishVersion() )
             self.crayfishViewerLibFound = True
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError, AssertionError):
             # The crayfishviewer binary cannot be found
             # FIXME - does this work from behind a proxy?
             reply = QMessageBox.question(self.iface.mainWindow(), 'Crayfish Viewer Library Not Found', "Crayfish Viewer depends on a platform specific compiled library which was not found.  Would you like to attempt to automatically download and install one from the developer's website?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)

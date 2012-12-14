@@ -68,6 +68,7 @@ struct Node{
 
 struct Element{
     uint index;
+    bool isDummy;
     Node* p1;   // Top-Right node
     Node* p2;   // Top-Left node
     Node* p3;   // Bottom-Left node

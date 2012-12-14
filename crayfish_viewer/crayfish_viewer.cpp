@@ -108,6 +108,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
                  line.startsWith("NS") ){
             mLastWarning = ViewerWarning::UnsupportedElement;
             mWarningsEncountered = true;
+            mElemCount += 1; // We still count them as elements
         }
     }
 
@@ -198,6 +199,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
                 continue;
             }
             mElems[index].index = index;
+            mElems[index].isDummy = false;
             // Bear in mind that no check is done to ensure that the the p1-p4 pointers will point to a valid location
             mElems[index].p1 = &mNodes[ chunks[2].toInt()-1 ]; // -1 (crayfish Dat is 1-based indexing)
             mElems[index].p2 = &mNodes[ chunks[3].toInt()-1 ];
@@ -205,7 +207,23 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
             mElems[index].p4 = &mNodes[ chunks[5].toInt()-1 ];
             //mElemCount += 1;
         }
-        if( line.startsWith("ND") ){
+        else if( line.startsWith("E2L") ||
+                 line.startsWith("E3L") ||
+                 line.startsWith("E3T") ||
+                 line.startsWith("E6T") ||
+                 line.startsWith("E8Q") ||
+                 line.startsWith("E9Q") ){
+            // We do not yet support these elements
+            chunks = line.split(" ", QString::SkipEmptyParts);
+            uint index = chunks[1].toInt()-1;
+            if(index >= mElemCount){
+                index += 1;
+                continue;
+            }
+            mElems[index].index = index;
+            mElems[index].isDummy = true;
+        }
+        else if( line.startsWith("ND") ){
             chunks = line.split(" ", QString::SkipEmptyParts);
             uint index = chunks[1].toInt()-1;
             if(index >= mNodeCount){
@@ -266,6 +284,9 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
 
     // Update derrived element values
     for(uint i=0; i<mElemCount; i++){
+
+        if( mElems[i].isDummy )
+            continue;
 
         mElems[i].minX = mElems[i].p1->x;
         mElems[i].minY = mElems[i].p1->y;
@@ -850,6 +871,9 @@ QImage* CrayfishViewer::draw(bool renderContours,
 
     if(renderContours){
         for(uint i=0; i<mElemCount; i++){
+
+            if( mElems[i].isDummy )
+                continue;
 
             // For each element
 

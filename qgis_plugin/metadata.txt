@@ -5,7 +5,7 @@ qgisMinimumVersion=1.7.4
 description=A collection of tools for TUFLOW and other hydraulic 
     modelling packages
 ; category=Raster ; Did not know what my available choices where
-version=version 1.0.1
+version=version 1.0.3
 author=Peter Wells for Lutra Consulting
 email=peter.wells@lutraconsulting.co.uk
 ; end of mandatory metadata
@@ -39,6 +39,9 @@ changelog=0.1 - Initial release
         to unexpected keywords in 2dm
         Reader now more robust in terms of reading unexpected items in 
         .2dm file
+    1.0.2 - Bug fix for AssertionError seen when updating plugin
+    1.0.3 - Bug fix for failure to render Quad4 elements in layers 
+        featuring unsupported elements
 
 ; tags are in comma separated value format, spaces are allowed
 tags=hydraulic,hydraulic modelling,flood,analysis,animation,results viewer,tuflow,sms
