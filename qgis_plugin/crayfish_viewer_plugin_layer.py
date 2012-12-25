@@ -114,4 +114,46 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         painter.drawImage(0, 0, img)
         painter.restore()
         return True
-
+        
+    def identify(self, pt):
+        """
+            Returns a QString representing the value of the layer at 
+            the given QgsPoint, pt
+            
+            This function calls valueAtCoord in the C++ provider
+            
+            double valueAtCoord(int dataSetIdx, 
+                                int timeIndex, 
+                                double xCoord, 
+                                double yCoord);
+        """
+        
+        x = pt.x()
+        y = pt.y()
+        
+        # Determine what scalar data is currently being displayed
+        dataSetIdx = self.dock.listWidget.currentRow()
+        timeIndex = self.dock.listWidget_2.currentRow()
+        
+        value = self.provider.valueAtCoord( dataSetIdx, 
+                                            timeIndex, 
+                                            x, y)
+        v = None
+        if value == -9999.0:
+            # Outide extent
+            v = QString('out of extent')
+        else:
+            v = QString(str(value))
+            
+        d = dict()
+        d[ QString('Band 1') ] = v
+        
+        return (True, d)
+        
+    def bandCount(self):
+        return 1
+        
+    def rasterUnitsPerPixel(self):
+        # Only required so far for the profile tool
+        # There's probably a better way of doing this
+        return float(0.5)
