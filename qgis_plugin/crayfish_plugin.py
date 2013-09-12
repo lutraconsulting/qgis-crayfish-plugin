@@ -59,8 +59,6 @@ class CrayfishPlugin:
         
     def initGui(self):
         
-        # import pydevd; pydevd.settrace()
-        
         # Try to import the binary library:
         restartRequired = False
         
@@ -338,7 +336,7 @@ class CrayfishPlugin:
     
     def getCrayfishLayers(self):
         crayfishLayers = []
-        layers = self.iface.mapCanvas().layers()
+        layers = QgsMapLayerRegistry.instance().mapLayers().values()
         for l in layers:
             if l.type() == QgsMapLayer.PluginLayer and str(l.pluginLayerType()) == 'crayfish_viewer':
                 crayfishLayers.append(l)
