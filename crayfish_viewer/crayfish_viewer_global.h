@@ -37,6 +37,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.f
 #  define CRAYFISHVIEWERSHARED_EXPORT Q_DECL_IMPORT
 #endif
 
+namespace ElementType{
+    enum Enum{
+        Undefined,
+        E4Q,
+        E3T
+    };
+};
+
 namespace ViewerError{
     enum Enum{
         None,
@@ -68,11 +76,13 @@ struct Node{
 
 struct Element{
     uint index;
+    ElementType::Enum eType;
+    int nodeCount;
     bool isDummy;
     Node* p1;   // Top-Right node
     Node* p2;   // Top-Left node
     Node* p3;   // Bottom-Left node
-    Node* p4;   // Bottom-Right node
+    Node* p4;   // Bottom-Right node // FIXME - this is irrelevant for a triangle but should make no harm
     double maxSize; // Largest distance (real world) across the element
     double minX;
     double maxX;

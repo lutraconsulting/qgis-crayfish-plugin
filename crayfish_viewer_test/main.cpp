@@ -6,22 +6,22 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    QString meshName = "C:\\Users\\pete\\Documents\\tmp\\Crayfish Bugs\\tutorial_run_number_03.2dm";
+    QString meshName = "/home/pete/dev/qgis-crayfish-plugin/crayfish_viewer_test/Test Data/triangles.2dm";
     QString datName = "C:\\Users\\pete\\Documents\\tmp\\Crayfish Bugs\\tutorial_run_number_03_d.dat";
     CrayfishViewer* s = new CrayfishViewer(meshName);
     if(! s->loadedOk()){
         return 1;
     }
 
-    if(! s->loadDataSet(datName) ){
+    /*if(! s->loadDataSet(datName) ){
         return 1;
     }
 
     if( ! s->loadedOk() )
-        return 1;
+        return 1;*/
 
-    float minVal = s->minValue(1);
-    float maxVal = s->maxValue(1);
+    float minVal = s->minValue(0);
+    float maxVal = s->maxValue(0);
 
     QRectF extent = s->getExtents();
 
@@ -69,11 +69,11 @@ int main(int argc, char *argv[])
                             true,
                             1070,
                             582,
-                            395335.669942,
-                            173006.572809,
-                            0.0823131443299,
-                            1, // ds
-                            3, // time
+                            99000.0, // llx
+                            99000.0, // lly
+                            2.0, // px size
+                            0, // ds
+                            0, // time
 
                             true,
                             0.0,
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
                             15.0,
                             40.0);
 
-    img->save("/home/pete/dev/qgis/crayfishViewer/crayfish_viewer/test_data/output.png");
+    img->save("/tmp/output.png");
 
     // Try to interpolate a value:
     // double val = s->valueAtCoord(0, 0, 394798.247423, 173689.113402);

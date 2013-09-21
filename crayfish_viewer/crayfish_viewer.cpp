@@ -27,6 +27,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.f
 #include "crayfish_viewer.h"
 #include <iostream>
 
+#include <QVector2D>
+
 
 CrayfishViewer::~CrayfishViewer(){
     if(mImage){
@@ -88,12 +90,17 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
     }
 
     mElemCount = 0;
+    uint quad4ElemCount = 0;
     mNodeCount = 0;
 
     QTextStream in(&file);
     while (!in.atEnd()) {
         QString line = in.readLine();
         if( line.startsWith("E4Q") ){
+            quad4ElemCount += 1;
+            mElemCount += 1;
+        }
+        else if( line.startsWith("E3T") ){
             mElemCount += 1;
         }
         else if( line.startsWith("ND") ){
@@ -101,7 +108,6 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
         }
         else if( line.startsWith("E2L") ||
                  line.startsWith("E3L") ||
-                 line.startsWith("E3T") ||
                  line.startsWith("E6T") ||
                  line.startsWith("E8Q") ||
                  line.startsWith("E9Q") ||
@@ -112,7 +118,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
         }
     }
 
-    mRotatedNodeCount = mElemCount * 4;
+    mRotatedNodeCount = quad4ElemCount * 4;
 
     // Allocate memory
     DataSet* bedDs = 0;
@@ -199,6 +205,8 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
                 continue;
             }
             mElems[index].index = index;
+            mElems[index].eType = ElementType::E4Q;
+            mElems[index].nodeCount = 4;
             mElems[index].isDummy = false;
             // Bear in mind that no check is done to ensure that the the p1-p4 pointers will point to a valid location
             mElems[index].p1 = &mNodes[ chunks[2].toInt()-1 ]; // -1 (crayfish Dat is 1-based indexing)
@@ -207,9 +215,26 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
             mElems[index].p4 = &mNodes[ chunks[5].toInt()-1 ];
             //mElemCount += 1;
         }
+        else if( line.startsWith("E3T") ){
+            chunks = line.split(" ", QString::SkipEmptyParts);
+            uint index = chunks[1].toInt()-1;
+            if(index >= mElemCount){
+                index += 1;
+                continue;
+            }
+            mElems[index].index = index;
+            mElems[index].eType = ElementType::E3T;
+            mElems[index].nodeCount = 3;
+            mElems[index].isDummy = false;
+            // Bear in mind that no check is done to ensure that the the p1-p4 pointers will point to a valid location
+            mElems[index].p1 = &mNodes[ chunks[2].toInt()-1 ]; // -1 (crayfish Dat is 1-based indexing)
+            mElems[index].p2 = &mNodes[ chunks[3].toInt()-1 ];
+            mElems[index].p3 = &mNodes[ chunks[4].toInt()-1 ];
+            mElems[index].p4 = 0;
+            //mElemCount += 1;
+        }
         else if( line.startsWith("E2L") ||
                  line.startsWith("E3L") ||
-                 line.startsWith("E3T") ||
                  line.startsWith("E6T") ||
                  line.startsWith("E8Q") ||
                  line.startsWith("E9Q") ){
@@ -282,7 +307,13 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
         //    mZMin = bedDs->outputs.at(0)->values[i];
     }
 
-    // Update derrived element values
+    /*
+      In order to keep things running quickly, we pre-compute many
+      element properties to speed up drawing at the expenses of memory.
+
+        Element bounding box (xmin, xmax and friends)
+      */
+
     for(uint i=0; i<mElemCount; i++){
 
         if( mElems[i].isDummy )
@@ -311,132 +342,142 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
         if(mElems[i].p3->y > mElems[i].maxY)
             mElems[i].maxY = mElems[i].p3->y;
 
-        if(mElems[i].p4->x < mElems[i].minX)
-            mElems[i].minX = mElems[i].p4->x;
-        if(mElems[i].p4->x > mElems[i].maxX)
-            mElems[i].maxX = mElems[i].p4->x;
-        if(mElems[i].p4->y < mElems[i].minY)
-            mElems[i].minY = mElems[i].p4->y;
-        if(mElems[i].p4->y > mElems[i].maxY)
-            mElems[i].maxY = mElems[i].p4->y;
+        if(mElems[i].nodeCount > 3){
+            if(mElems[i].p4->x < mElems[i].minX)
+                mElems[i].minX = mElems[i].p4->x;
+            if(mElems[i].p4->x > mElems[i].maxX)
+                mElems[i].maxX = mElems[i].p4->x;
+            if(mElems[i].p4->y < mElems[i].minY)
+                mElems[i].minY = mElems[i].p4->y;
+            if(mElems[i].p4->y > mElems[i].maxY)
+                mElems[i].maxY = mElems[i].p4->y;
+        }
 
         mElems[i].maxSize = std::max( (mElems[i].maxX - mElems[i].minX),
                                  (mElems[i].maxY - mElems[i].minY) );
 
-        // Now ensure the node references are in the order we expect them (counter-clockwise from top-right)
+        /*
+          E4Q elements are re-ordered to ensure nodes are listed counter-clockwise from top-right
+          */
 
-        Node* tmpPoints[4];
-        Node* t;
-        tmpPoints[0] = mElems[i].p1;
-        tmpPoints[1] = mElems[i].p2;
-        tmpPoints[2] = mElems[i].p3;
-        tmpPoints[3] = mElems[i].p4;
+        if(mElems[i].eType == ElementType::E4Q){
 
-        // Determine if we have rotation (based on how many nodes have x coord == minX)
-        bool haveRotation = false;
-        int numberOfNodesAtMinX = 0;
-        for(int j=0; j<4; j++){
-            if(tmpPoints[j]->x == mElems[i].minX){
-                numberOfNodesAtMinX += 1;
-            }
-        }
-        if(numberOfNodesAtMinX < 2){
-            haveRotation = true;
-        }
+            Node* tmpPoints[4];
+            Node* t;
+            tmpPoints[0] = mElems[i].p1;
+            tmpPoints[1] = mElems[i].p2;
+            tmpPoints[2] = mElems[i].p3;
+            tmpPoints[3] = mElems[i].p4;
 
-        // Sort all by X
-        bool swapped = true;
-        while(swapped){
-            swapped = false;
-            for(int j=0; j<3; j++){
-                if(tmpPoints[j+1]->x < tmpPoints[j]->x){
-                    // swap it
-                    t = tmpPoints[j];
-                    tmpPoints[j] = tmpPoints[j+1];
-                    tmpPoints[j+1] = t;
-                    swapped = true;
+            // Determine if we have rotation (based on how many nodes have x coord == minX)
+            bool haveRotation = false;
+            int numberOfNodesAtMinX = 0;
+            for(int j=0; j<4; j++){
+                if(tmpPoints[j]->x == mElems[i].minX){
+                    numberOfNodesAtMinX += 1;
                 }
             }
-        }
-
-        // Now sort by Y depending if we are rotated or not
-        if(haveRotation){
-            if(tmpPoints[2]->y < tmpPoints[1]->y){
-                t = tmpPoints[1];
-                tmpPoints[1] = tmpPoints[2];
-                tmpPoints[2] = t;
+            if(numberOfNodesAtMinX < 2){
+                haveRotation = true;
             }
-            mElems[i].p1 = tmpPoints[2];
-            mElems[i].p2 = tmpPoints[0];
-            mElems[i].p3 = tmpPoints[1];
-            mElems[i].p4 = tmpPoints[3];
-        }else{
-            if(tmpPoints[1]->y < tmpPoints[0]->y){
-                t = tmpPoints[0];
-                tmpPoints[0] = tmpPoints[1];
-                tmpPoints[1] = t;
-            }
-            if(tmpPoints[3]->y < tmpPoints[2]->y){
-                t = tmpPoints[2];
-                tmpPoints[2] = tmpPoints[3];
-                tmpPoints[3] = t;
-            }
-            mElems[i].p1 = tmpPoints[3];
-            mElems[i].p2 = tmpPoints[1];
-            mElems[i].p3 = tmpPoints[0];
-            mElems[i].p4 = tmpPoints[2];
-        }
 
-        // At this stage the nodes are ordered anti-clockwise from the top-right node (even with rotation)
+            // Sort all by X
+            bool swapped = true;
+            while(swapped){
+                swapped = false;
+                for(int j=0; j<3; j++){
+                    if(tmpPoints[j+1]->x < tmpPoints[j]->x){
+                        // swap it
+                        t = tmpPoints[j];
+                        tmpPoints[j] = tmpPoints[j+1];
+                        tmpPoints[j+1] = t;
+                        swapped = true;
+                    }
+                }
+            }
 
-        if(haveRotation){
-            mElems[i].hasRotation = true;
-            mElems[i].rotation = atan(   (mElems[i].p3->x - mElems[i].p2->x)
-                                       / (mElems[i].p2->y - mElems[i].p3->y) );
-            mElems[i].cosAlpha = cos(mElems[i].rotation);
-            mElems[i].sinAlpha = sin(mElems[i].rotation);
-            mElems[i].cosNegAlpha = cos(-1.0 * mElems[i].rotation);
-            mElems[i].sinNegAlpha = sin(-1.0 * mElems[i].rotation);
-            double cellSize = (mElems[i].p3->x - mElems[i].p2->x) / mElems[i].sinAlpha;
-            mRotatedNodes[ (i*4) ].index = mElems[i].p1->index;
-            mRotatedNodes[ (i*4) ].x = mElems[i].p2->x + cellSize;
-            mRotatedNodes[ (i*4) ].y = mElems[i].p2->y;
-            mRotatedNodes[ (i*4) ].z = mElems[i].p1->z;
-            mRotatedNodes[ (i*4)+1 ].index = mElems[i].p2->index;
-            mRotatedNodes[ (i*4)+1 ].x = mElems[i].p2->x;
-            mRotatedNodes[ (i*4)+1 ].y = mElems[i].p2->y;
-            mRotatedNodes[ (i*4)+1 ].z = mElems[i].p2->z;
-            mRotatedNodes[ (i*4)+2 ].index = mElems[i].p3->index;
-            mRotatedNodes[ (i*4)+2 ].x = mElems[i].p2->x;
-            mRotatedNodes[ (i*4)+2 ].y = mElems[i].p2->y - cellSize;
-            mRotatedNodes[ (i*4)+2 ].z = mElems[i].p3->z;
-            mRotatedNodes[ (i*4)+3 ].index = mElems[i].p4->index;
-            mRotatedNodes[ (i*4)+3 ].x = mElems[i].p2->x + cellSize;
-            mRotatedNodes[ (i*4)+3 ].y = mElems[i].p2->y - cellSize;
-            mRotatedNodes[ (i*4)+3 ].z = mElems[i].p4->z;
-        }else{
-            mElems[i].hasRotation = false;
-            mElems[i].rotation = 0.0;
-            mElems[i].cosAlpha = 0.0;
-            mElems[i].sinAlpha = 0.0;
-            mElems[i].cosNegAlpha = 0.0;
-            mElems[i].sinNegAlpha = 0.0;
-            mRotatedNodes[ (i*4) ].index = mElems[i].p1->index;
-            mRotatedNodes[ (i*4) ].x = mElems[i].p1->x;
-            mRotatedNodes[ (i*4) ].y = mElems[i].p1->y;
-            mRotatedNodes[ (i*4) ].z = mElems[i].p1->z;
-            mRotatedNodes[ (i*4)+1 ].index = mElems[i].p2->index;
-            mRotatedNodes[ (i*4)+1 ].x = mElems[i].p2->x;
-            mRotatedNodes[ (i*4)+1 ].y = mElems[i].p2->y;
-            mRotatedNodes[ (i*4)+1 ].z = mElems[i].p2->z;
-            mRotatedNodes[ (i*4)+2 ].index = mElems[i].p3->index;
-            mRotatedNodes[ (i*4)+2 ].x = mElems[i].p3->x;
-            mRotatedNodes[ (i*4)+2 ].y = mElems[i].p3->y;
-            mRotatedNodes[ (i*4)+2 ].z = mElems[i].p3->z;
-            mRotatedNodes[ (i*4)+3 ].index = mElems[i].p4->index;
-            mRotatedNodes[ (i*4)+3 ].x = mElems[i].p4->x;
-            mRotatedNodes[ (i*4)+3 ].y = mElems[i].p4->y;
-            mRotatedNodes[ (i*4)+3 ].z = mElems[i].p4->z;
+            // Now sort by Y depending if we are rotated or not
+            if(haveRotation){
+                if(tmpPoints[2]->y < tmpPoints[1]->y){
+                    t = tmpPoints[1];
+                    tmpPoints[1] = tmpPoints[2];
+                    tmpPoints[2] = t;
+                }
+                mElems[i].p1 = tmpPoints[2];
+                mElems[i].p2 = tmpPoints[0];
+                mElems[i].p3 = tmpPoints[1];
+                mElems[i].p4 = tmpPoints[3];
+            }else{
+                if(tmpPoints[1]->y < tmpPoints[0]->y){
+                    t = tmpPoints[0];
+                    tmpPoints[0] = tmpPoints[1];
+                    tmpPoints[1] = t;
+                }
+                if(tmpPoints[3]->y < tmpPoints[2]->y){
+                    t = tmpPoints[2];
+                    tmpPoints[2] = tmpPoints[3];
+                    tmpPoints[3] = t;
+                }
+                mElems[i].p1 = tmpPoints[3];
+                mElems[i].p2 = tmpPoints[1];
+                mElems[i].p3 = tmpPoints[0];
+                mElems[i].p4 = tmpPoints[2];
+            }
+
+            // At this stage the nodes are ordered anti-clockwise from the top-right node (even with rotation)
+
+            if(haveRotation){
+                mElems[i].hasRotation = true;
+                mElems[i].rotation = atan(   (mElems[i].p3->x - mElems[i].p2->x)
+                                           / (mElems[i].p2->y - mElems[i].p3->y) );
+                mElems[i].cosAlpha = cos(mElems[i].rotation);
+                mElems[i].sinAlpha = sin(mElems[i].rotation);
+                mElems[i].cosNegAlpha = cos(-1.0 * mElems[i].rotation);
+                mElems[i].sinNegAlpha = sin(-1.0 * mElems[i].rotation);
+                double cellSize = (mElems[i].p3->x - mElems[i].p2->x) / mElems[i].sinAlpha;
+                mRotatedNodes[ (i*4) ].index = mElems[i].p1->index;
+                mRotatedNodes[ (i*4) ].x = mElems[i].p2->x + cellSize;
+                mRotatedNodes[ (i*4) ].y = mElems[i].p2->y;
+                mRotatedNodes[ (i*4) ].z = mElems[i].p1->z;
+                mRotatedNodes[ (i*4)+1 ].index = mElems[i].p2->index;
+                mRotatedNodes[ (i*4)+1 ].x = mElems[i].p2->x;
+                mRotatedNodes[ (i*4)+1 ].y = mElems[i].p2->y;
+                mRotatedNodes[ (i*4)+1 ].z = mElems[i].p2->z;
+                mRotatedNodes[ (i*4)+2 ].index = mElems[i].p3->index;
+                mRotatedNodes[ (i*4)+2 ].x = mElems[i].p2->x;
+                mRotatedNodes[ (i*4)+2 ].y = mElems[i].p2->y - cellSize;
+                mRotatedNodes[ (i*4)+2 ].z = mElems[i].p3->z;
+                mRotatedNodes[ (i*4)+3 ].index = mElems[i].p4->index;
+                mRotatedNodes[ (i*4)+3 ].x = mElems[i].p2->x + cellSize;
+                mRotatedNodes[ (i*4)+3 ].y = mElems[i].p2->y - cellSize;
+                mRotatedNodes[ (i*4)+3 ].z = mElems[i].p4->z;
+            }else{
+                mElems[i].hasRotation = false;
+                mElems[i].rotation = 0.0;
+                mElems[i].cosAlpha = 0.0;
+                mElems[i].sinAlpha = 0.0;
+                mElems[i].cosNegAlpha = 0.0;
+                mElems[i].sinNegAlpha = 0.0;
+                mRotatedNodes[ (i*4) ].index = mElems[i].p1->index;
+                mRotatedNodes[ (i*4) ].x = mElems[i].p1->x;
+                mRotatedNodes[ (i*4) ].y = mElems[i].p1->y;
+                mRotatedNodes[ (i*4) ].z = mElems[i].p1->z;
+                mRotatedNodes[ (i*4)+1 ].index = mElems[i].p2->index;
+                mRotatedNodes[ (i*4)+1 ].x = mElems[i].p2->x;
+                mRotatedNodes[ (i*4)+1 ].y = mElems[i].p2->y;
+                mRotatedNodes[ (i*4)+1 ].z = mElems[i].p2->z;
+                mRotatedNodes[ (i*4)+2 ].index = mElems[i].p3->index;
+                mRotatedNodes[ (i*4)+2 ].x = mElems[i].p3->x;
+                mRotatedNodes[ (i*4)+2 ].y = mElems[i].p3->y;
+                mRotatedNodes[ (i*4)+2 ].z = mElems[i].p3->z;
+                mRotatedNodes[ (i*4)+3 ].index = mElems[i].p4->index;
+                mRotatedNodes[ (i*4)+3 ].x = mElems[i].p4->x;
+                mRotatedNodes[ (i*4)+3 ].y = mElems[i].p4->y;
+                mRotatedNodes[ (i*4)+3 ].z = mElems[i].p4->z;
+            }
+
+        }else if(mElems[i].eType == ElementType::E3T){
+            // Anything?
         }
 
     }
@@ -870,53 +911,77 @@ QImage* CrayfishViewer::draw(bool renderContours,
     }
 
     if(renderContours){
-        for(uint i=0; i<mElemCount; i++){
+        // Render E4Q before E3T
+        QVector<ElementType::Enum> typesToRender;
+        typesToRender.append(ElementType::E4Q);
+        typesToRender.append(ElementType::E3T);
+        QVectorIterator<ElementType::Enum> i(typesToRender);
+        while(i.hasNext()){
 
-            if( mElems[i].isDummy )
-                continue;
+            ElementType::Enum elemTypeToRender = i.next();
 
-            // For each element
+            for(uint i=0; i<mElemCount; i++){
 
-            // If the element's activity flag is off, ignore it
-            if( ! mDataSets.at(dataSetIdx)->outputs.at(outputTime)->statusFlags[i] ){
-                continue;
-            }
+                if( mElems[i].eType != elemTypeToRender )
+                    continue;
 
-            // If the element is outside the view of the canvas, skip it
-            if( elemOutsideView(i) ){
-                continue;
-            }
+                if( mElems[i].isDummy )
+                    continue;
 
-            //
-            if( mElems[i].maxSize < mPixelSize ){
-                // The element is smaller than the pixel size so there is no point rendering the element properly
-                // Just take the value of the first point associated with the element instead
-                QPoint pp = realToPixel( mRotatedNodes[ (i*4) ].x, mRotatedNodes[ (i*4) ].y );
-                pp.setX( std::min(pp.x(), mCanvasWidth-1) );
-                pp.setX( std::max(pp.x(), 0) );
-                pp.setY( std::min(pp.y(), mCanvasHeight-1) );
-                pp.setY( std::max(pp.y(), 0) );
+                // For each element
 
-                QRgb* line = (QRgb*) mImage->scanLine(pp.y());
-                QColor tmpCol;
-                //double val = mRotatedNodes[ (i*4) ].z;
-                float val = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[ (i*4) ].index ];
-                setColorFromVal(val, &tmpCol, dataSetIdx);
-                line[pp.x()] = tmpCol.rgb();
+                // If the element's activity flag is off, ignore it
+                if( ! mDataSets.at(dataSetIdx)->outputs.at(outputTime)->statusFlags[i] ){
+                    continue;
+                }
 
-            }else{
-                // Get the BBox of the element in pixels
-                QPoint ll = realToPixel(mElems[i].minX, mElems[i].minY);
-                QPoint ur = realToPixel(mElems[i].maxX, mElems[i].maxY);
-                int topLim = std::max( ur.y(), 0 );
-                int bottomLim = std::min( ll.y(), mCanvasHeight-1 );
-                int leftLim = std::max( ll.x(), 0 );
-                int rightLim = std::min( ur.x(), mCanvasWidth-1 );
+                // If the element is outside the view of the canvas, skip it
+                if( elemOutsideView(i) ){
+                    continue;
+                }
 
-                for(int j=topLim; j<=bottomLim; j++){ // FIXME - are we missing the last line?  Should this be j<=bottomLim ?
-                    paintRow(i, j, leftLim, rightLim, dataSetIdx, outputTime);
+                //
+                if( mElems[i].maxSize < mPixelSize ){
+                    // The element is smaller than the pixel size so there is no point rendering the element properly
+                    // Just take the value of the first point associated with the element instead
+                    QPoint pp;
+                    if(elemTypeToRender == ElementType::E4Q){
+                        pp = realToPixel( mRotatedNodes[ (i*4) ].x, mRotatedNodes[ (i*4) ].y );
+                    }else{
+                        pp = realToPixel( mElems[i].p1->x, mElems[i].p1->y );
+                    }
+                    pp.setX( std::min(pp.x(), mCanvasWidth-1) );
+                    pp.setX( std::max(pp.x(), 0) );
+                    pp.setY( std::min(pp.y(), mCanvasHeight-1) );
+                    pp.setY( std::max(pp.y(), 0) );
+
+                    QRgb* line = (QRgb*) mImage->scanLine(pp.y());
+                    QColor tmpCol;
+                    //double val = mRotatedNodes[ (i*4) ].z;
+                    float val;
+                    if(elemTypeToRender == ElementType::E4Q){
+                        val = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[ (i*4) ].index ];
+                    }else{
+                        val = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mElems[i].index ];
+                    }
+                    setColorFromVal(val, &tmpCol, dataSetIdx);
+                    line[pp.x()] = tmpCol.rgb();
+
+                }else{
+                    // Get the BBox of the element in pixels
+                    QPoint ll = realToPixel(mElems[i].minX, mElems[i].minY);
+                    QPoint ur = realToPixel(mElems[i].maxX, mElems[i].maxY);
+                    int topLim = std::max( ur.y(), 0 );
+                    int bottomLim = std::min( ll.y(), mCanvasHeight-1 );
+                    int leftLim = std::max( ll.x(), 0 );
+                    int rightLim = std::min( ur.x(), mCanvasWidth-1 );
+
+                    for(int j=topLim; j<=bottomLim; j++){ // FIXME - are we missing the last line?  Should this be j<=bottomLim ?
+                        paintRow(i, j, leftLim, rightLim, dataSetIdx, outputTime);
+                    }
                 }
             }
+
         }
     }
 
@@ -1172,51 +1237,105 @@ bool CrayfishViewer::elemOutsideView(uint i){
 
 bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, double* interpolatedVal, int dataSetIdx, int outputTime){
 
-    // Sort points by by X coord and then by Y coord
-    // (x1, y1, q11), (_x1, y2, q12), (x2, _y1, q21), (_x2, _y2, q22) = points
+    if(mElems[elementIndex].eType == ElementType::E4Q){
 
-    double x1 = mRotatedNodes[(elementIndex*4)+2].x;
-    double y1 = mRotatedNodes[(elementIndex*4)+2].y;
-    //double q11 = mRotatedNodes[(elementIndex*4)+2].z;
-    double q11 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+2].index ];
+        // Sort points by by X coord and then by Y coord
+        // (x1, y1, q11), (_x1, y2, q12), (x2, _y1, q21), (_x2, _y2, q22) = points
 
-    //double _x1 = mRotatedNodes[(elementIndex*4)+1].x;
-    double y2 = mRotatedNodes[(elementIndex*4)+1].y;
-    //double q12 = mRotatedNodes[(elementIndex*4)+1].z;
-    double q12 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+1].index ];
+        double x1 = mRotatedNodes[(elementIndex*4)+2].x;
+        double y1 = mRotatedNodes[(elementIndex*4)+2].y;
+        //double q11 = mRotatedNodes[(elementIndex*4)+2].z;
+        double q11 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+2].index ];
 
-    double x2 = mRotatedNodes[(elementIndex*4)+3].x;
-    //double _y1 = mRotatedNodes[(elementIndex*4)+3].y;
-    //double q21 = mRotatedNodes[(elementIndex*4)+3].z;
-    double q21 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+3].index ];
+        //double _x1 = mRotatedNodes[(elementIndex*4)+1].x;
+        double y2 = mRotatedNodes[(elementIndex*4)+1].y;
+        //double q12 = mRotatedNodes[(elementIndex*4)+1].z;
+        double q12 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+1].index ];
 
-    //double _x2 = mRotatedNodes[(elementIndex*4)+0].x;
-    //double _y2 = mRotatedNodes[(elementIndex*4)+0].y;
-    //double q22 = mRotatedNodes[(elementIndex*4)+0].z;
-    double q22 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+0].index ];
+        double x2 = mRotatedNodes[(elementIndex*4)+3].x;
+        //double _y1 = mRotatedNodes[(elementIndex*4)+3].y;
+        //double q21 = mRotatedNodes[(elementIndex*4)+3].z;
+        double q21 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+3].index ];
 
-    // If the element has been rotated, rotate the x,y coord around node 2 in the oposite direction
-    if(mElems[elementIndex].hasRotation){
-        double x_ = x - mRotatedNodes[ (elementIndex*4)+1 ].x;
-        double y_ = y - mRotatedNodes[ (elementIndex*4)+1 ].y;
-        x = mRotatedNodes[ (elementIndex*4)+1 ].x + (  x_ * mElems[elementIndex].cosNegAlpha - y_ * mElems[elementIndex].sinNegAlpha );
-        y = mRotatedNodes[ (elementIndex*4)+1 ].y + (  x_ * mElems[elementIndex].sinNegAlpha + y_ * mElems[elementIndex].cosNegAlpha );
+        //double _x2 = mRotatedNodes[(elementIndex*4)+0].x;
+        //double _y2 = mRotatedNodes[(elementIndex*4)+0].y;
+        //double q22 = mRotatedNodes[(elementIndex*4)+0].z;
+        double q22 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+0].index ];
+
+        // If the element has been rotated, rotate the x,y coord around node 2 in the oposite direction
+        if(mElems[elementIndex].hasRotation){
+            double x_ = x - mRotatedNodes[ (elementIndex*4)+1 ].x;
+            double y_ = y - mRotatedNodes[ (elementIndex*4)+1 ].y;
+            x = mRotatedNodes[ (elementIndex*4)+1 ].x + (  x_ * mElems[elementIndex].cosNegAlpha - y_ * mElems[elementIndex].sinNegAlpha );
+            y = mRotatedNodes[ (elementIndex*4)+1 ].y + (  x_ * mElems[elementIndex].sinNegAlpha + y_ * mElems[elementIndex].cosNegAlpha );
+        }
+
+        // At this stage x1, x2, y1, y2 are the rotated coordinates and x and y have also been rotated
+        if( !( x >= x1 && x <= x2 ) ||
+            !( y >= y1 && y <= y2 ) ){
+            // The point is not inside this rectangle
+            return false;
+        }
+
+        *interpolatedVal = (q11 * (x2 - x) * (y2 - y) +
+                            q21 * (x - x1) * (y2 - y) +
+                            q12 * (x2 - x) * (y - y1) +
+                            q22 * (x - x1) * (y - y1) )
+
+                            / ( (x2 - x1) * (y2 - y1) + 0.0 );
+        return true;
+
+    }else if(mElems[elementIndex].eType == ElementType::E3T){
+
+        /*
+            So - we're interpoalting a 3-noded triangle
+            The query point must be within the bounding box of this triangl but not nessisarily
+            within the triangle itself.
+          */
+
+        /*
+          First determine if the point of interest lies within the triangle using Barycentric techniques
+          described here:  http://www.blackpawn.com/texts/pointinpoly/
+          */
+
+        QPointF pA(mElems[elementIndex].p1->x, mElems[elementIndex].p1->y);
+        QPointF pB(mElems[elementIndex].p2->x, mElems[elementIndex].p2->y);
+        QPointF pC(mElems[elementIndex].p3->x, mElems[elementIndex].p3->y);
+
+        QPointF pP(x, y);
+
+        // Compute vectors
+        QVector2D v0( pC - pA );
+        QVector2D v1( pB - pA );
+        QVector2D v2( pP - pA );
+
+        // Compute dot products
+        double dot00 = QVector2D::dotProduct(v0, v0);
+        double dot01 = QVector2D::dotProduct(v0, v1);
+        double dot02 = QVector2D::dotProduct(v0, v2);
+        double dot11 = QVector2D::dotProduct(v1, v1);
+        double dot12 = QVector2D::dotProduct(v1, v2);
+
+        // Compute barycentric coordinates
+        double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
+        double lam1 = (dot11 * dot02 - dot01 * dot12) * invDenom;
+        double lam2 = (dot00 * dot12 - dot01 * dot02) * invDenom;
+        double lam3 = 1.0 - lam1 - lam2;
+
+        // Return if POI is outside triangle
+        if( (lam1 < 0) || (lam2 < 0) || (lam3 < 0) ){
+            return false;
+        }
+
+        // Now interpolate
+
+        double z1 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mElems[elementIndex].p1->index ];
+        double z2 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mElems[elementIndex].p2->index ];
+        double z3 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mElems[elementIndex].p3->index ];
+        *interpolatedVal = lam1 * z3 + lam2 * z2 + lam3 * z1;
+        return true;
+
     }
-
-    // At this stage x1, x2, y1, y2 are the rotated coordinates and x and y have also been rotated
-    if( !( x >= x1 && x <= x2 ) ||
-        !( y >= y1 && y <= y2 ) ){
-        // The point is not inside this rectangle
-        return false;
-    }
-
-    *interpolatedVal = (q11 * (x2 - x) * (y2 - y) +
-                        q21 * (x - x1) * (y2 - y) +
-                        q12 * (x2 - x) * (y - y1) +
-                        q22 * (x - x1) * (y - y1) )
-
-                        / ( (x2 - x1) * (y2 - y1) + 0.0 );
-    return true;
 }
 
 QPointF CrayfishViewer::pixelToReal(int i, int j){
