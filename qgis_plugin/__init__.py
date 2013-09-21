@@ -29,7 +29,8 @@ def name():
 def description():
     return "A collection of tools for TUFLOW and other hydraulic modelling packages"
 def version():
-    return "Version 1.0.3"
+    from version import crayfishPythonPluginVersion
+    return "Version " + crayfishPythonPluginVersion()
 def qgisMinimumVersion():
     return "1.7"
 def authorName():

@@ -28,6 +28,8 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 
+from version import crayfishPythonPluginVersion
+
 import resources
 
 import os
@@ -51,7 +53,7 @@ class CrayfishPlugin:
     def __init__(self, iface):
         # Save reference to the QGIS interface
         self.iface = iface
-        self.version = '1.0.3'
+        self.version = crayfishPythonPluginVersion()
         self.dock = None
         self.dockInitialised = False # We have not yet created the dock
         self.lr = QgsMapLayerRegistry.instance()

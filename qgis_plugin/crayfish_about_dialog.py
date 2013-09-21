@@ -29,6 +29,7 @@ from PyQt4.QtGui import *
 from qgis.core import *
 
 from crayfish_about_dialog_widget import Ui_Dialog
+from version import crayfishPythonPluginVersion
 
 class CrayfishAboutDialog(QDialog, Ui_Dialog):
     
@@ -39,6 +40,8 @@ class CrayfishAboutDialog(QDialog, Ui_Dialog):
         
         self.setupUi(self)
         self.iface = iface
+        
+        self.aboutBrowser.setHtml( self.source() )
         
         pm = QPixmap( ":/plugins/crayfish/crayfish_128px.png" )
         self.crayfishIconLabel.setPixmap(pm)
@@ -59,3 +62,5 @@ class CrayfishAboutDialog(QDialog, Ui_Dialog):
         
         QDesktopServices.openUrl(url)
 
+    def source(self):
+        return """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd"><html><head><meta name="qrichtext" content="1" /><style type="text/css">p, li { white-space: pre-wrap; }</style></head><body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;" bgcolor="#efe1bb"><p style=" margin-top:6px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-family:'FreeSans,Geneva,Arial,sans-serif'; font-size:8pt; font-weight:600; color:#412824;">Crayfish Plugin</span></p>        <p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-family:'FreeSans,Geneva,Arial,sans-serif'; font-size:8pt; color:#412824;">Version """ + crayfishPythonPluginVersion() + """</span></p>        <p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-family:'FreeSans,Geneva,Arial,sans-serif'; font-size:8pt; color:#412824;">The Crayfish Plugin is a collection of tools for hydraulic modellers working with TUFLOW and other modelling packages. It aims to use QGIS as an efficient and effective pre and post-processor.</span></p>        <p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-family:'FreeSans,Geneva,Arial,sans-serif'; font-size:8pt; color:#412824;">Check out the </span><a href="http://www.lutraconsulting.co.uk/resources/crayfish"><span style=" font-family:'FreeSans,Geneva,Arial,sans-serif'; font-size:8pt; text-decoration: underline; color:#412824;">Crayfish resources page</span></a><span style=" font-family:'FreeSans,Geneva,Arial,sans-serif'; font-size:8pt; color:#412824;"> on our website for more information.</span></p>    </body></html>"""
