@@ -261,7 +261,11 @@ class CrayfishPlugin:
         
         # Retrieve the last place we looked if stored
         settings = QSettings()
-        lastFolder = str(settings.value("crayfishViewer/lastFolder", os.sep).toString())
+        try:
+            lastFolder = str(settings.value("crayfishViewer/lastFolder", os.sep).toString())
+        except:
+            # QGIS 2.0
+            lastFolder = str(settings.value("crayfishViewer/lastFolder", os.sep))
         
         # Get the file name
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Crayfish Dat File', lastFolder, "DAT Results (*.dat);;2DM Mesh Files (*.2dm)")
@@ -318,8 +322,13 @@ class CrayfishPlugin:
                     # Unsupported element seen
                     QMessageBox.warning(self.iface.mainWindow(), "Warning", "It looks like your mesh contains elements that are unsupported at this time.  The following types of elements will be ignored for the time being: E2L, E3L, E3T, E6T, E8Q, E9Q, NS")
                 
-            if not parentLayer.provider.loadDataSet( QString(inFileName) ):
-                QMessageBox.critical(self.iface.mainWindow(), "Failed to Load DAT", "Failed to successfully load the .Dat file")
+            try:
+                if not parentLayer.provider.loadDataSet( QString(inFileName) ):
+                    QMessageBox.critical(self.iface.mainWindow(), "Failed to Load DAT", "Failed to successfully load the .Dat file")
+            except:
+                # QGIS 2.0
+                if not parentLayer.provider.loadDataSet( inFileName ):
+                    QMessageBox.critical(self.iface.mainWindow(), "Failed to Load DAT", "Failed to successfully load the .Dat file")
             self.dock.refresh()
             self.dock.showMostRecentDataSet()
         else:

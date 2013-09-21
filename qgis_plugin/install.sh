@@ -24,5 +24,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.from PyQt4.QtCore import *
 
-mkdir -p ~/.qgis/python/plugins/crayfish
-cp -f *.py ~/.qgis/python/plugins/crayfish
+qgis_folder=".qgis2"
+
+mkdir -p ~/${qgis_folder}/python/plugins/crayfish
+cp -f *.py ~/${qgis_folder}/python/plugins/crayfish
+cp -f metadata.txt ~/${qgis_folder}/python/plugins/crayfish

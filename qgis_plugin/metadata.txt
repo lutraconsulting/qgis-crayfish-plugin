@@ -2,6 +2,7 @@
 [general]
 name=Crayfish
 qgisMinimumVersion=1.7.4
+qgisMaximumVersion=2.99
 description=A collection of tools for TUFLOW and other hydraulic 
     modelling packages
 ; category=Raster ; Did not know what my available choices where
