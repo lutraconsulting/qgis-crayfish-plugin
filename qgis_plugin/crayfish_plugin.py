@@ -207,6 +207,7 @@ class CrayfishPlugin:
         # Make connections
         QObject.connect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)
         QObject.connect(self.lr, SIGNAL("layerWillBeRemoved(QString)"), self.layerRemoved)
+        QObject.connect(self.lr, SIGNAL("layerWasAdded(QgsMapLayer*)"), self.assignDock)
         
         
     def layersRemoved(self, layers):
@@ -249,6 +250,7 @@ class CrayfishPlugin:
         # Make connections
         QObject.disconnect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)
         QObject.disconnect(self.lr, SIGNAL("layerWillBeRemoved(QString)"), self.layerRemoved)
+        QObject.disconnect(self.lr, SIGNAL("layerWasAdded(QgsMapLayer*)"), self.assignDock)
 
     def run(self):
         """
@@ -327,10 +329,12 @@ class CrayfishPlugin:
             try:
                 if not parentLayer.provider.loadDataSet( QString(inFileName) ):
                     QMessageBox.critical(self.iface.mainWindow(), "Failed to Load DAT", "Failed to successfully load the .Dat file")
+                parentLayer.addDatFileName( str(QString(inFileName)) )
             except:
                 # QGIS 2.0
                 if not parentLayer.provider.loadDataSet( inFileName ):
                     QMessageBox.critical(self.iface.mainWindow(), "Failed to Load DAT", "Failed to successfully load the .Dat file")
+                parentLayer.addDatFileName( str(inFileName) )
             self.dock.refresh()
             self.dock.showMostRecentDataSet()
         else:
@@ -376,39 +380,35 @@ class CrayfishPlugin:
             # Failed to load 2DM
             return False
             
-        # Properly set the extents
-        e = layer.provider.getExtents()
-        r = QgsRectangle(   QgsPoint( e.bottomLeft().x(), e.bottomLeft().y() ),
-                            QgsPoint( e.topRight().x(), e.topRight().y() ) )
-        layer.setExtent( r )
-        
         # Add to layer registry
         QgsMapLayerRegistry.instance().addMapLayer(layer)
         
-        layer.set2DMFileName(twoDMFileName) # Set the 2dm file name
+        layer.setDock(self.initialiseDock())
         
-        # Initiate the dock if this has not already been done
-        if not self.dockInitialised:
-            self.initialiseDock()
-            self.dockInitialised = True
-        layer.setDock(self.dock)
-        self.dock.setHidden(False)
-            
-        head, tail = os.path.split(twoDMFileName)
-        layerName, ext = os.path.splitext(tail)
-        layer.setLayerName(layerName)
-            
-        self.dock.refresh()
-        self.dock.listWidget_2.setFocus()
-                
         return True
         
     
     def initialiseDock(self):
         
-        self.dock = CrayfishViewerDock(self.iface)
-        # QObject.connect(self.dock, SIGNAL('visibilityChanged(bool)'), self.showHideDockWidget) # nessisary ?
-        self.iface.addDockWidget( Qt.LeftDockWidgetArea, self.dock )
+        if not self.dockInitialised:        
+            self.dock = CrayfishViewerDock(self.iface)
+            # QObject.connect(self.dock, SIGNAL('visibilityChanged(bool)'), self.showHideDockWidget) # nessisary ?
+            self.iface.addDockWidget( Qt.LeftDockWidgetArea, self.dock )
+            self.dockInitialised = True
         
+        self.dock.setHidden(False)
+        self.dock.refresh()
+        self.dock.listWidget_2.setFocus()
+        return self.dock
+        
+    def assignDock(self, layer):
+        if layer.type() != QgsMapLayer.PluginLayer:
+            return
+        if layer.LAYER_TYPE != 'crayfish_viewer':
+            return
+        dock = self.initialiseDock()
+        layer.setDock(dock)
+        dock.refresh()
+        dock.showMostRecentDataSet()
         
         

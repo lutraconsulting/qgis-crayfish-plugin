@@ -5,13 +5,22 @@ from qgis.core import *
 from crayfish_viewer_render_settings import *
 from crayfishviewer import CrayfishViewer
 
+import os
+
 
 class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     LAYER_TYPE="crayfish_viewer"
 
-    def __init__(self, meshFileName):
+    def __init__(self, meshFileName=None):
         QgsPluginLayer.__init__(self, CrayfishViewerPluginLayer.LAYER_TYPE, "Crayfish Viewer plugin layer")
+        self.meshLoaded = False
+        self.datFileNames = []
+        if meshFileName is not None:
+            self.loadMesh(meshFileName)
+        
+    
+    def loadMesh(self, meshFileName):
         self.provider = CrayfishViewer(meshFileName)
         if self.provider.loadedOk():
             self.setValid(True)
@@ -22,10 +31,52 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         self.dataSetIdx = 0
         self.timeIdx = 0
         self.rs = CrayfishViewerRenderSettings()
+        self.meshLoaded = True
+        
+        # Properly set the extents
+        e = self.provider.getExtents()
+        r = QgsRectangle(   QgsPoint( e.bottomLeft().x(), e.bottomLeft().y() ),
+                            QgsPoint( e.topRight().x(), e.topRight().y() ) )
+        self.setExtent(r)
+        
+        self.set2DMFileName(meshFileName) # Set the 2dm file name
+        
+        head, tail = os.path.split(meshFileName)
+        layerName, ext = os.path.splitext(tail)
+        self.setLayerName(layerName)
+        
+        
+    def readXml(self, node):
+        twoDmFile = str( node.toElement().attribute('meshfile') )
+        self.loadMesh(twoDmFile)
+        datNodes = node.toElement().elementsByTagName("dat")
+        for i in xrange(datNodes.length()):
+            datNode = datNodes.item(i)
+            datFilePath = datNode.toElement().attribute('path')
+            if not self.provider.loadDataSet(datFilePath):
+                return False
+            self.addDatFileName(datFilePath)
+        return True
+
+
+    def writeXml(self, node, doc):
+        element = node.toElement();
+        # write plugin layer type to project (essential to be read from project)
+        element.setAttribute("type", "plugin")
+        element.setAttribute("name", CrayfishViewerPluginLayer.LAYER_TYPE)
+        element.setAttribute("meshfile", self.twoDMFileName)
+        for datFile in self.datFileNames:
+            ch = doc.createElement("dat")
+            ch.setAttribute("path", datFile);
+            element.appendChild(ch)
+        return True
             
 
     def set2DMFileName(self, fName):
         self.twoDMFileName = fName
+    
+    def addDatFileName(self, fName):
+        self.datFileNames.append(fName)
     
     def setDock(self, dock):
         self.dock = dock
