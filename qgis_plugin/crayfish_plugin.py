@@ -200,7 +200,7 @@ class CrayfishPlugin:
         self.menu.addAction(self.action)
         
         # Register plugin layer type
-        from crayfish_viewer_plugin_layer_type import *
+        from crayfish_viewer_plugin_layer_type import CrayfishViewerPluginLayerType
         QgsPluginLayerRegistry.instance().addPluginLayerType(CrayfishViewerPluginLayerType())
         
         # Make connections
@@ -249,7 +249,7 @@ class CrayfishPlugin:
         self.iface.pluginMenu().removeAction(self.menu.menuAction())
         
         # Unregister plugin layer type
-        from crayfish_viewer_plugin_layer_type import *
+        from crayfish_viewer_plugin_layer import CrayfishViewerPluginLayer
         QgsPluginLayerRegistry.instance().removePluginLayerType(CrayfishViewerPluginLayer.LAYER_TYPE)
         
         # Make connections
@@ -379,7 +379,7 @@ class CrayfishPlugin:
         return None
     
     def addLayer(self, twoDMFileName):
-        from crayfish_viewer_plugin_layer import *
+        from crayfish_viewer_plugin_layer import CrayfishViewerPluginLayer
         layer = CrayfishViewerPluginLayer(twoDMFileName)
         if not layer.isValid():
             # Failed to load 2DM
