@@ -39,6 +39,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         Ui_DockWidget.__init__(self)
         
         self.setupUi(self)
+        self.setObjectName("CrayfishViewerDock") # used by main window to save/restore state
         self.iface = iface
         
         self.setEnabled(False)

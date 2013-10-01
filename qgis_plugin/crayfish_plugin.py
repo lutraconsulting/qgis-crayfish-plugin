@@ -55,7 +55,6 @@ class CrayfishPlugin:
         self.iface = iface
         self.version = crayfishPythonPluginVersion()
         self.dock = None
-        self.dockInitialised = False # We have not yet created the dock
         self.lr = QgsMapLayerRegistry.instance()
         self.crayfishViewerLibFound = False
         
@@ -208,6 +207,12 @@ class CrayfishPlugin:
         QObject.connect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)
         QObject.connect(self.lr, SIGNAL("layerWillBeRemoved(QString)"), self.layerRemoved)
         QObject.connect(self.lr, SIGNAL("layerWasAdded(QgsMapLayer*)"), self.assignDock)
+
+        # Create the dock widget
+        self.dock = CrayfishViewerDock(self.iface)
+        self.iface.addDockWidget( Qt.LeftDockWidgetArea, self.dock )
+        self.dock.hide()   # do not show the dock by default
+        QObject.connect(self.dock, SIGNAL("visibilityChanged(bool)"), self.dockVisibilityChanged)
         
         
     def layersRemoved(self, layers):
@@ -222,7 +227,7 @@ class CrayfishPlugin:
         loadedCrayfishLayers = self.getCrayfishLayers()
         if len(loadedCrayfishLayers) == 0 and self.dock is not None:
             # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Calling Hide")
-            self.dock.setHidden(True)
+            self.dock.hide()
 
     def unload(self):
         if self.dock is not None:
@@ -383,32 +388,26 @@ class CrayfishPlugin:
         # Add to layer registry
         QgsMapLayerRegistry.instance().addMapLayer(layer)
         
-        layer.setDock(self.initialiseDock())
+        self.assignDock(layer)
         
         return True
-        
-    
-    def initialiseDock(self):
-        
-        if not self.dockInitialised:        
-            self.dock = CrayfishViewerDock(self.iface)
-            # QObject.connect(self.dock, SIGNAL('visibilityChanged(bool)'), self.showHideDockWidget) # nessisary ?
-            self.iface.addDockWidget( Qt.LeftDockWidgetArea, self.dock )
-            self.dockInitialised = True
-        
-        self.dock.setHidden(False)
-        self.dock.refresh()
-        self.dock.listWidget_2.setFocus()
-        return self.dock
-        
+
     def assignDock(self, layer):
         if layer.type() != QgsMapLayer.PluginLayer:
             return
         if layer.LAYER_TYPE != 'crayfish_viewer':
             return
-        dock = self.initialiseDock()
-        layer.setDock(dock)
-        dock.refresh()
-        dock.showMostRecentDataSet()
+
+        # make sure the dock is visible and up-to-date
+        self.dock.show()
+        self.dock.refresh()
+
+        layer.setDock(self.dock)
+        self.dock.showMostRecentDataSet()
+
+        self.dock.listWidget_2.setFocus()
         
-        
+    def dockVisibilityChanged(self, visible):
+        if visible and len(self.getCrayfishLayers()) == 0:
+            # force hidden on startup
+            QTimer.singleShot(0, self.dock.hide)
