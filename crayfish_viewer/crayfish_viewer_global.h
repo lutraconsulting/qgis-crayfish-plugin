@@ -97,14 +97,56 @@ struct Element{
 };
 
 struct Output{
+
+    Output()
+      : statusFlags(0)
+      , values(0)
+      , values_x(0)
+      , values_y(0)
+    {
+    }
+
+    ~Output()
+    {
+      delete[] statusFlags;
+      delete[] values;
+      delete[] values_x;
+      delete[] values_y;
+    }
+
+    void init(int nodeCount, int elemCount, bool isVector)
+    {
+      Q_ASSERT(statusFlags == 0 && values == 0 && values_x == 0 && values_y == 0);
+      statusFlags = new char[elemCount];
+      values = new float[nodeCount];
+      if (isVector)
+      {
+        values_x = new float[nodeCount];
+        values_y = new float[nodeCount];
+      }
+    }
+
     float time;
-    char* statusFlags;
-    float* values;
-    float* values_x;
-    float* values_y;
+    char* statusFlags;   //!< array determining which elements are active and therefore if they should be rendered (size = element count)
+    float* values;       //!< array of values per node (size = node count)
+    float* values_x;     //!< in case of dataset with vector data - array of X coords - otherwise 0
+    float* values_y;     //!< in case of dataset with vector data - array of Y coords - otherwise 0
 };
 
+/**
+ * DataSet represents one sub-layer of the plugin layer.
+ * One mesh may have several DataSet instances attached.
+ */
 struct DataSet{
+
+    ~DataSet()
+    {
+      for (size_t j=0; j<outputs.size(); j++)
+          delete outputs.at(j);
+      outputs.clear();
+    }
+
+
     DataSetType::Enum type;
     QString name;
     std::vector<Output*> outputs;

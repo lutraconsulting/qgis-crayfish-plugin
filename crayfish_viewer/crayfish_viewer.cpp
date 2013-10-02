@@ -31,6 +31,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.f
 
 
 CrayfishViewer::~CrayfishViewer(){
+
+    //std::cerr << "CF: terminating!" << std::endl;
+
     if(mImage){
         delete mImage;
         mImage = 0;
@@ -48,51 +51,43 @@ CrayfishViewer::~CrayfishViewer(){
         mRotatedNodes = 0;
     }
 
-    for(int i=0; i<mDataSets.size(); i++){
-        DataSet* ds = mDataSets.at(i);
-        for(int j=0; j<ds->outputs.size(); j++){
-            Output* o = ds->outputs.at(j);
-            delete[] o->values;
-            delete[] o->statusFlags;
-            if(ds->type == DataSetType::Vector){
-                delete[] o->values_x;
-                delete[] o->values_y;
-            }
-            delete o;
-        }
-        ds->outputs.clear();
-        delete ds;
-    }
+    for(size_t i=0; i<mDataSets.size(); i++)
+        delete mDataSets.at(i);
     mDataSets.clear();
 }
 
-CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
+CrayfishViewer::CrayfishViewer( QString twoDMFileName )
+  : mLoadedSuccessfully(true)
+  , mWarningsEncountered(false)
+  , mLastError(ViewerError::None)
+  , mLastWarning(ViewerWarning::None)
+  , mImage(new QImage(0, 0, QImage::Format_ARGB32))
+  , mCanvasWidth(0)
+  , mCanvasHeight(0)
+  , mLlX(0.0), mLlY(0.0)
+  , mUrX(0.0), mUrY(0.0)
+  , mPixelSize(0.0)
+  , mElemCount(0)
+  , mElems(0)
+  , mNodeCount(0)
+  , mRotatedNodeCount(0)
+  , mNodes(0)
+  , mRotatedNodes(0)
+{
 
-    // Initialise variables
-    mLoadedSuccessfully = true;
-    mWarningsEncountered = false;
-    mLastError = ViewerError::None;
-    mLastWarning = ViewerWarning::None;
-    mImage = new QImage(0, 0, QImage::Format_ARGB32);
-    mCanvasWidth = 0;
-    mCanvasHeight = 0;
-    mLlX = 0.0;
-    mLlY = 0.0;
-    mUrX = 0.0;
-    mUrY = 0.0;
-    mPixelSize = 0.0;
+  //std::cerr << "CF: opening 2DM: " << twoDMFileName.toAscii().data() << std::endl;
 
     QFile file(twoDMFileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
         mLoadedSuccessfully = false;
         mLastError = ViewerError::FileNotFound;
+        //std::cerr << "CF: ERROR open" << std::endl;
         return;
     }
 
-    mElemCount = 0;
     uint quad4ElemCount = 0;
-    mNodeCount = 0;
 
+    // Find out how many nodes and elements are contained in the .2dm mesh file
     QTextStream in(&file);
     while (!in.atEnd()) {
         QString line = in.readLine();
@@ -124,19 +119,12 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
     DataSet* bedDs = 0;
     Output* o = 0;
     try{
-        mElems = 0;
-        mNodes = 0;
-        mRotatedNodes = 0;
         mElems = new Element[mElemCount];
-
         mNodes = new Node[mNodeCount];
         mRotatedNodes = new Node[mRotatedNodeCount];
         bedDs = new DataSet;
         o = new Output;
-        o->statusFlags = 0;
-        o->values = 0;
-        o->statusFlags = new char[mElemCount];
-        o->values = new float[mNodeCount];
+        o->init(mNodeCount, mElemCount, false);
     } catch (const std::bad_alloc &) {
         /*
         // At present, QGIS crashes when the following lines are executed
@@ -175,6 +163,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName ){
         std::cout << "Done, returning" << std::endl;
         */
         mLoadedSuccessfully = false;
+        //std::cerr << "CF: ERROR alloc" << std::endl;
         return;
     }
 
@@ -660,16 +649,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
             Output* o = 0;
             try{
                 o = new Output;
-                o->statusFlags = 0;
-                o->statusFlags = new char[mElemCount];
-                o->values = 0;
-                o->values = new float[mNodeCount];
-                o->values_x = 0;
-                o->values_y = 0;
-                if(ds->type == DataSetType::Vector){
-                    o->values_x = new float[mNodeCount];
-                    o->values_y = new float[mNodeCount];
-                }
+                o->init(mNodeCount, mElemCount, ds->type == DataSetType::Vector);
             } catch (const std::bad_alloc &) {
                 allocateErrorEncountered = true;
             }
