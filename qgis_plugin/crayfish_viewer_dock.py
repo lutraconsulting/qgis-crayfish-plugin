@@ -42,6 +42,10 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.setObjectName("CrayfishViewerDock") # used by main window to save/restore state
         self.iface = iface
         
+        # make sure we accept only doubles for min/max values
+        self.minLineEdit.setValidator(QDoubleValidator(self.minLineEdit))
+        self.maxLineEdit.setValidator(QDoubleValidator(self.maxLineEdit))
+
         self.setEnabled(False)
         self.reArranging = False
         self.vectorPropsDialog = None
@@ -51,16 +55,16 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         QObject.connect(self.listWidget_2, SIGNAL("currentRowChanged(int)"), self.redraw)
         QObject.connect(self.iface, SIGNAL("currentLayerChanged(QgsMapLayer *)"), self.refresh)
         QObject.connect(self.groupBox, SIGNAL("toggled(bool)"), self.toggleContourOptions)
-        QObject.connect(self.minLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
-        QObject.connect(self.maxLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
+        QObject.connect(self.minLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
+        QObject.connect(self.maxLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
         QObject.connect(self.displayContoursCheckBox, SIGNAL('toggled(bool)'), self.toggleDisplayContours)
         
         
     def __del__(self):
         # Disconnect signals and slots
         QObject.disconnect(self.displayContoursCheckBox, SIGNAL('toggled(bool)'), self.toggleDisplayContours)
-        QObject.disconnect(self.maxLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
-        QObject.disconnect(self.minLineEdit, SIGNAL('editingFinished()'), self.redrawCurrentLayer)
+        QObject.disconnect(self.maxLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
+        QObject.disconnect(self.minLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
         QObject.disconnect(self.groupBox, SIGNAL("toggled(bool)"), self.toggleContourOptions)
         QObject.disconnect(self.iface, SIGNAL("currentLayerChanged(QgsMapLayer *)"), self.refresh)
         QObject.disconnect(self.listWidget_2, SIGNAL("currentRowChanged(int)"), self.redraw)
@@ -220,11 +224,15 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
     
     def getRenderOptions(self):
         autoRender = not self.groupBox.isChecked()
-        minContour = float( str(self.minLineEdit.text()) )
-        maxContour = float( str(self.maxLineEdit.text()) )
-        return autoRender, minContour, maxContour
-    
-    
+        try:
+            minContour = float( str(self.minLineEdit.text()) )
+            maxContour = float( str(self.maxLineEdit.text()) )
+            return autoRender, minContour, maxContour
+        except ValueError:
+            # fallback if the conversion was not successful (e.g. user typed so far just "3.1e" from "3.1e5")
+            return True, 0.0, 0.0
+
+
     def deactivate(self):
         if not self.isEnabled():
             return
