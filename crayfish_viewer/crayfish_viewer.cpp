@@ -942,7 +942,7 @@ QImage* CrayfishViewer::draw(bool renderContours,
                     if(elemTypeToRender == ElementType::E4Q){
                         val = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[ (i*4) ].index ];
                     }else{
-                        val = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mElems[i].index ];
+                        val = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mElems[i].p1->index ];
                     }
                     setColorFromVal(val, &tmpCol, dataSetIdx);
                     line[pp.x()] = tmpCol.rgb();
@@ -1281,6 +1281,9 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
         QPointF pA(mElems[elementIndex].p1->x, mElems[elementIndex].p1->y);
         QPointF pB(mElems[elementIndex].p2->x, mElems[elementIndex].p2->y);
         QPointF pC(mElems[elementIndex].p3->x, mElems[elementIndex].p3->y);
+
+        if (pA == pB || pA == pC || pB == pC)
+          return false; // this is not a valid triangle!
 
         QPointF pP(x, y);
 
