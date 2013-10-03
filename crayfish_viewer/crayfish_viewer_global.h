@@ -133,11 +133,27 @@ struct Output{
     float* values_y;     //!< in case of dataset with vector data - array of Y coords - otherwise 0
 };
 
+enum VectorLengthMethod{
+    MinMax,  //!< minimal and maximal length
+    Scaled,  //!< length is scaled proportionally to the magnitude
+    Fixed    //!< length is fixed to a certain value
+};
+
 /**
  * DataSet represents one sub-layer of the plugin layer.
  * One mesh may have several DataSet instances attached.
  */
-struct DataSet{
+struct CRAYFISHVIEWERSHARED_EXPORT DataSet
+{
+    DataSet()
+      : mCurrentOutputTime(0)
+      , mRenderContours(true)
+      , mContouredAutomatically(true)
+      , mContourMin(0)
+      , mContourMax(0)
+      , mRenderVectors(false)
+    {
+    }
 
     ~DataSet()
     {
@@ -146,20 +162,91 @@ struct DataSet{
       outputs.clear();
     }
 
+    void setCurrentOutputTime(int outputTime)
+    {
+      // If we're looking at bed elevation, ensure the time output is the first (and only)
+      if (type == DataSetType::Bed)
+          outputTime = 0;
+
+      mCurrentOutputTime = outputTime;
+    }
+    int currentOutputTime() const { return mCurrentOutputTime; }
+    const Output* output(int outputTime) const
+    {
+      if (outputTime < 0 || outputTime >= (int)outputs.size())
+        return 0;
+
+      return outputs.at(outputTime);
+    }
+    const Output* currentOutput() const
+    {
+      return output(mCurrentOutputTime);
+    }
+
+    // -- contour rendering --
+
+    void setContourRenderingEnabled(bool enabled) { mRenderContours = enabled; }
+    bool isContourRenderingEnabled() const { return mRenderContours; }
+
+    void setContourAutoRange(bool enabled) { mContouredAutomatically = enabled; }
+    bool contourAutoRange() const { return mContouredAutomatically; }
+
+    void setContourCustomRange(float vMin, float vMax) { mContourMin = vMin; mContourMax = vMax; }
+    float contourCustomRangeMin() const { return mContourMin; }
+    float contourCustomRangeMax() const { return mContourMax; }
+
+    // -- vector rendering --
+
+    void setVectorRenderingEnabled(bool enabled) { mRenderVectors = enabled; }
+    bool isVectorRenderingEnabled() const { return mRenderVectors; }
+
+    void setVectorShaftLengthMethod(VectorLengthMethod method) { mShaftLengthMethod = method; }
+    VectorLengthMethod vectorShaftLengthMethod() const { return mShaftLengthMethod; }
+
+    void setVectorShaftLengthMinMax(float minLen, float maxLen) { mMinShaftLength = minLen; mMaxShaftLength = maxLen; }
+    float vectorShaftLengthMin() const { return mMinShaftLength; }
+    float vectorShaftLengthMax() const { return mMaxShaftLength; }
+
+    void setVectorShaftLengthScaleFactor(float scaleFactor) { mScaleFactor = scaleFactor; }
+    float vectorShaftLengthScaleFactor() const { return mScaleFactor; }
+
+    void setVectorShaftLengthFixed(float fixedLen) { mFixedShaftLength = fixedLen; }
+    float vectorShaftLengthFixed() const { return mFixedShaftLength; }
+
+    void setVectorPenWidth(int width) { mLineWidth = width; }
+    int vectorPenWidth() const { return mLineWidth; }
+
+    void setVectorHeadSize(float widthPerc, float lengthPerc) { mVectorHeadWidthPerc = widthPerc; mVectorHeadLengthPerc = lengthPerc; }
+    float vectorHeadWidth() const { return mVectorHeadWidthPerc; }
+    float vectorHeadLength() const { return mVectorHeadLengthPerc; }
 
     DataSetType::Enum type;
     QString name;
     std::vector<Output*> outputs;
-    float mZMin;
-    float mZMax;
-    bool timeVarying;
-    int lastOutputRendered;
-    bool contouredAutomatically;
-    bool renderContours;
-    bool renderVectors;
-    float contourMin;
-    float contourMax;
-    bool isBed;
+    float mZMin;   //!< min Z value of data
+    float mZMax;   //!< max Z value of data
+    bool timeVarying;  //!< whether the data are time-varying (may contain more than one Output)
+    bool isBed;    //!< whether the data represent river bed
+
+protected:
+    int mCurrentOutputTime; //!< current time index for rendering
+
+    // contour rendering settings
+    bool mRenderContours; //!< whether to render contours
+    bool mContouredAutomatically;  //!< whether the min/max Z value should be used from full data range
+    float mContourMin;  //!< min Z value for rendering of contours
+    float mContourMax;  //!< max Z value for rendering of contours
+
+    // vector rendering settings
+    bool mRenderVectors;  //!< whether to render vectors (only valid for vector data)
+    VectorLengthMethod mShaftLengthMethod;
+    float mMinShaftLength;    //!< valid if using "min/max" method
+    float mMaxShaftLength;    //!< valid if using "min/max" method
+    float mScaleFactor;       //!< valid if using "scaled" method
+    float mFixedShaftLength;  //!< valid if using "fixed" method
+    int mLineWidth;           //!< pen width for drawing of the vectors
+    float mVectorHeadWidthPerc;   //!< arrow head's width  (in percent to shaft's length)
+    float mVectorHeadLengthPerc;  //!< arrow head's length (in percent to shaft's length)
 };
 
 #endif // CRAYFISHVIEWER_GLOBAL_H

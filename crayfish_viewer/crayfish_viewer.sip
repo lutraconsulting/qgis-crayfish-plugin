@@ -11,35 +11,10 @@ class CrayfishViewer {
 %End
 
 public:
-    enum VectorLengthMethod{
-        DefineMinAndMax,
-        Scaled,
-        Fixed
-    };
+
     CrayfishViewer(QString);
     ~CrayfishViewer();
-    QImage* draw(bool,
-                 bool,
-                 int,
-                 int,
-                 double,
-                 double,
-                 double,
-                 int,
-                 int,
-
-                 bool,
-                 float,
-                 float,
-
-                 VectorLengthMethod,
-                 float,
-                 float,
-                 float,
-                 float,
-                 int,
-                 float,
-                 float);
+    QImage* draw();
     bool loadedOk();
     bool warningsEncountered();
     int getLastWarning();
@@ -60,10 +35,86 @@ public:
     bool isVector(int);
     bool displayContours(int);
     bool displayVectors(int);
-    bool displayMesh();
-    void setDisplayMesh(bool display);
     double valueAtCoord(int, int, double, double);
+
+
+    // new stuff - rendering options
+
+    void setCanvasSize(const QSize& size);
+    QSize canvasSize() const;
+
+    void setExtent(double llX, double llY, double pixelSize);
+    QRectF extent() const;
+
+    void setMeshRenderingEnabled(bool enabled);
+    bool isMeshRenderingEnabled() const;
+
+    void setCurrentDataSetIndex(int index);
+    int currentDataSetIndex() const;
+    const DataSet* dataSet(int dataSetIndex) const;
+    const DataSet* currentDataSet() const;
 };
+
+
+enum VectorLengthMethod{
+    MinMax,  //!< minimal and maximal length
+    Scaled,  //!< length is scaled proportionally to the magnitude
+    Fixed    //!< length is fixed to a certain value
+};
+
+struct DataSet
+{
+%TypeHeaderCode
+#include <crayfish_viewer_global.h>
+%End
+
+  DataSet();
+  ~DataSet();
+
+    void setCurrentOutputTime(int outputTime);
+    int currentOutputTime() const;
+    //const Output* output(int outputTime) const;
+    //const Output* currentOutput() const;
+
+    // -- contour rendering --
+
+    void setContourRenderingEnabled(bool enabled);
+    bool isContourRenderingEnabled() const;
+
+    void setContourAutoRange(bool enabled);
+    bool contourAutoRange() const;
+
+    void setContourCustomRange(float vMin, float vMax);
+    float contourCustomRangeMin() const;
+    float contourCustomRangeMax() const;
+
+    // -- vector rendering --
+
+    void setVectorRenderingEnabled(bool enabled);
+    bool isVectorRenderingEnabled() const;
+
+    void setVectorShaftLengthMethod(VectorLengthMethod method);
+    VectorLengthMethod vectorShaftLengthMethod() const;
+
+    void setVectorShaftLengthMinMax(float minLen, float maxLen);
+    float vectorShaftLengthMin() const;
+    float vectorShaftLengthMax() const;
+
+    void setVectorShaftLengthScaleFactor(float scaleFactor);
+    float vectorShaftLengthScaleFactor() const;
+
+    void setVectorShaftLengthFixed(float fixedLen);
+    float vectorShaftLengthFixed() const;
+
+    void setVectorPenWidth(int width);
+    int vectorPenWidth() const;
+
+    void setVectorHeadSize(float widthPerc, float lengthPerc);
+    float vectorHeadWidth() const;
+    float vectorHeadLength() const;
+};
+
+
 
 %UnitCode
 #include <version.h>

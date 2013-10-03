@@ -67,13 +67,13 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
   , mLlX(0.0), mLlY(0.0)
   , mUrX(0.0), mUrY(0.0)
   , mPixelSize(0.0)
+  , mRenderMesh(0)
   , mElemCount(0)
   , mElems(0)
   , mNodeCount(0)
   , mRotatedNodeCount(0)
   , mNodes(0)
   , mRotatedNodes(0)
-  , mRenderMesh(0)
 {
 
   //std::cerr << "CF: opening 2DM: " << twoDMFileName.toAscii().data() << std::endl;
@@ -169,13 +169,10 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
     }
 
     // Create a dataset for the bed elevation
-    bedDs->contouredAutomatically = true;
     bedDs->type = DataSetType::Bed;
     bedDs->name = "Bed Elevation";
     bedDs->timeVarying = false;
     bedDs->isBed = true;
-    bedDs->renderContours = true;
-    bedDs->renderVectors = false;
 
     o->time = 0.0;
     memset(o->statusFlags, 1, mElemCount); // All cells active
@@ -261,8 +258,8 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
 
     float zMin = bedDs->outputs.at(0)->values[0];
     float zMax = bedDs->outputs.at(0)->values[0];
-    for(int i=0; i<bedDs->outputs.size(); i++){
-        for(int j=0; j<mNodeCount; j++){
+    for(uint i=0; i<bedDs->outputs.size(); i++){
+        for(uint j=0; j<mNodeCount; j++){
             if( bedDs->outputs.at(i)->values[j] < zMin ){
                 zMin = bedDs->outputs.at(i)->values[j];
             }
@@ -273,8 +270,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
     }
     bedDs->mZMin = zMin;
     bedDs->mZMax = zMax;
-    bedDs->contourMin = bedDs->mZMin;
-    bedDs->contourMax = bedDs->mZMax;
+    bedDs->setContourCustomRange(zMin, zMax);
 
     //mZMin = mNodes[0].z;
     //mZMax = mNodes[0].z;
@@ -492,14 +488,12 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
     int objecttype;
     int sflt;
     int sflg;
-    int begin;
     int vectype;
     int objid;
-    int numdata;
-    int numcells;
+    uint numdata;
+    uint numcells;
     char name[40];
     char istat;
-    char statflag;
     float time;
 
     QDataStream in(&file);
@@ -513,10 +507,8 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
 
     DataSet* ds = 0;
     ds = new DataSet;
-    ds->contouredAutomatically = true;
     ds->timeVarying = true;
     ds->isBed = false;
-    ds->lastOutputRendered = 0;
 
     bool allocateErrorEncountered = false;
 
@@ -659,7 +651,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
 
 
             if(istat){
-                for(int i=0; i<mElemCount; i++){
+                for(uint i=0; i<mElemCount; i++){
                     // Read status flags
                     if( in.readRawData( (char*)&o->statusFlags[i], 1) != 1 ){
                         delete[] o->statusFlags;
@@ -675,7 +667,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
                 }
             }
 
-            for(int i=0; i<mNodeCount; i++){
+            for(uint i=0; i<mNodeCount; i++){
                 // Read values flags
                 if(ds->type == DataSetType::Vector){
                     if( in.readRawData( (char*)&o->values_x[i], 4) != 4 ){
@@ -756,8 +748,8 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
         bool first = true;
         float zMin = 0.0;
         float zMax = 0.0;
-        for(int i=0; i<ds->outputs.size(); i++){
-            for(int j=0; j<mNodeCount; j++){
+        for(uint i=0; i<ds->outputs.size(); i++){
+            for(uint j=0; j<mNodeCount; j++){
                 if(ds->outputs.at(i)->values[j] != -9999.0){
                     // This is not a NULL value
                     if(first){
@@ -777,14 +769,8 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
 
         ds->mZMin = zMin;
         ds->mZMax = zMax;
-        ds->contourMin = zMin;
-        ds->contourMax = zMax;
-        ds->renderContours = true;
-        if(ds->type == DataSetType::Vector){
-            ds->renderVectors = true;
-        }else{
-            ds->renderVectors = false;
-        }
+        ds->setContourCustomRange(zMin, zMax);
+        ds->setVectorRenderingEnabled(ds->type == DataSetType::Vector);
 
         mDataSets.push_back(ds);
         return true;
@@ -804,94 +790,102 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
     mDataSets.push_back(bedDs);*/
 }
 
-QImage* CrayfishViewer::draw(bool renderContours,
-                        bool renderVectors,
-                        int canvasWidth,
-                        int canvasHeight,
-                        double llX,
-                        double llY,
-                        double pixelSize,
-                        int dataSetIdx,
-                        int outputTime,
 
-                        // Contouring options
-                        bool autoContour,
-                        float minContour,
-                        float maxContour,
 
-                        VectorLengthMethod shaftLengthCalculationMethod,
-                        float minShaftLength,
-                        float maxShaftLength,
-                        float scaleFactor,
-                        float fixedShaftLength,
-                        int lineWidth,
-                        float vectorHeadWidthPerc,
-                        float vectorHeadLengthPerc){
+void CrayfishViewer::setCanvasSize(const QSize& size)
+{
+  if(size.width() != mCanvasWidth || size.height() != mCanvasHeight){
+      // The size of the canvas has changed so we need to re-allocate out QImage
+      delete mImage;
+      mImage = new QImage(size, QImage::Format_ARGB32);
+  }
+  mCanvasWidth = size.width();
+  mCanvasHeight = size.height();
+}
 
-    /*
-      Record details of:
-        Canvas width (px)
-        Canvas height (px)
-        Lower left pixel x
-        Lower left pixel y
-        Pixel size
-      */
+QSize CrayfishViewer::canvasSize() const
+{
+  return QSize(mCanvasWidth, mCanvasHeight);
+}
+
+void CrayfishViewer::setExtent(double llX, double llY, double pixelSize)
+{
+  mLlX = llX;
+  mLlY = llY;
+  mPixelSize = pixelSize;
+
+  mUrX = mLlX + (mCanvasWidth*mPixelSize);
+  mUrY = mLlY + (mCanvasHeight*mPixelSize);
+}
+
+QRectF CrayfishViewer::extent() const
+{
+  return QRectF(QPointF(mXMin,mYMax), QPointF(mXMax,mYMin));
+}
+
+void CrayfishViewer::setMeshRenderingEnabled(bool enabled)
+{
+  mRenderMesh = enabled;
+}
+
+bool CrayfishViewer::isMeshRenderingEnabled() const
+{
+  return mRenderMesh;
+}
+
+void CrayfishViewer::setCurrentDataSetIndex(int index)
+{
+  mCurDataSetIdx = index;
+}
+
+int CrayfishViewer::currentDataSetIndex() const
+{
+  return mCurDataSetIdx;
+}
+
+const DataSet* CrayfishViewer::dataSet(int dataSetIndex) const
+{
+  if (dataSetIndex < 0 || dataSetIndex >= (int)mDataSets.size())
+    return 0;
+
+  return mDataSets.at(dataSetIndex);
+}
+
+const DataSet *CrayfishViewer::currentDataSet() const
+{
+  return dataSet(mCurDataSetIdx);
+}
+
+
+QImage* CrayfishViewer::draw(){
 
     // Some sanity checks
 
-    bool invalidRenderParameters = false;
+    const DataSet* ds = currentDataSet();
+    if (!ds)
+      return 0;
 
-    // If we're looking at bed elevation, ensure the time output is the first (and only)
-    if(mDataSets.at(dataSetIdx)->type == DataSetType::Bed){
-        outputTime = 0;
-    }
-
-    if( dataSetIdx > mDataSets.size() || dataSetIdx < 0 ){
-        invalidRenderParameters = true;
-    }else if( outputTime > mDataSets.at(dataSetIdx)->outputs.size() || outputTime < 0 ){
-        invalidRenderParameters = true;
-    }
-
-    if(canvasWidth != mCanvasWidth || canvasHeight != mCanvasHeight){
-        // The size of the canvas has changed so we need to re-allocate out QImage
-        delete mImage;
-        mImage = new QImage(canvasWidth, canvasHeight, QImage::Format_ARGB32);
-    }
-    mCanvasWidth = canvasWidth;
-    mCanvasHeight = canvasHeight;
+    const Output* output = ds->currentOutput();
+    if ( !output )
+        return 0;
 
     mImage->fill( qRgba(255,255,255,0) );
 
-    mLlX = llX;
-    mLlY = llY;
-    mPixelSize = pixelSize;
+    if(ds->isContourRenderingEnabled())
+        renderContourData(ds, output);
 
-    mUrX = mLlX + (mCanvasWidth*mPixelSize);
-    mUrY = mLlY + (mCanvasHeight*mPixelSize);
+    if(ds->isVectorRenderingEnabled() && ds->type == DataSetType::Vector)
+        renderVectorData(ds, output);
 
-    if(invalidRenderParameters){
-        return mImage;
-    }
+    if (mRenderMesh)
+        renderMesh();
 
-    /*
-      In order to keep track of which output times we used last during a render for a particular
-      dataset, we will store the index of the output time in the dataset structure
+    return mImage;
+}
 
-      */
-    mDataSets.at(dataSetIdx)->lastOutputRendered = outputTime;
 
-    // Save rendering information
-    mDataSets.at(dataSetIdx)->renderContours = renderContours;
-    mDataSets.at(dataSetIdx)->renderVectors = renderVectors;
-    if(autoContour){
-        mDataSets.at(dataSetIdx)->contouredAutomatically = true;
-    }else{
-        mDataSets.at(dataSetIdx)->contouredAutomatically = false;
-        mDataSets.at(dataSetIdx)->contourMin = minContour;
-        mDataSets.at(dataSetIdx)->contourMax = maxContour;
-    }
-
-    if(renderContours){
+void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
+{
         // Render E4Q before E3T
         QVector<ElementType::Enum> typesToRender;
         typesToRender.append(ElementType::E4Q);
@@ -912,7 +906,7 @@ QImage* CrayfishViewer::draw(bool renderContours,
                 // For each element
 
                 // If the element's activity flag is off, ignore it
-                if( ! mDataSets.at(dataSetIdx)->outputs.at(outputTime)->statusFlags[i] ){
+                if( ! output->statusFlags[i] ){
                     continue;
                 }
 
@@ -941,11 +935,11 @@ QImage* CrayfishViewer::draw(bool renderContours,
                     //double val = mRotatedNodes[ (i*4) ].z;
                     float val;
                     if(elemTypeToRender == ElementType::E4Q){
-                        val = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[ (i*4) ].index ];
+                        val = output->values[ mRotatedNodes[ (i*4) ].index ];
                     }else{
-                        val = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mElems[i].p1->index ];
+                        val = output->values[ mElems[i].p1->index ];
                     }
-                    setColorFromVal(val, &tmpCol, dataSetIdx);
+                    setColorFromVal(val, &tmpCol, ds);
                     line[pp.x()] = tmpCol.rgb();
 
                 }else{
@@ -958,15 +952,28 @@ QImage* CrayfishViewer::draw(bool renderContours,
                     int rightLim = std::min( ur.x(), mCanvasWidth-1 );
 
                     for(int j=topLim; j<=bottomLim; j++){ // FIXME - are we missing the last line?  Should this be j<=bottomLim ?
-                        paintRow(i, j, leftLim, rightLim, dataSetIdx, outputTime);
+                        paintRow(i, j, leftLim, rightLim, ds, output);
                     }
                 }
             }
 
         }
-    }
+}
 
-    if(renderVectors && mDataSets.at(dataSetIdx)->type == DataSetType::Vector){
+
+void CrayfishViewer::renderVectorData(
+    const DataSet* ds,
+    const Output* output)
+{
+    VectorLengthMethod shaftLengthCalculationMethod = ds->vectorShaftLengthMethod();
+    float minShaftLength   = ds->vectorShaftLengthMin();
+    float maxShaftLength   = ds->vectorShaftLengthMax();
+    float scaleFactor      = ds->vectorShaftLengthScaleFactor();
+    float fixedShaftLength = ds->vectorShaftLengthFixed();
+    int lineWidth          = ds->vectorPenWidth();
+    float vectorHeadWidthPerc  = ds->vectorHeadWidth();
+    float vectorHeadLengthPerc = ds->vectorHeadLength();
+
         /*
           Here is where we render vector data
 
@@ -985,8 +992,8 @@ QImage* CrayfishViewer::draw(bool renderContours,
         // Set up the render configuration options
 
         // Determine the min and max magnitudes in this layer
-        float minVal = mDataSets.at(dataSetIdx)->mZMin;
-        float maxVal = mDataSets.at(dataSetIdx)->mZMax;
+        float minVal = ds->mZMin;
+        float maxVal = ds->mZMax;
 
         // Determine the range of vector sizes specified by the user for
         // rendering vectors with a min and max length
@@ -997,7 +1004,7 @@ QImage* CrayfishViewer::draw(bool renderContours,
         // Get a list of nodes that are within the current render extent
         std::vector<Node*> candidateNodes;
 
-        for(int i=0; i<mNodeCount; i++){
+        for(uint i=0; i<mNodeCount; i++){
             if( mNodes[i].x > mLlX &&
                 mNodes[i].x < mUrX &&
                 mNodes[i].y > mLlY &&
@@ -1007,8 +1014,6 @@ QImage* CrayfishViewer::draw(bool renderContours,
             }
         }
 
-
-        float userScaleFactor = 20.0;
 
         QPainter p;
         // p.setRenderHint( QPainter::Antialiasing );
@@ -1035,19 +1040,13 @@ QImage* CrayfishViewer::draw(bool renderContours,
         vectorHeadPoints[2].setX( -1.0 * vectorHeadLengthPerc * 0.01 );
         vectorHeadPoints[2].setY( -1.0 * vectorHeadWidthPerc * 0.5 * 0.01 );
 
-        float defaultVectorLength = 1.0;
-
-        for(int i=0; i<candidateNodes.size(); i++){
+        for(uint i=0; i<candidateNodes.size(); i++){
             // Get the value
             Node* n = candidateNodes.at(i);
             uint nodeIndex = n->index;
 
-            if(nodeIndex == 16307){
-                int balls = nodeIndex + 2;
-            }
-
-            float xVal = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values_x[nodeIndex];
-            float yVal = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values_y[nodeIndex];
+            float xVal = output->values_x[nodeIndex];
+            float yVal = output->values_y[nodeIndex];
 
             if(xVal == 0.0 && yVal == 0.0){
                 continue;
@@ -1064,7 +1063,7 @@ QImage* CrayfishViewer::draw(bool renderContours,
             double cosAlpha = cos( vectorAngle ) * mag(xVal);
             double sinAlpha = sin( vectorAngle ) * mag(xVal);
 
-            if(shaftLengthCalculationMethod == DefineMinAndMax){
+            if(shaftLengthCalculationMethod == MinMax){
                 float valRange = ( maxVal - minVal );
                 float percX = (absolute(xVal) - minVal) / valRange;
                 float percY = (absolute(yVal) - minVal) / valRange;
@@ -1136,16 +1135,16 @@ QImage* CrayfishViewer::draw(bool renderContours,
 
         }
         p.end();
-    }
+}
 
 
-    if (mRenderMesh)
-    {
+void CrayfishViewer::renderMesh()
+{
       // render mesh as a wireframe
 
       QPainter p(mImage);
       QPoint pts[5];
-      for (int i=0; i < mElemCount; ++i)
+      for (uint i=0; i < mElemCount; ++i)
       {
         if( mElems[i].isDummy )
             continue;
@@ -1170,10 +1169,8 @@ QImage* CrayfishViewer::draw(bool renderContours,
           p.drawPolyline(pts, 4);
         }
       }
-    }
-
-    return mImage;
 }
+
 
 QPoint CrayfishViewer::realToPixel(double x, double y){
     int px = (x - mLlX) / mPixelSize;
@@ -1187,7 +1184,7 @@ QPointF CrayfishViewer::realToPixelF(double x, double y){
     return QPointF(px, py);
 }
 
-void CrayfishViewer::paintRow(uint elementIdx, int rowIdx, int leftLim, int rightLim, int dataSetIdx, int outputTime){
+void CrayfishViewer::paintRow(uint elementIdx, int rowIdx, int leftLim, int rightLim, const DataSet* ds, const Output* output){
     /*
       Grab the pointer to the row if we do not have it already
       */
@@ -1200,29 +1197,29 @@ void CrayfishViewer::paintRow(uint elementIdx, int rowIdx, int leftLim, int righ
         QPointF p = pixelToReal(j, rowIdx);
 
         double val;
-        if( interpolatValue(elementIdx, p.x(), p.y(), &val, dataSetIdx, outputTime) ){
+        if( interpolatValue(elementIdx, p.x(), p.y(), &val, output) ){
             // The supplied point was inside the element
             // line[j] = qRgba(128,0,0,255);
             QColor tmpCol;
-            setColorFromVal(val, &tmpCol, dataSetIdx);
+            setColorFromVal(val, &tmpCol, ds);
             line[j] = tmpCol.rgb();
         }
     }
 }
 
-void CrayfishViewer::setColorFromVal(double val, QColor* col, int dataSetIdx){
+void CrayfishViewer::setColorFromVal(double val, QColor* col, const DataSet* ds){
     // If the value is less than min or greater than max, set it to the appropriate end of the
     // spectrum
 
     float zMin = 0.0;
     float zMax = 0.0;
 
-    if( mDataSets.at(dataSetIdx)->contouredAutomatically ){
-        zMin = mDataSets.at(dataSetIdx)->mZMin;
-        zMax = mDataSets.at(dataSetIdx)->mZMax;
+    if( ds->contourAutoRange() ){
+        zMin = ds->mZMin;
+        zMax = ds->mZMax;
     }else{
-        zMin = mDataSets.at(dataSetIdx)->contourMin;
-        zMax = mDataSets.at(dataSetIdx)->contourMax;
+        zMin = ds->contourCustomRangeMin();
+        zMax = ds->contourCustomRangeMax();
     }
 
     if(val < zMin){
@@ -1250,7 +1247,7 @@ bool CrayfishViewer::elemOutsideView(uint i){
     return false;
 }
 
-bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, double* interpolatedVal, int dataSetIdx, int outputTime){
+bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, double* interpolatedVal, const Output* output){
 
     if(mElems[elementIndex].eType == ElementType::E4Q){
 
@@ -1260,22 +1257,22 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
         double x1 = mRotatedNodes[(elementIndex*4)+2].x;
         double y1 = mRotatedNodes[(elementIndex*4)+2].y;
         //double q11 = mRotatedNodes[(elementIndex*4)+2].z;
-        double q11 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+2].index ];
+        double q11 = output->values[ mRotatedNodes[(elementIndex*4)+2].index ];
 
         //double _x1 = mRotatedNodes[(elementIndex*4)+1].x;
         double y2 = mRotatedNodes[(elementIndex*4)+1].y;
         //double q12 = mRotatedNodes[(elementIndex*4)+1].z;
-        double q12 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+1].index ];
+        double q12 = output->values[ mRotatedNodes[(elementIndex*4)+1].index ];
 
         double x2 = mRotatedNodes[(elementIndex*4)+3].x;
         //double _y1 = mRotatedNodes[(elementIndex*4)+3].y;
         //double q21 = mRotatedNodes[(elementIndex*4)+3].z;
-        double q21 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+3].index ];
+        double q21 = output->values[ mRotatedNodes[(elementIndex*4)+3].index ];
 
         //double _x2 = mRotatedNodes[(elementIndex*4)+0].x;
         //double _y2 = mRotatedNodes[(elementIndex*4)+0].y;
         //double q22 = mRotatedNodes[(elementIndex*4)+0].z;
-        double q22 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mRotatedNodes[(elementIndex*4)+0].index ];
+        double q22 = output->values[ mRotatedNodes[(elementIndex*4)+0].index ];
 
         // If the element has been rotated, rotate the x,y coord around node 2 in the oposite direction
         if(mElems[elementIndex].hasRotation){
@@ -1347,12 +1344,15 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
 
         // Now interpolate
 
-        double z1 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mElems[elementIndex].p1->index ];
-        double z2 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mElems[elementIndex].p2->index ];
-        double z3 = mDataSets.at(dataSetIdx)->outputs.at(outputTime)->values[ mElems[elementIndex].p3->index ];
+        double z1 = output->values[ mElems[elementIndex].p1->index ];
+        double z2 = output->values[ mElems[elementIndex].p2->index ];
+        double z3 = output->values[ mElems[elementIndex].p3->index ];
         *interpolatedVal = lam1 * z3 + lam2 * z2 + lam3 * z1;
         return true;
 
+    }else{
+      Q_ASSERT(0 && "unknown element type");
+      return false;
     }
 }
 
@@ -1364,6 +1364,11 @@ QPointF CrayfishViewer::pixelToReal(int i, int j){
 }
 
 double CrayfishViewer::valueAtCoord(int dataSetIdx, int timeIndex, double xCoord, double yCoord){
+
+  const DataSet* ds = dataSet(dataSetIdx);
+  Q_ASSERT(ds);
+  const Output* output = ds->output(timeIndex);
+  Q_ASSERT(output);
 
     /*
       We want to find the value at the given coordinate
@@ -1391,25 +1396,17 @@ double CrayfishViewer::valueAtCoord(int dataSetIdx, int timeIndex, double xCoord
 
     double value;
 
-    for(int i=0; i<candidateElementIds.size(); i++){
+    for(uint i=0; i<candidateElementIds.size(); i++){
 
         uint elemIndex = candidateElementIds.at(i);
-        if( ! mDataSets.at(dataSetIdx)->outputs.at(timeIndex)->statusFlags[elemIndex] ){
+        if( ! output->statusFlags[elemIndex] ){
             continue;
         }
-        if( interpolatValue(elemIndex, xCoord, yCoord, &value, dataSetIdx, timeIndex) ){
+        if( interpolatValue(elemIndex, xCoord, yCoord, &value, output) ){
             // We successfully got a value, return it and leave
             return value;
         }
     }
 
     return -9999.0;
-}
-
-float CrayfishViewer::lastMinContourValue(int dataSet){
-    return mDataSets.at(dataSet)->contourMin;
-}
-
-float CrayfishViewer::lastMaxContourValue(int dataSet){
-    return mDataSets.at(dataSet)->contourMax;
 }

@@ -127,35 +127,31 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             contMax = 0.0
         else:
             autoContour, contMin, contMax = self.dock.getRenderOptions()
-            
-        self.provider.setDisplayMesh(self.rs.renderMesh)
-        img = self.provider.draw(   self.rs.renderContours, # Whether to render contours
-                                    self.rs.renderVectors,  # Whether to render vectors
-                                    width,                  # The width of the QImage to return in px
-                                    height,                 # The height of the QImage to return in px
-                                    extent.xMinimum(),      # x coordinate of the XLL corner
-                                    extent.yMinimum(),      # y coordinate of the XLL corner
-                                    pixelSize,              # Size of pixels in map units
-                                    self.dataSetIdx,        # Dataset index (0=2dm)
-                                    self.timeIdx,           # Output index
-                                    
-                                                            # Contour options
-                                    autoContour,            # Can't remember what this is
-                                    contMin,                # Minimum contour value
-                                    contMax,                # Maximum contour value
-                                    
-                                                                    # Vector options
-                                    self.rs.shaftLength,            # Method used to scale the shaft (sounds rude doesn't it)
-                                    self.rs.shaftLengthMin,         # Minimum shaft length
-                                    self.rs.shaftLengthMax,         # Maximum shaft length
-                                    self.rs.shaftLengthScale,       # Scale for scaling vector to magnitude
-                                    self.rs.shaftLengthFixedLength, # Fixed vector length
-                                    self.rs.lineWidth,              # Line width to use for rendering
-                                    self.rs.headWidth,              # Vector head width (%)
-                                    self.rs.headLength              # Vector head length (%)
-                                    )
-                                    
-                                    
+
+        self.provider.setCanvasSize(QSize(int(width), int(height)))
+        self.provider.setExtent(extent.xMinimum(), extent.yMinimum(), pixelSize)
+        self.provider.setCurrentDataSetIndex(self.dataSetIdx)
+        self.provider.setMeshRenderingEnabled(self.rs.renderMesh)
+        
+        ds = self.provider.currentDataSet()
+        ds.setCurrentOutputTime(self.timeIdx)
+        
+        # contour rendering settings
+        ds.setContourRenderingEnabled(self.rs.renderContours)
+        ds.setContourAutoRange(autoContour)
+        ds.setContourCustomRange(contMin, contMax)
+        
+        # vector rendering settings
+        ds.setVectorRenderingEnabled(self.rs.renderVectors)
+        ds.setVectorShaftLengthMethod(self.rs.shaftLength)  # Method used to scale the shaft (sounds rude doesn't it)
+        ds.setVectorShaftLengthMinMax(self.rs.shaftLengthMin, self.rs.shaftLengthMax)
+        ds.setVectorShaftLengthScaleFactor(self.rs.shaftLengthScale)
+        ds.setVectorShaftLengthFixed(self.rs.shaftLengthFixedLength)
+        ds.setVectorPenWidth(self.rs.lineWidth)
+        ds.setVectorHeadSize(self.rs.headWidth, self.rs.headLength)
+        
+        img = self.provider.draw()
+        
         # img now contains the render of the crayfish layer, merge it
         
         painter = rendererContext.painter()

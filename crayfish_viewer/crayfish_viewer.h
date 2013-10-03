@@ -40,33 +40,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.f
 
 class CRAYFISHVIEWERSHARED_EXPORT CrayfishViewer {
 public:
-    enum VectorLengthMethod{
-        DefineMinAndMax,
-        Scaled,
-        Fixed
-    };
+
     CrayfishViewer(QString);
     ~CrayfishViewer();
-    QImage* draw(bool,
-                 bool,
-                 int,
-                 int,
-                 double,
-                 double,
-                 double,
-                 int dataSetIdx,
-                 int outputTime,
-
-                 bool autoContour,
-                 float minContour,
-                 float maxContour,
-
-                 VectorLengthMethod shaftLengthCalculationMethod,
-                 float minShaftLength,
-                 float maxShaftLength,
-                 float scaleFactor,
-                 float fixedShaftLength,
-                 int lineWidth, float vectorHeadWidthPerc, float vectorHeadLengthPerc);
+    QImage* draw();
 
     bool loadedOk(){ return mLoadedSuccessfully; }
     bool warningsEncountered(){ return mWarningsEncountered; }
@@ -78,52 +55,80 @@ public:
     int dataSetOutputCount(int dataSet){ return mDataSets.at(dataSet)->outputs.size(); }
     float dataSetOutputTime(int dataSet, int output){ return mDataSets.at(dataSet)->outputs.at(output)->time; }
     bool timeVarying(int dataSet){ return mDataSets.at(dataSet)->timeVarying; }
-    int getLastRenderIndex(int dataSet){ return mDataSets.at(dataSet)->lastOutputRendered; }
-    bool layerContouredAutomatically(int dataSet){ return mDataSets.at(dataSet)->contouredAutomatically; }
+    int getLastRenderIndex(int dataSet){ return mDataSets.at(dataSet)->currentOutputTime(); } // TODO: remove
+    bool layerContouredAutomatically(int dataSet){ return mDataSets.at(dataSet)->contourAutoRange(); } // TODO: remove
     float minValue(int dataSet){ return mDataSets.at(dataSet)->mZMin; }
     float maxValue(int dataSet){ return mDataSets.at(dataSet)->mZMax; }
-    float lastMinContourValue(int dataSet);
-    float lastMaxContourValue(int dataSet);
+    float lastMinContourValue(int dataSet) { return mDataSets.at(dataSet)->contourCustomRangeMin(); } // TODO: remove
+    float lastMaxContourValue(int dataSet) { return mDataSets.at(dataSet)->contourCustomRangeMax(); } // TODO: remove
     bool isBed(int dataSet){ return mDataSets.at(dataSet)->isBed; }
     bool isVector(int dataSet){ return (mDataSets.at(dataSet)->type == DataSetType::Vector); }
-    bool displayContours(int dataSet){ return mDataSets.at(dataSet)->renderContours; }
-    bool displayVectors(int dataSet){ return mDataSets.at(dataSet)->renderVectors; }
-    bool displayMesh() { return mRenderMesh; }
-    void setDisplayMesh(bool display) { mRenderMesh = display; }
+    bool displayContours(int dataSet){ return mDataSets.at(dataSet)->isContourRenderingEnabled(); } // TODO: remove
+    bool displayVectors(int dataSet){ return mDataSets.at(dataSet)->isVectorRenderingEnabled(); } // TODO: remove
     double valueAtCoord(int dataSetIdx, int timeIndex, double xCoord, double yCoord);
+
+    // new stuff - rendering options
+
+    void setCanvasSize(const QSize& size);
+    QSize canvasSize() const;
+
+    void setExtent(double llX, double llY, double pixelSize);
+    QRectF extent() const;
+
+    void setMeshRenderingEnabled(bool enabled);
+    bool isMeshRenderingEnabled() const;
+
+    void setCurrentDataSetIndex(int index);
+    int currentDataSetIndex() const;
+    const DataSet* dataSet(int dataSetIndex) const;
+    const DataSet* currentDataSet() const;
+
 private:
     bool mLoadedSuccessfully;
     bool mWarningsEncountered;
     ViewerError::Enum mLastError;
     ViewerWarning::Enum mLastWarning;
     QImage* mImage;
-    int mCanvasWidth;
-    int mCanvasHeight;
-    double mLlX;
-    double mLlY;
-    double mUrX;
-    double mUrY;
-    double mPixelSize;
+
+    // global rendering options
+    int mCanvasWidth;   //!< width of the current view (pixels)
+    int mCanvasHeight;  //!< height of the current view (pixels)
+    double mLlX;        //!< X of current view's lower-left point (mesh coords)
+    double mLlY;        //!< Y of current view's lower-left point (mesh coords)
+    double mUrX;        //!< X of current view's upper-right point (mesh coords)
+    double mUrY;        //!< Y of current view's upper-right point (mesh coords)
+    double mPixelSize;  //!< units (in mesh) per pixel (on screen)
+    bool mRenderMesh;   //!< whether to render the mesh as a wireframe
+    int mCurDataSetIdx; //!< index of the current dataset
+
+    // envelope of the mesh
     double mXMin;
     double mXMax;
     double mYMin;
     double mYMax;
+
+    // mesh topology - nodes and elements
     uint mElemCount;
     Element* mElems;
     uint mNodeCount;
     uint mRotatedNodeCount;
     Node* mNodes;
     Node* mRotatedNodes;
-    std::vector<DataSet*> mDataSets;
-    bool mRenderMesh;
+
+    std::vector<DataSet*> mDataSets;  //!< datasets associated with the mesh
 
     bool elemOutsideView(uint);
     QPoint realToPixel(double, double);
     QPointF realToPixelF(double, double);
-    void paintRow(uint, int, int, int, int dataSetIdx, int outputTime);
-    bool interpolatValue(uint, double, double, double*, int dataSetIdx, int outputTime);
+    void paintRow(uint, int, int, int, const DataSet* ds, const Output* output);
+    bool interpolatValue(uint, double, double, double*, const Output* output);
     QPointF pixelToReal(int, int);
-    void setColorFromVal(double, QColor *col, int dataSetIdx);
+    void setColorFromVal(double, QColor *col, const DataSet* ds);
+
+
+    void renderContourData(const DataSet* ds, const Output* output);
+    void renderVectorData(const DataSet* ds, const Output* output);
+    void renderMesh();
 };
 
 float absolute(float input){
