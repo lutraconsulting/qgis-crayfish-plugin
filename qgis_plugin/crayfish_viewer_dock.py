@@ -112,7 +112,18 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
                 #self.displayContoursCheckBox.toggled.emit(True)
         self.redrawCurrentLayer()
         
-    
+    def displayMeshButtonToggled(self, newState):
+        """
+            displayMeshCheckBox has been toggled
+        """
+        l = self.iface.mapCanvas().currentLayer()
+        if newState:
+            l.rs.renderMesh = True
+        else:
+            l.rs.renderMesh = False
+        self.redrawCurrentLayer()
+
+
     def toggleContourOptions(self, on):
         if on:
             self.minLineEdit.setEnabled(True)

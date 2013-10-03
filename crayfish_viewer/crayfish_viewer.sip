@@ -60,6 +60,8 @@ public:
     bool isVector(int);
     bool displayContours(int);
     bool displayVectors(int);
+    bool displayMesh();
+    void setDisplayMesh(bool display);
     double valueAtCoord(int, int, double, double);
 };
 

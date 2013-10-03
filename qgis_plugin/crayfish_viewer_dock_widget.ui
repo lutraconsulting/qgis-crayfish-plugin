@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>460</width>
-    <height>456</height>
+    <width>463</width>
+    <height>485</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -109,7 +109,7 @@
       </item>
       <item>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="1" column="0">
+        <item row="0" column="1">
          <widget class="QPushButton" name="contourOptionsPushButton">
           <property name="enabled">
            <bool>false</bool>
@@ -119,13 +119,10 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="QPushButton" name="vectorOptionsPushButton">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
+        <item row="1" column="0">
+         <widget class="QCheckBox" name="displayVectorsCheckBox">
           <property name="text">
-           <string>Vector Options</string>
+           <string>Display Vectors</string>
           </property>
          </widget>
         </item>
@@ -139,10 +136,20 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QCheckBox" name="displayVectorsCheckBox">
+        <item row="1" column="1">
+         <widget class="QPushButton" name="vectorOptionsPushButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
-           <string>Display Vectors</string>
+           <string>Vector Options</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QCheckBox" name="displayMeshCheckBox">
+          <property name="text">
+           <string>Display Mesh</string>
           </property>
          </widget>
         </item>
@@ -185,8 +192,8 @@
    <slot>displayVectorsButtonToggled()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>272</x>
-     <y>378</y>
+     <x>229</x>
+     <y>420</y>
     </hint>
     <hint type="destinationlabel">
      <x>454</x>
@@ -210,10 +217,27 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>displayMeshCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>DockWidget</receiver>
+   <slot>displayMeshButtonToggled()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>61</x>
+     <y>439</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>5</x>
+     <y>431</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>displayContoursButtonToggled()</slot>
   <slot>displayVectorsButtonToggled()</slot>
   <slot>displayVectorPropsDialog()</slot>
+  <slot>displayMeshButtonToggled()</slot>
  </slots>
 </ui>

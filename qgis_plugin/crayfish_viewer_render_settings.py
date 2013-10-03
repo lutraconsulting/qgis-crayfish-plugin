@@ -35,6 +35,7 @@ class CrayfishViewerRenderSettings():
         
         self.renderContours = True
         self.renderVectors = False
+        self.renderMesh = False
         
         self.shaftLength = 0 # DefineMinAndMax
         self.shaftLengthMin = 3.0
@@ -59,6 +60,7 @@ class CrayfishViewerRenderSettings():
         
         self.__renderContours = None
         self.__renderVectors = None
+        self.__renderMesh = None
         
         self.__shaftLength = None
         self.__shaftLengthMin = None
@@ -84,6 +86,7 @@ class CrayfishViewerRenderSettings():
         
         self.__renderContours = self.renderContours
         self.__renderVectors = self.renderVectors
+        self.__renderMesh = self.renderMesh
         
         self.__shaftLength = self.shaftLength
         self.__shaftLengthMin = self.shaftLengthMin
@@ -109,6 +112,7 @@ class CrayfishViewerRenderSettings():
         
         self.renderContours = self.__renderContours
         self.renderVectors = self.__renderVectors
+        self.renderMesh = self.__renderMesh
         
         self.shaftLength = self.__shaftLength
         self.shaftLengthMin = self.__shaftLengthMin

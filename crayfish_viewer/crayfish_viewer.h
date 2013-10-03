@@ -88,6 +88,8 @@ public:
     bool isVector(int dataSet){ return (mDataSets.at(dataSet)->type == DataSetType::Vector); }
     bool displayContours(int dataSet){ return mDataSets.at(dataSet)->renderContours; }
     bool displayVectors(int dataSet){ return mDataSets.at(dataSet)->renderVectors; }
+    bool displayMesh() { return mRenderMesh; }
+    void setDisplayMesh(bool display) { mRenderMesh = display; }
     double valueAtCoord(int dataSetIdx, int timeIndex, double xCoord, double yCoord);
 private:
     bool mLoadedSuccessfully;
@@ -113,6 +115,7 @@ private:
     Node* mNodes;
     Node* mRotatedNodes;
     std::vector<DataSet*> mDataSets;
+    bool mRenderMesh;
 
     bool elemOutsideView(uint);
     QPoint realToPixel(double, double);

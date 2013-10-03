@@ -128,6 +128,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         else:
             autoContour, contMin, contMax = self.dock.getRenderOptions()
             
+        self.provider.setDisplayMesh(self.rs.renderMesh)
         img = self.provider.draw(   self.rs.renderContours, # Whether to render contours
                                     self.rs.renderVectors,  # Whether to render vectors
                                     width,                  # The width of the QImage to return in px

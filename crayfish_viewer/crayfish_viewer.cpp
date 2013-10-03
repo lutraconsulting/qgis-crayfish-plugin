@@ -73,6 +73,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
   , mRotatedNodeCount(0)
   , mNodes(0)
   , mRotatedNodes(0)
+  , mRenderMesh(0)
 {
 
   //std::cerr << "CF: opening 2DM: " << twoDMFileName.toAscii().data() << std::endl;
@@ -1135,6 +1136,40 @@ QImage* CrayfishViewer::draw(bool renderContours,
 
         }
         p.end();
+    }
+
+
+    if (mRenderMesh)
+    {
+      // render mesh as a wireframe
+
+      QPainter p(mImage);
+      QPoint pts[5];
+      for (int i=0; i < mElemCount; ++i)
+      {
+        if( mElems[i].isDummy )
+            continue;
+
+        // If the element is outside the view of the canvas, skip it
+        if( elemOutsideView(i) )
+            continue;
+
+        if (mElems[i].eType == ElementType::E4Q)
+        {
+          pts[0] = pts[4] = realToPixel( mElems[i].p1->x, mElems[i].p1->y ); // first and last point
+          pts[1] = realToPixel( mElems[i].p2->x, mElems[i].p2->y );
+          pts[2] = realToPixel( mElems[i].p3->x, mElems[i].p3->y );
+          pts[3] = realToPixel( mElems[i].p4->x, mElems[i].p4->y );
+          p.drawPolyline(pts, 5);
+        }
+        else if (mElems[i].eType == ElementType::E3T)
+        {
+          pts[0] = pts[3] = realToPixel( mElems[i].p1->x, mElems[i].p1->y ); // first and last point
+          pts[1] = realToPixel( mElems[i].p2->x, mElems[i].p2->y );
+          pts[2] = realToPixel( mElems[i].p3->x, mElems[i].p3->y );
+          p.drawPolyline(pts, 4);
+        }
+      }
     }
 
     return mImage;

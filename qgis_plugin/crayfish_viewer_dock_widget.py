@@ -2,8 +2,8 @@
 
 # Form implementation generated from reading ui file 'crayfish_viewer_dock_widget.ui'
 #
-# Created: Wed Oct 10 22:54:06 2012
-#      by: PyQt4 UI code generator 4.9.1
+# Created: Thu Oct  3 10:39:10 2013
+#      by: PyQt4 UI code generator 4.10
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -12,12 +12,21 @@ from PyQt4 import QtCore, QtGui
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
-    _fromUtf8 = lambda s: s
+    def _fromUtf8(s):
+        return s
+
+try:
+    _encoding = QtGui.QApplication.UnicodeUTF8
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+except AttributeError:
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig)
 
 class Ui_DockWidget(object):
     def setupUi(self, DockWidget):
         DockWidget.setObjectName(_fromUtf8("DockWidget"))
-        DockWidget.resize(460, 456)
+        DockWidget.resize(463, 485)
         self.dockWidgetContents = QtGui.QWidget()
         self.dockWidgetContents.setObjectName(_fromUtf8("dockWidgetContents"))
         self.gridLayout_2 = QtGui.QGridLayout(self.dockWidgetContents)
@@ -69,18 +78,21 @@ class Ui_DockWidget(object):
         self.contourOptionsPushButton = QtGui.QPushButton(self.dockWidgetContents)
         self.contourOptionsPushButton.setEnabled(False)
         self.contourOptionsPushButton.setObjectName(_fromUtf8("contourOptionsPushButton"))
-        self.gridLayout_3.addWidget(self.contourOptionsPushButton, 1, 0, 1, 1)
-        self.vectorOptionsPushButton = QtGui.QPushButton(self.dockWidgetContents)
-        self.vectorOptionsPushButton.setEnabled(False)
-        self.vectorOptionsPushButton.setObjectName(_fromUtf8("vectorOptionsPushButton"))
-        self.gridLayout_3.addWidget(self.vectorOptionsPushButton, 1, 1, 1, 1)
+        self.gridLayout_3.addWidget(self.contourOptionsPushButton, 0, 1, 1, 1)
+        self.displayVectorsCheckBox = QtGui.QCheckBox(self.dockWidgetContents)
+        self.displayVectorsCheckBox.setObjectName(_fromUtf8("displayVectorsCheckBox"))
+        self.gridLayout_3.addWidget(self.displayVectorsCheckBox, 1, 0, 1, 1)
         self.displayContoursCheckBox = QtGui.QCheckBox(self.dockWidgetContents)
         self.displayContoursCheckBox.setChecked(True)
         self.displayContoursCheckBox.setObjectName(_fromUtf8("displayContoursCheckBox"))
         self.gridLayout_3.addWidget(self.displayContoursCheckBox, 0, 0, 1, 1)
-        self.displayVectorsCheckBox = QtGui.QCheckBox(self.dockWidgetContents)
-        self.displayVectorsCheckBox.setObjectName(_fromUtf8("displayVectorsCheckBox"))
-        self.gridLayout_3.addWidget(self.displayVectorsCheckBox, 0, 1, 1, 1)
+        self.vectorOptionsPushButton = QtGui.QPushButton(self.dockWidgetContents)
+        self.vectorOptionsPushButton.setEnabled(False)
+        self.vectorOptionsPushButton.setObjectName(_fromUtf8("vectorOptionsPushButton"))
+        self.gridLayout_3.addWidget(self.vectorOptionsPushButton, 1, 1, 1, 1)
+        self.displayMeshCheckBox = QtGui.QCheckBox(self.dockWidgetContents)
+        self.displayMeshCheckBox.setObjectName(_fromUtf8("displayMeshCheckBox"))
+        self.gridLayout_3.addWidget(self.displayMeshCheckBox, 2, 0, 1, 1)
         self.verticalLayout.addLayout(self.gridLayout_3)
         self.valueLabel = QtGui.QLabel(self.dockWidgetContents)
         self.valueLabel.setObjectName(_fromUtf8("valueLabel"))
@@ -92,18 +104,20 @@ class Ui_DockWidget(object):
         QtCore.QObject.connect(self.displayContoursCheckBox, QtCore.SIGNAL(_fromUtf8("toggled(bool)")), DockWidget.displayContoursButtonToggled)
         QtCore.QObject.connect(self.displayVectorsCheckBox, QtCore.SIGNAL(_fromUtf8("toggled(bool)")), DockWidget.displayVectorsButtonToggled)
         QtCore.QObject.connect(self.vectorOptionsPushButton, QtCore.SIGNAL(_fromUtf8("clicked()")), DockWidget.displayVectorPropsDialog)
+        QtCore.QObject.connect(self.displayMeshCheckBox, QtCore.SIGNAL(_fromUtf8("toggled(bool)")), DockWidget.displayMeshButtonToggled)
         QtCore.QMetaObject.connectSlotsByName(DockWidget)
 
     def retranslateUi(self, DockWidget):
-        DockWidget.setWindowTitle(QtGui.QApplication.translate("DockWidget", "Crayfish Viewer", None, QtGui.QApplication.UnicodeUTF8))
-        self.label.setText(QtGui.QApplication.translate("DockWidget", "Quantity", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_2.setText(QtGui.QApplication.translate("DockWidget", "Output Time", None, QtGui.QApplication.UnicodeUTF8))
-        self.groupBox.setTitle(QtGui.QApplication.translate("DockWidget", "Specify Colour Scale", None, QtGui.QApplication.UnicodeUTF8))
-        self.minLabel.setText(QtGui.QApplication.translate("DockWidget", "Min", None, QtGui.QApplication.UnicodeUTF8))
-        self.maxLabel.setText(QtGui.QApplication.translate("DockWidget", "Max", None, QtGui.QApplication.UnicodeUTF8))
-        self.contourOptionsPushButton.setText(QtGui.QApplication.translate("DockWidget", "Contour Options", None, QtGui.QApplication.UnicodeUTF8))
-        self.vectorOptionsPushButton.setText(QtGui.QApplication.translate("DockWidget", "Vector Options", None, QtGui.QApplication.UnicodeUTF8))
-        self.displayContoursCheckBox.setText(QtGui.QApplication.translate("DockWidget", "Display Contours", None, QtGui.QApplication.UnicodeUTF8))
-        self.displayVectorsCheckBox.setText(QtGui.QApplication.translate("DockWidget", "Display Vectors", None, QtGui.QApplication.UnicodeUTF8))
-        self.valueLabel.setText(QtGui.QApplication.translate("DockWidget", "(0.000) 0.000", None, QtGui.QApplication.UnicodeUTF8))
+        DockWidget.setWindowTitle(_translate("DockWidget", "Crayfish Viewer", None))
+        self.label.setText(_translate("DockWidget", "Quantity", None))
+        self.label_2.setText(_translate("DockWidget", "Output Time", None))
+        self.groupBox.setTitle(_translate("DockWidget", "Specify Colour Scale", None))
+        self.minLabel.setText(_translate("DockWidget", "Min", None))
+        self.maxLabel.setText(_translate("DockWidget", "Max", None))
+        self.contourOptionsPushButton.setText(_translate("DockWidget", "Contour Options", None))
+        self.displayVectorsCheckBox.setText(_translate("DockWidget", "Display Vectors", None))
+        self.displayContoursCheckBox.setText(_translate("DockWidget", "Display Contours", None))
+        self.vectorOptionsPushButton.setText(_translate("DockWidget", "Vector Options", None))
+        self.displayMeshCheckBox.setText(_translate("DockWidget", "Display Mesh", None))
+        self.valueLabel.setText(_translate("DockWidget", "(0.000) 0.000", None))
 
