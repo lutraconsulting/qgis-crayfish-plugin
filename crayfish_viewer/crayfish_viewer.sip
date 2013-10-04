@@ -21,22 +21,8 @@ public:
     QRectF getExtents();
     bool loadDataSet(QString);
     int dataSetCount();
-    QString* dataSetName(int);
-    int dataSetOutputCount(int);
-    float dataSetOutputTime(int, int);
-    bool timeVarying(int);
-    int getLastRenderIndex(int);
-    bool layerContouredAutomatically(int);
-    float minValue(int);
-    float maxValue(int);
-    float lastMinContourValue(int);
-    float lastMaxContourValue(int);
-    bool isBed(int);
-    bool isVector(int);
-    bool displayContours(int);
-    bool displayVectors(int);
-    double valueAtCoord(int, int, double, double);
 
+    double valueAtCoord(const Output *output, double xCoord, double yCoord);
 
     // new stuff - rendering options
 
@@ -62,19 +48,45 @@ enum VectorLengthMethod{
     Fixed    //!< length is fixed to a certain value
 };
 
+
+namespace DataSetType{
+    enum Enum{
+        Bed,
+        Scalar,
+        Vector
+    };
+};
+
 struct DataSet
 {
 %TypeHeaderCode
 #include <crayfish_viewer_global.h>
 %End
 
-  DataSet();
-  ~DataSet();
+    DataSet();
+    ~DataSet();
+
+    void setName(const QString& name);
+    QString name() const;
+
+    void setType(DataSetType::Enum t);
+    DataSetType::Enum type() const;
+
+    uint outputCount() const;
+
+    //void addOutput(Output* output);
 
     void setCurrentOutputTime(int outputTime);
     int currentOutputTime() const;
-    //const Output* output(int outputTime) const;
-    //const Output* currentOutput() const;
+    const Output* output(int outputTime) const;
+    const Output* currentOutput() const;
+
+    void updateZRange(int nodeCount);
+    float minZValue() const;
+    float maxZValue() const;
+
+    void setIsTimeVarying(bool varying);
+    bool isTimeVarying() const;
 
     // -- contour rendering --
 
@@ -87,6 +99,9 @@ struct DataSet
     void setContourCustomRange(float vMin, float vMax);
     float contourCustomRangeMin() const;
     float contourCustomRangeMax() const;
+
+    void setContourAlpha(int alpha);
+    int contourAlpha() const;
 
     // -- vector rendering --
 
@@ -112,6 +127,23 @@ struct DataSet
     void setVectorHeadSize(float widthPerc, float lengthPerc);
     float vectorHeadWidth() const;
     float vectorHeadLength() const;
+};
+
+
+struct Output{
+%TypeHeaderCode
+#include <crayfish_viewer_global.h>
+%End
+
+    Output();
+    ~Output();
+    //void init(int nodeCount, int elemCount, bool isVector);
+
+    float time;
+    //char* statusFlags;   //!< array determining which elements are active and therefore if they should be rendered (size = element count)
+    //float* values;       //!< array of values per node (size = node count)
+    //float* values_x;     //!< in case of dataset with vector data - array of X coords - otherwise 0
+    //float* values_y;     //!< in case of dataset with vector data - array of Y coords - otherwise 0
 };
 
 

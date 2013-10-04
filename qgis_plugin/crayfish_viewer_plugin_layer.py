@@ -131,18 +131,15 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         self.provider.setCanvasSize(QSize(int(width), int(height)))
         self.provider.setExtent(extent.xMinimum(), extent.yMinimum(), pixelSize)
         self.provider.setCurrentDataSetIndex(self.dataSetIdx)
-        self.provider.setMeshRenderingEnabled(self.rs.renderMesh)
         
         ds = self.provider.currentDataSet()
         ds.setCurrentOutputTime(self.timeIdx)
         
         # contour rendering settings
-        ds.setContourRenderingEnabled(self.rs.renderContours)
         ds.setContourAutoRange(autoContour)
         ds.setContourCustomRange(contMin, contMax)
         
         # vector rendering settings
-        ds.setVectorRenderingEnabled(self.rs.renderVectors)
         ds.setVectorShaftLengthMethod(self.rs.shaftLength)  # Method used to scale the shaft (sounds rude doesn't it)
         ds.setVectorShaftLengthMinMax(self.rs.shaftLengthMin, self.rs.shaftLengthMax)
         ds.setVectorShaftLengthScaleFactor(self.rs.shaftLengthScale)

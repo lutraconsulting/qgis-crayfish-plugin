@@ -43,21 +43,21 @@ namespace ElementType{
         E4Q,
         E3T
     };
-};
+}
 
 namespace ViewerError{
     enum Enum{
         None,
         FileNotFound
     };
-};
+}
 
 namespace ViewerWarning{
     enum Enum{
         None,
         UnsupportedElement
     };
-};
+}
 
 namespace DataSetType{
     enum Enum{
@@ -65,7 +65,7 @@ namespace DataSetType{
         Scalar,
         Vector
     };
-};
+}
 
 struct Node{
     uint index;
@@ -96,7 +96,7 @@ struct Element{
     double cosNegAlpha;
 };
 
-struct Output{
+struct CRAYFISHVIEWERSHARED_EXPORT Output{
 
     Output()
       : statusFlags(0)
@@ -151,6 +151,7 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
       , mContouredAutomatically(true)
       , mContourMin(0)
       , mContourMax(0)
+      , mContourAlpha(255)
       , mRenderVectors(false)
     {
     }
@@ -162,10 +163,20 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
       outputs.clear();
     }
 
+    void setName(const QString& name) { mName = name; }
+    QString name() const { return mName; }
+
+    void setType(DataSetType::Enum t) { mType = t; }
+    DataSetType::Enum type() const { return mType; }
+
+    uint outputCount() const { return outputs.size(); }
+
+    void addOutput(Output* output) { outputs.push_back(output); }
+
     void setCurrentOutputTime(int outputTime)
     {
       // If we're looking at bed elevation, ensure the time output is the first (and only)
-      if (type == DataSetType::Bed)
+      if (mType == DataSetType::Bed)
           outputTime = 0;
 
       mCurrentOutputTime = outputTime;
@@ -183,6 +194,41 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
       return output(mCurrentOutputTime);
     }
 
+    void updateZRange(uint nodeCount)
+    {
+      bool first = true;
+      float zMin = 0.0;
+      float zMax = 0.0;
+      for(uint i=0; i<outputCount(); i++){
+          const Output* out = output(i);
+          for(uint j=0; j<nodeCount; j++){
+              if(out->values[j] != -9999.0){
+                  // This is not a NULL value
+                  if(first){
+                      first = false;
+                      zMin = out->values[j];
+                      zMax = out->values[j];
+                  }
+                  if( out->values[j] < zMin ){
+                      zMin = out->values[j];
+                  }
+                  if( out->values[j] > zMax ){
+                      zMax = out->values[j];
+                  }
+              }
+          }
+      }
+
+      mZMin = zMin;
+      mZMax = zMax;
+    }
+
+    float minZValue() const { return mZMin; }
+    float maxZValue() const { return mZMax; }
+
+    void setIsTimeVarying(bool varying) { mTimeVarying = varying; }
+    bool isTimeVarying() const { return mTimeVarying; }
+
     // -- contour rendering --
 
     void setContourRenderingEnabled(bool enabled) { mRenderContours = enabled; }
@@ -194,6 +240,9 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
     void setContourCustomRange(float vMin, float vMax) { mContourMin = vMin; mContourMax = vMax; }
     float contourCustomRangeMin() const { return mContourMin; }
     float contourCustomRangeMax() const { return mContourMax; }
+
+    void setContourAlpha(int alpha) { mContourAlpha = alpha; }
+    int contourAlpha() const { return mContourAlpha; }
 
     // -- vector rendering --
 
@@ -220,15 +269,15 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
     float vectorHeadWidth() const { return mVectorHeadWidthPerc; }
     float vectorHeadLength() const { return mVectorHeadLengthPerc; }
 
-    DataSetType::Enum type;
-    QString name;
+protected:
+
+    DataSetType::Enum mType;
+    QString mName;
     std::vector<Output*> outputs;
     float mZMin;   //!< min Z value of data
     float mZMax;   //!< max Z value of data
-    bool timeVarying;  //!< whether the data are time-varying (may contain more than one Output)
-    bool isBed;    //!< whether the data represent river bed
+    bool mTimeVarying;  //!< whether the data are time-varying (may contain more than one Output)
 
-protected:
     int mCurrentOutputTime; //!< current time index for rendering
 
     // contour rendering settings
@@ -236,6 +285,7 @@ protected:
     bool mContouredAutomatically;  //!< whether the min/max Z value should be used from full data range
     float mContourMin;  //!< min Z value for rendering of contours
     float mContourMax;  //!< max Z value for rendering of contours
+    int mContourAlpha;  //!< alpha value (opaqueness) of contours (0 = transparent, 255 = opaque)
 
     // vector rendering settings
     bool mRenderVectors;  //!< whether to render vectors (only valid for vector data)

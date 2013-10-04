@@ -43,8 +43,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.iface = iface
         
         # make sure we accept only doubles for min/max values
-        self.minLineEdit.setValidator(QDoubleValidator(self.minLineEdit))
-        self.maxLineEdit.setValidator(QDoubleValidator(self.maxLineEdit))
+        self.contourMinLineEdit.setValidator(QDoubleValidator(self.contourMinLineEdit))
+        self.contourMaxLineEdit.setValidator(QDoubleValidator(self.contourMaxLineEdit))
 
         self.setEnabled(False)
         self.reArranging = False
@@ -54,22 +54,26 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         QObject.connect(self.listWidget, SIGNAL("currentRowChanged(int)"), self.dataSetChanged)
         QObject.connect(self.listWidget_2, SIGNAL("currentRowChanged(int)"), self.redraw)
         QObject.connect(self.iface, SIGNAL("currentLayerChanged(QgsMapLayer *)"), self.refresh)
-        QObject.connect(self.groupBox, SIGNAL("toggled(bool)"), self.toggleContourOptions)
-        QObject.connect(self.minLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
-        QObject.connect(self.maxLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
-        QObject.connect(self.displayContoursCheckBox, SIGNAL('toggled(bool)'), self.toggleDisplayContours)
+        QObject.connect(self.contourCustomRangeCheckBox, SIGNAL("toggled(bool)"), self.toggleContourOptions)
+        QObject.connect(self.contourMinLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
+        QObject.connect(self.contourMaxLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
+        QObject.connect(self.contoursGroupBox, SIGNAL('toggled(bool)'), self.displayContoursButtonToggled)
+        QObject.connect(self.contourTransparencySlider, SIGNAL('valueChanged(int)'), self.transparencyChanged)
         
         
     def __del__(self):
         # Disconnect signals and slots
-        QObject.disconnect(self.displayContoursCheckBox, SIGNAL('toggled(bool)'), self.toggleDisplayContours)
-        QObject.disconnect(self.maxLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
-        QObject.disconnect(self.minLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
-        QObject.disconnect(self.groupBox, SIGNAL("toggled(bool)"), self.toggleContourOptions)
+        QObject.disconnect(self.contoursGroupBox, SIGNAL('toggled(bool)'), self.displayContoursButtonToggled)
+        QObject.disconnect(self.contourMaxLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
+        QObject.disconnect(self.contourMinLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
+        QObject.disconnect(self.contourCustomRangeCheckBox, SIGNAL("toggled(bool)"), self.toggleContourOptions)
         QObject.disconnect(self.iface, SIGNAL("currentLayerChanged(QgsMapLayer *)"), self.refresh)
         QObject.disconnect(self.listWidget_2, SIGNAL("currentRowChanged(int)"), self.redraw)
         QObject.disconnect(self.listWidget, SIGNAL("currentRowChanged(int)"), self.dataSetChanged)
         
+    def currentDataSet(self):
+        l = self.iface.mapCanvas().currentLayer()
+        return l.provider.dataSet( self.listWidget.currentRow() )
         
     def displayVectorPropsDialog(self):
         if self.vectorPropsDialog is not None:
@@ -87,11 +91,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         """
             displayContoursCheckBox has been toggled
         """
-        l = self.iface.mapCanvas().currentLayer()
-        if newState:
-            l.rs.renderContours = True
-        else:
-            l.rs.renderContours = False
+        self.currentDataSet().setContourRenderingEnabled(newState)
         self.redrawCurrentLayer()
             
             
@@ -99,17 +99,12 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         """
             displayVectorsCheckBox has been toggled
         """
-        l = self.iface.mapCanvas().currentLayer()
-        if newState:
-            self.vectorOptionsPushButton.setEnabled(True)
-            l.rs.renderVectors = True
-        else:
-            self.vectorOptionsPushButton.setEnabled(False)
-            l.rs.renderVectors = False
+        self.currentDataSet().setVectorRenderingEnabled(newState)
+        self.vectorOptionsPushButton.setEnabled(newState)
+        if not newState:
             # Ensure one or the other is on
-            if not self.displayContoursCheckBox.isEnabled():
-                self.displayContoursCheckBox.setCheckState(True)
-                #self.displayContoursCheckBox.toggled.emit(True)
+            if not self.contoursGroupBox.isChecked():
+                self.contoursGroupBox.setCheckState(True)
         self.redrawCurrentLayer()
         
     def displayMeshButtonToggled(self, newState):
@@ -117,37 +112,26 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             displayMeshCheckBox has been toggled
         """
         l = self.iface.mapCanvas().currentLayer()
-        if newState:
-            l.rs.renderMesh = True
-        else:
-            l.rs.renderMesh = False
+        l.provider.setMeshRenderingEnabled(newState)
         self.redrawCurrentLayer()
 
 
     def toggleContourOptions(self, on):
-        if on:
-            self.minLineEdit.setEnabled(True)
-            self.maxLineEdit.setEnabled(True)
-            l = self.iface.mapCanvas().currentLayer()
-            dataSetRow = self.listWidget.currentRow()
-            self.minLineEdit.setText( str("%.3f" % l.provider.lastMinContourValue(dataSetRow)) )
-            self.maxLineEdit.setText( str("%.3f" % l.provider.lastMaxContourValue(dataSetRow)) )
-        else:
-            self.minLineEdit.setEnabled(False)
-            self.maxLineEdit.setEnabled(False)
-            l = self.iface.mapCanvas().currentLayer()
-            dataSetRow = self.listWidget.currentRow()
-            self.minLineEdit.setText( str("%.3f" % l.provider.minValue(dataSetRow)) )
-            self.maxLineEdit.setText( str("%.3f" % l.provider.maxValue(dataSetRow)) )
+        l = self.iface.mapCanvas().currentLayer()
+        dataSet = l.provider.dataSet( self.listWidget.currentRow() )
+        zMin = dataSet.contourCustomRangeMin() if on else dataSet.minZValue()
+        zMax = dataSet.contourCustomRangeMax() if on else dataSet.maxZValue()
+        self.contourMinLineEdit.setEnabled(on)
+        self.contourMaxLineEdit.setEnabled(on)
+        self.contourMinLineEdit.setText( str("%.3f" % zMin) )
+        self.contourMaxLineEdit.setText( str("%.3f" % zMax) )
         # Redraw the layer
         tIndex = self.listWidget_2.currentRow()
         self.redraw(tIndex)
         
-    def toggleDisplayContours(self, on):
-        if on:
-            self.groupBox.setEnabled(True)
-        else:
-            self.groupBox.setEnabled(False)
+    def transparencyChanged(self, value):
+        self.currentDataSet().setContourAlpha(255-value)
+        self.redraw(self.listWidget_2.currentRow())
     
     def showMostRecentDataSet(self):
         lastRow = self.listWidget.count() - 1
@@ -188,45 +172,47 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         l = self.iface.mapCanvas().currentLayer()
         if l.type() != QgsMapLayer.PluginLayer or str(l.pluginLayerType()) != 'crayfish_viewer':
             return
+          
+        dataSet = l.provider.dataSet(dataSetRow)
         
         self.reArranging = True
         
         self.listWidget_2.clear()
         
-        if l.provider.timeVarying(dataSetRow):
+        if dataSet.isTimeVarying():
             self.listWidget_2.setEnabled(True)
-            for i in range( l.provider.dataSetOutputCount(dataSetRow) ):
-                t = l.provider.dataSetOutputTime(dataSetRow, i)
+            for i in range( dataSet.outputCount() ):
+                t = dataSet.output(i).time
                 timeString = self.timeToString(t)
                 self.listWidget_2.addItem(timeString)
             # Restore the selection of the last time step that we viewed
             # for this dataset
-            lastIdxViewed = l.provider.getLastRenderIndex(dataSetRow)
+            lastIdxViewed = dataSet.currentOutputTime()
             # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Setting last time index to " + str(lastIdxViewed) )
             self.listWidget_2.setCurrentRow(lastIdxViewed)
         else:
             self.listWidget_2.setEnabled(False)
             
         # Get the contour settings from the provider
-        contourAutomatically = l.provider.layerContouredAutomatically(dataSetRow)
-        self.groupBox.setChecked( not contourAutomatically )
+        contourAutomatically = dataSet.contourAutoRange()
+        self.contourTransparencySlider.setValue( 255 - dataSet.contourAlpha() )
+        self.contourCustomRangeCheckBox.setChecked( not contourAutomatically )
         if contourAutomatically:
-            self.minLineEdit.setText( str("%.3f" % l.provider.minValue(dataSetRow)) )
-            self.maxLineEdit.setText( str("%.3f" % l.provider.maxValue(dataSetRow)) )
+            vMin = dataSet.minZValue()
+            vMax = dataSet.maxZValue()
         else:
-            self.minLineEdit.setText( str("%.3f" % l.provider.lastMinContourValue(dataSetRow)) )
-            self.maxLineEdit.setText( str("%.3f" % l.provider.lastMaxContourValue(dataSetRow)) )
+            vMin = dataSet.contourCustomRangeMin()
+            vMax = dataSet.contourCustomRangeMax()
+        self.contourMinLineEdit.setText( str("%.3f" % vMin) )
+        self.contourMaxLineEdit.setText( str("%.3f" % vMax) )
             
         # Get contour / vector render preferences
-        displayContours = l.provider.displayContours(dataSetRow)
-        displayVectors = l.provider.displayVectors(dataSetRow)
-        # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Render settings are " + str(dataSetRow) + ', ' + str(displayContours) + ', ' + str(displayVectors) )
-        self.displayContoursCheckBox.setChecked(displayContours)
-        self.displayVectorsCheckBox.setChecked(displayVectors)
+        self.contoursGroupBox.setChecked(dataSet.isContourRenderingEnabled())
+        self.displayVectorsCheckBox.setChecked(dataSet.isVectorRenderingEnabled())
         
         # Disable the vector options if we are looking at a scalar dataset
-        isVectorDataSet = l.provider.isVector(dataSetRow)
-        self.displayVectorsCheckBox.setEnabled(isVectorDataSet)
+        from crayfishviewer import DataSetType
+        self.displayVectorsCheckBox.setEnabled(dataSet.type() == DataSetType.Vector)
         
         self.reArranging = False
         # self.redraw(lastIdxViewed)
@@ -234,10 +220,10 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         
     
     def getRenderOptions(self):
-        autoRender = not self.groupBox.isChecked()
+        autoRender = not self.contourCustomRangeCheckBox.isChecked()
         try:
-            minContour = float( str(self.minLineEdit.text()) )
-            maxContour = float( str(self.maxLineEdit.text()) )
+            minContour = float( str(self.contourMinLineEdit.text()) )
+            maxContour = float( str(self.contourMaxLineEdit.text()) )
             return autoRender, minContour, maxContour
         except ValueError:
             # fallback if the conversion was not successful (e.g. user typed so far just "3.1e" from "3.1e5")
@@ -278,7 +264,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         currentDs = self.listWidget.currentRow()
         currentTs = self.listWidget_2.currentRow()
         
-        bedValue = l.provider.valueAtCoord(0, 0, xCoord, yCoord) # Note that the bed will always be 0, 0
+        bed = l.provider.dataSet(0).output(0)
+        bedValue = l.provider.valueAtCoord(bed, xCoord, yCoord) # Note that the bed will always be 0, 0
         
         if bedValue == nullValue:
             # The mouse cursor is outside the mesh, exit nicely
@@ -286,10 +273,13 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             return
             
         textValue = str( '(%.3f)' % bedValue )
-            
-        if not l.provider.isBed(currentDs):
+        
+        dataSet = self.currentDataSet()
+        ts = dataSet.output(currentTs)
+        from crayfishviewer import DataSetType
+        if dataSet.type() != DataSetType.Bed:
             # We're looking at an actual dataset rather than just the bed level
-            dsValue = l.provider.valueAtCoord(currentDs, currentTs, xCoord, yCoord)
+            dsValue = l.provider.valueAtCoord(ts, xCoord, yCoord)
             if dsValue != nullValue:
                 textValue += str(' %.3f' % dsValue)
         
@@ -321,7 +311,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             # Add datasets
             # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Adding datasets in refresh()")
             for i in range(l.provider.dataSetCount()):
-                n = l.provider.dataSetName(i)
+                n = l.provider.dataSet(i).name()
                 self.listWidget.addItem(n)
                 
             # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Done adding datasets in refresh(), setting setCurrentRow")

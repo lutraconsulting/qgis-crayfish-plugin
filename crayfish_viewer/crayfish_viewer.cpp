@@ -169,14 +169,13 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
     }
 
     // Create a dataset for the bed elevation
-    bedDs->type = DataSetType::Bed;
-    bedDs->name = "Bed Elevation";
-    bedDs->timeVarying = false;
-    bedDs->isBed = true;
+    bedDs->setType(DataSetType::Bed);
+    bedDs->setName("Bed Elevation");
+    bedDs->setIsTimeVarying(false);
 
     o->time = 0.0;
     memset(o->statusFlags, 1, mElemCount); // All cells active
-    bedDs->outputs.push_back(o);
+    bedDs->addOutput(o);
     mDataSets.push_back(bedDs);
 
     in.seek(0);
@@ -245,7 +244,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
             mNodes[index].index = index;
             mNodes[index].x = chunks[2].toDouble();
             mNodes[index].y = chunks[3].toDouble();
-            bedDs->outputs.at(0)->values[index] = chunks[4].toFloat();
+            bedDs->output(0)->values[index] = chunks[4].toFloat();
             //mNodeCount += 1;
         }
     }
@@ -256,21 +255,8 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
     mYMin = mNodes[0].y;
     mYMax = mNodes[0].y;
 
-    float zMin = bedDs->outputs.at(0)->values[0];
-    float zMax = bedDs->outputs.at(0)->values[0];
-    for(uint i=0; i<bedDs->outputs.size(); i++){
-        for(uint j=0; j<mNodeCount; j++){
-            if( bedDs->outputs.at(i)->values[j] < zMin ){
-                zMin = bedDs->outputs.at(i)->values[j];
-            }
-            if( bedDs->outputs.at(i)->values[j] > zMax ){
-                zMax = bedDs->outputs.at(i)->values[j];
-            }
-        }
-    }
-    bedDs->mZMin = zMin;
-    bedDs->mZMax = zMax;
-    bedDs->setContourCustomRange(zMin, zMax);
+    bedDs->updateZRange(mNodeCount);
+    bedDs->setContourCustomRange(bedDs->minZValue(), bedDs->maxZValue());
 
     //mZMin = mNodes[0].z;
     //mZMax = mNodes[0].z;
@@ -507,8 +493,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
 
     DataSet* ds = 0;
     ds = new DataSet;
-    ds->timeVarying = true;
-    ds->isBed = false;
+    ds->setIsTimeVarying(true);
 
     bool allocateErrorEncountered = false;
 
@@ -560,12 +545,12 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
 
         case 130:
 
-            ds->type = DataSetType::Scalar;
+            ds->setType(DataSetType::Scalar);
             break;
 
         case 140:
 
-            ds->type = DataSetType::Vector;
+            ds->setType(DataSetType::Vector);
             break;
 
         case 150:
@@ -625,8 +610,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
             }
             if(name[39] != 0)
                 name[39] = 0;
-            ds->name.clear();
-            ds->name.append(name);
+            ds->setName(name);
             break;
 
         case 200:
@@ -642,7 +626,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
             Output* o = 0;
             try{
                 o = new Output;
-                o->init(mNodeCount, mElemCount, ds->type == DataSetType::Vector);
+                o->init(mNodeCount, mElemCount, ds->type() == DataSetType::Vector);
             } catch (const std::bad_alloc &) {
                 allocateErrorEncountered = true;
             }
@@ -654,13 +638,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
                 for(uint i=0; i<mElemCount; i++){
                     // Read status flags
                     if( in.readRawData( (char*)&o->statusFlags[i], 1) != 1 ){
-                        delete[] o->statusFlags;
-                        delete[] o->values;
-                        if(ds->type == DataSetType::Vector){
-                            delete[] o->values_x;
-                            delete[] o->values_y;
-                        }
-                        ds->outputs.clear();
+                        delete o;
                         delete ds;
                         return false;
                     }
@@ -669,46 +647,28 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
 
             for(uint i=0; i<mNodeCount; i++){
                 // Read values flags
-                if(ds->type == DataSetType::Vector){
+              if(ds->type() == DataSetType::Vector){
                     if( in.readRawData( (char*)&o->values_x[i], 4) != 4 ){
-                        delete[] o->statusFlags;
-                        delete[] o->values;
-                        if(ds->type == DataSetType::Vector){
-                            delete[] o->values_x;
-                            delete[] o->values_y;
-                        }
-                        ds->outputs.clear();
+                        delete o;
                         delete ds;
                         return false;
                     }
                     if( in.readRawData( (char*)&o->values_y[i], 4) != 4 ){
-                        delete[] o->statusFlags;
-                        delete[] o->values;
-                        if(ds->type == DataSetType::Vector){
-                            delete[] o->values_x;
-                            delete[] o->values_y;
-                        }
-                        ds->outputs.clear();
+                        delete o;
                         delete ds;
                         return false;
                     }
                     o->values[i] = sqrt( pow(o->values_x[i],2) + pow(o->values_y[i],2) ); // Determine the magnitude
                 }else{
                     if( in.readRawData( (char*)&o->values[i], 4) != 4 ){
-                        delete[] o->statusFlags;
-                        delete[] o->values;
-                        if(ds->type == DataSetType::Vector){
-                            delete[] o->values_x;
-                            delete[] o->values_y;
-                        }
-                        ds->outputs.clear();
+                        delete o;
                         delete ds;
                         return false;
                     }
                 }
             }
 
-            ds->outputs.push_back(o);
+            ds->addOutput(o);
 
             break;
 
@@ -743,34 +703,12 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
         return false;
     }
 
-    if(ds->outputs.size() > 0){
+    if(ds->outputCount() > 0){
 
-        bool first = true;
-        float zMin = 0.0;
-        float zMax = 0.0;
-        for(uint i=0; i<ds->outputs.size(); i++){
-            for(uint j=0; j<mNodeCount; j++){
-                if(ds->outputs.at(i)->values[j] != -9999.0){
-                    // This is not a NULL value
-                    if(first){
-                        first = false;
-                        zMin = ds->outputs.at(i)->values[j];
-                        zMax = ds->outputs.at(i)->values[j];
-                    }
-                    if( ds->outputs.at(i)->values[j] < zMin ){
-                        zMin = ds->outputs.at(i)->values[j];
-                    }
-                    if( ds->outputs.at(i)->values[j] > zMax ){
-                        zMax = ds->outputs.at(i)->values[j];
-                    }
-                }
-            }
-        }
+        ds->updateZRange(mNodeCount);
 
-        ds->mZMin = zMin;
-        ds->mZMax = zMax;
-        ds->setContourCustomRange(zMin, zMax);
-        ds->setVectorRenderingEnabled(ds->type == DataSetType::Vector);
+        ds->setContourCustomRange(ds->minZValue(), ds->maxZValue());
+        ds->setVectorRenderingEnabled(ds->type() == DataSetType::Vector);
 
         mDataSets.push_back(ds);
         return true;
@@ -874,7 +812,7 @@ QImage* CrayfishViewer::draw(){
     if(ds->isContourRenderingEnabled())
         renderContourData(ds, output);
 
-    if(ds->isVectorRenderingEnabled() && ds->type == DataSetType::Vector)
+    if(ds->isVectorRenderingEnabled() && ds->type() == DataSetType::Vector)
         renderVectorData(ds, output);
 
     if (mRenderMesh)
@@ -890,10 +828,10 @@ void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
         QVector<ElementType::Enum> typesToRender;
         typesToRender.append(ElementType::E4Q);
         typesToRender.append(ElementType::E3T);
-        QVectorIterator<ElementType::Enum> i(typesToRender);
-        while(i.hasNext()){
+        QVectorIterator<ElementType::Enum> it(typesToRender);
+        while(it.hasNext()){
 
-            ElementType::Enum elemTypeToRender = i.next();
+            ElementType::Enum elemTypeToRender = it.next();
 
             for(uint i=0; i<mElemCount; i++){
 
@@ -940,7 +878,7 @@ void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
                         val = output->values[ mElems[i].p1->index ];
                     }
                     setColorFromVal(val, &tmpCol, ds);
-                    line[pp.x()] = tmpCol.rgb();
+                    line[pp.x()] = tmpCol.rgba();
 
                 }else{
                     // Get the BBox of the element in pixels
@@ -955,9 +893,9 @@ void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
                         paintRow(i, j, leftLim, rightLim, ds, output);
                     }
                 }
-            }
+            } // for all elements
 
-        }
+        } // for element types
 }
 
 
@@ -992,8 +930,8 @@ void CrayfishViewer::renderVectorData(
         // Set up the render configuration options
 
         // Determine the min and max magnitudes in this layer
-        float minVal = ds->mZMin;
-        float maxVal = ds->mZMax;
+        float minVal = ds->minZValue();
+        float maxVal = ds->maxZValue();
 
         // Determine the range of vector sizes specified by the user for
         // rendering vectors with a min and max length
@@ -1202,7 +1140,7 @@ void CrayfishViewer::paintRow(uint elementIdx, int rowIdx, int leftLim, int righ
             // line[j] = qRgba(128,0,0,255);
             QColor tmpCol;
             setColorFromVal(val, &tmpCol, ds);
-            line[j] = tmpCol.rgb();
+            line[j] = tmpCol.rgba();
         }
     }
 }
@@ -1215,8 +1153,8 @@ void CrayfishViewer::setColorFromVal(double val, QColor* col, const DataSet* ds)
     float zMax = 0.0;
 
     if( ds->contourAutoRange() ){
-        zMin = ds->mZMin;
-        zMax = ds->mZMax;
+        zMin = ds->minZValue();
+        zMax = ds->maxZValue();
     }else{
         zMin = ds->contourCustomRangeMin();
         zMax = ds->contourCustomRangeMax();
@@ -1224,16 +1162,20 @@ void CrayfishViewer::setColorFromVal(double val, QColor* col, const DataSet* ds)
 
     if(val < zMin){
         col->setHsv(240, 255, 255); // Blue
-        return;
     }
-    if(val > zMax){
+    else if(val > zMax){
         col->setHsv(0, 255, 255); // Red
-        return;
+    }
+    else
+    {
+      // Else the value lies between so interpolate
+      int h = (1.0-(val-zMin)/(zMax-zMin))*240;
+      col->setHsv(h, 255, 255);
     }
 
-    // Else the value lies between so interpolate
-    int h = (1.0-(val-zMin)/(zMax-zMin))*240;
-    col->setHsv(h, 255, 255);
+    // set transparency
+    if (ds->contourAlpha() != 255)
+      col->setAlpha(ds->contourAlpha());
 }
 
 bool CrayfishViewer::elemOutsideView(uint i){
@@ -1363,12 +1305,7 @@ QPointF CrayfishViewer::pixelToReal(int i, int j){
     return QPointF(x,y);
 }
 
-double CrayfishViewer::valueAtCoord(int dataSetIdx, int timeIndex, double xCoord, double yCoord){
-
-  const DataSet* ds = dataSet(dataSetIdx);
-  Q_ASSERT(ds);
-  const Output* output = ds->output(timeIndex);
-  Q_ASSERT(output);
+double CrayfishViewer::valueAtCoord(const Output* output, double xCoord, double yCoord){
 
     /*
       We want to find the value at the given coordinate

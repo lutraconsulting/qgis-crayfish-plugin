@@ -51,21 +51,8 @@ public:
     QRectF getExtents(){ return QRectF(QPointF(mXMin,mYMax), QPointF(mXMax,mYMin)); }
     bool loadDataSet(QString);
     int dataSetCount(){ return mDataSets.size(); }
-    QString* dataSetName(int dataSet){ return &mDataSets.at(dataSet)->name; }
-    int dataSetOutputCount(int dataSet){ return mDataSets.at(dataSet)->outputs.size(); }
-    float dataSetOutputTime(int dataSet, int output){ return mDataSets.at(dataSet)->outputs.at(output)->time; }
-    bool timeVarying(int dataSet){ return mDataSets.at(dataSet)->timeVarying; }
-    int getLastRenderIndex(int dataSet){ return mDataSets.at(dataSet)->currentOutputTime(); } // TODO: remove
-    bool layerContouredAutomatically(int dataSet){ return mDataSets.at(dataSet)->contourAutoRange(); } // TODO: remove
-    float minValue(int dataSet){ return mDataSets.at(dataSet)->mZMin; }
-    float maxValue(int dataSet){ return mDataSets.at(dataSet)->mZMax; }
-    float lastMinContourValue(int dataSet) { return mDataSets.at(dataSet)->contourCustomRangeMin(); } // TODO: remove
-    float lastMaxContourValue(int dataSet) { return mDataSets.at(dataSet)->contourCustomRangeMax(); } // TODO: remove
-    bool isBed(int dataSet){ return mDataSets.at(dataSet)->isBed; }
-    bool isVector(int dataSet){ return (mDataSets.at(dataSet)->type == DataSetType::Vector); }
-    bool displayContours(int dataSet){ return mDataSets.at(dataSet)->isContourRenderingEnabled(); } // TODO: remove
-    bool displayVectors(int dataSet){ return mDataSets.at(dataSet)->isVectorRenderingEnabled(); } // TODO: remove
-    double valueAtCoord(int dataSetIdx, int timeIndex, double xCoord, double yCoord);
+
+    double valueAtCoord(const Output *output, double xCoord, double yCoord);
 
     // new stuff - rendering options
 
