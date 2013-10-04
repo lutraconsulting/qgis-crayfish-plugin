@@ -20,6 +20,7 @@ public:
     int getLastWarning();
     QRectF getExtents();
     bool loadDataSet(QString);
+    bool isDataSetLoaded(QString fileName);
     int dataSetCount();
 
     double valueAtCoord(const Output *output, double xCoord, double yCoord);
@@ -63,8 +64,10 @@ struct DataSet
 #include <crayfish_viewer_global.h>
 %End
 
-    DataSet();
+    DataSet(const QString& fileName);
     ~DataSet();
+
+    QString fileName() const;
 
     void setName(const QString& name);
     QString name() const;

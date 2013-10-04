@@ -295,7 +295,7 @@ class CrayfishPlugin:
             
             if layerWith2dm:
                 # This 2dm has already been added
-                self.iface.messageBar().pushMessage("Crayfish", "The mesh file you are trying to open is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
+                self.iface.messageBar().pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
                 return
               
             if not self.addLayer(inFileName):
@@ -313,6 +313,10 @@ class CrayfishPlugin:
             parentLayer = self.loadMeshForFile(inFileName)
             if not parentLayer:
                 return   # error message has been shown already
+            
+            if parentLayer.provider.isDataSetLoaded(inFileName):
+                self.iface.messageBar().pushMessage("Crayfish", "The .dat file is already loaded in layer " + parentLayer.name(), level=QgsMessageBar.INFO)
+                return
 
             if not parentLayer.provider.loadDataSet( inFileName ):
                 self.iface.messageBar().pushMessage("Crayfish", "Failed to load the .DAT file", level=QgsMessageBar.CRITICAL)

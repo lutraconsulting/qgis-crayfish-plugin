@@ -123,7 +123,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
         mElems = new Element[mElemCount];
         mNodes = new Node[mNodeCount];
         mRotatedNodes = new Node[mRotatedNodeCount];
-        bedDs = new DataSet;
+        bedDs = new DataSet(twoDMFileName);
         o = new Output;
         o->init(mNodeCount, mElemCount, false);
     } catch (const std::bad_alloc &) {
@@ -505,7 +505,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
         return false;
 
     DataSet* ds = 0;
-    ds = new DataSet;
+    ds = new DataSet(datFileName);
     ds->setIsTimeVarying(true);
 
     bool allocateErrorEncountered = false;
@@ -739,6 +739,16 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
     memset(bedDs->outputs[0].statusFlags, 1, mElemCount); // All cells active
     bedDs->outputs[0].values = new float[mNodeCount];
     mDataSets.push_back(bedDs);*/
+}
+
+bool CrayfishViewer::isDataSetLoaded(QString fileName)
+{
+  for (size_t i = 0; i < mDataSets.size(); ++i)
+  {
+    if (dataSet(i)->fileName() == fileName)
+      return true;
+  }
+  return false;
 }
 
 

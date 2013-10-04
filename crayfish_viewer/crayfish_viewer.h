@@ -50,6 +50,7 @@ public:
     int getLastWarning(){ return mLastWarning; }
     QRectF getExtents(){ return QRectF(QPointF(mXMin,mYMax), QPointF(mXMax,mYMin)); }
     bool loadDataSet(QString);
+    bool isDataSetLoaded(QString fileName);
     int dataSetCount(){ return mDataSets.size(); }
 
     double valueAtCoord(const Output *output, double xCoord, double yCoord);

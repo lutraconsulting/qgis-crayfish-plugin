@@ -146,8 +146,9 @@ enum VectorLengthMethod{
  */
 struct CRAYFISHVIEWERSHARED_EXPORT DataSet
 {
-    DataSet()
-      : mCurrentOutputTime(0)
+    DataSet(const QString& fileName)
+      : mFileName(fileName)
+      , mCurrentOutputTime(0)
       , mRenderContours(true)
       , mContouredAutomatically(true)
       , mContourMin(0)
@@ -163,6 +164,8 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
           delete outputs.at(j);
       outputs.clear();
     }
+
+    QString fileName() const { return mFileName; }
 
     void setName(const QString& name) { mName = name; }
     QString name() const { return mName; }
@@ -272,6 +275,7 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
 
 protected:
 
+    QString mFileName;
     DataSetType::Enum mType;
     QString mName;
     std::vector<Output*> outputs;
