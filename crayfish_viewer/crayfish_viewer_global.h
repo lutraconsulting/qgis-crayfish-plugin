@@ -55,7 +55,8 @@ namespace ViewerError{
 namespace ViewerWarning{
     enum Enum{
         None,
-        UnsupportedElement
+        UnsupportedElement,
+        InvalidElements
     };
 }
 

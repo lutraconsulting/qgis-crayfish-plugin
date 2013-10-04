@@ -27,6 +27,7 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
+from qgis.gui import QgsMessageBar
 
 from version import crayfishPythonPluginVersion
 
@@ -270,15 +271,10 @@ class CrayfishPlugin:
         
         # Retrieve the last place we looked if stored
         settings = QSettings()
-        try:
-            lastFolder = str(settings.value("crayfishViewer/lastFolder", os.sep).toString())
-        except:
-            # QGIS 2.0
-            lastFolder = str(settings.value("crayfishViewer/lastFolder", os.sep))
+        lastFolder = unicode(settings.value("crayfishViewer/lastFolder", os.sep))
         
         # Get the file name
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Crayfish Dat File', lastFolder, "DAT Results (*.dat);;2DM Mesh Files (*.2dm)")
-        inFileName = str(inFileName) 
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel 
             return
             
@@ -297,18 +293,15 @@ class CrayfishPlugin:
             """
             layerWith2dm = self.getLayerWith2DM(inFileName)
             
-            if layerWith2dm is None:
-                if not self.addLayer(inFileName):
-                    # Failed to add this 2DM file
-                    QMessageBox.critical(self.iface.mainWindow(), "Failed to Load Mesh", "Failed to load mesh file")
-                    return
-                else:
-                    # 2DM loaded OK
-                    return
-            else:
+            if layerWith2dm:
                 # This 2dm has already been added
-                QMessageBox.information(self.iface.mainWindow(), "Mesh Already Present", "The mesh file you are trying to open is already loaded in layer " + layerWith2dm.name())
+                self.iface.messageBar().pushMessage("Crayfish", "The mesh file you are trying to open is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
                 return
+              
+            if not self.addLayer(inFileName):
+                # Failed to add this 2DM file
+                self.iface.messageBar().pushMessage("Crayfish", "Failed to load mesh file", level=QgsMessageBar.CRITICAL)
+
         elif fileType == '.dat':
             """
                 The user is adding a result set:
@@ -317,36 +310,46 @@ class CrayfishPlugin:
                     Else create a new layer and add to that one
             """
             
-            first, sep, last = inFileName.rpartition('_')
-            meshFileName = first + '.2dm'
-            parentLayer = self.getLayerWith2DM(meshFileName)
-            if parentLayer is None:
-                # The 2DM has not yet been loaded, load it
-                if not self.addLayer(meshFileName):
-                    QMessageBox.critical(self.iface.mainWindow(), "Failed to Load Mesh", "The mesh file associated with this DAT file (" + meshFileName + ") could not be loaded.  This could be because it contains enexpected features or because it is too large.")
-                    return
-                parentLayer = self.getLayerWith2DM(meshFileName)
-                assert( parentLayer is not None)
-                if parentLayer.provider.warningsEncountered() and parentLayer.provider.getLastWarning() == 1:
-                    # Unsupported element seen
-                    QMessageBox.warning(self.iface.mainWindow(), "Warning", "It looks like your mesh contains elements that are unsupported at this time.  The following types of elements will be ignored for the time being: E2L, E3L, E3T, E6T, E8Q, E9Q, NS")
+            parentLayer = self.loadMeshForFile(inFileName)
+            if not parentLayer:
+                return   # error message has been shown already
+
+            if not parentLayer.provider.loadDataSet( inFileName ):
+                self.iface.messageBar().pushMessage("Crayfish", "Failed to load the .DAT file", level=QgsMessageBar.CRITICAL)
+                return
                 
-            try:
-                if not parentLayer.provider.loadDataSet( QString(inFileName) ):
-                    QMessageBox.critical(self.iface.mainWindow(), "Failed to Load DAT", "Failed to successfully load the .Dat file")
-                parentLayer.addDatFileName( str(QString(inFileName)) )
-            except:
-                # QGIS 2.0
-                if not parentLayer.provider.loadDataSet( inFileName ):
-                    QMessageBox.critical(self.iface.mainWindow(), "Failed to Load DAT", "Failed to successfully load the .Dat file")
-                parentLayer.addDatFileName( str(inFileName) )
+            parentLayer.addDatFileName( str(inFileName) )
             self.dock.refresh()
             self.dock.showMostRecentDataSet()
         else:
             # This is an unsupported file type
-            QMessageBox.critical(self.iface.mainWindow(), "Unsupported File Type", "The file type you are trying to load is not supported: " + fileType)
+            self.iface.messageBar().pushMessage("Crayfish", "The file type you are trying to load is not supported: " + fileType, level=QgsMessageBar.CRITICAL)
+            return
+
+
+
+    def loadMeshForFile(self, inFileName):
+        first, sep, last = inFileName.rpartition('_')
+        meshFileName = first + '.2dm'
+        
+        parentLayer = self.getLayerWith2DM(meshFileName)
+        if parentLayer is not None:
+            return parentLayer   # already loaded
+
+        # The 2DM has not yet been loaded, load it
+
+        # check whether the file exists
+        if not os.path.exists(meshFileName):
+            self.iface.messageBar().pushMessage("Crayfish", "The mesh file does not exist ("+meshFileName+")", level=QgsMessageBar.CRITICAL)
             return
         
+        if not self.addLayer(meshFileName):
+            self.iface.messageBar().pushMessage("Crayfish", "The mesh file associated with this DAT file (" + meshFileName + ") could not be loaded.  This could be because it contains enexpected features or because it is too large.", level=QgsMessageBar.CRITICAL)
+            return
+          
+        parentLayer = self.getLayerWith2DM(meshFileName)
+        assert( parentLayer is not None)
+        return parentLayer
 
     def about(self):
         d = crayfish_about_dialog.CrayfishAboutDialog(self.iface)
@@ -389,6 +392,14 @@ class CrayfishPlugin:
         QgsMapLayerRegistry.instance().addMapLayer(layer)
         
         self.assignDock(layer)
+
+        if layer.provider.warningsEncountered():
+            w = layer.provider.getLastWarning() 
+            if w == 1:
+                # Unsupported element seen
+                self.iface.messageBar().pushMessage("Crayfish", "It looks like your mesh contains elements that are unsupported at this time.  The following types of elements will be ignored for the time being: E2L, E3L, E6T, E8Q, E9Q, NS", level=QgsMessageBar.WARNING)
+            elif w == 2:
+                self.iface.messageBar().pushMessage("Crayfish", "The mesh contains some invalid elements, they will not be rendered.", level=QgsMessageBar.WARNING)
         
         return True
 

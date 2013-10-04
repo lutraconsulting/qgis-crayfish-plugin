@@ -450,6 +450,19 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
 
         }else if(mElems[i].eType == ElementType::E3T){
             // Anything?
+
+            // check validity of the triangle
+            // for now just checking if we have three distinct nodes
+          QPointF p1(mElems[i].p1->x, mElems[i].p1->y);
+          QPointF p2(mElems[i].p2->x, mElems[i].p2->y);
+          QPointF p3(mElems[i].p3->x, mElems[i].p3->y);
+          if (p1 == p2 || p1 == p3 || p2 == p3)
+          {
+            mElems[i].isDummy = true; // mark element as unusable
+
+            mLastWarning = ViewerWarning::InvalidElements;
+            mWarningsEncountered = true;
+          }
         }
 
     }
