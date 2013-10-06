@@ -182,13 +182,10 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         x = pt.x()
         y = pt.y()
         
-        # Determine what scalar data is currently being displayed
-        dataSetIdx = self.dock.listWidget.currentRow()
-        timeIndex = self.dock.listWidget_2.currentRow()
-        
-        value = self.provider.valueAtCoord( dataSetIdx, 
-                                            timeIndex, 
+        value = self.provider.valueAtCoord( self.dataSetIdx, 
+                                            self.timeIdx, 
                                             x, y)
+        
         v = None
         if value == -9999.0:
             # Outide extent
