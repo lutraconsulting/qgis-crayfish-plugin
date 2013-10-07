@@ -95,13 +95,8 @@ struct Element{
 /** auxilliary cached data used for rendering of E4Q elements */
 struct E4Qtmp
 {
-  uint elemIndex; //!< index of the element in mElems
-  uint p1idx, p2idx, p3idx, p4idx; //!< indices of nodes - may be rotated compared to what is stored in Element
-
-  double rotation;
-  double sinNegAlpha;
-  double cosNegAlpha;
-  double cellSize;
+  //uint elemIndex; //!< index of the element in mElems
+  double a[4], b[4]; //!< coefficients for mapping between physical and logical coords
 };
 
 struct CRAYFISHVIEWERSHARED_EXPORT Output{

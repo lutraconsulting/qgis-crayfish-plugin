@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.f
 */
 
 #include "crayfish_viewer.h"
+#include "crayfish_e4q.h"
 #include <iostream>
 
 #include <QVector2D>
@@ -296,92 +297,13 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
 
         if(elem.eType == ElementType::E4Q){
 
-            Node* tmpPoints[4];
-            Node* t;
-            tmpPoints[0] = elem.p1;
-            tmpPoints[1] = elem.p2;
-            tmpPoints[2] = elem.p3;
-            tmpPoints[3] = elem.p4;
-
-            // Determine if we have rotation (based on how many nodes have x coord == minX)
-            bool haveRotation = false;
-            int numberOfNodesAtMinX = 0;
-            for(int j=0; j<4; j++){
-                if(tmpPoints[j]->x == elem.minX){
-                    numberOfNodesAtMinX += 1;
-                }
-            }
-            if(numberOfNodesAtMinX < 2){
-                haveRotation = true;
-            }
-
-            // Sort all by X
-            bool swapped = true;
-            while(swapped){
-                swapped = false;
-                for(int j=0; j<3; j++){
-                    if(tmpPoints[j+1]->x < tmpPoints[j]->x){
-                        // swap it
-                        t = tmpPoints[j];
-                        tmpPoints[j] = tmpPoints[j+1];
-                        tmpPoints[j+1] = t;
-                        swapped = true;
-                    }
-                }
-            }
-
-            // Now sort by Y depending if we are rotated or not
-            if(haveRotation){
-                if(tmpPoints[2]->y < tmpPoints[1]->y){
-                    t = tmpPoints[1];
-                    tmpPoints[1] = tmpPoints[2];
-                    tmpPoints[2] = t;
-                }
-                elem.p1 = tmpPoints[2];
-                elem.p2 = tmpPoints[0];
-                elem.p3 = tmpPoints[1];
-                elem.p4 = tmpPoints[3];
-            }else{
-                if(tmpPoints[1]->y < tmpPoints[0]->y){
-                    t = tmpPoints[0];
-                    tmpPoints[0] = tmpPoints[1];
-                    tmpPoints[1] = t;
-                }
-                if(tmpPoints[3]->y < tmpPoints[2]->y){
-                    t = tmpPoints[2];
-                    tmpPoints[2] = tmpPoints[3];
-                    tmpPoints[3] = t;
-                }
-                elem.p1 = tmpPoints[3];
-                elem.p2 = tmpPoints[1];
-                elem.p3 = tmpPoints[0];
-                elem.p4 = tmpPoints[2];
-            }
-
-            // At this stage the nodes are ordered anti-clockwise from the top-right node (even with rotation)
-
             // cache some temporary data for faster rendering
 
             elem.indexTmp = e4qIndex;
             E4Qtmp& e4q = mE4Qtmp[e4qIndex];
-            e4q.elemIndex = i;
-            e4q.p1idx = elem.p1->index;
-            e4q.p2idx = elem.p2->index;
-            e4q.p3idx = elem.p3->index;
-            e4q.p4idx = elem.p4->index;
+            //e4q.elemIndex = i;
 
-            if(haveRotation){
-                e4q.rotation = atan(   (elem.p3->x - elem.p2->x)
-                                     / (elem.p2->y - elem.p3->y) );
-                e4q.cellSize = (elem.p3->x - elem.p2->x) / sin(e4q.rotation);
-                e4q.cosNegAlpha = cos(-1.0 * e4q.rotation);
-                e4q.sinNegAlpha = sin(-1.0 * e4q.rotation);
-            }else{
-                e4q.rotation = 0.0;
-                e4q.cellSize = 0.0;
-                e4q.cosNegAlpha = 0.0;
-                e4q.sinNegAlpha = 0.0;
-            }
+            E4Q_computeMapping(elem, e4q);
 
             e4qIndex++;
 
@@ -1176,56 +1098,22 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
 
     if(elem.eType == ElementType::E4Q){
 
-      E4Qtmp& e4q = mE4Qtmp[elem.indexTmp];
+        E4Qtmp& e4q = mE4Qtmp[elem.indexTmp];
 
-      double q11 = output->values[ e4q.p3idx ];
-      double q12 = output->values[ e4q.p2idx ];
-      double q21 = output->values[ e4q.p4idx ];
-      double q22 = output->values[ e4q.p1idx ];
-      double x1, x2, y1, y2;
+        double Lx, Ly;
+        if (!E4Q_mapPhysicalToLogical(e4q, x, y, Lx, Ly))
+          return false;
 
-      if (e4q.rotation != 0) {
+        if (Lx < 0 || Ly < 0 || Lx > 1 || Ly > 1)
+          return false;
 
-        Node* p2 = elem.p2;
+        double q11 = output->values[ elem.p3->index ];
+        double q12 = output->values[ elem.p2->index ];
+        double q21 = output->values[ elem.p4->index ];
+        double q22 = output->values[ elem.p1->index ];
 
-        // prepare coordinates of a square - sides parallel with axes
-        x1 = p2->x;
-        y1 = p2->y - e4q.cellSize;
-        x2 = p2->x + e4q.cellSize;
-        y2 = p2->y;
+        *interpolatedVal = q11*Lx*Ly + q21*(1-Lx)*Ly + q12*Lx*(1-Ly) + q22*(1-Lx)*(1-Ly);
 
-        // If the element has been rotated, rotate the x,y coord around node 2 in the oposite direction
-        double x_ = x - p2->x;
-        double y_ = y - p2->y;
-        x = p2->x + (  x_ * e4q.cosNegAlpha - y_ * e4q.sinNegAlpha );
-        y = p2->y + (  x_ * e4q.sinNegAlpha + y_ * e4q.cosNegAlpha );
-
-      }else{
-
-        x1 = elem.p3->x;
-        y1 = elem.p3->y;
-        x2 = elem.p1->x;
-        y2 = elem.p1->y;
-
-      }
-
-
-        // Sort points by by X coord and then by Y coord
-        // (x1, y1, q11), (_x1, y2, q12), (x2, _y1, q21), (_x2, _y2, q22) = points
-
-        // At this stage x1, x2, y1, y2 are the rotated coordinates and x and y have also been rotated
-        if( !( x >= x1 && x <= x2 ) ||
-            !( y >= y1 && y <= y2 ) ){
-            // The point is not inside this rectangle
-            return false;
-        }
-
-        *interpolatedVal = (q11 * (x2 - x) * (y2 - y) +
-                            q21 * (x - x1) * (y2 - y) +
-                            q12 * (x2 - x) * (y - y1) +
-                            q22 * (x - x1) * (y - y1) )
-
-                            / ( (x2 - x1) * (y2 - y1) + 0.0 );
         return true;
 
     }else if(elem.eType == ElementType::E3T){

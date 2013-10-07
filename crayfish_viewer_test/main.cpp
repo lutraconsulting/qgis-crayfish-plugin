@@ -2,8 +2,64 @@
 #include <QLibrary>
 #include "crayfish_viewer.h"
 
+void dumpL2P(double x, double y, const E4Qtmp& t)
+{
+  double Px, Py;
+  E4Q_mapLogicalToPhysical(t, x, y, Px, Py);
+  qDebug("[%f,%f] -> [%f,%f]", x, y, Px, Py);
+}
+
+void dumpP2L(double x, double y, const E4Qtmp& t)
+{
+  double Lx, Ly;
+  E4Q_mapPhysicalToLogical(t, x, y, Lx, Ly);
+  qDebug("[%f,%f] -> [%f,%f]", x, y, Lx, Ly);
+}
+
+
 int main(int argc, char *argv[])
 {
+
+  // create our E4Q
+  Node p1 = { 0, -1, -1 };
+  Node p2 = { 0,  8,  3 };
+  Node p3 = { 0, 13, 11 };
+  Node p4 = { 0, -4,  8 };
+
+  // test with a square
+  /*
+  Node p2 = { 0,  2, -1 };
+  Node p3 = { 0,  2,  2 };
+  Node p4 = { 0, -1,  2 };
+  */
+
+  Element testElem;
+  testElem.p1 = &p1;
+  testElem.p2 = &p2;
+  testElem.p3 = &p3;
+  testElem.p4 = &p4;
+
+  E4Qtmp testE4Q;
+
+  E4Q_computeMapping(testElem, testE4Q);
+
+  dumpL2P(0,0, testE4Q);
+  dumpL2P(1,0, testE4Q);
+  dumpL2P(0,1, testE4Q);
+  dumpL2P(1,1, testE4Q);
+  dumpL2P(0.5,0.5, testE4Q);
+
+  qDebug("---");
+
+  dumpP2L(-1,-1, testE4Q);
+  dumpP2L( 8, 3, testE4Q);
+  dumpP2L(13,11, testE4Q);
+  dumpP2L(-4, 8, testE4Q);
+  dumpP2L(2,2, testE4Q);
+
+  qDebug("complex: %d", E4Q_isComplex(testElem));
+
+#if 0
     QCoreApplication a(argc, argv);
 
     QString meshName = "/home/pete/dev/qgis-crayfish-plugin/crayfish_viewer_test/Test Data/triangles.2dm";
@@ -95,4 +151,5 @@ int main(int argc, char *argv[])
     return 0;
 
     // return a.exec();
+#endif
 }

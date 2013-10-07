@@ -36,11 +36,13 @@ TEMPLATE = lib
 DEFINES += CRAYFISHVIEWER_LIBRARY
 
 SOURCES += crayfish_viewer.cpp\
-        version.cpp
+        version.cpp \
+        crayfish_e4q.cpp
 
 HEADERS += crayfish_viewer.h\
         crayfish_viewer_global.h\
-        version.h
+        version.h \
+        crayfish_e4q.h
 
 CONFIG(debug, debug|release) {
     DESTDIR = $$PWD/build/debug
