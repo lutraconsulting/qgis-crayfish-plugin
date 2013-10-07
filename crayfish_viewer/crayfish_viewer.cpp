@@ -46,9 +46,9 @@ CrayfishViewer::~CrayfishViewer(){
         delete[] mNodes;
         mNodes = 0;
     }
-    if(mRotatedNodes){
-        delete[] mRotatedNodes;
-        mRotatedNodes = 0;
+    if (mE4Qtmp){
+        delete[] mE4Qtmp;
+        mE4Qtmp = 0;
     }
 
     for(size_t i=0; i<mDataSets.size(); i++)
@@ -71,9 +71,9 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
   , mElemCount(0)
   , mElems(0)
   , mNodeCount(0)
-  , mRotatedNodeCount(0)
   , mNodes(0)
-  , mRotatedNodes(0)
+  , mE4Qtmp(0)
+  , mE4Qcount(0)
 {
 
   //std::cerr << "CF: opening 2DM: " << twoDMFileName.toAscii().data() << std::endl;
@@ -86,14 +86,12 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
         return;
     }
 
-    uint quad4ElemCount = 0;
-
     // Find out how many nodes and elements are contained in the .2dm mesh file
     QTextStream in(&file);
     while (!in.atEnd()) {
         QString line = in.readLine();
         if( line.startsWith("E4Q") ){
-            quad4ElemCount += 1;
+            mE4Qcount += 1;
             mElemCount += 1;
         }
         else if( line.startsWith("E3T") ){
@@ -114,15 +112,13 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
         }
     }
 
-    mRotatedNodeCount = quad4ElemCount * 4;
-
     // Allocate memory
     DataSet* bedDs = 0;
     Output* o = 0;
     try{
         mElems = new Element[mElemCount];
         mNodes = new Node[mNodeCount];
-        mRotatedNodes = new Node[mRotatedNodeCount];
+        mE4Qtmp = new E4Qtmp[mE4Qcount];
         bedDs = new DataSet(twoDMFileName);
         o = new Output;
         o->init(mNodeCount, mElemCount, false);
@@ -139,10 +135,6 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
         if(mNodes){
             std::cout << "Deleting mNodes" << std::endl;
             delete[] mNodes;
-        }
-        if(mRotatedNodes){
-            std::cout << "Deleting mRotatedNodes" << std::endl;
-            delete[] mRotatedNodes;
         }
         if(o){
             std::cout << "Had o" << std::endl;
@@ -279,6 +271,8 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
         //    mZMin = bedDs->outputs.at(0)->values[i];
     }
 
+    int e4qIndex = 0;
+
     /*
       In order to keep things running quickly, we pre-compute many
       element properties to speed up drawing at the expenses of memory.
@@ -291,61 +285,63 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
         if( mElems[i].isDummy )
             continue;
 
-        mElems[i].minX = mElems[i].p1->x;
-        mElems[i].minY = mElems[i].p1->y;
-        mElems[i].maxX = mElems[i].p1->x;
-        mElems[i].maxY = mElems[i].p1->y;
+        Element& elem = mElems[i];
 
-        if(mElems[i].p2->x < mElems[i].minX)
-            mElems[i].minX = mElems[i].p2->x;
-        if(mElems[i].p2->x > mElems[i].maxX)
-            mElems[i].maxX = mElems[i].p2->x;
-        if(mElems[i].p2->y < mElems[i].minY)
-            mElems[i].minY = mElems[i].p2->y;
-        if(mElems[i].p2->y > mElems[i].maxY)
-            mElems[i].maxY = mElems[i].p2->y;
+        elem.minX = elem.p1->x;
+        elem.minY = elem.p1->y;
+        elem.maxX = elem.p1->x;
+        elem.maxY = elem.p1->y;
 
-        if(mElems[i].p3->x < mElems[i].minX)
-            mElems[i].minX = mElems[i].p3->x;
-        if(mElems[i].p3->x > mElems[i].maxX)
-            mElems[i].maxX = mElems[i].p3->x;
-        if(mElems[i].p3->y < mElems[i].minY)
-            mElems[i].minY = mElems[i].p3->y;
-        if(mElems[i].p3->y > mElems[i].maxY)
-            mElems[i].maxY = mElems[i].p3->y;
+        if(elem.p2->x < elem.minX)
+            elem.minX = elem.p2->x;
+        if(elem.p2->x > elem.maxX)
+            elem.maxX = elem.p2->x;
+        if(elem.p2->y < elem.minY)
+            elem.minY = elem.p2->y;
+        if(elem.p2->y > elem.maxY)
+            elem.maxY = elem.p2->y;
 
-        if(mElems[i].nodeCount > 3){
-            if(mElems[i].p4->x < mElems[i].minX)
-                mElems[i].minX = mElems[i].p4->x;
-            if(mElems[i].p4->x > mElems[i].maxX)
-                mElems[i].maxX = mElems[i].p4->x;
-            if(mElems[i].p4->y < mElems[i].minY)
-                mElems[i].minY = mElems[i].p4->y;
-            if(mElems[i].p4->y > mElems[i].maxY)
-                mElems[i].maxY = mElems[i].p4->y;
+        if(elem.p3->x < elem.minX)
+            elem.minX = elem.p3->x;
+        if(elem.p3->x > elem.maxX)
+            elem.maxX = elem.p3->x;
+        if(elem.p3->y < elem.minY)
+            elem.minY = elem.p3->y;
+        if(elem.p3->y > elem.maxY)
+            elem.maxY = elem.p3->y;
+
+        if(elem.nodeCount > 3){
+            if(elem.p4->x < elem.minX)
+                elem.minX = elem.p4->x;
+            if(elem.p4->x > elem.maxX)
+                elem.maxX = elem.p4->x;
+            if(elem.p4->y < elem.minY)
+                elem.minY = elem.p4->y;
+            if(elem.p4->y > elem.maxY)
+                elem.maxY = elem.p4->y;
         }
 
-        mElems[i].maxSize = std::max( (mElems[i].maxX - mElems[i].minX),
-                                 (mElems[i].maxY - mElems[i].minY) );
+        elem.maxSize = std::max( (elem.maxX - elem.minX),
+                                 (elem.maxY - elem.minY) );
 
         /*
           E4Q elements are re-ordered to ensure nodes are listed counter-clockwise from top-right
           */
 
-        if(mElems[i].eType == ElementType::E4Q){
+        if(elem.eType == ElementType::E4Q){
 
             Node* tmpPoints[4];
             Node* t;
-            tmpPoints[0] = mElems[i].p1;
-            tmpPoints[1] = mElems[i].p2;
-            tmpPoints[2] = mElems[i].p3;
-            tmpPoints[3] = mElems[i].p4;
+            tmpPoints[0] = elem.p1;
+            tmpPoints[1] = elem.p2;
+            tmpPoints[2] = elem.p3;
+            tmpPoints[3] = elem.p4;
 
             // Determine if we have rotation (based on how many nodes have x coord == minX)
             bool haveRotation = false;
             int numberOfNodesAtMinX = 0;
             for(int j=0; j<4; j++){
-                if(tmpPoints[j]->x == mElems[i].minX){
+                if(tmpPoints[j]->x == elem.minX){
                     numberOfNodesAtMinX += 1;
                 }
             }
@@ -375,10 +371,10 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
                     tmpPoints[1] = tmpPoints[2];
                     tmpPoints[2] = t;
                 }
-                mElems[i].p1 = tmpPoints[2];
-                mElems[i].p2 = tmpPoints[0];
-                mElems[i].p3 = tmpPoints[1];
-                mElems[i].p4 = tmpPoints[3];
+                elem.p1 = tmpPoints[2];
+                elem.p2 = tmpPoints[0];
+                elem.p3 = tmpPoints[1];
+                elem.p4 = tmpPoints[3];
             }else{
                 if(tmpPoints[1]->y < tmpPoints[0]->y){
                     t = tmpPoints[0];
@@ -390,75 +386,50 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
                     tmpPoints[2] = tmpPoints[3];
                     tmpPoints[3] = t;
                 }
-                mElems[i].p1 = tmpPoints[3];
-                mElems[i].p2 = tmpPoints[1];
-                mElems[i].p3 = tmpPoints[0];
-                mElems[i].p4 = tmpPoints[2];
+                elem.p1 = tmpPoints[3];
+                elem.p2 = tmpPoints[1];
+                elem.p3 = tmpPoints[0];
+                elem.p4 = tmpPoints[2];
             }
 
             // At this stage the nodes are ordered anti-clockwise from the top-right node (even with rotation)
 
+            // cache some temporary data for faster rendering
+
+            elem.indexTmp = e4qIndex;
+            E4Qtmp& e4q = mE4Qtmp[e4qIndex];
+            e4q.elemIndex = i;
+            e4q.p1idx = elem.p1->index;
+            e4q.p2idx = elem.p2->index;
+            e4q.p3idx = elem.p3->index;
+            e4q.p4idx = elem.p4->index;
+
             if(haveRotation){
-                mElems[i].hasRotation = true;
-                mElems[i].rotation = atan(   (mElems[i].p3->x - mElems[i].p2->x)
-                                           / (mElems[i].p2->y - mElems[i].p3->y) );
-                mElems[i].cosAlpha = cos(mElems[i].rotation);
-                mElems[i].sinAlpha = sin(mElems[i].rotation);
-                mElems[i].cosNegAlpha = cos(-1.0 * mElems[i].rotation);
-                mElems[i].sinNegAlpha = sin(-1.0 * mElems[i].rotation);
-                double cellSize = (mElems[i].p3->x - mElems[i].p2->x) / mElems[i].sinAlpha;
-                mRotatedNodes[ (i*4) ].index = mElems[i].p1->index;
-                mRotatedNodes[ (i*4) ].x = mElems[i].p2->x + cellSize;
-                mRotatedNodes[ (i*4) ].y = mElems[i].p2->y;
-                mRotatedNodes[ (i*4) ].z = mElems[i].p1->z;
-                mRotatedNodes[ (i*4)+1 ].index = mElems[i].p2->index;
-                mRotatedNodes[ (i*4)+1 ].x = mElems[i].p2->x;
-                mRotatedNodes[ (i*4)+1 ].y = mElems[i].p2->y;
-                mRotatedNodes[ (i*4)+1 ].z = mElems[i].p2->z;
-                mRotatedNodes[ (i*4)+2 ].index = mElems[i].p3->index;
-                mRotatedNodes[ (i*4)+2 ].x = mElems[i].p2->x;
-                mRotatedNodes[ (i*4)+2 ].y = mElems[i].p2->y - cellSize;
-                mRotatedNodes[ (i*4)+2 ].z = mElems[i].p3->z;
-                mRotatedNodes[ (i*4)+3 ].index = mElems[i].p4->index;
-                mRotatedNodes[ (i*4)+3 ].x = mElems[i].p2->x + cellSize;
-                mRotatedNodes[ (i*4)+3 ].y = mElems[i].p2->y - cellSize;
-                mRotatedNodes[ (i*4)+3 ].z = mElems[i].p4->z;
+                e4q.rotation = atan(   (elem.p3->x - elem.p2->x)
+                                     / (elem.p2->y - elem.p3->y) );
+                e4q.cellSize = (elem.p3->x - elem.p2->x) / sin(e4q.rotation);
+                e4q.cosNegAlpha = cos(-1.0 * e4q.rotation);
+                e4q.sinNegAlpha = sin(-1.0 * e4q.rotation);
             }else{
-                mElems[i].hasRotation = false;
-                mElems[i].rotation = 0.0;
-                mElems[i].cosAlpha = 0.0;
-                mElems[i].sinAlpha = 0.0;
-                mElems[i].cosNegAlpha = 0.0;
-                mElems[i].sinNegAlpha = 0.0;
-                mRotatedNodes[ (i*4) ].index = mElems[i].p1->index;
-                mRotatedNodes[ (i*4) ].x = mElems[i].p1->x;
-                mRotatedNodes[ (i*4) ].y = mElems[i].p1->y;
-                mRotatedNodes[ (i*4) ].z = mElems[i].p1->z;
-                mRotatedNodes[ (i*4)+1 ].index = mElems[i].p2->index;
-                mRotatedNodes[ (i*4)+1 ].x = mElems[i].p2->x;
-                mRotatedNodes[ (i*4)+1 ].y = mElems[i].p2->y;
-                mRotatedNodes[ (i*4)+1 ].z = mElems[i].p2->z;
-                mRotatedNodes[ (i*4)+2 ].index = mElems[i].p3->index;
-                mRotatedNodes[ (i*4)+2 ].x = mElems[i].p3->x;
-                mRotatedNodes[ (i*4)+2 ].y = mElems[i].p3->y;
-                mRotatedNodes[ (i*4)+2 ].z = mElems[i].p3->z;
-                mRotatedNodes[ (i*4)+3 ].index = mElems[i].p4->index;
-                mRotatedNodes[ (i*4)+3 ].x = mElems[i].p4->x;
-                mRotatedNodes[ (i*4)+3 ].y = mElems[i].p4->y;
-                mRotatedNodes[ (i*4)+3 ].z = mElems[i].p4->z;
+                e4q.rotation = 0.0;
+                e4q.cellSize = 0.0;
+                e4q.cosNegAlpha = 0.0;
+                e4q.sinNegAlpha = 0.0;
             }
 
-        }else if(mElems[i].eType == ElementType::E3T){
+            e4qIndex++;
+
+        }else if(elem.eType == ElementType::E3T){
             // Anything?
 
             // check validity of the triangle
             // for now just checking if we have three distinct nodes
-          QPointF p1(mElems[i].p1->x, mElems[i].p1->y);
-          QPointF p2(mElems[i].p2->x, mElems[i].p2->y);
-          QPointF p3(mElems[i].p3->x, mElems[i].p3->y);
+          QPointF p1(elem.p1->x, elem.p1->y);
+          QPointF p2(elem.p2->x, elem.p2->y);
+          QPointF p3(elem.p3->x, elem.p3->y);
           if (p1 == p2 || p1 == p3 || p2 == p3)
           {
-            mElems[i].isDummy = true; // mark element as unusable
+            elem.isDummy = true; // mark element as unusable
 
             mLastWarning = ViewerWarning::InvalidElements;
             mWarningsEncountered = true;
@@ -882,7 +853,7 @@ void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
                     // Just take the value of the first point associated with the element instead
                     QPoint pp;
                     if(elemTypeToRender == ElementType::E4Q){
-                        pp = realToPixel( mRotatedNodes[ (i*4) ].x, mRotatedNodes[ (i*4) ].y );
+                        pp = realToPixel( mElems[i].p1->x, mElems[i].p1->y );
                     }else{
                         pp = realToPixel( mElems[i].p1->x, mElems[i].p1->y );
                     }
@@ -893,10 +864,9 @@ void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
 
                     QRgb* line = (QRgb*) mImage->scanLine(pp.y());
                     QColor tmpCol;
-                    //double val = mRotatedNodes[ (i*4) ].z;
                     float val;
                     if(elemTypeToRender == ElementType::E4Q){
-                        val = output->values[ mRotatedNodes[ (i*4) ].index ];
+                        val = output->values[ mElems[i].p1->index ];
                     }else{
                         val = output->values[ mElems[i].p1->index ];
                     }
@@ -1214,38 +1184,46 @@ bool CrayfishViewer::elemOutsideView(uint i){
 
 bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, double* interpolatedVal, const Output* output){
 
-    if(mElems[elementIndex].eType == ElementType::E4Q){
+    Element& elem = mElems[elementIndex];
+
+    if(elem.eType == ElementType::E4Q){
+
+      E4Qtmp& e4q = mE4Qtmp[elem.indexTmp];
+
+      double q11 = output->values[ e4q.p3idx ];
+      double q12 = output->values[ e4q.p2idx ];
+      double q21 = output->values[ e4q.p4idx ];
+      double q22 = output->values[ e4q.p1idx ];
+      double x1, x2, y1, y2;
+
+      if (e4q.rotation != 0) {
+
+        Node* p2 = elem.p2;
+
+        // prepare coordinates of a square - sides parallel with axes
+        x1 = p2->x;
+        y1 = p2->y - e4q.cellSize;
+        x2 = p2->x + e4q.cellSize;
+        y2 = p2->y;
+
+        // If the element has been rotated, rotate the x,y coord around node 2 in the oposite direction
+        double x_ = x - p2->x;
+        double y_ = y - p2->y;
+        x = p2->x + (  x_ * e4q.cosNegAlpha - y_ * e4q.sinNegAlpha );
+        y = p2->y + (  x_ * e4q.sinNegAlpha + y_ * e4q.cosNegAlpha );
+
+      }else{
+
+        x1 = elem.p3->x;
+        y1 = elem.p3->y;
+        x2 = elem.p1->x;
+        y2 = elem.p1->y;
+
+      }
+
 
         // Sort points by by X coord and then by Y coord
         // (x1, y1, q11), (_x1, y2, q12), (x2, _y1, q21), (_x2, _y2, q22) = points
-
-        double x1 = mRotatedNodes[(elementIndex*4)+2].x;
-        double y1 = mRotatedNodes[(elementIndex*4)+2].y;
-        //double q11 = mRotatedNodes[(elementIndex*4)+2].z;
-        double q11 = output->values[ mRotatedNodes[(elementIndex*4)+2].index ];
-
-        //double _x1 = mRotatedNodes[(elementIndex*4)+1].x;
-        double y2 = mRotatedNodes[(elementIndex*4)+1].y;
-        //double q12 = mRotatedNodes[(elementIndex*4)+1].z;
-        double q12 = output->values[ mRotatedNodes[(elementIndex*4)+1].index ];
-
-        double x2 = mRotatedNodes[(elementIndex*4)+3].x;
-        //double _y1 = mRotatedNodes[(elementIndex*4)+3].y;
-        //double q21 = mRotatedNodes[(elementIndex*4)+3].z;
-        double q21 = output->values[ mRotatedNodes[(elementIndex*4)+3].index ];
-
-        //double _x2 = mRotatedNodes[(elementIndex*4)+0].x;
-        //double _y2 = mRotatedNodes[(elementIndex*4)+0].y;
-        //double q22 = mRotatedNodes[(elementIndex*4)+0].z;
-        double q22 = output->values[ mRotatedNodes[(elementIndex*4)+0].index ];
-
-        // If the element has been rotated, rotate the x,y coord around node 2 in the oposite direction
-        if(mElems[elementIndex].hasRotation){
-            double x_ = x - mRotatedNodes[ (elementIndex*4)+1 ].x;
-            double y_ = y - mRotatedNodes[ (elementIndex*4)+1 ].y;
-            x = mRotatedNodes[ (elementIndex*4)+1 ].x + (  x_ * mElems[elementIndex].cosNegAlpha - y_ * mElems[elementIndex].sinNegAlpha );
-            y = mRotatedNodes[ (elementIndex*4)+1 ].y + (  x_ * mElems[elementIndex].sinNegAlpha + y_ * mElems[elementIndex].cosNegAlpha );
-        }
 
         // At this stage x1, x2, y1, y2 are the rotated coordinates and x and y have also been rotated
         if( !( x >= x1 && x <= x2 ) ||
@@ -1262,7 +1240,7 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
                             / ( (x2 - x1) * (y2 - y1) + 0.0 );
         return true;
 
-    }else if(mElems[elementIndex].eType == ElementType::E3T){
+    }else if(elem.eType == ElementType::E3T){
 
         /*
             So - we're interpoalting a 3-noded triangle
@@ -1275,9 +1253,9 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
           described here:  http://www.blackpawn.com/texts/pointinpoly/
           */
 
-        QPointF pA(mElems[elementIndex].p1->x, mElems[elementIndex].p1->y);
-        QPointF pB(mElems[elementIndex].p2->x, mElems[elementIndex].p2->y);
-        QPointF pC(mElems[elementIndex].p3->x, mElems[elementIndex].p3->y);
+        QPointF pA(elem.p1->x, elem.p1->y);
+        QPointF pB(elem.p2->x, elem.p2->y);
+        QPointF pC(elem.p3->x, elem.p3->y);
 
         if (pA == pB || pA == pC || pB == pC)
           return false; // this is not a valid triangle!
@@ -1309,9 +1287,9 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
 
         // Now interpolate
 
-        double z1 = output->values[ mElems[elementIndex].p1->index ];
-        double z2 = output->values[ mElems[elementIndex].p2->index ];
-        double z3 = output->values[ mElems[elementIndex].p3->index ];
+        double z1 = output->values[ elem.p1->index ];
+        double z2 = output->values[ elem.p2->index ];
+        double z3 = output->values[ elem.p3->index ];
         *interpolatedVal = lam1 * z3 + lam2 * z2 + lam3 * z1;
         return true;
 

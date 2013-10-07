@@ -72,7 +72,6 @@ struct Node{
     uint index;
     double x;
     double y;
-    double z;
 };
 
 struct Element{
@@ -89,12 +88,20 @@ struct Element{
     double maxX;
     double minY;
     double maxY;
-    bool hasRotation;
-    double rotation;
-    double sinAlpha;
-    double cosAlpha;
-    double sinNegAlpha;
-    double cosNegAlpha;
+
+    int indexTmp; //!< index into array with temporary information for particular element type
+};
+
+/** auxilliary cached data used for rendering of E4Q elements */
+struct E4Qtmp
+{
+  uint elemIndex; //!< index of the element in mElems
+  uint p1idx, p2idx, p3idx, p4idx; //!< indices of nodes - may be rotated compared to what is stored in Element
+
+  double rotation;
+  double sinNegAlpha;
+  double cosNegAlpha;
+  double cellSize;
 };
 
 struct CRAYFISHVIEWERSHARED_EXPORT Output{

@@ -99,9 +99,9 @@ private:
     uint mElemCount;
     Element* mElems;
     uint mNodeCount;
-    uint mRotatedNodeCount;
     Node* mNodes;
-    Node* mRotatedNodes;
+    E4Qtmp* mE4Qtmp;
+    uint mE4Qcount;
 
     std::vector<DataSet*> mDataSets;  //!< datasets associated with the mesh
 
