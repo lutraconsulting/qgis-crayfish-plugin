@@ -104,8 +104,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
                  line.startsWith("E3L") ||
                  line.startsWith("E6T") ||
                  line.startsWith("E8Q") ||
-                 line.startsWith("E9Q") ||
-                 line.startsWith("NS") ){
+                 line.startsWith("E9Q")){
             mLastWarning = ViewerWarning::UnsupportedElement;
             mWarningsEncountered = true;
             mElemCount += 1; // We still count them as elements
@@ -178,10 +177,8 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
         if( line.startsWith("E4Q") ){
             chunks = line.split(" ", QString::SkipEmptyParts);
             uint index = chunks[1].toInt()-1;
-            if(index >= mElemCount){
-                index += 1;
-                continue;
-            }
+            Q_ASSERT(index < mElemCount);
+
             mElems[index].index = index;
             mElems[index].eType = ElementType::E4Q;
             mElems[index].nodeCount = 4;
@@ -191,15 +188,13 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
             mElems[index].p2 = &mNodes[ chunks[3].toInt()-1 ];
             mElems[index].p3 = &mNodes[ chunks[4].toInt()-1 ];
             mElems[index].p4 = &mNodes[ chunks[5].toInt()-1 ];
-            //mElemCount += 1;
+
         }
         else if( line.startsWith("E3T") ){
             chunks = line.split(" ", QString::SkipEmptyParts);
             uint index = chunks[1].toInt()-1;
-            if(index >= mElemCount){
-                index += 1;
-                continue;
-            }
+            Q_ASSERT(index < mElemCount);
+
             mElems[index].index = index;
             mElems[index].eType = ElementType::E3T;
             mElems[index].nodeCount = 3;
@@ -215,61 +210,32 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
                  line.startsWith("E3L") ||
                  line.startsWith("E6T") ||
                  line.startsWith("E8Q") ||
-                 line.startsWith("E9Q") ){
+                 line.startsWith("E9Q")){
             // We do not yet support these elements
             chunks = line.split(" ", QString::SkipEmptyParts);
             uint index = chunks[1].toInt()-1;
-            if(index >= mElemCount){
-                index += 1;
-                continue;
-            }
+            Q_ASSERT(index < mElemCount);
+
             mElems[index].index = index;
             mElems[index].isDummy = true;
         }
         else if( line.startsWith("ND") ){
             chunks = line.split(" ", QString::SkipEmptyParts);
             uint index = chunks[1].toInt()-1;
-            if(index >= mNodeCount){
-                index += 1;
-                continue;
-            }
+            Q_ASSERT(index < mNodeCount);
+
             mNodes[index].index = index;
             mNodes[index].x = chunks[2].toDouble();
             mNodes[index].y = chunks[3].toDouble();
             bedDs->output(0)->values[index] = chunks[4].toFloat();
-            //mNodeCount += 1;
         }
     }
 
     // Determine stats
-    mXMin = mNodes[0].x;
-    mXMax = mNodes[0].x;
-    mYMin = mNodes[0].y;
-    mYMax = mNodes[0].y;
+    computeMeshExtent(); // mXMin, mXMax, mYMin, mYMax
 
     bedDs->updateZRange(mNodeCount);
     bedDs->setContourCustomRange(bedDs->minZValue(), bedDs->maxZValue());
-
-    //mZMin = mNodes[0].z;
-    //mZMax = mNodes[0].z;
-    //mZMin = bedDs->outputs.at(0)->values[0];
-    //mZMax = bedDs->outputs.at(0)->values[0];
-    for(uint i=0; i<mNodeCount; i++){
-        if(mNodes[i].x > mXMax)
-            mXMax = mNodes[i].x;
-        if(mNodes[i].x < mXMin)
-            mXMin = mNodes[i].x;
-
-        if(mNodes[i].y > mYMax)
-            mYMax = mNodes[i].y;
-        if(mNodes[i].y < mYMin)
-            mYMin = mNodes[i].y;
-
-        //if(bedDs->outputs.at(0)->values[i] > mZMax)
-        //    mZMax = bedDs->outputs.at(0)->values[i];
-        //if(bedDs->outputs.at(0)->values[i] < mZMin)
-        //    mZMin = bedDs->outputs.at(0)->values[i];
-    }
 
     int e4qIndex = 0;
 
@@ -444,6 +410,28 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
     } Yes we do!*/
 
 }
+
+
+void CrayfishViewer::computeMeshExtent()
+{
+    mXMin = mNodes[0].x;
+    mXMax = mNodes[0].x;
+    mYMin = mNodes[0].y;
+    mYMax = mNodes[0].y;
+
+    for(uint i=0; i<mNodeCount; i++){
+        if(mNodes[i].x > mXMax)
+            mXMax = mNodes[i].x;
+        if(mNodes[i].x < mXMin)
+            mXMin = mNodes[i].x;
+
+        if(mNodes[i].y > mYMax)
+            mYMax = mNodes[i].y;
+        if(mNodes[i].y < mYMin)
+            mYMin = mNodes[i].y;
+    }
+}
+
 
 bool CrayfishViewer::loadDataSet(QString datFileName){
 

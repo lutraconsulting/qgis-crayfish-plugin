@@ -105,6 +105,7 @@ private:
 
     std::vector<DataSet*> mDataSets;  //!< datasets associated with the mesh
 
+    void computeMeshExtent();
     bool elemOutsideView(uint);
     QPoint realToPixel(double, double);
     QPointF realToPixelF(double, double);
