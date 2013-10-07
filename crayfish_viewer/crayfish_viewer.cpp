@@ -123,39 +123,8 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
         o = new Output;
         o->init(mNodeCount, mElemCount, false);
     } catch (const std::bad_alloc &) {
-        /*
-        // At present, QGIS crashes when the following lines are executed
-        // therefore it's been commented for the moment
-        std::cout << "In catch" << std::endl;
-        // Clean up
-        if(mElems){
-            std::cout << "Deleting mElems" << std::endl;
-            delete[] mElems;
-        }
-        if(mNodes){
-            std::cout << "Deleting mNodes" << std::endl;
-            delete[] mNodes;
-        }
-        if(o){
-            std::cout << "Had o" << std::endl;
-            if(o->statusFlags){
-                std::cout << "Deleting flags" << std::endl;
-                delete[] o->statusFlags;
-            }
-            if(o->values){
-                delete[] o->values;
-                std::cout << "Deleting values" << std::endl;
-            }
-            std::cout << "Deleting o" << std::endl;
-            delete o;
-        }
-        if(bedDs){
-            std::cout << "Deleting bedDs" << std::endl;
-            delete bedDs;
-        }
-        std::cout << "Done, returning" << std::endl;
-        */
         mLoadedSuccessfully = false;
+        mLastError = ViewerError::NotEnoughMemory;
         //std::cerr << "CF: ERROR alloc" << std::endl;
         return;
     }
@@ -326,11 +295,6 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
 
     }
 
-    /*if(mNodes){
-        delete[] mNodes; // We don't need this any more
-        mNodes = 0;
-    } Yes we do!*/
-
 }
 
 
@@ -389,9 +353,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
     ds = new DataSet(datFileName);
     ds->setIsTimeVarying(true);
 
-    bool allocateErrorEncountered = false;
-
-    while( card != 210 && !(allocateErrorEncountered) ){
+    while( card != 210 ){
         if( in.readRawData( (char*)&card, 4) != 4 ){
             // We've reached the end of the file and there was no ends card
             break;
@@ -522,7 +484,9 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
                 o = new Output;
                 o->init(mNodeCount, mElemCount, ds->type() == DataSetType::Vector);
             } catch (const std::bad_alloc &) {
-                allocateErrorEncountered = true;
+                delete o;
+                delete ds;
+                return false;
             }
 
             o->time = time;
@@ -569,34 +533,6 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
         }
     }
 
-    // If we suffered an allocate error, clean up and return false
-    if(allocateErrorEncountered){
-        /*
-        // At present, QGIS crashes when the following lines are executed
-        // therefore it's been commented for the moment
-        // Clean up
-        for(int j=0; j<ds->outputs.size(); j++){
-            Output* o = ds->outputs.at(j);
-            if(o){
-                if (o->values)
-                    delete[] o->values;
-                if (o->statusFlags)
-                    delete[] o->statusFlags;
-                if(ds->type == Vector){
-                    if (o->values_x)
-                        delete[] o->values_x;
-                    if (o->values_y)
-                        delete[] o->values_y;
-                }
-                delete o;
-            }
-        }
-        ds->outputs.clear();
-        delete ds;
-        */
-        return false;
-    }
-
     if(ds->outputCount() > 0){
 
         ds->updateZRange(mNodeCount);
@@ -609,17 +545,6 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
     }
 
     return false;
-
-    /*DataSet* ds = new DataSet;
-    bedDs->type = Bed;
-    bedDs->outputCount = 1;
-    bedDs->name = "Bed Elevation";
-    bedDs->outputs = new Output;
-    bedDs->outputs[0].time = 0.0;
-    bedDs->outputs[0].statusFlags = new char[mElemCount];
-    memset(bedDs->outputs[0].statusFlags, 1, mElemCount); // All cells active
-    bedDs->outputs[0].values = new float[mNodeCount];
-    mDataSets.push_back(bedDs);*/
 }
 
 bool CrayfishViewer::isDataSetLoaded(QString fileName)

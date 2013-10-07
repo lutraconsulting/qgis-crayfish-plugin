@@ -299,8 +299,7 @@ class CrayfishPlugin:
                 return
               
             if not self.addLayer(inFileName):
-                # Failed to add this 2DM file
-                self.iface.messageBar().pushMessage("Crayfish", "Failed to load mesh file", level=QgsMessageBar.CRITICAL)
+                return # addLayer() reports errors/warnings
 
         elif fileType == '.dat':
             """
@@ -348,8 +347,7 @@ class CrayfishPlugin:
             return
         
         if not self.addLayer(meshFileName):
-            self.iface.messageBar().pushMessage("Crayfish", "The mesh file associated with this DAT file (" + meshFileName + ") could not be loaded.  This could be because it contains enexpected features or because it is too large.", level=QgsMessageBar.CRITICAL)
-            return
+            return    # errors/warnings reported in addLayer()
           
         parentLayer = self.getLayerWith2DM(meshFileName)
         assert( parentLayer is not None)
@@ -389,7 +387,14 @@ class CrayfishPlugin:
         from crayfish_viewer_plugin_layer import CrayfishViewerPluginLayer
         layer = CrayfishViewerPluginLayer(twoDMFileName)
         if not layer.isValid():
+
             # Failed to load 2DM
+            e = layer.provider.getLastError()
+            if e == 1:  # not enough memory
+              self.iface.messageBar().pushMessage("Crayfish", "Not enough memory to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
+            elif e == 2: # cannot open
+              self.iface.messageBar().pushMessage("Crayfish", "Failed to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
+
             return False
             
         # Add to layer registry
@@ -401,7 +406,7 @@ class CrayfishPlugin:
             w = layer.provider.getLastWarning() 
             if w == 1:
                 # Unsupported element seen
-                self.iface.messageBar().pushMessage("Crayfish", "It looks like your mesh contains elements that are unsupported at this time.  The following types of elements will be ignored for the time being: E2L, E3L, E6T, E8Q, E9Q, NS", level=QgsMessageBar.WARNING)
+                self.iface.messageBar().pushMessage("Crayfish", "The mesh contains elements that are unsupported at this time. The following types of elements will be ignored for the time being: E2L, E3L, E6T, E8Q, E9Q", level=QgsMessageBar.WARNING)
             elif w == 2:
                 self.iface.messageBar().pushMessage("Crayfish", "The mesh contains some invalid elements, they will not be rendered.", level=QgsMessageBar.WARNING)
         

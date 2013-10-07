@@ -18,6 +18,7 @@ public:
     bool loadedOk();
     bool warningsEncountered();
     int getLastWarning();
+    int getLastError();
     QRectF getExtents();
     bool loadDataSet(QString);
     bool isDataSetLoaded(QString fileName);

@@ -48,6 +48,7 @@ namespace ElementType{
 namespace ViewerError{
     enum Enum{
         None,
+        NotEnoughMemory,
         FileNotFound
     };
 }

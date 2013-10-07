@@ -49,6 +49,7 @@ public:
     bool loadedOk(){ return mLoadedSuccessfully; }
     bool warningsEncountered(){ return mWarningsEncountered; }
     int getLastWarning(){ return mLastWarning; }
+    int getLastError() { return mLastError; }
     QRectF getExtents(){ return QRectF(QPointF(mXMin,mYMax), QPointF(mXMax,mYMin)); }
     bool loadDataSet(QString);
     bool isDataSetLoaded(QString fileName);
