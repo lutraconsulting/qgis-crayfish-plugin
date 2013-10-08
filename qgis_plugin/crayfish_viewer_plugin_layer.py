@@ -1,6 +1,7 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
+from qgis.utils import iface
 
 from crayfish_viewer_render_settings import *
 from crayfishviewer import CrayfishViewer
@@ -38,7 +39,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         r = QgsRectangle(   QgsPoint( e.bottomLeft().x(), e.bottomLeft().y() ),
                             QgsPoint( e.topRight().x(), e.topRight().y() ) )
         self.setExtent(r)
-        
+
         self.set2DMFileName(meshFileName) # Set the 2dm file name
         
         head, tail = os.path.split(meshFileName)
@@ -101,7 +102,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         
         mapToPixel = rendererContext.mapToPixel()
         pixelSize = mapToPixel.mapUnitsPerPixel()
-        extent = rendererContext.extent()
+        extent = iface.mapCanvas().mapRenderer().extent() # non-projected map extent # rendererContext.extent()
         topleft = mapToPixel.transform(extent.xMinimum(), extent.yMaximum())
         bottomright = mapToPixel.transform(extent.xMaximum(), extent.yMinimum())
         width = (bottomright.x() - topleft.x())
@@ -110,6 +111,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         if debug:
             print '\n'
             print 'About to render with the following parameters:'
+            print '\tExtent:\t%f,%f - %f,%f\n' % (extent.xMinimum(),extent.yMinimum(),extent.xMaximum(),extent.yMaximum())
             print '\tWidth:\t' + str(width) + '\n'
             print '\tHeight:\t' + str(height) + '\n'
             print '\tXMin:\t' + str(extent.xMinimum()) + '\n'
@@ -131,6 +133,13 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         self.provider.setCanvasSize(QSize(int(width), int(height)))
         self.provider.setExtent(extent.xMinimum(), extent.yMinimum(), pixelSize)
         self.provider.setCurrentDataSetIndex(self.dataSetIdx)
+        
+        mr = iface.mapCanvas().mapRenderer()
+        projEnabled = mr.hasCrsTransformEnabled()
+        if projEnabled:
+          self.provider.setProjection(self.crs().authid(), mr.destinationCrs().authid())
+        else:
+          self.provider.setProjection("", "")
         
         ds = self.provider.currentDataSet()
         ds.setCurrentOutputTime(self.timeIdx)

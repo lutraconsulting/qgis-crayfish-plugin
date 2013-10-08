@@ -202,7 +202,8 @@ class CrayfishPlugin:
         
         # Register plugin layer type
         from crayfish_viewer_plugin_layer_type import CrayfishViewerPluginLayerType
-        QgsPluginLayerRegistry.instance().addPluginLayerType(CrayfishViewerPluginLayerType())
+        self.lt = CrayfishViewerPluginLayerType()
+        QgsPluginLayerRegistry.instance().addPluginLayerType(self.lt)
         
         # Make connections
         QObject.connect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)

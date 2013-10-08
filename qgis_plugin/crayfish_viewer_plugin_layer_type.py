@@ -28,7 +28,8 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 
-from crayfish_viewer_plugin_layer import *
+from crayfish_viewer_plugin_layer import CrayfishViewerPluginLayer
+from crayfish_viewer_plugin_layer_props_dialog import CrayfishViewerPluginPropsDialog
 
 class CrayfishViewerPluginLayerType(QgsPluginLayerType):
 
@@ -39,4 +40,6 @@ class CrayfishViewerPluginLayerType(QgsPluginLayerType):
         return CrayfishViewerPluginLayer()
 
     def showLayerProperties(self, layer):
+        dlg = CrayfishViewerPluginPropsDialog(layer)
+        dlg.exec_()
         return True

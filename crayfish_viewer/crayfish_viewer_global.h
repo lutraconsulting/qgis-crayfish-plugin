@@ -69,10 +69,25 @@ namespace DataSetType{
     };
 }
 
+#include <QPointF>
+
 struct Node{
-    uint index;
     double x;
     double y;
+
+    bool operator==(const Node& other) const { return x == other.x && y == other.y; }
+    QPointF toPointF() const { return QPointF(x,y); }
+};
+
+struct BBox {
+  double minX;
+  double maxX;
+  double minY;
+  double maxY;
+
+  double maxSize; // Largest distance (real world) across the element
+
+  bool isPointInside(double x, double y) const { return x >= minX && x <= maxX && y >= minY && y <= maxY; }
 };
 
 struct Element{
@@ -80,15 +95,8 @@ struct Element{
     ElementType::Enum eType;
     int nodeCount;
     bool isDummy;
-    Node* p1;   // Top-Right node
-    Node* p2;   // Top-Left node
-    Node* p3;   // Bottom-Left node
-    Node* p4;   // Bottom-Right node // FIXME - this is irrelevant for a triangle but should make no harm
-    double maxSize; // Largest distance (real world) across the element
-    double minX;
-    double maxX;
-    double minY;
-    double maxY;
+    uint p[4];     //!< indices of nodes
+    BBox bbox;     //!< bounding box of the element
 
     int indexTmp; //!< index into array with temporary information for particular element type
 };
@@ -96,7 +104,6 @@ struct Element{
 /** auxilliary cached data used for rendering of E4Q elements */
 struct E4Qtmp
 {
-  //uint elemIndex; //!< index of the element in mElems
   double a[4], b[4]; //!< coefficients for mapping between physical and logical coords
 };
 

@@ -41,6 +41,9 @@ public:
     int currentDataSetIndex() const;
     const DataSet* dataSet(int dataSetIndex) const;
     const DataSet* currentDataSet() const;
+
+    void setProjection(const QString& srcAuthid, const QString& destAuthid);
+    bool hasProjection() const;
 };
 
 

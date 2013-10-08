@@ -28,6 +28,8 @@
 #
 #-------------------------------------------------
 
+QGIS_PATH = /home/martin/qgis/inst-master
+
 # QT       -= gui
 
 TARGET = crayfishViewer
@@ -44,40 +46,12 @@ HEADERS += crayfish_viewer.h\
         version.h \
         crayfish_e4q.h
 
+DEFINES += CORE_EXPORT=""
+INCLUDEPATH += $${QGIS_PATH}/include/qgis
+LIBS += -L$${QGIS_PATH}/lib -lqgis_core
+
 CONFIG(debug, debug|release) {
     DESTDIR = $$PWD/build/debug
 } else {
     DESTDIR = $$PWD/build/release
-}
-
-
-#Release:DESTDIR = "$$PWD/build/release"
-#Release:OBJECTS_DIR = "$$PWD/build/release/.obj"
-#Release:MOC_DIR = "$$PWD/build/release/.moc"
-#Release:RCC_DIR = "$$PWD/build/release/.rcc"
-#Release:UI_DIR = "$$PWD/build/release/.ui"
-
-#Debug:DESTDIR = "$$PWD/build/debug"
-#Debug:OBJECTS_DIR = "$$PWD/build/debug/.obj"
-#Debug:MOC_DIR = "$$PWD/build/debug/.moc"
-#Debug:RCC_DIR = "$$PWD/build/debug/.rcc"
-#Debug:UI_DIR = "$$PWD/build/debug/.ui"
-
-symbian {
-    MMP_RULES += EXPORTUNFROZEN
-    TARGET.UID3 = 0xE75114E6
-    TARGET.CAPABILITY = 
-    TARGET.EPOCALLOWDLLDATA = 1
-    addFiles.sources = crayfishViewer.dll
-    addFiles.path = !:/sys/bin
-    DEPLOYMENT += addFiles
-}
-
-unix:!symbian {
-    maemo5 {
-        target.path = /opt/usr/lib
-    } else {
-        target.path = /usr/lib
-    }
-    INSTALLS += target
 }

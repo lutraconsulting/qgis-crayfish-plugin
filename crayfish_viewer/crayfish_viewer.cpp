@@ -30,6 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <QVector2D>
 
+#include "qgscoordinatereferencesystem.h"
+#include "qgscoordinatetransform.h"
 
 CrayfishViewer::~CrayfishViewer(){
 
@@ -55,6 +57,15 @@ CrayfishViewer::~CrayfishViewer(){
     for(size_t i=0; i<mDataSets.size(); i++)
         delete mDataSets.at(i);
     mDataSets.clear();
+
+    if(mProjNodes){
+        delete[] mProjNodes;
+        mProjNodes = 0;
+    }
+    if(mProjBBoxes){
+        delete[] mProjBBoxes;
+        mProjBBoxes = 0;
+    }
 }
 
 CrayfishViewer::CrayfishViewer( QString twoDMFileName )
@@ -75,6 +86,9 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
   , mNodes(0)
   , mE4Qtmp(0)
   , mE4Qcount(0)
+  , mProjection(false)
+  , mProjNodes(0)
+  , mProjBBoxes(0)
 {
 
   //std::cerr << "CF: opening 2DM: " << twoDMFileName.toAscii().data() << std::endl;
@@ -149,15 +163,14 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
             uint index = chunks[1].toInt()-1;
             Q_ASSERT(index < mElemCount);
 
-            mElems[index].index = index;
-            mElems[index].eType = ElementType::E4Q;
-            mElems[index].nodeCount = 4;
-            mElems[index].isDummy = false;
+            Element& elem = mElems[index];
+            elem.index = index;
+            elem.eType = ElementType::E4Q;
+            elem.nodeCount = 4;
+            elem.isDummy = false;
             // Bear in mind that no check is done to ensure that the the p1-p4 pointers will point to a valid location
-            mElems[index].p1 = &mNodes[ chunks[2].toInt()-1 ]; // -1 (crayfish Dat is 1-based indexing)
-            mElems[index].p2 = &mNodes[ chunks[3].toInt()-1 ];
-            mElems[index].p3 = &mNodes[ chunks[4].toInt()-1 ];
-            mElems[index].p4 = &mNodes[ chunks[5].toInt()-1 ];
+            for (int i = 0; i < 4; ++i)
+              elem.p[i] = chunks[i+2].toInt()-1; // -1 (crayfish Dat is 1-based indexing)
 
         }
         else if( line.startsWith("E3T") ){
@@ -165,16 +178,15 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
             uint index = chunks[1].toInt()-1;
             Q_ASSERT(index < mElemCount);
 
-            mElems[index].index = index;
-            mElems[index].eType = ElementType::E3T;
-            mElems[index].nodeCount = 3;
-            mElems[index].isDummy = false;
+            Element& elem = mElems[index];
+            elem.index = index;
+            elem.eType = ElementType::E3T;
+            elem.nodeCount = 3;
+            elem.isDummy = false;
             // Bear in mind that no check is done to ensure that the the p1-p4 pointers will point to a valid location
-            mElems[index].p1 = &mNodes[ chunks[2].toInt()-1 ]; // -1 (crayfish Dat is 1-based indexing)
-            mElems[index].p2 = &mNodes[ chunks[3].toInt()-1 ];
-            mElems[index].p3 = &mNodes[ chunks[4].toInt()-1 ];
-            mElems[index].p4 = 0;
-            //mElemCount += 1;
+            for (int i = 0; i < 3; ++i)
+              elem.p[i] = chunks[i+2].toInt()-1; // -1 (crayfish Dat is 1-based indexing)
+            elem.p[3] = -1; // only three points
         }
         else if( line.startsWith("E2L") ||
                  line.startsWith("E3L") ||
@@ -194,7 +206,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
             uint index = chunks[1].toInt()-1;
             Q_ASSERT(index < mNodeCount);
 
-            mNodes[index].index = index;
+            //mNodes[index].index = index;
             mNodes[index].x = chunks[2].toDouble();
             mNodes[index].y = chunks[3].toDouble();
             bedDs->output(0)->values[index] = chunks[4].toFloat();
@@ -223,42 +235,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
 
         Element& elem = mElems[i];
 
-        elem.minX = elem.p1->x;
-        elem.minY = elem.p1->y;
-        elem.maxX = elem.p1->x;
-        elem.maxY = elem.p1->y;
-
-        if(elem.p2->x < elem.minX)
-            elem.minX = elem.p2->x;
-        if(elem.p2->x > elem.maxX)
-            elem.maxX = elem.p2->x;
-        if(elem.p2->y < elem.minY)
-            elem.minY = elem.p2->y;
-        if(elem.p2->y > elem.maxY)
-            elem.maxY = elem.p2->y;
-
-        if(elem.p3->x < elem.minX)
-            elem.minX = elem.p3->x;
-        if(elem.p3->x > elem.maxX)
-            elem.maxX = elem.p3->x;
-        if(elem.p3->y < elem.minY)
-            elem.minY = elem.p3->y;
-        if(elem.p3->y > elem.maxY)
-            elem.maxY = elem.p3->y;
-
-        if(elem.nodeCount > 3){
-            if(elem.p4->x < elem.minX)
-                elem.minX = elem.p4->x;
-            if(elem.p4->x > elem.maxX)
-                elem.maxX = elem.p4->x;
-            if(elem.p4->y < elem.minY)
-                elem.minY = elem.p4->y;
-            if(elem.p4->y > elem.maxY)
-                elem.maxY = elem.p4->y;
-        }
-
-        elem.maxSize = std::max( (elem.maxX - elem.minX),
-                                 (elem.maxY - elem.minY) );
+        updateBBox(elem.bbox, elem, mNodes);
 
         /*
           E4Q elements are re-ordered to ensure nodes are listed counter-clockwise from top-right
@@ -270,9 +247,8 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
 
             elem.indexTmp = e4qIndex;
             E4Qtmp& e4q = mE4Qtmp[e4qIndex];
-            //e4q.elemIndex = i;
 
-            E4Q_computeMapping(elem, e4q);
+            E4Q_computeMapping(elem, e4q, mNodes);
 
             e4qIndex++;
 
@@ -281,10 +257,10 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
 
             // check validity of the triangle
             // for now just checking if we have three distinct nodes
-          QPointF p1(elem.p1->x, elem.p1->y);
-          QPointF p2(elem.p2->x, elem.p2->y);
-          QPointF p3(elem.p3->x, elem.p3->y);
-          if (p1 == p2 || p1 == p3 || p2 == p3)
+          const Node& n1 = mNodes[elem.p[0]];
+          const Node& n2 = mNodes[elem.p[1]];
+          const Node& n3 = mNodes[elem.p[2]];
+          if (n1 == n2 || n1 == n3 || n2 == n3)
           {
             elem.isDummy = true; // mark element as unusable
 
@@ -624,6 +600,84 @@ const DataSet *CrayfishViewer::currentDataSet() const
 }
 
 
+void CrayfishViewer::setProjection(const QString& srcAuthid, const QString& destAuthid)
+{
+  mProjection = !srcAuthid.isEmpty() && !destAuthid.isEmpty();
+
+  if (!mProjection)
+  {
+    delete [] mProjNodes;
+    mProjNodes = 0;
+    delete [] mProjBBoxes;
+    mProjBBoxes = 0;
+
+    for (uint i = 0; i < mElemCount; ++i)
+    {
+      if (mElems[i].eType == ElementType::E4Q)
+        E4Q_computeMapping(mElems[i], mE4Qtmp[mElems[i].indexTmp], mNodes);
+    }
+
+    return;
+  }
+
+  if (mProjNodes == 0)
+  {
+    mProjNodes = new Node[mNodeCount];
+    mProjBBoxes = new BBox[mElemCount];
+  }
+
+  QgsCoordinateReferenceSystem srcCRS(srcAuthid);
+  QgsCoordinateReferenceSystem destCRS(destAuthid);
+
+  QgsCoordinateTransform ct(srcCRS, destCRS);
+
+  for (uint i = 0; i < mNodeCount; ++i)
+  {
+    const Node& n = mNodes[i];
+    QgsPoint p = ct.transform(n.x, n.y);
+    mProjNodes[i].x = p.x();
+    mProjNodes[i].y = p.y();
+  }
+
+  for (uint i = 0; i < mElemCount; ++i)
+  {
+    updateBBox(mProjBBoxes[i], mElems[i], mProjNodes);
+
+    if (mElems[i].eType == ElementType::E4Q)
+      E4Q_computeMapping(mElems[i], mE4Qtmp[mElems[i].indexTmp], mProjNodes); // update interpolation coefficients
+  }
+
+}
+
+bool CrayfishViewer::hasProjection() const
+{
+  return mProjection;
+}
+
+void CrayfishViewer::updateBBox(BBox& bbox, const Element& elem, Node* nodes)
+{
+  const Node& node0 = nodes[elem.p[0]];
+
+  bbox.minX = node0.x;
+  bbox.minY = node0.y;
+  bbox.maxX = node0.x;
+  bbox.maxY = node0.y;
+
+  for (int j = 1; j < elem.nodeCount; ++j)
+  {
+    const Node& n = nodes[elem.p[j]];
+    if (n.x < bbox.minX) bbox.minX = n.x;
+    if (n.x > bbox.maxX) bbox.maxX = n.x;
+    if (n.y < bbox.minY) bbox.minY = n.y;
+    if (n.y > bbox.maxY) bbox.maxY = n.y;
+  }
+
+  bbox.maxSize = std::max( (bbox.maxX - bbox.minX),
+                           (bbox.maxY - bbox.minY) );
+
+}
+
+
 QImage* CrayfishViewer::draw(){
 
     // Some sanity checks
@@ -664,10 +718,11 @@ void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
 
             for(uint i=0; i<mElemCount; i++){
 
-                if( mElems[i].eType != elemTypeToRender )
+                const Element& elem = mElems[i];
+                if( elem.eType != elemTypeToRender )
                     continue;
 
-                if( mElems[i].isDummy )
+                if( elem.isDummy )
                     continue;
 
                 // For each element
@@ -683,15 +738,11 @@ void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
                 }
 
                 //
-                if( mElems[i].maxSize < mPixelSize ){
+                const BBox& bbox = (mProjection ? mProjBBoxes[i] : elem.bbox);
+                if( bbox.maxSize < mPixelSize ){
                     // The element is smaller than the pixel size so there is no point rendering the element properly
                     // Just take the value of the first point associated with the element instead
-                    QPoint pp;
-                    if(elemTypeToRender == ElementType::E4Q){
-                        pp = realToPixel( mElems[i].p1->x, mElems[i].p1->y );
-                    }else{
-                        pp = realToPixel( mElems[i].p1->x, mElems[i].p1->y );
-                    }
+                    QPoint pp = realToPixel( elem.p[0] );
                     pp.setX( std::min(pp.x(), mCanvasWidth-1) );
                     pp.setX( std::max(pp.x(), 0) );
                     pp.setY( std::min(pp.y(), mCanvasHeight-1) );
@@ -699,19 +750,14 @@ void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
 
                     QRgb* line = (QRgb*) mImage->scanLine(pp.y());
                     QColor tmpCol;
-                    float val;
-                    if(elemTypeToRender == ElementType::E4Q){
-                        val = output->values[ mElems[i].p1->index ];
-                    }else{
-                        val = output->values[ mElems[i].p1->index ];
-                    }
+                    float val = output->values[ elem.p[0] ];
                     setColorFromVal(val, &tmpCol, ds);
                     line[pp.x()] = tmpCol.rgba();
 
                 }else{
                     // Get the BBox of the element in pixels
-                    QPoint ll = realToPixel(mElems[i].minX, mElems[i].minY);
-                    QPoint ur = realToPixel(mElems[i].maxX, mElems[i].maxY);
+                    QPoint ll = realToPixel(bbox.minX, bbox.minY);
+                    QPoint ur = realToPixel(bbox.maxX, bbox.maxY);
                     int topLim = std::max( ur.y(), 0 );
                     int bottomLim = std::min( ll.y(), mCanvasHeight-1 );
                     int leftLim = std::max( ll.x(), 0 );
@@ -768,16 +814,11 @@ void CrayfishViewer::renderVectorData(
         vectorLengthRange *= 0.707106781;
 
         // Get a list of nodes that are within the current render extent
-        std::vector<Node*> candidateNodes;
+        std::vector<int> candidateNodes;
 
         for(uint i=0; i<mNodeCount; i++){
-            if( mNodes[i].x > mLlX &&
-                mNodes[i].x < mUrX &&
-                mNodes[i].y > mLlY &&
-                mNodes[i].y < mUrY ){
-
-                candidateNodes.push_back( &mNodes[i] );
-            }
+            if (nodeInsideView(i))
+                candidateNodes.push_back( i );
         }
 
 
@@ -808,8 +849,7 @@ void CrayfishViewer::renderVectorData(
 
         for(uint i=0; i<candidateNodes.size(); i++){
             // Get the value
-            Node* n = candidateNodes.at(i);
-            uint nodeIndex = n->index;
+            uint nodeIndex = candidateNodes.at(i);
 
             float xVal = output->values_x[nodeIndex];
             float yVal = output->values_y[nodeIndex];
@@ -852,7 +892,7 @@ void CrayfishViewer::renderVectorData(
             }
 
             // Determine the line coords
-            QPointF lineStart = realToPixelF( n->x, n->y );
+            QPointF lineStart = realToPixelF( nodeIndex );
             QPointF lineEnd = QPointF( lineStart.x() + xDist,
                                        lineStart.y() + yDist);
 
@@ -921,27 +961,36 @@ void CrayfishViewer::renderMesh()
 
         if (mElems[i].eType == ElementType::E4Q)
         {
-          pts[0] = pts[4] = realToPixel( mElems[i].p1->x, mElems[i].p1->y ); // first and last point
-          pts[1] = realToPixel( mElems[i].p2->x, mElems[i].p2->y );
-          pts[2] = realToPixel( mElems[i].p3->x, mElems[i].p3->y );
-          pts[3] = realToPixel( mElems[i].p4->x, mElems[i].p4->y );
+          pts[0] = pts[4] = realToPixel( mElems[i].p[0] ); // first and last point
+          pts[1] = realToPixel( mElems[i].p[1] );
+          pts[2] = realToPixel( mElems[i].p[2] );
+          pts[3] = realToPixel( mElems[i].p[3] );
           p.drawPolyline(pts, 5);
         }
         else if (mElems[i].eType == ElementType::E3T)
         {
-          pts[0] = pts[3] = realToPixel( mElems[i].p1->x, mElems[i].p1->y ); // first and last point
-          pts[1] = realToPixel( mElems[i].p2->x, mElems[i].p2->y );
-          pts[2] = realToPixel( mElems[i].p3->x, mElems[i].p3->y );
+          pts[0] = pts[3] = realToPixel( mElems[i].p[0] ); // first and last point
+          pts[1] = realToPixel( mElems[i].p[1] );
+          pts[2] = realToPixel( mElems[i].p[2] );
           p.drawPolyline(pts, 4);
         }
       }
 }
 
+QPoint CrayfishViewer::realToPixel(int nodeIndex){
+  const Node& n = (mProjection ? mProjNodes[nodeIndex] : mNodes[nodeIndex]);
+  return realToPixel(n.x, n.y);
+}
 
 QPoint CrayfishViewer::realToPixel(double x, double y){
     int px = (x - mLlX) / mPixelSize;
     int py = mCanvasHeight - (y - mLlY) / mPixelSize;
     return QPoint(px, py);
+}
+
+QPointF CrayfishViewer::realToPixelF(int nodeIndex){
+  const Node& n = (mProjection ? mProjNodes[nodeIndex] : mNodes[nodeIndex]);
+  return realToPixel(n.x, n.y);
 }
 
 QPointF CrayfishViewer::realToPixelF(double x, double y){
@@ -1006,15 +1055,16 @@ void CrayfishViewer::setColorFromVal(double val, QColor* col, const DataSet* ds)
       col->setAlpha(ds->contourAlpha());
 }
 
+bool CrayfishViewer::nodeInsideView(uint nodeIndex)
+{
+  const Node& n = (mProjection ? mProjNodes[nodeIndex] : mNodes[nodeIndex]);
+  return n.x > mLlX && n.x < mUrX && n.y > mLlY && n.y < mUrY;
+}
+
 bool CrayfishViewer::elemOutsideView(uint i){
-    // Determine if this element is visible within the view
-    if( mElems[i].maxX < mLlX ||
-        mElems[i].minX > mUrX ||
-        mElems[i].minY > mUrY ||
-        mElems[i].maxY < mLlY ){
-        return true;
-    }
-    return false;
+  const BBox& bbox = (mProjection ? mProjBBoxes[i] : mElems[i].bbox);
+  // Determine if this element is visible within the view
+  return bbox.maxX < mLlX || bbox.minX > mUrX || bbox.minY > mUrY || bbox.maxY < mLlY;
 }
 
 bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, double* interpolatedVal, const Output* output){
@@ -1032,10 +1082,10 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
         if (Lx < 0 || Ly < 0 || Lx > 1 || Ly > 1)
           return false;
 
-        double q11 = output->values[ elem.p3->index ];
-        double q12 = output->values[ elem.p2->index ];
-        double q21 = output->values[ elem.p4->index ];
-        double q22 = output->values[ elem.p1->index ];
+        double q11 = output->values[ elem.p[2] ];
+        double q12 = output->values[ elem.p[1] ];
+        double q21 = output->values[ elem.p[3] ];
+        double q22 = output->values[ elem.p[0] ];
 
         *interpolatedVal = q11*Lx*Ly + q21*(1-Lx)*Ly + q12*Lx*(1-Ly) + q22*(1-Lx)*(1-Ly);
 
@@ -1054,9 +1104,10 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
           described here:  http://www.blackpawn.com/texts/pointinpoly/
           */
 
-        QPointF pA(elem.p1->x, elem.p1->y);
-        QPointF pB(elem.p2->x, elem.p2->y);
-        QPointF pC(elem.p3->x, elem.p3->y);
+        Node* nodes = mProjection ? mProjNodes : mNodes;
+        QPointF pA(nodes[elem.p[0]].toPointF());
+        QPointF pB(nodes[elem.p[1]].toPointF());
+        QPointF pC(nodes[elem.p[2]].toPointF());
 
         if (pA == pB || pA == pC || pB == pC)
           return false; // this is not a valid triangle!
@@ -1088,9 +1139,9 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
 
         // Now interpolate
 
-        double z1 = output->values[ elem.p1->index ];
-        double z2 = output->values[ elem.p2->index ];
-        double z3 = output->values[ elem.p3->index ];
+        double z1 = output->values[ elem.p[0] ];
+        double z2 = output->values[ elem.p[1] ];
+        double z3 = output->values[ elem.p[2] ];
         *interpolatedVal = lam1 * z3 + lam2 * z2 + lam3 * z1;
         return true;
 
@@ -1120,10 +1171,9 @@ double CrayfishViewer::valueAtCoord(const Output* output, double xCoord, double 
     std::vector<uint> candidateElementIds;
 
     for(uint i=0; i<mElemCount; i++){
-        if( xCoord >= mElems[i].minX &&
-            xCoord <= mElems[i].maxX &&
-            yCoord >= mElems[i].minY &&
-            yCoord <= mElems[i].maxY ){
+
+        const BBox& bbox = (mProjection ? mProjBBoxes[i] : mElems[i].bbox);
+        if( bbox.isPointInside(xCoord, yCoord) ){
 
             candidateElementIds.push_back(i);
         }

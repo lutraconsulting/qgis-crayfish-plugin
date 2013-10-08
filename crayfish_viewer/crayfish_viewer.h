@@ -73,6 +73,9 @@ public:
     const DataSet* dataSet(int dataSetIndex) const;
     const DataSet* currentDataSet() const;
 
+    void setProjection(const QString& srcAuthid, const QString& destAuthid);
+    bool hasProjection() const;
+
 private:
     bool mLoadedSuccessfully;
     bool mWarningsEncountered;
@@ -107,14 +110,22 @@ private:
 
     std::vector<DataSet*> mDataSets;  //!< datasets associated with the mesh
 
+    bool mProjection; //!< whether doing reprojection from mesh coords to map coords
+    Node* mProjNodes; //!< reprojected nodes
+    BBox* mProjBBoxes; //!< reprojected bounding boxes of elements
+
     void computeMeshExtent();
+    bool nodeInsideView(uint nodeIndex);
     bool elemOutsideView(uint);
     QPoint realToPixel(double, double);
+    QPoint realToPixel(int nodeIndex);
     QPointF realToPixelF(double, double);
+    QPointF realToPixelF(int nodeIndex);
     void paintRow(uint, int, int, int, const DataSet* ds, const Output* output);
     bool interpolatValue(uint, double, double, double*, const Output* output);
     QPointF pixelToReal(int, int);
     void setColorFromVal(double, QColor *col, const DataSet* ds);
+    void updateBBox(BBox& bbox, const Element& elem, Node* nodes);
 
 
     void renderContourData(const DataSet* ds, const Output* output);
