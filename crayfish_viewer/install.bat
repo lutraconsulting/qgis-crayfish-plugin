@@ -20,7 +20,7 @@ rem GNU General Public License for more details.
 
 rem You should have received a copy of the GNU General Public License
 rem along with this program; if not, write to the Free Software
-rem Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.from PyQt4.QtCore import *
+rem Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 mkdir %HOMEPATH%\.qgis\python\plugins\crayfish
 copy /y build\release\crayfishViewer.dll %HOMEPATH%\.qgis\python\plugins\crayfish
