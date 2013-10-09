@@ -7,6 +7,7 @@ from crayfish_viewer_render_settings import *
 from crayfishviewer import CrayfishViewer
 
 import os
+import glob
 
 
 class CrayfishViewerPluginLayer(QgsPluginLayer):
@@ -19,7 +20,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         self.datFileNames = []
         if meshFileName is not None:
             self.loadMesh(meshFileName)
-        
+
     
     def loadMesh(self, meshFileName):
         self.provider = CrayfishViewer(meshFileName)
@@ -39,6 +40,17 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         r = QgsRectangle(   QgsPoint( e.bottomLeft().x(), e.bottomLeft().y() ),
                             QgsPoint( e.topRight().x(), e.topRight().y() ) )
         self.setExtent(r)
+
+        # try to load .prj file from the same directory
+        crs = QgsCoordinateReferenceSystem()
+        meshDir = os.path.dirname(meshFileName)
+        prjFiles = glob.glob(meshDir + os.path.sep + '*.prj')
+        if len(prjFiles) == 1:
+            wkt = open(prjFiles[0]).read()
+            crs.createFromWkt(wkt)
+
+        crs.validate()  # if CRS is not valid, validate it using user's preference (prompt / use project's CRS / use default CRS)
+        self.setCrs(crs)
 
         self.set2DMFileName(meshFileName) # Set the 2dm file name
         
@@ -133,21 +145,21 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         self.provider.setCanvasSize(QSize(int(width), int(height)))
         self.provider.setExtent(extent.xMinimum(), extent.yMinimum(), pixelSize)
         self.provider.setCurrentDataSetIndex(self.dataSetIdx)
-        
+
         mr = iface.mapCanvas().mapRenderer()
         projEnabled = mr.hasCrsTransformEnabled()
         if projEnabled:
           self.provider.setProjection(self.crs().authid(), mr.destinationCrs().authid())
         else:
           self.provider.setProjection("", "")
-        
+
         ds = self.provider.currentDataSet()
         ds.setCurrentOutputTime(self.timeIdx)
-        
+
         # contour rendering settings
         ds.setContourAutoRange(autoContour)
         ds.setContourCustomRange(contMin, contMax)
-        
+
         # vector rendering settings
         ds.setVectorShaftLengthMethod(self.rs.shaftLength)  # Method used to scale the shaft (sounds rude doesn't it)
         ds.setVectorShaftLengthMinMax(self.rs.shaftLengthMin, self.rs.shaftLengthMax)
@@ -155,9 +167,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         ds.setVectorShaftLengthFixed(self.rs.shaftLengthFixedLength)
         ds.setVectorPenWidth(self.rs.lineWidth)
         ds.setVectorHeadSize(self.rs.headWidth, self.rs.headLength)
-        
+
         img = self.provider.draw()
-        
+
         # img now contains the render of the crayfish layer, merge it
         
         painter = rendererContext.painter()
