@@ -60,12 +60,13 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         
         
     def readXml(self, node):
-        twoDmFile = str( node.toElement().attribute('meshfile') )
+        prj = QgsProject.instance()
+        twoDmFile = prj.readPath( node.toElement().attribute('meshfile') )
         self.loadMesh(twoDmFile)
         datNodes = node.toElement().elementsByTagName("dat")
         for i in xrange(datNodes.length()):
             datNode = datNodes.item(i)
-            datFilePath = datNode.toElement().attribute('path')
+            datFilePath = prj.readPath( datNode.toElement().attribute('path') )
             if not self.provider.loadDataSet(datFilePath):
                 return False
             self.addDatFileName(datFilePath)
@@ -73,14 +74,15 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
 
     def writeXml(self, node, doc):
+        prj = QgsProject.instance()
         element = node.toElement();
         # write plugin layer type to project (essential to be read from project)
         element.setAttribute("type", "plugin")
         element.setAttribute("name", CrayfishViewerPluginLayer.LAYER_TYPE)
-        element.setAttribute("meshfile", self.twoDMFileName)
+        element.setAttribute("meshfile", prj.writePath(self.twoDMFileName))
         for datFile in self.datFileNames:
             ch = doc.createElement("dat")
-            ch.setAttribute("path", datFile);
+            ch.setAttribute("path", prj.writePath(datFile))
             element.appendChild(ch)
         return True
             
