@@ -604,7 +604,12 @@ const DataSet *CrayfishViewer::currentDataSet() const
 
 void CrayfishViewer::setProjection(const QString& srcAuthid, const QString& destAuthid)
 {
+  if (mSrcAuthid == srcAuthid && mDestAuthid == destAuthid)
+    return; // nothing has changed - so do nothing!
+
   mProjection = !srcAuthid.isEmpty() && !destAuthid.isEmpty();
+  mSrcAuthid = srcAuthid;
+  mDestAuthid = destAuthid;
 
   if (!mProjection)
   {

@@ -80,6 +80,8 @@ public:
 
     void setProjection(const QString& srcAuthid, const QString& destAuthid);
     bool hasProjection() const;
+    QString sourceCrsAuthid() const { return mSrcAuthid; }
+    QString destCrsAuthid() const { return mDestAuthid; }
 
 private:
     bool mLoadedSuccessfully;
@@ -117,6 +119,8 @@ private:
     std::vector<DataSet*> mDataSets;  //!< datasets associated with the mesh
 
     bool mProjection; //!< whether doing reprojection from mesh coords to map coords
+    QString mSrcAuthid;  //!< CRS's authority+id of the source (layer)
+    QString mDestAuthid; //!< CRS's authority+id of the destination (project)
     Node* mProjNodes; //!< reprojected nodes
     BBox* mProjBBoxes; //!< reprojected bounding boxes of elements
 

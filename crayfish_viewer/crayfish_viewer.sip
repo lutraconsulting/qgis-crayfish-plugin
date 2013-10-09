@@ -44,6 +44,8 @@ public:
 
     void setProjection(const QString& srcAuthid, const QString& destAuthid);
     bool hasProjection() const;
+    QString sourceCrsAuthid() const;
+    QString destCrsAuthid() const;
 
     uint nodeCount() const;
     uint elementCount() const;
