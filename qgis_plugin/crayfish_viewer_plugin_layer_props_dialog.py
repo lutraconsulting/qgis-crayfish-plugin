@@ -37,19 +37,33 @@ class CrayfishViewerPluginPropsDialog(QDialog, Ui_CrayfishViewerPluginLayerProps
     def __init__(self, layer):
         QDialog.__init__(self)
         self.layer = layer
-        
+
         self.setupUi(self)
-        
+
         self.crs = self.layer.crs()
-        
+
+        p = self.layer.provider
+        ec, ec4, ec3 = p.elementCount(), p.elementCount_E4Q(), p.elementCount_E3T()
+        ecx = ec - ec4 - ec3  # unknown elements
+        html = '''<table>
+          <tr><td width="50%%">Nodes</td><td align="right"><b>%d</b></td>
+          </tr><tr><td>&nbsp;</td></tr>
+          <tr><td>Elements</td><td align="right"><b>%d</b></td></tr>
+          <tr><td>&nbsp;&nbsp;&nbsp;&nbsp;E4Q</td><td align="right">%d</td></tr>
+          <tr><td>&nbsp;&nbsp;&nbsp;&nbsp;E3T</td><td align="right">%d</td></tr>
+          <tr><td>&nbsp;&nbsp;&nbsp;&nbsp;Unknown</td><td align="right">%d</td></tr>
+          </table>''' % (p.nodeCount(), ec, ec4, ec3, ecx)
+        self.editMetadata.setReadOnly(True)
+        self.editMetadata.setHtml(html)
+
         self.updateEditCRS()
         self.connect(self.buttonBox, SIGNAL("accepted()"), self.onOK)
         self.connect(self.btnSpecifyCRS, SIGNAL("clicked()"), self.onSpecifyCRS)
-        
+
     def updateEditCRS(self):
         self.editCRS.setText(self.crs.authid() + " - " + self.crs.description())
         self.editCRS.setCursorPosition(0)
-        
+
     def onSpecifyCRS(self):
 
         selector = QgsGenericProjectionSelector(self)
@@ -60,6 +74,6 @@ class CrayfishViewerPluginPropsDialog(QDialog, Ui_CrayfishViewerPluginLayerProps
           self.updateEditCRS()
 
     def onOK(self):
-      
+
         self.layer.setCrs(self.crs)
         self.accept()

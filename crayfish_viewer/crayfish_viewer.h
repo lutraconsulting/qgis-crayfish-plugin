@@ -57,6 +57,11 @@ public:
 
     double valueAtCoord(const Output *output, double xCoord, double yCoord);
 
+    uint nodeCount() const { return mNodeCount; }
+    uint elementCount() const { return mElemCount; }
+    uint elementCount_E4Q() const { return mE4Qcount; }
+    uint elementCount_E3T() const { return mE3Tcount; }
+
     // new stuff - rendering options
 
     void setCanvasSize(const QSize& size);
@@ -107,6 +112,7 @@ private:
     Node* mNodes;
     E4Qtmp* mE4Qtmp;
     uint mE4Qcount;
+    uint mE3Tcount;
 
     std::vector<DataSet*> mDataSets;  //!< datasets associated with the mesh
 

@@ -86,6 +86,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
   , mNodes(0)
   , mE4Qtmp(0)
   , mE4Qcount(0)
+  , mE3Tcount(0)
   , mProjection(false)
   , mProjNodes(0)
   , mProjBBoxes(0)
@@ -110,6 +111,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
             mElemCount += 1;
         }
         else if( line.startsWith("E3T") ){
+            mE3Tcount += 1;
             mElemCount += 1;
         }
         else if( line.startsWith("ND") ){

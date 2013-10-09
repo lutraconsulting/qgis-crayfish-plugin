@@ -44,6 +44,11 @@ public:
 
     void setProjection(const QString& srcAuthid, const QString& destAuthid);
     bool hasProjection() const;
+
+    uint nodeCount() const;
+    uint elementCount() const;
+    uint elementCount_E4Q() const;
+    uint elementCount_E3T() const;
 };
 
 
