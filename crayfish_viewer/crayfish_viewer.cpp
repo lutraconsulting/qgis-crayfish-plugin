@@ -30,8 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <QVector2D>
 
-#include "qgscoordinatereferencesystem.h"
-#include "qgscoordinatetransform.h"
+#include <proj_api.h>
+
 
 CrayfishViewer::~CrayfishViewer(){
 
@@ -601,50 +601,94 @@ const DataSet *CrayfishViewer::currentDataSet() const
   return dataSet(mCurDataSetIdx);
 }
 
-
-void CrayfishViewer::setProjection(const QString& srcAuthid, const QString& destAuthid)
+void CrayfishViewer::setNoProjection()
 {
-  if (mSrcAuthid == srcAuthid && mDestAuthid == destAuthid)
-    return; // nothing has changed - so do nothing!
-
-  mProjection = !srcAuthid.isEmpty() && !destAuthid.isEmpty();
-  mSrcAuthid = srcAuthid;
-  mDestAuthid = destAuthid;
-
   if (!mProjection)
+    return; // nothing to do
+
+  delete [] mProjNodes;
+  mProjNodes = 0;
+  delete [] mProjBBoxes;
+  mProjBBoxes = 0;
+
+  for (uint i = 0; i < mElemCount; ++i)
   {
-    delete [] mProjNodes;
-    mProjNodes = 0;
-    delete [] mProjBBoxes;
-    mProjBBoxes = 0;
+    if (mElems[i].eType == ElementType::E4Q)
+      E4Q_computeMapping(mElems[i], mE4Qtmp[mElems[i].indexTmp], mNodes);
+  }
 
-    for (uint i = 0; i < mElemCount; ++i)
-    {
-      if (mElems[i].eType == ElementType::E4Q)
-        E4Q_computeMapping(mElems[i], mE4Qtmp[mElems[i].indexTmp], mNodes);
-    }
+  mProjection = false;
+  mSrcProj4.clear();
+  mDestProj4.clear();
+}
 
-    return;
+bool CrayfishViewer::setProjection(const QString& srcProj4, const QString& destProj4)
+{
+  Q_ASSERT(!srcProj4.isEmpty() && !destProj4.isEmpty());
+
+  if (mSrcProj4 == srcProj4 && mDestProj4 == destProj4)
+    return true; // nothing has changed - so do nothing!
+
+  mProjection = true;
+  mSrcProj4 = srcProj4;
+  mDestProj4 = destProj4;
+
+  projPJ projSrc = pj_init_plus(srcProj4.toAscii().data());
+  if (!projSrc)
+  {
+    qDebug("Crayfish: source proj4 string is not valid! (%s)", pj_strerrno(pj_errno));
+    setNoProjection();
+    return false;
+  }
+
+  projPJ projDst = pj_init_plus(destProj4.toAscii().data());
+  if (!projDst)
+  {
+    pj_free(projSrc);
+    qDebug("Crayfish: source proj4 string is not valid! (%s)", pj_strerrno(pj_errno));
+    setNoProjection();
+    return false;
   }
 
   if (mProjNodes == 0)
-  {
     mProjNodes = new Node[mNodeCount];
-    mProjBBoxes = new BBox[mElemCount];
-  }
 
-  QgsCoordinateReferenceSystem srcCRS(srcAuthid);
-  QgsCoordinateReferenceSystem destCRS(destAuthid);
+  memcpy(mProjNodes, mNodes, sizeof(Node)*mNodeCount);
 
-  QgsCoordinateTransform ct(srcCRS, destCRS);
-
-  for (uint i = 0; i < mNodeCount; ++i)
+  if (pj_is_latlong(projSrc))
   {
-    const Node& n = mNodes[i];
-    QgsPoint p = ct.transform(n.x, n.y);
-    mProjNodes[i].x = p.x();
-    mProjNodes[i].y = p.y();
+    // convert source from degrees to radians
+    for (uint i = 0; i < mNodeCount; ++i)
+    {
+      mProjNodes[i].x *= M_PI / 180;
+      mProjNodes[i].y *= M_PI / 180;
+    }
   }
+
+  int res = pj_transform(projSrc, projDst, mNodeCount, 2, &mProjNodes->x, &mProjNodes->y, NULL);
+
+  if (res != 0)
+  {
+    qDebug("Crayfish: reprojection failed (%s)", pj_strerrno(res));
+    setNoProjection();
+    return false;
+  }
+
+  if (pj_is_latlong(projDst))
+  {
+    // convert source from degrees to radians
+    for (uint i = 0; i < mNodeCount; ++i)
+    {
+      mProjNodes[i].x *= 180 / M_PI;
+      mProjNodes[i].y *= 180 / M_PI;
+    }
+  }
+
+  pj_free(projSrc);
+  pj_free(projDst);
+
+  if (mProjBBoxes == 0)
+    mProjBBoxes = new BBox[mElemCount];
 
   for (uint i = 0; i < mElemCount; ++i)
   {
@@ -654,6 +698,7 @@ void CrayfishViewer::setProjection(const QString& srcAuthid, const QString& dest
       E4Q_computeMapping(mElems[i], mE4Qtmp[mElems[i].indexTmp], mProjNodes); // update interpolation coefficients
   }
 
+  return true;
 }
 
 bool CrayfishViewer::hasProjection() const

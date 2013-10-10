@@ -28,18 +28,14 @@
 
 win32 {
   contains(QMAKE_HOST.arch, x86_64) {
-    QGIS_PATH = c:/osgeo4w64/apps/qgis
+    OSGEO_PATH = c:/osgeo4w64
   } else {
-    QGIS_PATH = c:/osgeo4w/apps/qgis
+    OSGEO_PATH = c:/osgeo4w
   }
-}
 
-unix {
-  QGIS_PATH = /home/martin/qgis/inst-master
+  INCLUDEPATH += $${OSGEO_PATH}/include
+  LIBS += -L$${OSGEO_PATH}/lib
 }
-
-# QtXml needed just for some #includes within QGIS headers
-QT       += xml
 
 TARGET = crayfishViewer
 TEMPLATE = lib
@@ -55,14 +51,7 @@ HEADERS += crayfish_viewer.h\
         version.h \
         crayfish_e4q.h
 
-DEFINES += CORE_EXPORT=""
-win32 {
-INCLUDEPATH += $${QGIS_PATH}/include
-}
-unix {
-INCLUDEPATH += $${QGIS_PATH}/include/qgis
-}
-LIBS += -L$${QGIS_PATH}/lib -lqgis_core
+LIBS += -lproj
 
 CONFIG(debug, debug|release) {
     DESTDIR = $$PWD/build/debug

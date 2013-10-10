@@ -1,6 +1,7 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
+from qgis.gui import QgsMessageBar
 from qgis.utils import iface
 
 from crayfish_viewer_render_settings import *
@@ -151,9 +152,11 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         mr = iface.mapCanvas().mapRenderer()
         projEnabled = mr.hasCrsTransformEnabled()
         if projEnabled:
-          self.provider.setProjection(self.crs().authid(), mr.destinationCrs().authid())
+          res = self.provider.setProjection(self.crs().toProj4(), mr.destinationCrs().toProj4())
+          if not res:
+            iface.messageBar().pushMessage("Crayfish", "Failed to reproject the mesh!", level=QgsMessageBar.WARNING)
         else:
-          self.provider.setProjection("", "")
+          self.provider.setNoProjection()
 
         ds = self.provider.currentDataSet()
         ds.setCurrentOutputTime(self.timeIdx)

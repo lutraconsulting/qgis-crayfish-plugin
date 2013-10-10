@@ -78,10 +78,11 @@ public:
     const DataSet* dataSet(int dataSetIndex) const;
     const DataSet* currentDataSet() const;
 
-    void setProjection(const QString& srcAuthid, const QString& destAuthid);
+    void setNoProjection();
+    bool setProjection(const QString& srcProj4, const QString& destProj4);
     bool hasProjection() const;
-    QString sourceCrsAuthid() const { return mSrcAuthid; }
-    QString destCrsAuthid() const { return mDestAuthid; }
+    QString sourceCrsProj4() const { return mSrcProj4; }
+    QString destCrsProj4() const { return mDestProj4; }
 
 private:
     bool mLoadedSuccessfully;
@@ -119,8 +120,8 @@ private:
     std::vector<DataSet*> mDataSets;  //!< datasets associated with the mesh
 
     bool mProjection; //!< whether doing reprojection from mesh coords to map coords
-    QString mSrcAuthid;  //!< CRS's authority+id of the source (layer)
-    QString mDestAuthid; //!< CRS's authority+id of the destination (project)
+    QString mSrcProj4;  //!< CRS's proj.4 string of the source (layer)
+    QString mDestProj4; //!< CRS's proj.4 string of the destination (project)
     Node* mProjNodes; //!< reprojected nodes
     BBox* mProjBBoxes; //!< reprojected bounding boxes of elements
 

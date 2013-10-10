@@ -42,10 +42,11 @@ public:
     const DataSet* dataSet(int dataSetIndex) const;
     const DataSet* currentDataSet() const;
 
-    void setProjection(const QString& srcAuthid, const QString& destAuthid);
+    void setNoProjection();
+    bool setProjection(const QString& srcProj4, const QString& destProj4);
     bool hasProjection() const;
-    QString sourceCrsAuthid() const;
-    QString destCrsAuthid() const;
+    QString sourceCrsProj4() const;
+    QString destCrsProj4() const;
 
     uint nodeCount() const;
     uint elementCount() const;
