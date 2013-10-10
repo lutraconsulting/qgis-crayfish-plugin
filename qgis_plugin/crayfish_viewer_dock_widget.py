@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'crayfish_viewer_dock_widget.ui'
 #
-# Created: Fri Oct  4 16:27:40 2013
+# Created: Thu Oct 10 18:39:21 2013
 #      by: PyQt4 UI code generator 4.10
 #
 # WARNING! All changes made in this file will be lost!
@@ -122,4 +122,4 @@ class Ui_DockWidget(object):
         self.displayMeshCheckBox.setText(_translate("DockWidget", "Display Mesh", None))
         self.valueLabel.setText(_translate("DockWidget", "(0.000) 0.000", None))
 
-from qgis.gui import QgsCollapsibleGroupBox
+from crayfish_gui_utils import QgsCollapsibleGroupBox

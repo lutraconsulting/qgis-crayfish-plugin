@@ -27,7 +27,7 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
-from qgis.gui import QgsMessageBar
+from crayfish_gui_utils import QgsMessageBar, qgis_message_bar
 
 from version import crayfishPythonPluginVersion
 
@@ -272,10 +272,14 @@ class CrayfishPlugin:
         
         # Retrieve the last place we looked if stored
         settings = QSettings()
-        lastFolder = unicode(settings.value("crayfishViewer/lastFolder", os.sep))
+        try:
+            lastFolder = settings.value("crayfishViewer/lastFolder").toString()
+        except AttributeError:  # QGIS 2
+            lastFolder = settings.value("crayfishViewer/lastFolder")
         
         # Get the file name
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Crayfish Dat File', lastFolder, "DAT Results (*.dat);;2DM Mesh Files (*.2dm)")
+        inFileName = unicode(inFileName)
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel 
             return
             
@@ -296,7 +300,7 @@ class CrayfishPlugin:
             
             if layerWith2dm:
                 # This 2dm has already been added
-                self.iface.messageBar().pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
+                qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
                 return
               
             if not self.addLayer(inFileName):
@@ -315,11 +319,11 @@ class CrayfishPlugin:
                 return   # error message has been shown already
             
             if parentLayer.provider.isDataSetLoaded(inFileName):
-                self.iface.messageBar().pushMessage("Crayfish", "The .dat file is already loaded in layer " + parentLayer.name(), level=QgsMessageBar.INFO)
+                qgis_message_bar.pushMessage("Crayfish", "The .dat file is already loaded in layer " + parentLayer.name(), level=QgsMessageBar.INFO)
                 return
 
             if not parentLayer.provider.loadDataSet( inFileName ):
-                self.iface.messageBar().pushMessage("Crayfish", "Failed to load the .DAT file", level=QgsMessageBar.CRITICAL)
+                qgis_message_bar.pushMessage("Crayfish", "Failed to load the .DAT file", level=QgsMessageBar.CRITICAL)
                 return
                 
             parentLayer.addDatFileName( str(inFileName) )
@@ -327,7 +331,7 @@ class CrayfishPlugin:
             self.dock.showMostRecentDataSet()
         else:
             # This is an unsupported file type
-            self.iface.messageBar().pushMessage("Crayfish", "The file type you are trying to load is not supported: " + fileType, level=QgsMessageBar.CRITICAL)
+            qgis_message_bar.pushMessage("Crayfish", "The file type you are trying to load is not supported: " + fileType, level=QgsMessageBar.CRITICAL)
             return
 
 
@@ -344,7 +348,7 @@ class CrayfishPlugin:
 
         # check whether the file exists
         if not os.path.exists(meshFileName):
-            self.iface.messageBar().pushMessage("Crayfish", "The mesh file does not exist ("+meshFileName+")", level=QgsMessageBar.CRITICAL)
+            qgis_message_bar.pushMessage("Crayfish", "The mesh file does not exist ("+meshFileName+")", level=QgsMessageBar.CRITICAL)
             return
         
         if not self.addLayer(meshFileName):
@@ -392,9 +396,9 @@ class CrayfishPlugin:
             # Failed to load 2DM
             e = layer.provider.getLastError()
             if e == 1:  # not enough memory
-              self.iface.messageBar().pushMessage("Crayfish", "Not enough memory to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
+              qgis_message_bar.pushMessage("Crayfish", "Not enough memory to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
             elif e == 2: # cannot open
-              self.iface.messageBar().pushMessage("Crayfish", "Failed to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
+              qgis_message_bar.pushMessage("Crayfish", "Failed to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
 
             return False
             
@@ -407,9 +411,9 @@ class CrayfishPlugin:
             w = layer.provider.getLastWarning() 
             if w == 1:
                 # Unsupported element seen
-                self.iface.messageBar().pushMessage("Crayfish", "The mesh contains elements that are unsupported at this time. The following types of elements will be ignored for the time being: E2L, E3L, E6T, E8Q, E9Q", level=QgsMessageBar.WARNING)
+                qgis_message_bar.pushMessage("Crayfish", "The mesh contains elements that are unsupported at this time. The following types of elements will be ignored for the time being: E2L, E3L, E6T, E8Q, E9Q", level=QgsMessageBar.WARNING)
             elif w == 2:
-                self.iface.messageBar().pushMessage("Crayfish", "The mesh contains some invalid elements, they will not be rendered.", level=QgsMessageBar.WARNING)
+                qgis_message_bar.pushMessage("Crayfish", "The mesh contains some invalid elements, they will not be rendered.", level=QgsMessageBar.WARNING)
         
         return True
 

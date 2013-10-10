@@ -172,7 +172,7 @@
   <customwidget>
    <class>QgsCollapsibleGroupBox</class>
    <extends>QGroupBox</extends>
-   <header>qgis.gui</header>
+   <header>crayfish_gui_utils</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
