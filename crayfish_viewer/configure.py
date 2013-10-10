@@ -69,6 +69,11 @@ if sys.platform != 'win32':
     # Linux
     makefile.extra_lib_dirs = ["build/release"]
     makefile.extra_libs = ["crayfishViewer"]
+
+    # set RPATH to $ORIGIN - that is, use module's directory to find libs
+    # (no need to setup LD_LIBRARY_PATH for the c++ crayfishviewer shared lib)
+    # The double dollar symbol and quotes are necessary because of make's and shell's evaluation of variables
+    makefile.extra_lflags = ["-Wl,-rpath='$$ORIGIN'"]
 else:
     # Windows
     makefile.extra_libs = ["build/release/crayfishViewer"]
