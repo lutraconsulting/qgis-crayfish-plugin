@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
 # Copyright (C) 2012 Peter Wells for Lutra Consulting
@@ -24,8 +25,35 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-qgis_folder=".qgis2"
+import sys
+import os
+import shutil
+import platform
 
-mkdir -p ~/${qgis_folder}/python/plugins/crayfish
-cp -f crayfishviewer.so ~/${qgis_folder}/python/plugins/crayfish
-cp -f build/release/libcrayfishViewer.so.* ~/${qgis_folder}/python/plugins/crayfish
+debug = False
+qgis1 = False
+win = platform.system() == 'Windows'
+file_cpp = "crayfishViewer.dll" if win else "libcrayfishViewer.so.1"
+file_python = "crayfishviewer.pyd" if win else "crayfishviewer.so"
+
+if len(sys.argv) == 2:
+  if sys.argv[1] == '-debug':
+    debug = True
+  else:
+    print "install.py [-debug] [-1]"
+    print ""
+    print "  Install Crayfish C++ library and Python module"
+    sys.exit(0)
+
+qgis_folder = ".qgis" if qgis1 else ".qgis2"
+
+plugin_dir = os.path.expanduser(os.path.join("~", qgis_folder, "python", "plugins", "crayfish"))
+
+if not os.path.exists(plugin_dir):
+  os.makedirs(plugin_dir)
+
+
+build_mode = "debug" if debug else "release"
+
+shutil.copy(os.path.join("build", build_mode, file_cpp), plugin_dir)
+shutil.copy(os.path.join("build-python", build_mode, file_python), plugin_dir)

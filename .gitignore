@@ -1,0 +1,5 @@
+crayfish_viewer/build
+crayfish_viewer/build-python
+crayfish_viewer_test/build
+*.user
+
