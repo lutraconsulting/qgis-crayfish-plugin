@@ -1,3 +1,5 @@
+@echo off
+
 rem Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
 rem Copyright (C) 2012 Peter Wells for Lutra Consulting
 
@@ -22,7 +24,10 @@ rem You should have received a copy of the GNU General Public License
 rem along with this program; if not, write to the Free Software
 rem Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-mkdir %HOMEPATH%\.qgis\python\plugins\crayfish
-copy /y build\release\crayfishViewer.dll %HOMEPATH%\.qgis\python\plugins\crayfish
-copy /y crayfishviewer.pyd %HOMEPATH%\.qgis\python\plugins\crayfish
+SET qgis_folder=".qgis2"
+
+set PLUGINDIR=%HOMEPATH%\%qgis_folder%\python\plugins\crayfish
+mkdir %PLUGINDIR%
+copy /y build\release\crayfishViewer.dll %PLUGINDIR%
+copy /y crayfishviewer.pyd %PLUGINDIR%
 PAUSE

@@ -25,6 +25,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import sys
 import sipconfig
 from PyQt4 import pyqtconfig
 
@@ -64,11 +65,13 @@ makefile = pyqtconfig.QtGuiModuleMakefile(
 # Add the library we are wrapping.  The name doesn't include any platform
 # specific prefixes or extensions (e.g. the "lib" prefix on UNIX, or the
 # ".dll" extension on Windows).
-# Linux
-makefile.extra_lib_dirs = ["build/release"]
-makefile.extra_libs = ["crayfishViewer"]
-# Windows
-# makefile.extra_libs = ["build/release/crayfishViewer"]
+if sys.platform != 'win32':
+    # Linux
+    makefile.extra_lib_dirs = ["build/release"]
+    makefile.extra_libs = ["crayfishViewer"]
+else:
+    # Windows
+    makefile.extra_libs = ["build/release/crayfishViewer"]
 
 # Generate the Makefile itself.
 makefile.generate()

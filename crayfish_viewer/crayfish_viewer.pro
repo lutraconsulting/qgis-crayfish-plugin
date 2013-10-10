@@ -22,15 +22,24 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#-------------------------------------------------
-#
-# Project created by QtCreator 2012-08-24T11:25:24
-#
-#-------------------------------------------------
 
-QGIS_PATH = /home/martin/qgis/inst-master
+############################################################################
+# Setup path to QGIS
 
-# QT       -= gui
+win32 {
+  contains(QMAKE_HOST.arch, x86_64) {
+    QGIS_PATH = c:/osgeo4w64/apps/qgis
+  } else {
+    QGIS_PATH = c:/osgeo4w/apps/qgis
+  }
+}
+
+unix {
+  QGIS_PATH = /home/martin/qgis/inst-master
+}
+
+# QtXml needed just for some #includes within QGIS headers
+QT       += xml
 
 TARGET = crayfishViewer
 TEMPLATE = lib
@@ -47,7 +56,12 @@ HEADERS += crayfish_viewer.h\
         crayfish_e4q.h
 
 DEFINES += CORE_EXPORT=""
+win32 {
+INCLUDEPATH += $${QGIS_PATH}/include
+}
+unix {
 INCLUDEPATH += $${QGIS_PATH}/include/qgis
+}
 LIBS += -L$${QGIS_PATH}/lib -lqgis_core
 
 CONFIG(debug, debug|release) {
