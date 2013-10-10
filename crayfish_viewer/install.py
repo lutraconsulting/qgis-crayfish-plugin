@@ -36,14 +36,21 @@ win = platform.system() == 'Windows'
 file_cpp = "crayfishViewer.dll" if win else "libcrayfishViewer.so.1"
 file_python = "crayfishviewer.pyd" if win else "crayfishviewer.so"
 
-if len(sys.argv) == 2:
-  if sys.argv[1] == '-debug':
-    debug = True
-  else:
-    print "install.py [-debug] [-1]"
-    print ""
-    print "  Install Crayfish C++ library and Python module"
-    sys.exit(0)
+if len(sys.argv) > 1:
+  for arg in sys.argv[1:]:
+    if arg == '-debug':
+      debug = True
+    elif arg == '-1':
+      qgis1 = True
+    else:
+      print "install.py [-debug] [-1]"
+      print ""
+      print "  Install Crayfish C++ library and Python module"
+      print ""
+      print "  Arguments:"
+      print "  -debug    Use debug version of Crayfish C++ library"
+      print "  -1        Install to QGIS 1.x directory (instead of QGIS 2.x)"
+      sys.exit(0)
 
 qgis_folder = ".qgis" if qgis1 else ".qgis2"
 

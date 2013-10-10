@@ -44,6 +44,9 @@ if len(sys.argv) == 2:
     print "build-python.py [-debug]"
     print ""
     print "  Script for building Crayfish python module with SIP"
+    print ""
+    print "  Arguments:"
+    print "  -debug    Build debug version of Crayfish C++ library"
     sys.exit(0)
 
 build_dir = os.path.join(build_basedir, "debug" if build_debug else "release")

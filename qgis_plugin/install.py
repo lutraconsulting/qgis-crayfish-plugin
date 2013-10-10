@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
 # Copyright (C) 2012 Peter Wells for Lutra Consulting
@@ -24,8 +25,37 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-qgis_folder=".qgis2"
+import sys
+import os
+import shutil
+import platform
+import glob
 
-mkdir -p ~/${qgis_folder}/python/plugins/crayfish
-cp -f *.py ~/${qgis_folder}/python/plugins/crayfish
-cp -f metadata.txt ~/${qgis_folder}/python/plugins/crayfish
+qgis1 = False
+
+if len(sys.argv) > 1:
+  for arg in sys.argv[1:]:
+    if arg == '-1':
+      qgis1 = True
+    else:
+      print "install.py [-1]"
+      print ""
+      print "  Install Crayfish Python plugin"
+      print ""
+      print "  Arguments:"
+      print "  -1        Install to QGIS 1.x directory (instead of QGIS 2.x)"
+      sys.exit(0)
+
+qgis_folder = ".qgis" if qgis1 else ".qgis2"
+
+plugin_dir = os.path.expanduser(os.path.join("~", qgis_folder, "python", "plugins", "crayfish"))
+
+if not os.path.exists(plugin_dir):
+  os.makedirs(plugin_dir)
+
+install_files = ['metadata.txt'] + glob.glob("*.py") + glob.glob("*.png")
+install_files.remove("install.py")  # exclude this file!
+
+for filename in install_files:
+  print "-- "+filename
+  shutil.copy(filename, plugin_dir)
