@@ -32,6 +32,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <proj_api.h>
 
+#define DEG2RAD   (3.14159265358979323846 / 180)
+#define RAD2DEG   (180 / 3.14159265358979323846)
 
 CrayfishViewer::~CrayfishViewer(){
 
@@ -660,8 +662,8 @@ bool CrayfishViewer::setProjection(const QString& srcProj4, const QString& destP
     // convert source from degrees to radians
     for (uint i = 0; i < mNodeCount; ++i)
     {
-      mProjNodes[i].x *= M_PI / 180;
-      mProjNodes[i].y *= M_PI / 180;
+      mProjNodes[i].x *= DEG2RAD;
+      mProjNodes[i].y *= DEG2RAD;
     }
   }
 
@@ -679,8 +681,8 @@ bool CrayfishViewer::setProjection(const QString& srcProj4, const QString& destP
     // convert source from degrees to radians
     for (uint i = 0; i < mNodeCount; ++i)
     {
-      mProjNodes[i].x *= 180 / M_PI;
-      mProjNodes[i].y *= 180 / M_PI;
+      mProjNodes[i].x *= RAD2DEG;
+      mProjNodes[i].y *= RAD2DEG;
     }
   }
 

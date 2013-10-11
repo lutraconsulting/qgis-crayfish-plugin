@@ -27,6 +27,7 @@
 
 import os
 import sys
+import platform
 import sipconfig
 from PyQt4 import pyqtconfig
 
@@ -51,6 +52,9 @@ if len(sys.argv) == 2:
 
 build_dir = os.path.join(build_basedir, "debug" if build_debug else "release")
 build_cpp_dir = os.path.join("..","..", build_cpp_basedir, "debug" if build_debug else "release")
+
+win = platform.system() == 'Windows'
+make_cmd = "nmake" if win else "make"
 
 # Get into the build directory
 if not os.path.exists(build_dir):
@@ -103,7 +107,7 @@ else:
 makefile.generate()
 
 # Run make
-res = os.system('make')
+res = os.system(make_cmd)
 if res != 0:
   print "=== make failed ==="
   sys.exit(1)

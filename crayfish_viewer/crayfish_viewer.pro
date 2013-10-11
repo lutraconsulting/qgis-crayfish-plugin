@@ -34,7 +34,11 @@ win32 {
   }
 
   INCLUDEPATH += $${OSGEO_PATH}/include
-  LIBS += -L$${OSGEO_PATH}/lib
+  LIBS += -L$${OSGEO_PATH}/lib -lproj_i
+}
+
+unix {
+  LIBS += -lproj
 }
 
 TARGET = crayfishViewer
@@ -50,8 +54,6 @@ HEADERS += crayfish_viewer.h\
         crayfish_viewer_global.h\
         version.h \
         crayfish_e4q.h
-
-LIBS += -lproj
 
 CONFIG(debug, debug|release) {
     DESTDIR = $$PWD/build/debug
