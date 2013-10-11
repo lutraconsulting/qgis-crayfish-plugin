@@ -32,6 +32,7 @@ import platform
 
 debug = False
 qgis1 = False
+pkg = False
 win = platform.system() == 'Windows'
 file_cpp = "crayfishViewer.dll" if win else "libcrayfishViewer.so.1"
 file_python = "crayfishviewer.pyd" if win else "crayfishviewer.so"
@@ -42,25 +43,35 @@ if len(sys.argv) > 1:
       debug = True
     elif arg == '-1':
       qgis1 = True
+    elif arg == '-pkg':
+      pkg = True
     else:
-      print "install.py [-debug] [-1]"
+      print "install.py [-debug] [-1] [-pkg]"
       print ""
       print "  Install Crayfish C++ library and Python module"
       print ""
       print "  Arguments:"
       print "  -debug    Use debug version of Crayfish C++ library"
       print "  -1        Install to QGIS 1.x directory (instead of QGIS 2.x)"
+      print "  -pkg      Create .zip package for distribution instead of installation"
       sys.exit(0)
 
-qgis_folder = ".qgis" if qgis1 else ".qgis2"
-
-plugin_dir = os.path.expanduser(os.path.join("~", qgis_folder, "python", "plugins", "crayfish"))
-
-if not os.path.exists(plugin_dir):
-  os.makedirs(plugin_dir)
-
-
 build_mode = "debug" if debug else "release"
+build_file_cpp = os.path.join("build", build_mode, file_cpp)
+build_file_python = os.path.join("build-python", build_mode, file_python)
 
-shutil.copy(os.path.join("build", build_mode, file_cpp), plugin_dir)
-shutil.copy(os.path.join("build-python", build_mode, file_python), plugin_dir)
+if pkg:
+  import zipfile
+  with zipfile.ZipFile("crayfish_viewer_library.zip", "w") as z:
+    z.write(build_file_cpp, file_cpp)
+    z.write(build_file_python, file_python)
+
+else:
+  qgis_folder = ".qgis" if qgis1 else ".qgis2"
+  plugin_dir = os.path.expanduser(os.path.join("~", qgis_folder, "python", "plugins", "crayfish"))
+  
+  if not os.path.exists(plugin_dir):
+    os.makedirs(plugin_dir)
+
+  shutil.copy(build_file_cpp, plugin_dir)
+  shutil.copy(build_file_python, plugin_dir)
