@@ -101,10 +101,6 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         """
         self.currentDataSet().setVectorRenderingEnabled(newState)
         self.vectorOptionsPushButton.setEnabled(newState)
-        if not newState:
-            # Ensure one or the other is on
-            if not self.contoursGroupBox.isChecked():
-                self.contoursGroupBox.setCheckState(True)
         self.redrawCurrentLayer()
         
     def displayMeshButtonToggled(self, newState):

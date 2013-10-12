@@ -6,13 +6,19 @@ qgisMaximumVersion=2.99
 description=A collection of tools for TUFLOW and other hydraulic 
     modelling packages
 ; category=Raster ; Did not know what my available choices where
-version=version 1.1
+version=version 1.1.1
 author=Peter Wells for Lutra Consulting
 email=peter.wells@lutraconsulting.co.uk
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=1.1 - New features:
+changelog=1.1.1 - Bug fixes:
+ - Fixed bug where python exception would be generated when both contour and vector display disabled.
+ - Updated identify() to mesh with changes made to the crayfish view library's valueAtCoord function.
+ - Made calls to QString in identify() QGIS version agnostic.
+ - Added 'dummy' versions of rasterUnitsPerPixelX() and rasterUnitsPerPixelY() to allow profiletool to function.
+ - Ensured layer properties window displays a sensible window title.
+ <p>1.1 - New features:
  - Support for triangular elements
  - Support for projection on-the-fly
  - Rendering of the mesh as a wireframe

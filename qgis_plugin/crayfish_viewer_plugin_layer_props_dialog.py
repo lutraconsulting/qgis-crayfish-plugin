@@ -39,6 +39,7 @@ class CrayfishViewerPluginPropsDialog(QDialog, Ui_CrayfishViewerPluginLayerProps
         self.layer = layer
 
         self.setupUi(self)
+        self.window().setWindowTitle('Layer Properties - %s' % (self.layer.name()))
 
         self.crs = self.layer.crs()
 

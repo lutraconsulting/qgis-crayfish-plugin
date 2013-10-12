@@ -202,19 +202,27 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         x = pt.x()
         y = pt.y()
         
-        value = self.provider.valueAtCoord( self.dataSetIdx, 
-                                            self.timeIdx, 
-                                            x, y)
+        outputOfInterest = self.provider.dataSet(self.dataSetIdx).output(self.timeIdx)
+        value = self.provider.valueAtCoord( outputOfInterest, x, y)
         
         v = None
         if value == -9999.0:
             # Outide extent
-            v = QString('out of extent')
+            try:
+                v = QString('out of extent')
+            except:
+                v = 'out of extent'
         else:
-            v = QString(str(value))
+            try:
+                v = QString(str(value))
+            except:
+                v = str(value)
             
         d = dict()
-        d[ QString('Band 1') ] = v
+        try:
+            d[ QString('Band 1') ] = v
+        except:
+            d[ 'Band 1' ] = v
         
         return (True, d)
         
@@ -225,3 +233,11 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         # Only required so far for the profile tool
         # There's probably a better way of doing this
         return float(0.5)
+    
+    def rasterUnitsPerPixelX(self):
+        # Only required so far for the profile tool
+        return self.rasterUnitsPerPixel()
+    
+    def rasterUnitsPerPixelY(self):
+        # Only required so far for the profile tool
+        return self.rasterUnitsPerPixel()
