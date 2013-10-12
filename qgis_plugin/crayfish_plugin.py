@@ -165,7 +165,10 @@ class CrayfishPlugin:
         destFolder = os.path.dirname(__file__)
         s = QSettings()
         # FIXME - does this work from behind a proxy?
-        useProxy = qv2bool(s.value("proxy/proxyEnabled", False))
+        try:
+            useProxy = s.value("proxy/proxyEnabled", False).toBool()
+        except:
+            useProxy = s.value("proxy/proxyEnabled", False, type=bool)
         if useProxy:
             proxyHost = qv2unicode(s.value("proxy/proxyHost", unicode()))
             proxyPassword = qv2unicode(s.value("proxy/proxyPassword", unicode()))

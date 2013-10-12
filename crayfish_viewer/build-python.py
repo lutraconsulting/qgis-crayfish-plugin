@@ -86,6 +86,8 @@ makefile = pyqtconfig.QtGuiModuleMakefile(
 )
 
 makefile.extra_include_dirs = [os.path.join("..","..")]  # this directory is grandparent to the actual build dir
+if sys.platform == 'win32':
+    makefile.extra_include_dirs.append( os.path.join(os.environ['OSGEO4W_ROOT'], 'include') )
 
 # Add the library we are wrapping.  The name doesn't include any platform
 # specific prefixes or extensions (e.g. the "lib" prefix on UNIX, or the
