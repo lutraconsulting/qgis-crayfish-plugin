@@ -54,22 +54,12 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         QObject.connect(self.listWidget, SIGNAL("currentRowChanged(int)"), self.dataSetChanged)
         QObject.connect(self.listWidget_2, SIGNAL("currentRowChanged(int)"), self.redraw)
         QObject.connect(self.iface, SIGNAL("currentLayerChanged(QgsMapLayer *)"), self.refresh)
-        QObject.connect(self.contourCustomRangeCheckBox, SIGNAL("toggled(bool)"), self.toggleContourOptions)
-        QObject.connect(self.contourMinLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
-        QObject.connect(self.contourMaxLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
+        QObject.connect(self.contourCustomRangeCheckBox, SIGNAL("toggled(bool)"), self.contourCustomRangeToggled)
+        QObject.connect(self.contourMinLineEdit, SIGNAL('textEdited(QString)'), self.contourRangeChanged)
+        QObject.connect(self.contourMaxLineEdit, SIGNAL('textEdited(QString)'), self.contourRangeChanged)
         QObject.connect(self.contoursGroupBox, SIGNAL('toggled(bool)'), self.displayContoursButtonToggled)
         QObject.connect(self.contourTransparencySlider, SIGNAL('valueChanged(int)'), self.transparencyChanged)
         
-        
-    def __del__(self):
-        # Disconnect signals and slots
-        QObject.disconnect(self.contoursGroupBox, SIGNAL('toggled(bool)'), self.displayContoursButtonToggled)
-        QObject.disconnect(self.contourMaxLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
-        QObject.disconnect(self.contourMinLineEdit, SIGNAL('textEdited(QString)'), self.redrawCurrentLayer)
-        QObject.disconnect(self.contourCustomRangeCheckBox, SIGNAL("toggled(bool)"), self.toggleContourOptions)
-        QObject.disconnect(self.iface, SIGNAL("currentLayerChanged(QgsMapLayer *)"), self.refresh)
-        QObject.disconnect(self.listWidget_2, SIGNAL("currentRowChanged(int)"), self.redraw)
-        QObject.disconnect(self.listWidget, SIGNAL("currentRowChanged(int)"), self.dataSetChanged)
         
     def currentDataSet(self):
         l = self.iface.mapCanvas().currentLayer()
@@ -112,18 +102,41 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.redrawCurrentLayer()
 
 
-    def toggleContourOptions(self, on):
-        l = self.iface.mapCanvas().currentLayer()
-        dataSet = l.provider.dataSet( self.listWidget.currentRow() )
-        zMin = dataSet.contourCustomRangeMin() if on else dataSet.minZValue()
-        zMax = dataSet.contourCustomRangeMax() if on else dataSet.maxZValue()
-        self.contourMinLineEdit.setEnabled(on)
-        self.contourMaxLineEdit.setEnabled(on)
-        self.contourMinLineEdit.setText( str("%.3f" % zMin) )
-        self.contourMaxLineEdit.setText( str("%.3f" % zMax) )
+    def contourCustomRangeToggled(self, on):
+        """ set provider's auto range """
+
+        ds = self.currentDataSet()
+        ds.setContourAutoRange(not on)
+
+        self.updateContourRange(ds)
+
         # Redraw the layer
         tIndex = self.listWidget_2.currentRow()
         self.redraw(tIndex)
+
+
+    def contourRangeChanged(self):
+        """ set provider's custom range """
+        ds = self.currentDataSet()
+        try:
+            minContour = float( str(self.contourMinLineEdit.text()) )
+            maxContour = float( str(self.contourMaxLineEdit.text()) )
+            ds.setContourCustomRange(minContour, maxContour)
+            self.redrawCurrentLayer()
+        except ValueError:
+            pass
+
+
+    def updateContourRange(self, dataSet):
+        """ update GUI from provider's range """
+        manualRange = not dataSet.contourAutoRange()
+        zMin = dataSet.contourCustomRangeMin() if manualRange else dataSet.minZValue()
+        zMax = dataSet.contourCustomRangeMax() if manualRange else dataSet.maxZValue()
+        self.contourMinLineEdit.setEnabled(manualRange)
+        self.contourMaxLineEdit.setEnabled(manualRange)
+        self.contourMinLineEdit.setText( str("%.3f" % zMin) )
+        self.contourMaxLineEdit.setText( str("%.3f" % zMax) )
+
         
     def transparencyChanged(self, value):
         self.currentDataSet().setContourAlpha(255-value)
@@ -190,17 +203,14 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             self.listWidget_2.setEnabled(False)
             
         # Get the contour settings from the provider
-        contourAutomatically = dataSet.contourAutoRange()
         self.contourTransparencySlider.setValue( 255 - dataSet.contourAlpha() )
-        self.contourCustomRangeCheckBox.setChecked( not contourAutomatically )
-        if contourAutomatically:
-            vMin = dataSet.minZValue()
-            vMax = dataSet.maxZValue()
-        else:
-            vMin = dataSet.contourCustomRangeMin()
-            vMax = dataSet.contourCustomRangeMax()
-        self.contourMinLineEdit.setText( str("%.3f" % vMin) )
-        self.contourMaxLineEdit.setText( str("%.3f" % vMax) )
+
+        self.contourCustomRangeCheckBox.blockSignals(True)
+        self.contourCustomRangeCheckBox.setChecked( not dataSet.contourAutoRange() )
+        self.contourCustomRangeCheckBox.blockSignals(False)
+
+        self.updateContourRange(dataSet)
+
             
         # Get contour / vector render preferences
         self.contoursGroupBox.setChecked(dataSet.isContourRenderingEnabled())
@@ -213,19 +223,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.reArranging = False
         # self.redraw(lastIdxViewed)
         self.redrawCurrentLayer()
+
         
-    
-    def getRenderOptions(self):
-        autoRender = not self.contourCustomRangeCheckBox.isChecked()
-        try:
-            minContour = float( str(self.contourMinLineEdit.text()) )
-            maxContour = float( str(self.contourMaxLineEdit.text()) )
-            return autoRender, minContour, maxContour
-        except ValueError:
-            # fallback if the conversion was not successful (e.g. user typed so far just "3.1e" from "3.1e5")
-            return True, 0.0, 0.0
-
-
     def deactivate(self):
         if not self.isEnabled():
             return

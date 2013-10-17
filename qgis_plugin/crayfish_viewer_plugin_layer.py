@@ -138,13 +138,6 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         else:
             timeIndex = 0
             
-        if self.dock is None:
-            autoContour = True
-            contMin = 0.0
-            contMax = 0.0
-        else:
-            autoContour, contMin, contMax = self.dock.getRenderOptions()
-
         self.provider.setCanvasSize(QSize(int(width), int(height)))
         self.provider.setExtent(extent.xMinimum(), extent.yMinimum(), pixelSize)
         self.provider.setCurrentDataSetIndex(self.dataSetIdx)
@@ -161,9 +154,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         ds = self.provider.currentDataSet()
         ds.setCurrentOutputTime(self.timeIdx)
 
-        # contour rendering settings
-        ds.setContourAutoRange(autoContour)
-        ds.setContourCustomRange(contMin, contMax)
+        # contour rendering settings are applied directly when set (not here)
 
         # vector rendering settings
         ds.setVectorShaftLengthMethod(self.rs.shaftLength)  # Method used to scale the shaft (sounds rude doesn't it)
