@@ -1,6 +1,7 @@
 #include <QtCore/QCoreApplication>
 #include <QLibrary>
 #include "crayfish_viewer.h"
+#include "crayfish_e4q.h"
 
 void dumpL2P(double x, double y, const E4Qtmp& t)
 {
@@ -21,10 +22,12 @@ int main(int argc, char *argv[])
 {
 
   // create our E4Q
-  Node p1 = { 0, -1, -1 };
-  Node p2 = { 0,  8,  3 };
-  Node p3 = { 0, 13, 11 };
-  Node p4 = { 0, -4,  8 };
+  Node nodes[] = {
+    { -1, -1 },
+    {  8,  3 },
+    { 13, 11 },
+    { -4,  8 }
+  };
 
   // test with a square
   /*
@@ -34,14 +37,12 @@ int main(int argc, char *argv[])
   */
 
   Element testElem;
-  testElem.p1 = &p1;
-  testElem.p2 = &p2;
-  testElem.p3 = &p3;
-  testElem.p4 = &p4;
+  for (int i = 0; i < 4; ++i)
+    testElem.p[i] = i;
 
   E4Qtmp testE4Q;
 
-  E4Q_computeMapping(testElem, testE4Q);
+  E4Q_computeMapping(testElem, testE4Q, nodes);
 
   dumpL2P(0,0, testE4Q);
   dumpL2P(1,0, testE4Q);
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
   dumpP2L(-4, 8, testE4Q);
   dumpP2L(2,2, testE4Q);
 
-  qDebug("complex: %d", E4Q_isComplex(testElem));
+  qDebug("complex: %d", E4Q_isComplex(testElem, nodes));
 
 #if 0
     QCoreApplication a(argc, argv);
