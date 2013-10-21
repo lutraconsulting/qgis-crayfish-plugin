@@ -4,11 +4,40 @@ from qgis.core import *
 from crayfish_gui_utils import QgsMessageBar, qgis_message_bar
 from qgis.utils import iface
 
-from crayfish_viewer_render_settings import *
-from crayfishviewer import CrayfishViewer
+from crayfishviewer import CrayfishViewer, DataSetType
 
 import os
 import glob
+
+
+
+def qstring2int(s):
+    """ return an integer from a string or None on error. Should work with SIP API either 1 or 2 """
+    if isinstance(s, unicode):
+        try:
+            return int(s)
+        except ValueError:
+            return None
+    else:   # QString (API v1)
+        res = s.toInt()
+        return res[0] if res[1] else None
+
+def qstring2bool(s):
+    i = qstring2int(s)
+    if i is not None:
+        i = bool(i)
+    return i
+
+def qstring2float(s):
+    if isinstance(s, unicode):
+        try:
+            return float(s)
+        except ValueError:
+            return None
+    else:  # QString (API v2)
+        res = s.toDouble()
+        return res[0] if res[1] else None
+
 
 
 class CrayfishViewerPluginLayer(QgsPluginLayer):
@@ -18,7 +47,6 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
     def __init__(self, meshFileName=None):
         QgsPluginLayer.__init__(self, CrayfishViewerPluginLayer.LAYER_TYPE, "Crayfish Viewer plugin layer")
         self.meshLoaded = False
-        self.datFileNames = []
         if meshFileName is not None:
             self.loadMesh(meshFileName)
 
@@ -29,11 +57,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             self.setValid(True)
         else:
             self.setValid(False)
-        self.dock = None
         self.twoDMFileName = ''
-        self.dataSetIdx = 0
-        self.timeIdx = 0
-        self.rs = CrayfishViewerRenderSettings()
         self.meshLoaded = True
         
         # Properly set the extents
@@ -61,16 +85,46 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         
         
     def readXml(self, node):
+        element = node.toElement()
         prj = QgsProject.instance()
-        twoDmFile = prj.readPath( node.toElement().attribute('meshfile') )
+
+        # load mesh
+        twoDmFile = prj.readPath( element.attribute('meshfile') )
         self.loadMesh(twoDmFile)
-        datNodes = node.toElement().elementsByTagName("dat")
+
+        # load bed settings
+        bedElem = element.firstChildElement("bed")
+        if not bedElem.isNull():
+          ds = self.provider.dataSet(0)
+          self.readDataSetXml(ds, bedElem)
+
+        # load data files
+        datNodes = element.elementsByTagName("dat")
         for i in xrange(datNodes.length()):
-            datNode = datNodes.item(i)
-            datFilePath = prj.readPath( datNode.toElement().attribute('path') )
+            datElem = datNodes.item(i).toElement()
+            datFilePath = prj.readPath( datElem.attribute('path') )
             if not self.provider.loadDataSet(datFilePath):
                 return False
-            self.addDatFileName(datFilePath)
+            ds = self.provider.dataSet(self.provider.dataSetCount()-1)
+            self.readDataSetXml(ds, datElem)
+
+            currentOutput = qstring2int(datElem.attribute("current-output"))
+            if currentOutput is not None:
+                ds.setCurrentOutputTime(currentOutput)
+
+
+        # load settings
+        currentDataSetIndex = qstring2int(element.attribute("current-dataset"))
+        if currentDataSetIndex is not None:
+            self.provider.setCurrentDataSetIndex(currentDataSetIndex)
+
+        # mesh rendering
+        meshElem = element.firstChildElement("render-mesh")
+        if not meshElem.isNull():
+            meshRendering = qstring2bool(meshElem.attribute("enabled"))
+            if meshRendering is not None:
+                self.provider.setMeshRenderingEnabled(meshRendering)
+
         return True
 
 
@@ -81,25 +135,99 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         element.setAttribute("type", "plugin")
         element.setAttribute("name", CrayfishViewerPluginLayer.LAYER_TYPE)
         element.setAttribute("meshfile", prj.writePath(self.twoDMFileName))
-        for datFile in self.datFileNames:
-            ch = doc.createElement("dat")
-            ch.setAttribute("path", prj.writePath(datFile))
-            element.appendChild(ch)
+        element.setAttribute("current-dataset", self.provider.currentDataSetIndex())
+        meshElem = doc.createElement("render-mesh")
+        meshElem.setAttribute("enabled", "1" if self.provider.isMeshRenderingEnabled() else "0")
+        element.appendChild(meshElem)
+
+        for i in range(self.provider.dataSetCount()):
+            ds = self.provider.dataSet(i)
+            if ds.type() == DataSetType.Bed:
+                dsElem = doc.createElement("bed")
+            else:
+                dsElem = doc.createElement("dat")
+                dsElem.setAttribute("path", prj.writePath(ds.fileName()))
+                dsElem.setAttribute("current-output", ds.currentOutputTime())
+            self.writeDataSetXml(ds, dsElem, doc)
+            element.appendChild(dsElem)
+
         return True
-            
+
+    def readDataSetXml(self, ds, elem):
+
+        # contour options
+        contElem = elem.firstChildElement("render-contour")
+        if not contElem.isNull():
+            enabled = qstring2bool(contElem.attribute("enabled"))
+            if enabled is not None:
+                ds.setContourRenderingEnabled(enabled)
+            alpha = qstring2int(contElem.attribute("alpha"))
+            if alpha is not None:
+                ds.setContourAlpha(alpha)
+            autoRange = qstring2bool(contElem.attribute("auto-range"))
+            if autoRange is not None:
+                ds.setContourAutoRange(autoRange)
+            rangeMin = qstring2float(contElem.attribute("range-min"))
+            rangeMax = qstring2float(contElem.attribute("range-max"))
+            if rangeMin is not None and rangeMax is not None:
+                ds.setContourCustomRange(rangeMin, rangeMax)
+
+        # vector options (if applicable)
+        if ds.type() == DataSetType.Vector:
+            vectElem = elem.firstChildElement("render-vector")
+            enabled = qstring2bool(vectElem.attribute("enabled"))
+            if enabled is not None:
+                ds.setVectorRenderingEnabled(enabled)
+            method = qstring2int(vectElem.attribute("method"))
+            if method is not None:
+                ds.setVectorShaftLengthMethod(method)
+            shaftLengthMin = qstring2float(vectElem.attribute("shaft-length-min"))
+            shaftLengthMax = qstring2float(vectElem.attribute("shaft-length-max"))
+            if shaftLengthMin is not None and shaftLengthMax is not None:
+                ds.setVectorShaftLengthMinMax(shaftLengthMin, shaftLengthMax)
+            shaftLengthScale = qstring2float(vectElem.attribute("shaft-length-scale"))
+            if shaftLengthScale is not None:
+                ds.setVectorShaftLengthScaleFactor(shaftLengthScale)
+            shaftLengthFixed = qstring2float(vectElem.attribute("shaft-length-fixed"))
+            if shaftLengthFixed is not None:
+                ds.setVectorShaftLengthFixed(shaftLengthFixed)
+            penWidth = qstring2float(vectElem.attribute("pen-width"))
+            if penWidth is not None:
+                ds.setVectorPenWidth(penWidth)
+            headWidth = qstring2float(vectElem.attribute("head-width"))
+            headLength = qstring2float(vectElem.attribute("head-length"))
+            if headWidth is not None and headLength is not None:
+                ds.setVectorHeadSize(headWidth, headLength)
+
+
+    def writeDataSetXml(self, ds, elem, doc):
+
+        # contour options
+        contElem = doc.createElement("render-contour")
+        contElem.setAttribute("enabled", "1" if ds.isContourRenderingEnabled() else "0")
+        contElem.setAttribute("alpha", ds.contourAlpha())
+        contElem.setAttribute("auto-range", "1" if ds.contourAutoRange() else "0")
+        contElem.setAttribute("range-min", str(ds.contourCustomRangeMin()))
+        contElem.setAttribute("range-max", str(ds.contourCustomRangeMax()))
+        elem.appendChild(contElem)
+
+        # vector options (if applicable)
+        if ds.type() == DataSetType.Vector:
+          vectElem = doc.createElement("render-vector")
+          vectElem.setAttribute("enabled", "1" if ds.isVectorRenderingEnabled() else "0")
+          vectElem.setAttribute("method", ds.vectorShaftLengthMethod())
+          vectElem.setAttribute("shaft-length-min", str(ds.vectorShaftLengthMin()))
+          vectElem.setAttribute("shaft-length-max", str(ds.vectorShaftLengthMax()))
+          vectElem.setAttribute("shaft-length-scale", str(ds.vectorShaftLengthScaleFactor()))
+          vectElem.setAttribute("shaft-length-fixed", str(ds.vectorShaftLengthFixed()))
+          vectElem.setAttribute("pen-width", str(ds.vectorPenWidth()))
+          vectElem.setAttribute("head-width", str(ds.vectorHeadWidth()))
+          vectElem.setAttribute("head-length", str(ds.vectorHeadLength()))
+          elem.appendChild(vectElem)
+
 
     def set2DMFileName(self, fName):
         self.twoDMFileName = fName
-    
-    def addDatFileName(self, fName):
-        self.datFileNames.append(fName)
-    
-    def setDock(self, dock):
-        self.dock = dock
-        
-    def setRenderSettings(self, dataSetIdx, timeIdx):
-        self.dataSetIdx = dataSetIdx
-        self.timeIdx = timeIdx
     
     def draw(self, rendererContext):
         
@@ -133,14 +261,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             print '\tYMin:\t' + str(extent.yMinimum()) + '\n'
             print '\tPixSz:\t' + str(pixelSize) + '\n'
             
-        if self.dock is not None:
-            timeIndex = self.dock.listWidget_2.currentRow()
-        else:
-            timeIndex = 0
-            
         self.provider.setCanvasSize(QSize(int(width), int(height)))
         self.provider.setExtent(extent.xMinimum(), extent.yMinimum(), pixelSize)
-        self.provider.setCurrentDataSetIndex(self.dataSetIdx)
 
         mr = iface.mapCanvas().mapRenderer()
         projEnabled = mr.hasCrsTransformEnabled()
@@ -152,19 +274,12 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           self.provider.setNoProjection()
 
         ds = self.provider.currentDataSet()
-        ds.setCurrentOutputTime(self.timeIdx)
-
-        # contour rendering settings are applied directly when set (not here)
-
-        # vector rendering settings
-        ds.setVectorShaftLengthMethod(self.rs.shaftLength)  # Method used to scale the shaft (sounds rude doesn't it)
-        ds.setVectorShaftLengthMinMax(self.rs.shaftLengthMin, self.rs.shaftLengthMax)
-        ds.setVectorShaftLengthScaleFactor(self.rs.shaftLengthScale)
-        ds.setVectorShaftLengthFixed(self.rs.shaftLengthFixedLength)
-        ds.setVectorPenWidth(self.rs.lineWidth)
-        ds.setVectorHeadSize(self.rs.headWidth, self.rs.headLength)
+        if not ds:
+            return False
 
         img = self.provider.draw()
+        if not img:
+            return False
 
         # img now contains the render of the crayfish layer, merge it
         
@@ -184,8 +299,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             
             This function calls valueAtCoord in the C++ provider
             
-            double valueAtCoord(int dataSetIdx, 
-                                int timeIndex, 
+            double valueAtCoord(const Output* output,
                                 double xCoord, 
                                 double yCoord);
         """
@@ -193,7 +307,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         x = pt.x()
         y = pt.y()
         
-        outputOfInterest = self.provider.dataSet(self.dataSetIdx).output(self.timeIdx)
+        outputOfInterest = self.provider.currentDataSet().currentOutputTime()
         value = self.provider.valueAtCoord( outputOfInterest, x, y)
         
         v = None

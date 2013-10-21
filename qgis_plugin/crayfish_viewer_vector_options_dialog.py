@@ -112,6 +112,8 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         self.rs.filterByMag = self.filterByMagGroupBox.isChecked()
         self.rs.minMag = float( self.minimumMagLineEdit.text() )
         self.rs.maxMag = float( self.maximumMagLineEdit.text() )
+
+        self.rs.applyToDataSet()
     
     def shaftLengthMethodChanged(self, newIdx):
         """

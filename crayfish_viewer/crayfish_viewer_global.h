@@ -165,6 +165,14 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
       , mContourMax(0)
       , mContourAlpha(255)
       , mRenderVectors(false)
+      , mShaftLengthMethod(MinMax)
+      , mMinShaftLength(3)
+      , mMaxShaftLength(40)
+      , mScaleFactor(10)
+      , mFixedShaftLength(10)
+      , mLineWidth(1)
+      , mVectorHeadWidthPerc(15)
+      , mVectorHeadLengthPerc(40)
     {
     }
 

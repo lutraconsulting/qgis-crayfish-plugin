@@ -26,27 +26,30 @@
 
 class CrayfishViewerRenderSettings():
     
-    def __init__(self):
+    def __init__(self, ds):
         """
             Set defaults
         """
-        
+
         # Live settings
-        
-        self.shaftLength = 0 # DefineMinAndMax
-        self.shaftLengthMin = 3.0
-        self.shaftLengthMax = 40.0
-        self.shaftLengthFixedLength = 10.0
-        self.shaftLengthScale = 10.0
-        
-        self.lineWidth = 1
-        
+
+        self.ds = ds
+
+        self.shaftLength = ds.vectorShaftLengthMethod()
+        self.shaftLengthMin = ds.vectorShaftLengthMin()
+        self.shaftLengthMax = ds.vectorShaftLengthMax()
+        self.shaftLengthFixedLength = ds.vectorShaftLengthFixed()
+        self.shaftLengthScale = ds.vectorShaftLengthScaleFactor()
+
+        self.lineWidth = ds.vectorPenWidth()
+
+        self.headWidth = ds.vectorHeadWidth()
+        self.headLength = ds.vectorHeadLength()
+
+
         self.displayVectorsOnGrid = False
         self.xSpacing = 50.0
         self.ySpacing = 50.0
-        
-        self.headWidth = 15.0
-        self.headLength = 40.0
         
         self.filterByMag = False
         self.minMag = 0.0
@@ -116,3 +119,14 @@ class CrayfishViewerRenderSettings():
         self.filterByMag = self.__filterByMag
         self.minMag = self.__minMag
         self.maxMag = self.__maxMag
+
+        self.applyToDataSet()
+
+    def applyToDataSet(self):
+
+        self.ds.setVectorShaftLengthMethod(self.shaftLength)  # Method used to scale the shaft (sounds rude doesn't it)
+        self.ds.setVectorShaftLengthMinMax(self.shaftLengthMin, self.shaftLengthMax)
+        self.ds.setVectorShaftLengthScaleFactor(self.shaftLengthScale)
+        self.ds.setVectorShaftLengthFixed(self.shaftLengthFixedLength)
+        self.ds.setVectorPenWidth(self.lineWidth)
+        self.ds.setVectorHeadSize(self.headWidth, self.headLength)

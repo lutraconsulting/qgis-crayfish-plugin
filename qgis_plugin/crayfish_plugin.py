@@ -153,7 +153,7 @@ class CrayfishPlugin:
         # Make connections
         QObject.connect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)
         QObject.connect(self.lr, SIGNAL("layerWillBeRemoved(QString)"), self.layerRemoved)
-        QObject.connect(self.lr, SIGNAL("layerWasAdded(QgsMapLayer*)"), self.assignDock)
+        QObject.connect(self.lr, SIGNAL("layerWasAdded(QgsMapLayer*)"), self.layerWasAdded)
 
         # Create the dock widget
         self.dock = CrayfishViewerDock(self.iface)
@@ -274,7 +274,7 @@ class CrayfishPlugin:
         # Make connections
         QObject.disconnect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)
         QObject.disconnect(self.lr, SIGNAL("layerWillBeRemoved(QString)"), self.layerRemoved)
-        QObject.disconnect(self.lr, SIGNAL("layerWasAdded(QgsMapLayer*)"), self.assignDock)
+        QObject.disconnect(self.lr, SIGNAL("layerWasAdded(QgsMapLayer*)"), self.layerWasAdded)
 
     def run(self):
         """
@@ -323,6 +323,9 @@ class CrayfishPlugin:
             if not self.addLayer(inFileName):
                 return # addLayer() reports errors/warnings
 
+            # update GUI
+            self.dock.currentLayerChanged()
+
         elif fileType == '.dat':
             """
                 The user is adding a result set:
@@ -342,10 +345,14 @@ class CrayfishPlugin:
             if not parentLayer.provider.loadDataSet( inFileName ):
                 qgis_message_bar.pushMessage("Crayfish", "Failed to load the .DAT file", level=QgsMessageBar.CRITICAL)
                 return
-                
-            parentLayer.addDatFileName( str(inFileName) )
-            self.dock.refresh()
-            self.dock.showMostRecentDataSet()
+
+            # set to most recent data set
+            parentLayer.provider.setCurrentDataSetIndex(parentLayer.provider.dataSetCount()-1)
+            # update GUI
+            self.dock.currentLayerChanged()
+            # allow user to go through the time steps with arrow keys
+            self.dock.listWidget_2.setFocus()
+
         else:
             # This is an unsupported file type
             qgis_message_bar.pushMessage("Crayfish", "The file type you are trying to load is not supported: " + fileType, level=QgsMessageBar.CRITICAL)
@@ -422,8 +429,6 @@ class CrayfishPlugin:
         # Add to layer registry
         QgsMapLayerRegistry.instance().addMapLayer(layer)
         
-        self.assignDock(layer)
-
         if layer.provider.warningsEncountered():
             w = layer.provider.getLastWarning() 
             if w == 1:
@@ -434,7 +439,7 @@ class CrayfishPlugin:
         
         return True
 
-    def assignDock(self, layer):
+    def layerWasAdded(self, layer):
         if layer.type() != QgsMapLayer.PluginLayer:
             return
         if layer.LAYER_TYPE != 'crayfish_viewer':
@@ -442,12 +447,7 @@ class CrayfishPlugin:
 
         # make sure the dock is visible and up-to-date
         self.dock.show()
-        self.dock.refresh()
 
-        layer.setDock(self.dock)
-        self.dock.showMostRecentDataSet()
-
-        self.dock.listWidget_2.setFocus()
         
     def dockVisibilityChanged(self, visible):
         if visible and len(self.getCrayfishLayers()) == 0:

@@ -30,6 +30,8 @@ from qgis.core import *
 
 from crayfish_viewer_dock_widget import Ui_DockWidget
 import crayfish_viewer_vector_options_dialog
+from crayfish_viewer_render_settings import CrayfishViewerRenderSettings
+
 
 class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
     
@@ -47,13 +49,12 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.contourMaxLineEdit.setValidator(QDoubleValidator(self.contourMaxLineEdit))
 
         self.setEnabled(False)
-        self.reArranging = False
         self.vectorPropsDialog = None
         
         # Ensure refresh() is called when the layer changes
         QObject.connect(self.listWidget, SIGNAL("currentRowChanged(int)"), self.dataSetChanged)
-        QObject.connect(self.listWidget_2, SIGNAL("currentRowChanged(int)"), self.redraw)
-        QObject.connect(self.iface, SIGNAL("currentLayerChanged(QgsMapLayer *)"), self.refresh)
+        QObject.connect(self.listWidget_2, SIGNAL("currentRowChanged(int)"), self.outputTimeChanged)
+        QObject.connect(self.iface, SIGNAL("currentLayerChanged(QgsMapLayer *)"), self.currentLayerChanged)
         QObject.connect(self.contourCustomRangeCheckBox, SIGNAL("toggled(bool)"), self.contourCustomRangeToggled)
         QObject.connect(self.contourMinLineEdit, SIGNAL('textEdited(QString)'), self.contourRangeChanged)
         QObject.connect(self.contourMaxLineEdit, SIGNAL('textEdited(QString)'), self.contourRangeChanged)
@@ -69,7 +70,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         if self.vectorPropsDialog is not None:
             self.vectorPropsDialog.raise_()
             return
-        rs = self.iface.mapCanvas().currentLayer().rs
+        rs = CrayfishViewerRenderSettings( self.currentDataSet() )
         self.vectorPropsDialog = crayfish_viewer_vector_options_dialog.CrayfishViewerVectorOptionsDialog(self.iface, rs, self.redrawCurrentLayer)
         self.vectorPropsDialog.show()
         res = self.vectorPropsDialog.exec_()
@@ -110,9 +111,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
         self.updateContourRange(ds)
 
-        # Redraw the layer
-        tIndex = self.listWidget_2.currentRow()
-        self.redraw(tIndex)
+        self.redrawCurrentLayer()
 
 
     def contourRangeChanged(self):
@@ -140,28 +139,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         
     def transparencyChanged(self, value):
         self.currentDataSet().setContourAlpha(255-value)
-        self.redraw(self.listWidget_2.currentRow())
-    
-    def showMostRecentDataSet(self):
-        lastRow = self.listWidget.count() - 1
-        # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Setting index to " + str(lastRow) )
-        self.listWidget.setCurrentRow( lastRow )
-        
-    
-    def redraw(self, timeIdx):
-        l = self.iface.mapCanvas().currentLayer()
-        if l is None:
-            return
-        if l.type() != QgsMapLayer.PluginLayer or str(l.pluginLayerType()) != 'crayfish_viewer':
-            return
-            
-        dataSetIdx = self.listWidget.currentRow()
-        l.setRenderSettings(dataSetIdx, timeIdx)
-        l.setCacheImage(None)
-            
-        if not self.reArranging:
-            self.iface.mapCanvas().refresh()
-        
+        self.redrawCurrentLayer()
     
         
     def timeToString(self, hours):
@@ -178,16 +156,19 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         if dataSetRow < 0:
             return
         
-        l = self.iface.mapCanvas().currentLayer()
-        if l.type() != QgsMapLayer.PluginLayer or str(l.pluginLayerType()) != 'crayfish_viewer':
+        l = self.currentCrayfishLayer()
+        if not l:
             return
           
         dataSet = l.provider.dataSet(dataSetRow)
         
-        self.reArranging = True
-        
+        dataSetIdx = self.listWidget.currentRow()
+        l.provider.setCurrentDataSetIndex(dataSetIdx)
+
+        self.listWidget_2.blockSignals(True) # make sure that currentRowChanged(int) will not be emitted
         self.listWidget_2.clear()
-        
+        self.listWidget_2.blockSignals(False)
+
         if dataSet.isTimeVarying():
             self.listWidget_2.setEnabled(True)
             for i in range( dataSet.outputCount() ):
@@ -196,14 +177,15 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
                 self.listWidget_2.addItem(timeString)
             # Restore the selection of the last time step that we viewed
             # for this dataset
-            lastIdxViewed = dataSet.currentOutputTime()
-            # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Setting last time index to " + str(lastIdxViewed) )
-            self.listWidget_2.setCurrentRow(lastIdxViewed)
+            timeIdx = dataSet.currentOutputTime()
+            self.listWidget_2.setCurrentRow(timeIdx)
         else:
             self.listWidget_2.setEnabled(False)
             
         # Get the contour settings from the provider
+        self.contourTransparencySlider.blockSignals(True)
         self.contourTransparencySlider.setValue( 255 - dataSet.contourAlpha() )
+        self.contourTransparencySlider.blockSignals(False)
 
         self.contourCustomRangeCheckBox.blockSignals(True)
         self.contourCustomRangeCheckBox.setChecked( not dataSet.contourAutoRange() )
@@ -220,8 +202,18 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         from crayfishviewer import DataSetType
         self.displayVectorsCheckBox.setEnabled(dataSet.type() == DataSetType.Vector)
         
-        self.reArranging = False
-        # self.redraw(lastIdxViewed)
+        self.redrawCurrentLayer()
+
+
+    def outputTimeChanged(self, timeIdx):
+
+        l = self.currentCrayfishLayer()
+        if not l:
+            return
+
+        ds = l.provider.currentDataSet()
+        ds.setCurrentOutputTime(timeIdx)
+
         self.redrawCurrentLayer()
 
         
@@ -280,52 +272,49 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         
         self.valueLabel.setText( textValue )
         
-    
-    def refresh(self, l = None):
+    def currentCrayfishLayer(self):
+        """ return currently selected crayfish layer or None if there is no selection (of non-crayfish layer is current) """
+        l = self.iface.mapCanvas().currentLayer()
+        if l and l.type() == QgsMapLayer.PluginLayer and str(l.pluginLayerType()) == 'crayfish_viewer':
+            return l
+
+
+    def currentLayerChanged(self):
         """
             Refresh is usually called when the selected layer changes in the legend
             Refresh clears and repopulates the dock widgets, restoring them to their correct values
         """
-        
-        # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Refresh Called")
-                
+
+        l = self.currentCrayfishLayer()
         if l is None:
-            l = self.iface.mapCanvas().currentLayer()
-            if l is None:
-                self.deactivate()
-                return
-                
-        if l.type() == QgsMapLayer.PluginLayer and str(l.pluginLayerType()) == 'crayfish_viewer':
-            
-            # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Activating")
-            self.activate()
-            
-            # Clear everything
-            self.listWidget.clear()
-            
-            # Add datasets
-            # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Adding datasets in refresh()")
-            for i in range(l.provider.dataSetCount()):
-                n = l.provider.dataSet(i).name()
-                self.listWidget.addItem(n)
-                
-            # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Done adding datasets in refresh(), setting setCurrentRow")
-                
-            self.listWidget.setCurrentRow( l.dataSetIdx )
-            
-            # QMessageBox.information(self.iface.mainWindow(), "DEBUG", "Done setting setCurrentRow")
-                
-        else:
-            # disable the UI
             self.deactivate()
-            
-        self.redrawCurrentLayer()
+            return
+                
+        self.activate()
+
+        # Clear everything
+        self.listWidget.clear()
+
+        # Add datasets
+        for i in range(l.provider.dataSetCount()):
+            n = l.provider.dataSet(i).name()
+            self.listWidget.addItem(n)
+
+        # setup current dataset
+        dataSetIdx = l.provider.currentDataSetIndex()
+        self.listWidget.setCurrentRow( dataSetIdx )
+
+        self.displayMeshCheckBox.blockSignals(True)
+        self.displayMeshCheckBox.setChecked(l.provider.isMeshRenderingEnabled())
+        self.displayMeshCheckBox.blockSignals(False)
+
+        #self.redrawCurrentLayer()
 
 
     def redrawCurrentLayer(self):
-        l = self.iface.mapCanvas().currentLayer()
+        l = self.currentCrayfishLayer()
+        if l is None:
+            return
         if hasattr(l, "setCacheImage"):
             l.setCacheImage(None)
-        if not self.reArranging:
-            self.iface.mapCanvas().refresh()
-        # l.triggerRepaint()
+        self.iface.mapCanvas().refresh()
