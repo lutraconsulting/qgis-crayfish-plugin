@@ -143,8 +143,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
     
         
     def timeToString(self, hours):
-        
-        seconds = hours * 3600.0
+
+        seconds = round(hours * 3600.0, 2)
         m, s = divmod(seconds, 60)
         h, m = divmod(m, 60)
         d, h = divmod(h, 24)
