@@ -2,8 +2,8 @@
 
 # Form implementation generated from reading ui file 'crayfish_viewer_dock_widget.ui'
 #
-# Created: Thu Oct 10 18:39:21 2013
-#      by: PyQt4 UI code generator 4.10
+# Created: Mon Oct 21 20:50:24 2013
+#      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -26,7 +26,7 @@ except AttributeError:
 class Ui_DockWidget(object):
     def setupUi(self, DockWidget):
         DockWidget.setObjectName(_fromUtf8("DockWidget"))
-        DockWidget.resize(410, 535)
+        DockWidget.resize(351, 566)
         self.dockWidgetContents = QtGui.QWidget()
         self.dockWidgetContents.setObjectName(_fromUtf8("dockWidgetContents"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.dockWidgetContents)
@@ -63,11 +63,24 @@ class Ui_DockWidget(object):
         self.contourTransparencySlider.setObjectName(_fromUtf8("contourTransparencySlider"))
         self.horizontalLayout_2.addWidget(self.contourTransparencySlider)
         self.verticalLayout.addLayout(self.horizontalLayout_2)
-        self.contourCustomRangeCheckBox = QtGui.QCheckBox(self.contoursGroupBox)
-        self.contourCustomRangeCheckBox.setObjectName(_fromUtf8("contourCustomRangeCheckBox"))
-        self.verticalLayout.addWidget(self.contourCustomRangeCheckBox)
+        self.horizontalLayout_3 = QtGui.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(_fromUtf8("horizontalLayout_3"))
+        self.radContourBasic = QtGui.QRadioButton(self.contoursGroupBox)
+        self.radContourBasic.setChecked(True)
+        self.radContourBasic.setObjectName(_fromUtf8("radContourBasic"))
+        self.horizontalLayout_3.addWidget(self.radContourBasic)
+        self.cboContourBasic = QgsColorRampComboBox(self.contoursGroupBox)
+        self.cboContourBasic.setObjectName(_fromUtf8("cboContourBasic"))
+        self.horizontalLayout_3.addWidget(self.cboContourBasic)
+        self.verticalLayout.addLayout(self.horizontalLayout_3)
         self.horizontalLayout = QtGui.QHBoxLayout()
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
+        spacerItem = QtGui.QSpacerItem(20, 20, QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem)
+        self.contourCustomRangeCheckBox = QtGui.QCheckBox(self.contoursGroupBox)
+        self.contourCustomRangeCheckBox.setText(_fromUtf8(""))
+        self.contourCustomRangeCheckBox.setObjectName(_fromUtf8("contourCustomRangeCheckBox"))
+        self.horizontalLayout.addWidget(self.contourCustomRangeCheckBox)
         self.contourMinLabel = QtGui.QLabel(self.contoursGroupBox)
         self.contourMinLabel.setObjectName(_fromUtf8("contourMinLabel"))
         self.horizontalLayout.addWidget(self.contourMinLabel)
@@ -83,6 +96,22 @@ class Ui_DockWidget(object):
         self.contourMaxLineEdit.setObjectName(_fromUtf8("contourMaxLineEdit"))
         self.horizontalLayout.addWidget(self.contourMaxLineEdit)
         self.verticalLayout.addLayout(self.horizontalLayout)
+        self.horizontalLayout_4 = QtGui.QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(_fromUtf8("horizontalLayout_4"))
+        self.radioButton_2 = QtGui.QRadioButton(self.contoursGroupBox)
+        self.radioButton_2.setEnabled(False)
+        self.radioButton_2.setObjectName(_fromUtf8("radioButton_2"))
+        self.horizontalLayout_4.addWidget(self.radioButton_2)
+        self.comboBox_2 = QtGui.QComboBox(self.contoursGroupBox)
+        self.comboBox_2.setEnabled(False)
+        self.comboBox_2.setObjectName(_fromUtf8("comboBox_2"))
+        self.comboBox_2.addItem(_fromUtf8(""))
+        self.horizontalLayout_4.addWidget(self.comboBox_2)
+        self.toolButton = QtGui.QToolButton(self.contoursGroupBox)
+        self.toolButton.setEnabled(False)
+        self.toolButton.setObjectName(_fromUtf8("toolButton"))
+        self.horizontalLayout_4.addWidget(self.toolButton)
+        self.verticalLayout.addLayout(self.horizontalLayout_4)
         self.verticalLayout_2.addWidget(self.contoursGroupBox)
         self.gridLayout_3 = QtGui.QGridLayout()
         self.gridLayout_3.setObjectName(_fromUtf8("gridLayout_3"))
@@ -107,6 +136,20 @@ class Ui_DockWidget(object):
         QtCore.QObject.connect(self.vectorOptionsPushButton, QtCore.SIGNAL(_fromUtf8("clicked()")), DockWidget.displayVectorPropsDialog)
         QtCore.QObject.connect(self.displayMeshCheckBox, QtCore.SIGNAL(_fromUtf8("toggled(bool)")), DockWidget.displayMeshButtonToggled)
         QtCore.QMetaObject.connectSlotsByName(DockWidget)
+        DockWidget.setTabOrder(self.listWidget, self.listWidget_2)
+        DockWidget.setTabOrder(self.listWidget_2, self.contoursGroupBox)
+        DockWidget.setTabOrder(self.contoursGroupBox, self.contourTransparencySlider)
+        DockWidget.setTabOrder(self.contourTransparencySlider, self.radContourBasic)
+        DockWidget.setTabOrder(self.radContourBasic, self.cboContourBasic)
+        DockWidget.setTabOrder(self.cboContourBasic, self.contourCustomRangeCheckBox)
+        DockWidget.setTabOrder(self.contourCustomRangeCheckBox, self.contourMinLineEdit)
+        DockWidget.setTabOrder(self.contourMinLineEdit, self.contourMaxLineEdit)
+        DockWidget.setTabOrder(self.contourMaxLineEdit, self.radioButton_2)
+        DockWidget.setTabOrder(self.radioButton_2, self.comboBox_2)
+        DockWidget.setTabOrder(self.comboBox_2, self.toolButton)
+        DockWidget.setTabOrder(self.toolButton, self.displayVectorsCheckBox)
+        DockWidget.setTabOrder(self.displayVectorsCheckBox, self.vectorOptionsPushButton)
+        DockWidget.setTabOrder(self.vectorOptionsPushButton, self.displayMeshCheckBox)
 
     def retranslateUi(self, DockWidget):
         DockWidget.setWindowTitle(_translate("DockWidget", "Crayfish Viewer", None))
@@ -114,12 +157,16 @@ class Ui_DockWidget(object):
         self.label_2.setText(_translate("DockWidget", "Output Time", None))
         self.contoursGroupBox.setTitle(_translate("DockWidget", "Display Contours", None))
         self.label_3.setText(_translate("DockWidget", "Transparency", None))
-        self.contourCustomRangeCheckBox.setText(_translate("DockWidget", "Specifiy Color Scale", None))
+        self.radContourBasic.setText(_translate("DockWidget", "Basic", None))
         self.contourMinLabel.setText(_translate("DockWidget", "Min", None))
         self.contourMaxLabel.setText(_translate("DockWidget", "Max", None))
+        self.radioButton_2.setText(_translate("DockWidget", "Advanced", None))
+        self.comboBox_2.setItemText(0, _translate("DockWidget", "(list of presets)", None))
+        self.toolButton.setText(_translate("DockWidget", "...", None))
         self.displayVectorsCheckBox.setText(_translate("DockWidget", "Display Vectors", None))
         self.vectorOptionsPushButton.setText(_translate("DockWidget", "Vector Options", None))
         self.displayMeshCheckBox.setText(_translate("DockWidget", "Display Mesh", None))
         self.valueLabel.setText(_translate("DockWidget", "(0.000) 0.000", None))
 
 from crayfish_gui_utils import QgsCollapsibleGroupBox
+from qgis.gui import QgsColorRampComboBox
