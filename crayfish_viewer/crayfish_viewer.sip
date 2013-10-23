@@ -19,14 +19,20 @@ public:
     bool warningsEncountered();
     int getLastWarning();
     int getLastError();
-    QRectF getExtents();
     bool loadDataSet(QString);
     bool isDataSetLoaded(QString fileName);
-    int dataSetCount();
 
     double valueAtCoord(const Output *output, double xCoord, double yCoord);
 
-    // new stuff - rendering options
+    // mesh information
+
+    uint nodeCount() const;
+    uint elementCount() const;
+    uint elementCount_E4Q() const;
+    uint elementCount_E3T() const;
+    QRectF meshExtent() const;
+
+    // rendering options
 
     void setCanvasSize(const QSize& size);
     QSize canvasSize() const;
@@ -39,6 +45,7 @@ public:
 
     void setCurrentDataSetIndex(int index);
     int currentDataSetIndex() const;
+    int dataSetCount() const;
     const DataSet* dataSet(int dataSetIndex) const;
     const DataSet* currentDataSet() const;
 
@@ -48,10 +55,6 @@ public:
     QString sourceCrsProj4() const;
     QString destCrsProj4() const;
 
-    uint nodeCount() const;
-    uint elementCount() const;
-    uint elementCount_E4Q() const;
-    uint elementCount_E3T() const;
 };
 
 
@@ -161,6 +164,38 @@ struct Output{
     //float* values_y;     //!< in case of dataset with vector data - array of Y coords - otherwise 0
 };
 
+
+
+struct ColorMap
+{
+%TypeHeaderCode
+#include <crayfish_viewer_global.h>
+%End
+
+/*  struct Item
+  {
+    Item(double v = 0, QRgb c = 0): value(v), color(c) {}
+
+    double value;
+    QRgb color;
+    QString label;
+  };
+
+  enum Method { Linear, Discrete } method;
+
+  QVector<Item> items;
+  int alpha;
+*/
+  void dump() const;
+
+  QRgb value(double v) const;
+
+  QPixmap previewPixmap(const QSize& size, double vMin, double vMax);
+
+  /** default "cold-to-hot" color map */
+  static ColorMap defaultColorMap(double vMin, double vMax);
+
+};
 
 
 %UnitCode

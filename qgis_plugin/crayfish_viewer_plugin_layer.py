@@ -61,9 +61,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         self.meshLoaded = True
         
         # Properly set the extents
-        e = self.provider.getExtents()
-        r = QgsRectangle(   QgsPoint( e.bottomLeft().x(), e.bottomLeft().y() ),
-                            QgsPoint( e.topRight().x(), e.topRight().y() ) )
+        e = self.provider.meshExtent()
+        r = QgsRectangle(   QgsPoint( e.left(), e.top() ),
+                            QgsPoint( e.right(), e.bottom() ) )
         self.setExtent(r)
 
         # try to load .prj file from the same directory

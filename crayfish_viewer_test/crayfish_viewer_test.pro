@@ -10,14 +10,16 @@ CONFIG   -= app_bundle
 
 TEMPLATE = app
 
-DEPENDPATH += . ../crayfish_viewer/build/debug
 INCLUDEPATH +=  ../crayfish_viewer
-LIBS +=  -L../../crayfish_viewer/build/debug -lcrayfishViewer
 
 CONFIG(debug, debug|release) {
-    DESTDIR = $$PWD/build/debug
+    BUILDTYPE = debug
 } else {
-    DESTDIR = $$PWD/build/release
+    BUILDTYPE = release
 }
+
+DESTDIR = $$PWD/build/$${BUILDTYPE}
+LIBS +=  -L../../crayfish_viewer/build/$${BUILDTYPE}  -lcrayfishViewer
+DEPENDPATH += . ../crayfish_viewer/build/$${BUILDTYPE}
 
 SOURCES += main.cpp

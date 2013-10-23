@@ -32,7 +32,7 @@ from qgis.gui import QgsColorRampComboBox
 from crayfish_viewer_dock_widget import Ui_DockWidget
 import crayfish_viewer_vector_options_dialog
 from crayfish_viewer_render_settings import CrayfishViewerRenderSettings
-from crayfish_gui_utils import pixmap_colorRamp_default
+
 
 class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
     
@@ -50,7 +50,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.contourMaxLineEdit.setValidator(QDoubleValidator(self.contourMaxLineEdit))
 
         #self.cboContourBasic.populate(QgsStyleV2.defaultStyle())
-        pix_colorRamp = pixmap_colorRamp_default()
+        from crayfishviewer import ColorMap
+        cm = ColorMap.defaultColorMap(0,1)
+        pix_colorRamp = cm.previewPixmap(QSize(50,16), 0,1)
         self.cboContourBasic.setIconSize(pix_colorRamp.size())
         self.cboContourBasic.insertItem(0, QIcon(pix_colorRamp), "[default]")
         self.cboContourBasic.setCurrentIndex(0)

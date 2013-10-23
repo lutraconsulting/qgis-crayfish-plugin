@@ -31,6 +31,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QString>
 #include <vector>
 
+#include "crayfish_colormap.h"
+
 #if defined(CRAYFISHVIEWER_LIBRARY)
 #  define CRAYFISHVIEWERSHARED_EXPORT Q_DECL_EXPORT
 #else
@@ -106,6 +108,7 @@ struct E4Qtmp
 {
   double a[4], b[4]; //!< coefficients for mapping between physical and logical coords
 };
+
 
 struct CRAYFISHVIEWERSHARED_EXPORT Output{
 
@@ -256,6 +259,9 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
     void setContourRenderingEnabled(bool enabled) { mRenderContours = enabled; }
     bool isContourRenderingEnabled() const { return mRenderContours; }
 
+    void setContourColorMap(const ColorMap& cm) { mColorMap = cm; }
+    const ColorMap& contourColorMap() const { return mColorMap; }
+
     void setContourAutoRange(bool enabled) { mContouredAutomatically = enabled; }
     bool contourAutoRange() const { return mContouredAutomatically; }
 
@@ -309,6 +315,7 @@ protected:
     float mContourMin;  //!< min Z value for rendering of contours
     float mContourMax;  //!< max Z value for rendering of contours
     int mContourAlpha;  //!< alpha value (opaqueness) of contours (0 = transparent, 255 = opaque)
+    ColorMap mColorMap; //!< actual color map used for rendering
 
     // vector rendering settings
     bool mRenderVectors;  //!< whether to render vectors (only valid for vector data)

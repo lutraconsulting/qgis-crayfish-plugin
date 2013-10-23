@@ -56,19 +56,3 @@ except ImportError:
       self.msgbox[level](None, title, message)
 
   qgis_message_bar = QgsMessageBar()
-
-
-
-def pixmap_colorRamp_default():
-    from PyQt4.QtCore import QSize
-    from PyQt4.QtGui import QPixmap, QPainter, QColor, QIcon
-
-    s = QSize(50,16) #QgsColorRampComboBox.rampIconSize
-    pix = QPixmap(s)
-    p = QPainter(pix)
-    for i in xrange(s.width()):
-        h = int(240.0*i/(s.width()-1))
-        p.setPen(QColor.fromHsv(h,255,255))
-        p.drawLine(i,0,i,s.height()-1)
-    p.end()
-    return pix

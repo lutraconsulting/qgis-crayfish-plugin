@@ -50,19 +50,20 @@ public:
     bool warningsEncountered(){ return mWarningsEncountered; }
     int getLastWarning(){ return mLastWarning; }
     int getLastError() { return mLastError; }
-    QRectF getExtents(){ return QRectF(QPointF(mXMin,mYMax), QPointF(mXMax,mYMin)); }
     bool loadDataSet(QString);
     bool isDataSetLoaded(QString fileName);
-    int dataSetCount(){ return mDataSets.size(); }
 
     double valueAtCoord(const Output *output, double xCoord, double yCoord);
+
+    // mesh information
 
     uint nodeCount() const { return mNodeCount; }
     uint elementCount() const { return mElemCount; }
     uint elementCount_E4Q() const { return mE4Qcount; }
     uint elementCount_E3T() const { return mE3Tcount; }
+    QRectF meshExtent() const { return QRectF(QPointF(mXMin,mYMin), QPointF(mXMax,mYMax)); }
 
-    // new stuff - rendering options
+    // rendering options
 
     void setCanvasSize(const QSize& size);
     QSize canvasSize() const;
@@ -75,6 +76,7 @@ public:
 
     void setCurrentDataSetIndex(int index);
     int currentDataSetIndex() const;
+    int dataSetCount() const { return mDataSets.size(); }
     const DataSet* dataSet(int dataSetIndex) const;
     const DataSet* currentDataSet() const;
 
@@ -135,7 +137,6 @@ private:
     void paintRow(uint, int, int, int, const DataSet* ds, const Output* output);
     bool interpolatValue(uint, double, double, double*, const Output* output);
     QPointF pixelToReal(int, int);
-    void setColorFromVal(double, QColor *col, const DataSet* ds);
     void updateBBox(BBox& bbox, const Element& elem, Node* nodes);
 
 

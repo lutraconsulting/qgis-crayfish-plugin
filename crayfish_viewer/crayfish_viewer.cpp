@@ -568,7 +568,7 @@ void CrayfishViewer::setExtent(double llX, double llY, double pixelSize)
 
 QRectF CrayfishViewer::extent() const
 {
-  return QRectF(QPointF(mXMin,mYMax), QPointF(mXMax,mYMin));
+  return QRectF(QPointF(mLlX,mUrY), QPointF(mUrX,mLlY));
 }
 
 void CrayfishViewer::setMeshRenderingEnabled(bool enabled)
@@ -747,6 +747,20 @@ QImage* CrayfishViewer::draw(){
 
     mImage->fill( qRgba(255,255,255,0) );
 
+    // prepare color map
+    float zMin = 0.0;
+    float zMax = 0.0;
+    if( ds->contourAutoRange() ){
+        zMin = ds->minZValue();
+        zMax = ds->maxZValue();
+    }else{
+        zMin = ds->contourCustomRangeMin();
+        zMax = ds->contourCustomRangeMax();
+    }
+    ColorMap cm(ColorMap::defaultColorMap(zMin, zMax));
+    cm.alpha = ds->contourAlpha();
+    ((DataSet*)ds)->setContourColorMap(cm);
+
     if(ds->isContourRenderingEnabled())
         renderContourData(ds, output);
 
@@ -804,10 +818,8 @@ void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
                     pp.setY( std::max(pp.y(), 0) );
 
                     QRgb* line = (QRgb*) mImage->scanLine(pp.y());
-                    QColor tmpCol;
                     float val = output->values[ elem.p[0] ];
-                    setColorFromVal(val, &tmpCol, ds);
-                    line[pp.x()] = tmpCol.rgba();
+                    line[pp.x()] = ds->contourColorMap().value(val);
 
                 }else{
                     // Get the BBox of the element in pixels
@@ -1069,46 +1081,11 @@ void CrayfishViewer::paintRow(uint elementIdx, int rowIdx, int leftLim, int righ
         double val;
         if( interpolatValue(elementIdx, p.x(), p.y(), &val, output) ){
             // The supplied point was inside the element
-            // line[j] = qRgba(128,0,0,255);
-            QColor tmpCol;
-            setColorFromVal(val, &tmpCol, ds);
-            line[j] = tmpCol.rgba();
+            line[j] = ds->contourColorMap().value(val);
         }
     }
 }
 
-void CrayfishViewer::setColorFromVal(double val, QColor* col, const DataSet* ds){
-    // If the value is less than min or greater than max, set it to the appropriate end of the
-    // spectrum
-
-    float zMin = 0.0;
-    float zMax = 0.0;
-
-    if( ds->contourAutoRange() ){
-        zMin = ds->minZValue();
-        zMax = ds->maxZValue();
-    }else{
-        zMin = ds->contourCustomRangeMin();
-        zMax = ds->contourCustomRangeMax();
-    }
-
-    if(val < zMin){
-        col->setHsv(240, 255, 255); // Blue
-    }
-    else if(val > zMax){
-        col->setHsv(0, 255, 255); // Red
-    }
-    else
-    {
-      // Else the value lies between so interpolate
-      int h = (1.0-(val-zMin)/(zMax-zMin))*240;
-      col->setHsv(h, 255, 255);
-    }
-
-    // set transparency
-    if (ds->contourAlpha() != 255)
-      col->setAlpha(ds->contourAlpha());
-}
 
 bool CrayfishViewer::nodeInsideView(uint nodeIndex)
 {

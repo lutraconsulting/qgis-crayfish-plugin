@@ -18,9 +18,10 @@ void dumpP2L(double x, double y, const E4Qtmp& t)
 }
 
 
+
 int main(int argc, char *argv[])
 {
-
+#if 0
   // create our E4Q
   Node nodes[] = {
     { -1, -1 },
@@ -59,98 +60,58 @@ int main(int argc, char *argv[])
   dumpP2L(2,2, testE4Q);
 
   qDebug("complex: %d", E4Q_isComplex(testElem, nodes));
+#endif
 
-#if 0
     QCoreApplication a(argc, argv);
 
-    QString meshName = "/home/pete/dev/qgis-crayfish-plugin/crayfish_viewer_test/Test Data/triangles.2dm";
-    QString datName = "C:\\Users\\pete\\Documents\\tmp\\Crayfish Bugs\\tutorial_run_number_03_d.dat";
+    if (argc != 3)
+    {
+      qWarning("Syntax: %s <2dm file> <output image>", argv[0]);
+      return 1;
+    }
+
+    const char* meshName = argv[1];
+    const char* imgName = argv[2];
+
+    int imgWidth = 640; // height is computed from mesh's shape
+
+    qDebug("Loading mesh (%s) ...", meshName);
     CrayfishViewer* s = new CrayfishViewer(meshName);
-    if(! s->loadedOk()){
-        return 1;
+    if (!s->loadedOk())
+    {
+      qWarning("Failed to load the mesh! (%d)", s->getLastError());
+      return 1;
     }
 
-    /*if(! s->loadDataSet(datName) ){
-        return 1;
+    QRectF meshExtent = s->meshExtent();
+    qDebug("mesh extent: min %f,%f  max %f,%f", meshExtent.left(), meshExtent.top(), meshExtent.right(), meshExtent.bottom());
+    double pixelSize = meshExtent.width() / imgWidth;
+    int imgHeight = meshExtent.height() / pixelSize;
+    qDebug("img size: %d,%d", imgWidth, imgHeight);
+    qDebug("pixel size: %f", pixelSize);
+
+    s->setCanvasSize(QSize(imgWidth, imgHeight));
+    s->setExtent(meshExtent.left(), meshExtent.top(), pixelSize);
+
+    qDebug("dataset: %d", s->currentDataSetIndex());
+    if (!s->currentDataSet())
+      return 2;
+
+    qDebug("Drawing...");
+    QImage* img = s->draw();
+    if (!img)
+    {
+      qWarning("Failed to render image!");
+      return 1;
     }
 
-    if( ! s->loadedOk() )
-        return 1;*/
-
-    float minVal = s->minValue(0);
-    float maxVal = s->maxValue(0);
-
-    QRectF extent = s->getExtents();
-
-    int w = 1000;
-    int h = 600;
-
-    /*QImage* img = s->draw(  true,     // Render scalar
-                            true,     // Render vector
-                            w,        // Image width
-                            h,        // Image height
-                            extent.left(),   // Image llX
-                            extent.bottom(),   // Image llY,
-                            (extent.width() / double(w)),
-                            // 0.025,
-                            1, // Dataset (0=2dm, rest=dat)
-                            20, // Output time
-                            true, // auto render
-                            0.0, // render min
-                            0.0); // render max*/
-
-    /*
-    QImage* draw(bool,
-                 bool,
-                 int,
-                 int,
-                 double,
-                 double,
-                 double,
-                 int dataSetIdx,
-                 int outputTime,
-
-                 bool autoContour,
-                 float minContour,
-                 float maxContour,
-
-                 VectorLengthMethod shaftLengthCalculationMethod,
-                 float minShaftLength,
-                 float maxShaftLength,
-                 float scaleFactor,
-                 float fixedShaftLength,
-                 int lineWidth, float vectorHeadWidthPerc, float vectorHeadLengthPerc);
-    */
-
-    QImage* img = s->draw(  true,
-                            true,
-                            1070,
-                            582,
-                            99000.0, // llx
-                            99000.0, // lly
-                            2.0, // px size
-                            0, // ds
-                            0, // time
-
-                            true,
-                            0.0,
-                            0.0,
-
-                            CrayfishViewer::Scaled,
-                            3.0,
-                            50.0,
-                            5.0,
-                            10.0,
-                            1,
-                            15.0,
-                            40.0);
-
-    img->save("/tmp/output.png");
+    qDebug("Saving (%s) ...", imgName);
+    img->save(imgName);
 
     // Try to interpolate a value:
     // double val = s->valueAtCoord(0, 0, 394798.247423, 173689.113402);
-    return 0;
 
-    // return a.exec();
-#endif
+    delete s;
+
+    return 0;
 }

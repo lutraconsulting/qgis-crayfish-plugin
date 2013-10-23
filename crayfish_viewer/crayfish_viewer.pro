@@ -48,15 +48,21 @@ DEFINES += CRAYFISHVIEWER_LIBRARY
 
 SOURCES += crayfish_viewer.cpp\
         version.cpp \
-        crayfish_e4q.cpp
+        crayfish_e4q.cpp \
+        crayfish_colormap.cpp
 
 HEADERS += crayfish_viewer.h\
         crayfish_viewer_global.h\
         version.h \
-        crayfish_e4q.h
+        crayfish_e4q.h \
+        crayfish_colormap.h
 
 CONFIG(debug, debug|release) {
     DESTDIR = $$PWD/build/debug
 } else {
     DESTDIR = $$PWD/build/release
+}
+
+unix {
+  QMAKE_CXXFLAGS += -Wall -Wextra # -Wconversion
 }
