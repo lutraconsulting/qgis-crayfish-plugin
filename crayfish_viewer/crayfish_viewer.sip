@@ -111,6 +111,9 @@ struct DataSet
     void setContourRenderingEnabled(bool enabled);
     bool isContourRenderingEnabled() const;
 
+    void setContourColorMap(const ColorMap& cm);
+    const ColorMap& contourColorMap() const;
+
     void setContourAutoRange(bool enabled);
     bool contourAutoRange() const;
 
@@ -172,20 +175,24 @@ struct ColorMap
 #include <crayfish_viewer_global.h>
 %End
 
-/*  struct Item
+  struct Item
   {
-    Item(double v = 0, QRgb c = 0): value(v), color(c) {}
+    Item(double v = 0, QRgb c = 0);
 
     double value;
     QRgb color;
     QString label;
   };
 
-  enum Method { Linear, Discrete } method;
+  enum Method { Linear, Discrete };
+  Method method;
 
-  QVector<Item> items;
+  QVector<ColorMap::Item> items;
   int alpha;
-*/
+
+  void clearItems();
+  void addItem(const ColorMap::Item& item);
+
   void dump() const;
 
   QRgb value(double v) const;

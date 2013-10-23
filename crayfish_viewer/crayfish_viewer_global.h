@@ -246,6 +246,8 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
 
       mZMin = zMin;
       mZMax = zMax;
+
+      mColorMap = ColorMap::defaultColorMap(mZMin, mZMax);
     }
 
     float minZValue() const { return mZMin; }

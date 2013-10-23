@@ -747,20 +747,6 @@ QImage* CrayfishViewer::draw(){
 
     mImage->fill( qRgba(255,255,255,0) );
 
-    // prepare color map
-    float zMin = 0.0;
-    float zMax = 0.0;
-    if( ds->contourAutoRange() ){
-        zMin = ds->minZValue();
-        zMax = ds->maxZValue();
-    }else{
-        zMin = ds->contourCustomRangeMin();
-        zMax = ds->contourCustomRangeMax();
-    }
-    ColorMap cm(ColorMap::defaultColorMap(zMin, zMax));
-    cm.alpha = ds->contourAlpha();
-    ((DataSet*)ds)->setContourColorMap(cm);
-
     if(ds->isContourRenderingEnabled())
         renderContourData(ds, output);
 

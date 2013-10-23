@@ -58,6 +58,11 @@ struct CRAYFISHVIEWERSHARED_EXPORT ColorMap
   QVector<Item> items;
   int alpha;
 
+  ColorMap() : method(Linear), alpha(255) {}
+
+  void clearItems() { items.clear(); }
+  void addItem(const Item& item) { items.append(item); }
+
   void dump() const;
 
   QRgb value(double v) const;

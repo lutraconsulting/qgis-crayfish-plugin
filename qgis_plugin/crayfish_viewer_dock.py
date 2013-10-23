@@ -49,7 +49,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.contourMinLineEdit.setValidator(QDoubleValidator(self.contourMinLineEdit))
         self.contourMaxLineEdit.setValidator(QDoubleValidator(self.contourMaxLineEdit))
 
-        #self.cboContourBasic.populate(QgsStyleV2.defaultStyle())
+        self.cboContourBasic.populate(QgsStyleV2.defaultStyle())
         from crayfishviewer import ColorMap
         cm = ColorMap.defaultColorMap(0,1)
         pix_colorRamp = cm.previewPixmap(QSize(50,16), 0,1)
@@ -69,6 +69,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         QObject.connect(self.contourMaxLineEdit, SIGNAL('textEdited(QString)'), self.contourRangeChanged)
         QObject.connect(self.contoursGroupBox, SIGNAL('toggled(bool)'), self.displayContoursButtonToggled)
         QObject.connect(self.contourTransparencySlider, SIGNAL('valueChanged(int)'), self.transparencyChanged)
+        QObject.connect(self.cboContourBasic, SIGNAL('currentIndexChanged(int)'), self.contourColorMapChanged)
         
         
     def currentDataSet(self):
@@ -120,6 +121,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
         self.updateContourRange(ds)
 
+        self.iface.mapCanvas().currentLayer().updateColorMap(ds, self.cboContourBasic.currentText())
+
         self.redrawCurrentLayer()
 
 
@@ -130,6 +133,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             minContour = float( str(self.contourMinLineEdit.text()) )
             maxContour = float( str(self.contourMaxLineEdit.text()) )
             ds.setContourCustomRange(minContour, maxContour)
+
+            self.iface.mapCanvas().currentLayer().updateColorMap(ds, self.cboContourBasic.currentText())
+
             self.redrawCurrentLayer()
         except ValueError:
             pass
@@ -327,3 +333,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         if hasattr(l, "setCacheImage"):
             l.setCacheImage(None)
         self.iface.mapCanvas().refresh()
+
+    def contourColorMapChanged(self, idx):
+        self.iface.mapCanvas().currentLayer().updateColorMap( self.currentDataSet(), self.cboContourBasic.currentText() )
+        self.redrawCurrentLayer()

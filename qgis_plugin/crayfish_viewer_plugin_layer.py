@@ -4,7 +4,7 @@ from qgis.core import *
 from crayfish_gui_utils import QgsMessageBar, qgis_message_bar
 from qgis.utils import iface
 
-from crayfishviewer import CrayfishViewer, DataSetType
+from crayfishviewer import CrayfishViewer, DataSetType, ColorMap
 
 import os
 import glob
@@ -228,6 +228,35 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     def set2DMFileName(self, fName):
         self.twoDMFileName = fName
+
+
+    def updateColorMap(self, ds, newColorMapName):
+        """ update color map of the current data set given the settings """
+
+        # contour colormap
+        if ds.contourAutoRange():
+            zMin = ds.minZValue()
+            zMax = ds.maxZValue()
+        else:
+            zMin = ds.contourCustomRangeMin()
+            zMax = ds.contourCustomRangeMax()
+
+        if newColorMapName != '[default]':
+          qcm = QgsStyleV2.defaultStyle().colorRamp(newColorMapName)
+          if not qcm:
+            return   # unknown color map name
+          cm = ColorMap()
+          count = 5
+          for i in range(count):
+            v = i/float(count-1)
+            c = qcm.color(v)
+            vv = zMin + v*(zMax-zMin)
+            cm.addItem(ColorMap.Item(vv,c.rgb()))
+        else:
+          cm = ColorMap.defaultColorMap(zMin, zMax)
+        cm.alpha = ds.contourAlpha()
+        ds.setContourColorMap(cm)
+
     
     def draw(self, rendererContext):
         

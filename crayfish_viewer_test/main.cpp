@@ -93,6 +93,12 @@ int main(int argc, char *argv[])
     s->setCanvasSize(QSize(imgWidth, imgHeight));
     s->setExtent(meshExtent.left(), meshExtent.top(), pixelSize);
 
+    ColorMap cm;
+    cm.items.append(ColorMap::Item(10, qRgb(255,0,0)));
+    cm.items.append(ColorMap::Item(30, qRgb(255,255,0)));
+    cm.items.append(ColorMap::Item(50, qRgb(0,0,255)));
+    ((DataSet*)s->currentDataSet())->setContourColorMap(cm);
+
     qDebug("dataset: %d", s->currentDataSetIndex());
     if (!s->currentDataSet())
       return 2;
