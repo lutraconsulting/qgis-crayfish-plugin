@@ -31,6 +31,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_colormap.h"
 
+#include <QMap>
+#include <QVariant>
+
 struct Output;
 
 /**
@@ -75,16 +78,6 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
     void setContourColorMap(const ColorMap& cm) { mColorMap = cm; }
     const ColorMap& contourColorMap() const { return mColorMap; }
 
-    void setContourAutoRange(bool enabled) { mContouredAutomatically = enabled; }
-    bool contourAutoRange() const { return mContouredAutomatically; }
-
-    void setContourCustomRange(float vMin, float vMax) { mContourMin = vMin; mContourMax = vMax; }
-    float contourCustomRangeMin() const { return mContourMin; }
-    float contourCustomRangeMax() const { return mContourMax; }
-
-    void setContourAlpha(int alpha) { mContourAlpha = alpha; }
-    int contourAlpha() const { return mContourAlpha; }
-
     // -- vector rendering --
 
     void setVectorRenderingEnabled(bool enabled) { mRenderVectors = enabled; }
@@ -110,6 +103,13 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
     float vectorHeadWidth() const { return mVectorHeadWidthPerc; }
     float vectorHeadLength() const { return mVectorHeadLengthPerc; }
 
+    // -- custom (GUI-specific) settings --
+
+    void setCustomValue(const QString& key, const QVariant& value) { mCustomSettings.insert(key, value); }
+    QVariant customValue(const QString& key) const { return mCustomSettings.value(key); }
+    void clearCustomValue(const QString& key) { mCustomSettings.remove(key); }
+    QStringList customValues() const { return mCustomSettings.keys(); }
+
 protected:
 
     QString mFileName;
@@ -124,10 +124,6 @@ protected:
 
     // contour rendering settings
     bool mRenderContours; //!< whether to render contours
-    bool mContouredAutomatically;  //!< whether the min/max Z value should be used from full data range
-    float mContourMin;  //!< min Z value for rendering of contours
-    float mContourMax;  //!< max Z value for rendering of contours
-    int mContourAlpha;  //!< alpha value (opaqueness) of contours (0 = transparent, 255 = opaque)
     ColorMap mColorMap; //!< actual color map used for rendering
 
     // vector rendering settings
@@ -140,6 +136,8 @@ protected:
     int mLineWidth;           //!< pen width for drawing of the vectors
     float mVectorHeadWidthPerc;   //!< arrow head's width  (in percent to shaft's length)
     float mVectorHeadLengthPerc;  //!< arrow head's length (in percent to shaft's length)
+
+    QMap<QString, QVariant> mCustomSettings;
 };
 
 

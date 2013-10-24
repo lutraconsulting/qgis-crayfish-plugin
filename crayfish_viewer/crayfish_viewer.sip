@@ -114,16 +114,6 @@ struct DataSet
     void setContourColorMap(const ColorMap& cm);
     const ColorMap& contourColorMap() const;
 
-    void setContourAutoRange(bool enabled);
-    bool contourAutoRange() const;
-
-    void setContourCustomRange(float vMin, float vMax);
-    float contourCustomRangeMin() const;
-    float contourCustomRangeMax() const;
-
-    void setContourAlpha(int alpha);
-    int contourAlpha() const;
-
     // -- vector rendering --
 
     void setVectorRenderingEnabled(bool enabled);
@@ -148,6 +138,13 @@ struct DataSet
     void setVectorHeadSize(float widthPerc, float lengthPerc);
     float vectorHeadWidth() const;
     float vectorHeadLength() const;
+
+    // -- custom (GUI-specific) settings --
+
+    void setCustomValue(const QString& key, const QVariant& value);
+    QVariant customValue(const QString& key) const;
+    void clearCustomValue(const QString& key);
+    QStringList customValues() const;
 };
 
 

@@ -227,7 +227,6 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
     computeMeshExtent(); // mXMin, mXMax, mYMin, mYMax
 
     bedDs->updateZRange(mNodeCount);
-    bedDs->setContourCustomRange(bedDs->minZValue(), bedDs->maxZValue());
 
     int e4qIndex = 0;
 
@@ -523,7 +522,6 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
 
         ds->updateZRange(mNodeCount);
 
-        ds->setContourCustomRange(ds->minZValue(), ds->maxZValue());
         ds->setVectorRenderingEnabled(ds->type() == DataSetType::Vector);
 
         mDataSets.push_back(ds);

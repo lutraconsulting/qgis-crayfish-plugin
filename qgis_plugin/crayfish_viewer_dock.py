@@ -50,11 +50,11 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.contourMaxLineEdit.setValidator(QDoubleValidator(self.contourMaxLineEdit))
 
         self.cboContourBasic.populate(QgsStyleV2.defaultStyle())
-        from crayfishviewer import ColorMap
-        cm = ColorMap.defaultColorMap(0,1)
-        pix_colorRamp = cm.previewPixmap(QSize(50,16), 0,1)
-        self.cboContourBasic.setIconSize(pix_colorRamp.size())
-        self.cboContourBasic.insertItem(0, QIcon(pix_colorRamp), "[default]")
+        iconSize = QSize(50,16)
+        from crayfish_viewer_plugin_layer import defaultColorRamp
+        iconRamp = QgsSymbolLayerV2Utils.colorRampPreviewIcon(defaultColorRamp(), iconSize)
+        self.cboContourBasic.setIconSize(iconSize)
+        self.cboContourBasic.insertItem(0, iconRamp, "[default]")
         self.cboContourBasic.setCurrentIndex(0)
 
         self.setEnabled(False)
@@ -114,14 +114,15 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
 
     def contourCustomRangeToggled(self, on):
-        """ set provider's auto range """
+        """ set provider's custom range """
 
         ds = self.currentDataSet()
-        ds.setContourAutoRange(not on)
+
+        ds.setCustomValue("c_basicCustomRange", on)
 
         self.updateContourRange(ds)
 
-        self.iface.mapCanvas().currentLayer().updateColorMap(ds, self.cboContourBasic.currentText())
+        self.updateColorMap(ds)
 
         self.redrawCurrentLayer()
 
@@ -132,20 +133,22 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         try:
             minContour = float( str(self.contourMinLineEdit.text()) )
             maxContour = float( str(self.contourMaxLineEdit.text()) )
-            ds.setContourCustomRange(minContour, maxContour)
 
-            self.iface.mapCanvas().currentLayer().updateColorMap(ds, self.cboContourBasic.currentText())
+            ds.setCustomValue("c_basicCustomRangeMin", minContour)
+            ds.setCustomValue("c_basicCustomRangeMax", maxContour)
+
+            self.updateColorMap(ds)
 
             self.redrawCurrentLayer()
         except ValueError:
             pass
 
 
-    def updateContourRange(self, dataSet):
+    def updateContourRange(self, ds):
         """ update GUI from provider's range """
-        manualRange = not dataSet.contourAutoRange()
-        zMin = dataSet.contourCustomRangeMin() if manualRange else dataSet.minZValue()
-        zMax = dataSet.contourCustomRangeMax() if manualRange else dataSet.maxZValue()
+        manualRange = ds.customValue("c_basicCustomRange")
+        zMin = ds.customValue("c_basicCustomRangeMin") if manualRange else ds.minZValue()
+        zMax = ds.customValue("c_basicCustomRangeMax") if manualRange else ds.maxZValue()
         self.contourMinLineEdit.setEnabled(manualRange)
         self.contourMaxLineEdit.setEnabled(manualRange)
         self.contourMinLineEdit.setText( str("%.3f" % zMin) )
@@ -153,7 +156,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
         
     def transparencyChanged(self, value):
-        self.currentDataSet().setContourAlpha(255-value)
+        ds = self.currentDataSet()
+        ds.setCustomValue("c_basicAlpha", 255-value)
+        self.updateColorMap(ds)
         self.redrawCurrentLayer()
     
         
@@ -198,12 +203,18 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             self.listWidget_2.setEnabled(False)
             
         # Get the contour settings from the provider
+
         self.contourTransparencySlider.blockSignals(True)
-        self.contourTransparencySlider.setValue( 255 - dataSet.contourAlpha() )
+        self.contourTransparencySlider.setValue( 255 - dataSet.customValue("c_basicAlpha") )
         self.contourTransparencySlider.blockSignals(False)
 
+        index = self.cboContourBasic.findText( dataSet.customValue("c_basicName") )
+        self.cboContourBasic.blockSignals(True)
+        self.cboContourBasic.setCurrentIndex(index)
+        self.cboContourBasic.blockSignals(False)
+
         self.contourCustomRangeCheckBox.blockSignals(True)
-        self.contourCustomRangeCheckBox.setChecked( not dataSet.contourAutoRange() )
+        self.contourCustomRangeCheckBox.setChecked( dataSet.customValue("c_basicCustomRange") )
         self.contourCustomRangeCheckBox.blockSignals(False)
 
         self.updateContourRange(dataSet)
@@ -312,8 +323,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
         # Add datasets
         for i in range(l.provider.dataSetCount()):
-            n = l.provider.dataSet(i).name()
-            self.listWidget.addItem(n)
+            ds = l.provider.dataSet(i)
+            self.listWidget.addItem(ds.name())
 
         # setup current dataset
         dataSetIdx = l.provider.currentDataSetIndex()
@@ -335,5 +346,19 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.iface.mapCanvas().refresh()
 
     def contourColorMapChanged(self, idx):
-        self.iface.mapCanvas().currentLayer().updateColorMap( self.currentDataSet(), self.cboContourBasic.currentText() )
+        ds = self.currentDataSet()
+        rampName = self.cboContourBasic.currentText()
+
+        if rampName == "[default]":
+          from crayfish_viewer_plugin_layer import defaultColorRamp
+          ramp = defaultColorRamp()
+        else:
+          ramp = QgsStyleV2.defaultStyle().colorRamp(rampName)
+
+        ds.setCustomValue("c_basicName", rampName)
+        ds.setCustomValue("c_basicRamp", ramp)
+        self.updateColorMap(ds)
         self.redrawCurrentLayer()
+
+    def updateColorMap(self, ds):
+        self.iface.mapCanvas().currentLayer().updateColorMap(ds)

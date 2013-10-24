@@ -130,3 +130,4 @@ class CrayfishViewerRenderSettings():
         self.ds.setVectorShaftLengthFixed(self.shaftLengthFixedLength)
         self.ds.setVectorPenWidth(self.lineWidth)
         self.ds.setVectorHeadSize(self.headWidth, self.headLength)
+

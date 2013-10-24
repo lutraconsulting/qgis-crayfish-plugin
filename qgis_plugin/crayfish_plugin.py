@@ -346,8 +346,10 @@ class CrayfishPlugin:
                 qgis_message_bar.pushMessage("Crayfish", "Failed to load the .DAT file", level=QgsMessageBar.CRITICAL)
                 return
 
+            dsIndex = parentLayer.provider.dataSetCount()-1
+            parentLayer.initCustomValues(parentLayer.provider.dataSet(dsIndex))
             # set to most recent data set
-            parentLayer.provider.setCurrentDataSetIndex(parentLayer.provider.dataSetCount()-1)
+            parentLayer.provider.setCurrentDataSetIndex(dsIndex)
             # update GUI
             self.dock.currentLayerChanged()
             # allow user to go through the time steps with arrow keys

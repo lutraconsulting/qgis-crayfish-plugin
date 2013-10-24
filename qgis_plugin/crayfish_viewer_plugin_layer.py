@@ -38,6 +38,20 @@ def qstring2float(s):
         res = s.toDouble()
         return res[0] if res[1] else None
 
+def qstring2rgb(s):
+    r,g,b = s.split(",")
+    return qRgb(int(r),int(g),int(b))
+
+
+def defaultColorRamp():
+    props = {
+      'color1': '0,0,255,255',
+      'color2': '255,0,0,255',
+      'stops' : '0.25;0,255,255,255:0.5;0,255,0,255:0.75;255,255,0,255'}
+    return QgsVectorGradientColorRampV2.create(props)
+    #stops = [ QgsGradientStop(0.25, Qt.yellow), QgsGradientStop(0.5, Qt.green) ]
+    #return QgsVectorGradientColorRampV2(Qt.blue, Qt.red, False, stops)
+
 
 
 class CrayfishViewerPluginLayer(QgsPluginLayer):
@@ -82,7 +96,20 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         head, tail = os.path.split(meshFileName)
         layerName, ext = os.path.splitext(tail)
         self.setLayerName(layerName)
-        
+
+        self.initCustomValues(self.provider.dataSet(0)) # bed
+
+
+    def initCustomValues(self, ds):
+        """ set defaults for data source """
+        ds.setCustomValue("c_basicCustomRange", False)
+        ds.setCustomValue("c_basicCustomRangeMin", ds.minZValue())
+        ds.setCustomValue("c_basicCustomRangeMax", ds.maxZValue())
+        ds.setCustomValue("c_basicName", "[default]")
+        ds.setCustomValue("c_basicRamp", defaultColorRamp())
+        ds.setCustomValue("c_basicAlpha", 255)
+        self.updateColorMap(ds)  # make sure to apply the settings to form a color map
+
         
     def readXml(self, node):
         element = node.toElement()
@@ -155,6 +182,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     def readDataSetXml(self, ds, elem):
 
+        self.initCustomValues(ds)
+
         # contour options
         contElem = elem.firstChildElement("render-contour")
         if not contElem.isNull():
@@ -163,14 +192,24 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
                 ds.setContourRenderingEnabled(enabled)
             alpha = qstring2int(contElem.attribute("alpha"))
             if alpha is not None:
-                ds.setContourAlpha(alpha)
+                ds.setCustomValue("c_basicAlpha", alpha)
             autoRange = qstring2bool(contElem.attribute("auto-range"))
             if autoRange is not None:
-                ds.setContourAutoRange(autoRange)
+                ds.setCustomValue("c_basicCustomRange", not autoRange)
             rangeMin = qstring2float(contElem.attribute("range-min"))
             rangeMax = qstring2float(contElem.attribute("range-max"))
             if rangeMin is not None and rangeMax is not None:
-                ds.setContourCustomRange(rangeMin, rangeMax)
+                ds.setCustomValue("c_basicCustomRangeMin", rangeMin)
+                ds.setCustomValue("c_basicCustomRangeMax", rangeMax)
+
+            # read color ramp
+            rampElem = contElem.firstChildElement("colorramp")
+            if not rampElem.isNull():
+                ramp = QgsSymbolLayerV2Utils.loadColorRamp(rampElem)
+                ds.setCustomValue("c_basicRamp", ramp)
+                rampName = rampElem.attribute("name")
+                ds.setCustomValue("c_basicName", rampName)
+            self.updateColorMap(ds)
 
         # vector options (if applicable)
         if ds.type() == DataSetType.Vector:
@@ -199,16 +238,21 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             if headWidth is not None and headLength is not None:
                 ds.setVectorHeadSize(headWidth, headLength)
 
-
     def writeDataSetXml(self, ds, elem, doc):
 
         # contour options
         contElem = doc.createElement("render-contour")
         contElem.setAttribute("enabled", "1" if ds.isContourRenderingEnabled() else "0")
-        contElem.setAttribute("alpha", ds.contourAlpha())
-        contElem.setAttribute("auto-range", "1" if ds.contourAutoRange() else "0")
-        contElem.setAttribute("range-min", str(ds.contourCustomRangeMin()))
-        contElem.setAttribute("range-max", str(ds.contourCustomRangeMax()))
+        contElem.setAttribute("alpha", ds.customValue("c_basicAlpha"))
+        contElem.setAttribute("auto-range", "1" if not ds.customValue("c_basicCustomRange") else "0")
+        contElem.setAttribute("range-min", str(ds.customValue("c_basicCustomRangeMin")))
+        contElem.setAttribute("range-max", str(ds.customValue("c_basicCustomRangeMax")))
+
+        rampName = ds.customValue("c_basicName")
+        ramp = ds.customValue("c_basicRamp")
+        if ramp:
+            rampElem = QgsSymbolLayerV2Utils.saveColorRamp(rampName, ramp, doc)
+            contElem.appendChild(rampElem)
         elem.appendChild(contElem)
 
         # vector options (if applicable)
@@ -226,35 +270,68 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           elem.appendChild(vectElem)
 
 
+    def readColorMapXml(self, elem):
+
+        cmElem = elem.findFirstChildElement("colormap")
+        if cmElem.isNull():
+            return
+        cm = ColorMap()
+        itemElems = cmElem.elementsByTagName("item")
+        for i in range(itemElems.length()):
+            itemElem = itemElems.item(i).toElement()
+            value = qstring2float(itemElem.attribute("value"))
+            color = qstring2rgb(itemElem.attribute("color"))
+            cm.addItem(ColorMap.Item(value, color))
+        return cm
+
+
+    def writeColorMapXml(self, cm, parentElem, doc):
+
+        elem = doc.createElement("colormap")
+        for item in cm.items:
+            itemElem = doc.createElement("item")
+            itemElem.setAttribute("value", str(item.value))
+            itemElem.setAttribute("color", "%d,%d,%d" % (item.color.red(), item.color.green(), item.color.blue()))
+            elem.appendChild(itemElem)
+        parentElem.appendChild(elem)
+
+
     def set2DMFileName(self, fName):
         self.twoDMFileName = fName
 
 
-    def updateColorMap(self, ds, newColorMapName):
+    def updateColorMap(self, ds):
         """ update color map of the current data set given the settings """
 
         # contour colormap
-        if ds.contourAutoRange():
+        if ds.customValue("c_basicCustomRange"):
+            zMin = ds.customValue("c_basicCustomRangeMin")
+            zMax = ds.customValue("c_basicCustomRangeMax")
+        else:
             zMin = ds.minZValue()
             zMax = ds.maxZValue()
-        else:
-            zMin = ds.contourCustomRangeMin()
-            zMax = ds.contourCustomRangeMax()
 
-        if newColorMapName != '[default]':
-          qcm = QgsStyleV2.defaultStyle().colorRamp(newColorMapName)
-          if not qcm:
-            return   # unknown color map name
-          cm = ColorMap()
-          count = 5
-          for i in range(count):
+        qcm = ds.customValue("c_basicRamp")
+
+        # if the color ramp is a gradient, we will use the defined stops
+        # otherwise (unknown type of color ramp) we will just take few samples
+
+        isGradient = isinstance(qcm, QgsVectorGradientColorRampV2)
+
+        cm = ColorMap()
+        count = qcm.count() if isGradient else 5
+        for i in range(count):
+          if isGradient:
+            if i == 0: v,c = 0.0, qcm.color1()
+            elif i == count-1: v,c = 1.0, qcm.color2()
+            else: v,c = qcm.stops()[i-1].offset, qcm.stops()[i-1].color
+          else:
             v = i/float(count-1)
             c = qcm.color(v)
-            vv = zMin + v*(zMax-zMin)
-            cm.addItem(ColorMap.Item(vv,c.rgb()))
-        else:
-          cm = ColorMap.defaultColorMap(zMin, zMax)
-        cm.alpha = ds.contourAlpha()
+          vv = zMin + v*(zMax-zMin)
+          cm.addItem(ColorMap.Item(vv,c.rgb()))
+
+        cm.alpha = ds.customValue("c_basicAlpha")
         ds.setContourColorMap(cm)
 
     
