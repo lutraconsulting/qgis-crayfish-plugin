@@ -25,7 +25,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #include "crayfish_viewer.h"
+
+#include "crayfish_dataset.h"
 #include "crayfish_e4q.h"
+#include "crayfish_mesh.h"
+#include "crayfish_output.h"
+
 #include <iostream>
 
 #include <QVector2D>

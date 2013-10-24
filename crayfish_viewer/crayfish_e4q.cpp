@@ -1,7 +1,7 @@
 
 #include <math.h>
 
-#include "crayfish_viewer_global.h"
+#include "crayfish_e4q.h"
 
 /*
 Physical vs logical mapping of quads:

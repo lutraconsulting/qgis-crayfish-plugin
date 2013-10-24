@@ -49,13 +49,17 @@ DEFINES += CRAYFISHVIEWER_LIBRARY
 SOURCES += crayfish_viewer.cpp\
         version.cpp \
         crayfish_e4q.cpp \
-        crayfish_colormap.cpp
+        crayfish_colormap.cpp \
+    crayfish_dataset.cpp
 
 HEADERS += crayfish_viewer.h\
         crayfish_viewer_global.h\
         version.h \
         crayfish_e4q.h \
-        crayfish_colormap.h
+        crayfish_colormap.h \
+    crayfish_dataset.h \
+    crayfish_output.h \
+    crayfish_mesh.h
 
 CONFIG(debug, debug|release) {
     DESTDIR = $$PWD/build/debug

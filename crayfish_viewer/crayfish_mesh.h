@@ -24,51 +24,48 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef CRAYFISH_COLORMAP_H
-#define CRAYFISH_COLORMAP_H
+#ifndef CRAYFISH_MESH_H
+#define CRAYFISH_MESH_H
 
 #include "crayfish_viewer_global.h"
 
-#include <QColor>
-#include <QVector>
+#include <QPointF>
 
-class QPixmap;
-class QSize;
+struct Node{
+    double x;
+    double y;
 
+    bool operator==(const Node& other) const { return x == other.x && y == other.y; }
+    QPointF toPointF() const { return QPointF(x,y); }
+};
 
-/** keep information about how data should be rendered */
-struct CRAYFISHVIEWERSHARED_EXPORT ColorMap
+struct BBox {
+  double minX;
+  double maxX;
+  double minY;
+  double maxY;
+
+  double maxSize; // Largest distance (real world) across the element
+
+  bool isPointInside(double x, double y) const { return x >= minX && x <= maxX && y >= minY && y <= maxY; }
+};
+
+struct Element{
+    uint index;
+    ElementType::Enum eType;
+    int nodeCount;
+    bool isDummy;
+    uint p[4];     //!< indices of nodes
+    BBox bbox;     //!< bounding box of the element
+
+    int indexTmp; //!< index into array with temporary information for particular element type
+};
+
+/** auxilliary cached data used for rendering of E4Q elements */
+struct E4Qtmp
 {
-  struct Item
-  {
-    Item(double v = 0, QRgb c = 0): value(v), color(c) {}
-
-    double value;
-    QRgb color;
-    QString label;
-  };
-
-  enum Method { Linear, Discrete } method;
-
-  QVector<Item> items;
-  int alpha;
-
-  ColorMap() : method(Linear), alpha(255) {}
-
-  void clearItems() { items.clear(); }
-  void addItem(const Item& item) { items.append(item); }
-
-  void dump() const;
-
-  QRgb value(double v) const;
-
-  QPixmap previewPixmap(const QSize& size, double vMin, double vMax);
-
-  /** default "cold-to-hot" color map */
-  static ColorMap defaultColorMap(double vMin, double vMax);
-
+  double a[4], b[4]; //!< coefficients for mapping between physical and logical coords
 };
 
 
-
-#endif // CRAYFISH_COLORMAP_H
+#endif // CRAYFISH_MESH_H

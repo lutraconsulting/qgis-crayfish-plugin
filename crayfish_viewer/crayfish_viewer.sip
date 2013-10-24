@@ -76,7 +76,7 @@ namespace DataSetType{
 struct DataSet
 {
 %TypeHeaderCode
-#include <crayfish_viewer_global.h>
+#include <crayfish_dataset.h>
 %End
 
     DataSet(const QString& fileName);
@@ -153,7 +153,7 @@ struct DataSet
 
 struct Output{
 %TypeHeaderCode
-#include <crayfish_viewer_global.h>
+#include <crayfish_output.h>
 %End
 
     Output();
@@ -172,7 +172,7 @@ struct Output{
 struct ColorMap
 {
 %TypeHeaderCode
-#include <crayfish_viewer_global.h>
+#include <crayfish_colormap.h>
 %End
 
   struct Item

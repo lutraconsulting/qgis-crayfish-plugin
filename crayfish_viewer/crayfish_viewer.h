@@ -38,6 +38,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <math.h>
 
+struct Element;
+struct Node;
+struct BBox;
+struct E4Qtmp;
+
+struct DataSet;
+struct Output;
 
 class CRAYFISHVIEWERSHARED_EXPORT CrayfishViewer {
 public:

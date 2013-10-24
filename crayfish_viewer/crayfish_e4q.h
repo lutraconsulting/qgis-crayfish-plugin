@@ -8,6 +8,8 @@
   Logical coordinates = Quadrilateral mapped to a unit square (for bilinear interpolation)
 */
 
+#include "crayfish_mesh.h"
+
 //! precalculate coefficients for the mapping between logical and physical coordinates
 void E4Q_computeMapping(Element& elem, E4Qtmp& e4q, Node* nodes);
 
