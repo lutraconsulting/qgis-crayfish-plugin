@@ -163,34 +163,44 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
-          <widget class="QRadioButton" name="radioButton_2">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
+          <widget class="QRadioButton" name="radContourAdvanced">
            <property name="text">
             <string>Advanced</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox_2">
-           <property name="enabled">
-            <bool>false</bool>
+          <widget class="QLabel" name="lblAdvancedPreview">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
-           <item>
-            <property name="text">
-             <string>(list of presets)</string>
-            </property>
-           </item>
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
           </widget>
          </item>
          <item>
-          <widget class="QToolButton" name="toolButton">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
+          <widget class="QToolButton" name="btnAdvanced">
            <property name="text">
             <string>...</string>
+           </property>
+           <property name="popupMode">
+            <enum>QToolButton::InstantPopup</enum>
+           </property>
+           <property name="autoRaise">
+            <bool>true</bool>
+           </property>
+           <property name="arrowType">
+            <enum>Qt::NoArrow</enum>
            </property>
           </widget>
          </item>
@@ -260,9 +270,8 @@
   <tabstop>contourCustomRangeCheckBox</tabstop>
   <tabstop>contourMinLineEdit</tabstop>
   <tabstop>contourMaxLineEdit</tabstop>
-  <tabstop>radioButton_2</tabstop>
-  <tabstop>comboBox_2</tabstop>
-  <tabstop>toolButton</tabstop>
+  <tabstop>radContourAdvanced</tabstop>
+  <tabstop>btnAdvanced</tabstop>
   <tabstop>displayVectorsCheckBox</tabstop>
   <tabstop>vectorOptionsPushButton</tabstop>
   <tabstop>displayMeshCheckBox</tabstop>

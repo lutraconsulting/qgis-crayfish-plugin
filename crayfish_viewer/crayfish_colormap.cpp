@@ -40,10 +40,40 @@ void ColorMap::dump() const
 }
 
 
-QRgb ColorMap::value(double v) const
+QRgb ColorMap::valueDiscrete(double v) const
 {
-  // TODO: discrete
+  if (items.count() == 0)
+    return qRgba(0,0,0,0);
 
+  int currentIdx = items.count() / 2; // TODO: keep last used index
+
+  while (currentIdx >= 0 && currentIdx < items.count())
+  {
+    // Start searching from the last index - assumtion is that neighboring pixels tend to be similar values
+    const Item& currentItem = items.value(currentIdx);
+    bool valueVeryClose = qAbs(v - currentItem.value) < 0.0000001;
+
+    if (currentIdx != 0 && v <= items.at(currentIdx-1).value)
+    {
+      currentIdx--;
+    }
+    else if (v <= currentItem.value || valueVeryClose)
+    {
+      return qRgba( qRed(currentItem.color), qGreen(currentItem.color), qBlue(currentItem.color), alpha);
+    }
+    else
+    {
+      // Search deeper into the color ramp list
+      currentIdx++;
+    }
+  }
+
+  return qRgba(0,0,0,0);
+}
+
+
+QRgb ColorMap::valueLinear(double v) const
+{
   // interpolate
   bool clip = false;
   int currentIdx = items.count() / 2; // TODO: keep last used index
@@ -86,16 +116,31 @@ QRgb ColorMap::value(double v) const
   return qRgba(0,0,0,0); // transparent pixel
 }
 
+QRgb ColorMap::value(double v) const
+{
+  return method == Linear ? valueLinear(v) : valueDiscrete(v);
+}
+
 
 QPixmap ColorMap::previewPixmap(const QSize& size, double vMin, double vMax)
 {
   QPixmap pix(size);
+  pix.fill(Qt::white);
   QPainter p(&pix);
-  for (int i = 0; i < size.width(); ++i)
+
+  if (items.count() == 0)
   {
-    double v = vMin + (vMax-vMin) *  i / (size.width()-1);
-    p.setPen(QColor(value(v)));
-    p.drawLine(i,0,i,size.height()-1);
+    p.drawLine(0,0,size.width()-1,size.height()-1);
+    p.drawLine(0,size.height()-1,size.width()-1,0);
+  }
+  else
+  {
+    for (int i = 0; i < size.width(); ++i)
+    {
+      double v = vMin + (vMax-vMin) *  i / (size.width()-1);
+      p.setPen(QColor(value(v)));
+      p.drawLine(i,0,i,size.height()-1);
+    }
   }
   p.end();
   return pix;

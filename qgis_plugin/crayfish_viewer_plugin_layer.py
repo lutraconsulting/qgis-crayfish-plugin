@@ -102,12 +102,14 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     def initCustomValues(self, ds):
         """ set defaults for data source """
+        ds.setCustomValue("c_basic", True)
         ds.setCustomValue("c_basicCustomRange", False)
         ds.setCustomValue("c_basicCustomRangeMin", ds.minZValue())
         ds.setCustomValue("c_basicCustomRangeMax", ds.maxZValue())
         ds.setCustomValue("c_basicName", "[default]")
         ds.setCustomValue("c_basicRamp", defaultColorRamp())
-        ds.setCustomValue("c_basicAlpha", 255)
+        ds.setCustomValue("c_alpha", 255)
+        ds.setCustomValue("c_advancedColorMap", ColorMap.defaultColorMap(ds.minZValue(), ds.maxZValue()))
         self.updateColorMap(ds)  # make sure to apply the settings to form a color map
 
         
@@ -192,7 +194,10 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
                 ds.setContourRenderingEnabled(enabled)
             alpha = qstring2int(contElem.attribute("alpha"))
             if alpha is not None:
-                ds.setCustomValue("c_basicAlpha", alpha)
+                ds.setCustomValue("c_alpha", alpha)
+            isBasic = qstring2bool(contElem.attribute("basic"))
+            if isBasic is not None:
+                ds.setCustomValue("c_basic", isBasic)
             autoRange = qstring2bool(contElem.attribute("auto-range"))
             if autoRange is not None:
                 ds.setCustomValue("c_basicCustomRange", not autoRange)
@@ -202,13 +207,21 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
                 ds.setCustomValue("c_basicCustomRangeMin", rangeMin)
                 ds.setCustomValue("c_basicCustomRangeMax", rangeMax)
 
-            # read color ramp
+            # read color ramp (basic)
             rampElem = contElem.firstChildElement("colorramp")
             if not rampElem.isNull():
                 ramp = QgsSymbolLayerV2Utils.loadColorRamp(rampElem)
                 ds.setCustomValue("c_basicRamp", ramp)
                 rampName = rampElem.attribute("name")
                 ds.setCustomValue("c_basicName", rampName)
+
+            # read color map (advanced)
+            advElem = contElem.firstChildElement("advanced")
+            if not advElem.isNull():
+                cm = self.readColorMapXml(advElem)
+                if cm:
+                    ds.setCustomValue("c_advancedColorMap", cm)
+
             self.updateColorMap(ds)
 
         # vector options (if applicable)
@@ -243,7 +256,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         # contour options
         contElem = doc.createElement("render-contour")
         contElem.setAttribute("enabled", "1" if ds.isContourRenderingEnabled() else "0")
-        contElem.setAttribute("alpha", ds.customValue("c_basicAlpha"))
+        contElem.setAttribute("alpha", ds.customValue("c_alpha"))
+        contElem.setAttribute("basic", "1" if ds.customValue("c_basic") else "0")
         contElem.setAttribute("auto-range", "1" if not ds.customValue("c_basicCustomRange") else "0")
         contElem.setAttribute("range-min", str(ds.customValue("c_basicCustomRangeMin")))
         contElem.setAttribute("range-max", str(ds.customValue("c_basicCustomRangeMax")))
@@ -254,6 +268,10 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             rampElem = QgsSymbolLayerV2Utils.saveColorRamp(rampName, ramp, doc)
             contElem.appendChild(rampElem)
         elem.appendChild(contElem)
+
+        advElem = doc.createElement("advanced")
+        self.writeColorMapXml(ds.customValue("c_advancedColorMap"), advElem, doc)
+        contElem.appendChild(advElem)
 
         # vector options (if applicable)
         if ds.type() == DataSetType.Vector:
@@ -272,10 +290,11 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     def readColorMapXml(self, elem):
 
-        cmElem = elem.findFirstChildElement("colormap")
+        cmElem = elem.firstChildElement("colormap")
         if cmElem.isNull():
             return
         cm = ColorMap()
+        cm.method = ColorMap.Discrete if cmElem.attribute("method") == "discrete" else ColorMap.Linear
         itemElems = cmElem.elementsByTagName("item")
         for i in range(itemElems.length()):
             itemElem = itemElems.item(i).toElement()
@@ -288,10 +307,12 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
     def writeColorMapXml(self, cm, parentElem, doc):
 
         elem = doc.createElement("colormap")
+        elem.setAttribute("method", "discrete" if cm.method == ColorMap.Discrete else "linear")
         for item in cm.items:
             itemElem = doc.createElement("item")
             itemElem.setAttribute("value", str(item.value))
-            itemElem.setAttribute("color", "%d,%d,%d" % (item.color.red(), item.color.green(), item.color.blue()))
+            c = QColor(item.color)
+            itemElem.setAttribute("color", "%d,%d,%d" % (c.red(), c.green(), c.blue()))
             elem.appendChild(itemElem)
         parentElem.appendChild(elem)
 
@@ -302,6 +323,17 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     def updateColorMap(self, ds):
         """ update color map of the current data set given the settings """
+
+        if not ds.customValue("c_basic"):
+            cm = ds.customValue("c_advancedColorMap")
+        else:
+            cm = self._colorMapBasic(ds)
+
+        cm.alpha = ds.customValue("c_alpha")
+        ds.setContourColorMap(cm)
+
+
+    def _colorMapBasic(self, ds):
 
         # contour colormap
         if ds.customValue("c_basicCustomRange"):
@@ -331,8 +363,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           vv = zMin + v*(zMax-zMin)
           cm.addItem(ColorMap.Item(vv,c.rgb()))
 
-        cm.alpha = ds.customValue("c_basicAlpha")
-        ds.setContourColorMap(cm)
+        return cm
 
     
     def draw(self, rendererContext):

@@ -57,6 +57,9 @@ struct CRAYFISHVIEWERSHARED_EXPORT ColorMap
 
   void clearItems() { items.clear(); }
   void addItem(const Item& item) { items.append(item); }
+  void removeItem(int index) { items.remove(index); }
+  void moveItem(int indexOld, int indexNew) { items.insert(indexNew, items.value(indexOld)); items.remove(indexNew > indexOld ? indexOld : indexOld+1); }
+  Item& item(int index) { return items[index]; }
 
   void dump() const;
 
@@ -67,6 +70,9 @@ struct CRAYFISHVIEWERSHARED_EXPORT ColorMap
   /** default "cold-to-hot" color map */
   static ColorMap defaultColorMap(double vMin, double vMax);
 
+protected:
+  QRgb valueDiscrete(double v) const;
+  QRgb valueLinear(double v) const;
 };
 
 

@@ -189,6 +189,9 @@ struct ColorMap
 
   void clearItems();
   void addItem(const ColorMap::Item& item);
+  void removeItem(int index);
+  void moveItem(int indexOld, int indexNew);
+  ColorMap::Item& item(int index);
 
   void dump() const;
 

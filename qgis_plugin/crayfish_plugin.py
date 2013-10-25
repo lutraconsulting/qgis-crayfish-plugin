@@ -72,7 +72,7 @@ class CrayfishPlugin:
         self.crayfishViewerLibFound = False
         
     def initGui(self):
-        
+
         # Create action that will show the about page
         self.aboutAction = QAction(QIcon(":/plugins/crayfish/crayfish.png"), "About", self.iface.mainWindow())
         QObject.connect(self.aboutAction, SIGNAL("triggered()"), self.about)
