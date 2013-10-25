@@ -31,6 +31,8 @@ from qgis.core import QgsApplication, QgsStyleV2
 
 from crayfish_colormap_dialog_ui import Ui_CrayfishColorMapDialog
 
+from crayfishviewer import ColorMap
+
 
 
 class ColorMapModel(QAbstractTableModel):
@@ -80,7 +82,6 @@ class ColorMapModel(QAbstractTableModel):
     def addItem(self):
         row = self.rowCount(QModelIndex())
         self.beginInsertRows(QModelIndex(), row, row)
-        from crayfishviewer import ColorMap
         self.cm.addItem(ColorMap.Item(0, 0xff00ff00))
         self.endInsertRows()
 
@@ -112,6 +113,8 @@ class ColorMapModel(QAbstractTableModel):
           self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), self.index(0,0),self.index(len(self.cm.items),1))
 
 
+
+
 class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
     def __init__(self, colormap, vMin, vMax, fnRedraw, parent=None):
         QDialog.__init__(self, parent)
@@ -132,6 +135,8 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
 
         self.btnAdd.setIcon(QgsApplication.getThemeIcon("/mActionSignPlus.png"))
         self.btnRemove.setIcon(QgsApplication.getThemeIcon("/mActionSignMinus.png"))
+        self.btnLoad.setIcon(QgsApplication.getThemeIcon("/mActionFileOpen.svg"))
+        self.btnSave.setIcon(QgsApplication.getThemeIcon("/mActionFileSaveAs.svg"))
 
         # make sure we accept only doubles for min/max values
         self.editMin.setValidator(QDoubleValidator(self.editMin))
@@ -140,12 +145,12 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         self.editMin.setText("%.3f" % vMin)
         self.editMax.setText("%.3f" % vMax)
 
-        from crayfishviewer import ColorMap
-        if self.colormap.method == ColorMap.Discrete:
-            self.radIntDiscrete.setChecked(True)
+        self.updateGUI()
 
         self.connect(self.btnAdd, SIGNAL("clicked()"), self.addItem)
         self.connect(self.btnRemove, SIGNAL("clicked()"), self.removeItem)
+        self.connect(self.btnLoad, SIGNAL("clicked()"), self.loadColorMap)
+        self.connect(self.btnSave, SIGNAL("clicked()"), self.saveColorMap)
         self.connect(self.btnClassify, SIGNAL("clicked()"), self.classify)
         self.connect(self.model, SIGNAL("dataChanged(QModelIndex,QModelIndex)"), self.updatePreview)
         self.connect(self.model, SIGNAL("rowsInserted(QModelIndex,int,int)"), self.updatePreview)
@@ -155,11 +160,16 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         self.connect(self.radIntLinear, SIGNAL("clicked()"), self.setMethod)
         self.connect(self.radIntDiscrete, SIGNAL("clicked()"), self.setMethod)
 
+
+    def updateGUI(self):
+        """ update GUI from stored color map """
+        if self.colormap.method == ColorMap.Discrete:
+            self.radIntDiscrete.setChecked(True)
+
         self.updatePreview()
 
-    def classify(self):
 
-        from crayfishviewer import ColorMap
+    def classify(self):
 
         ramp = self.cboColorRamp.currentColorRamp()
         inv = self.chkInvert.isChecked()
@@ -205,6 +215,62 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
           self.model.removeItem(lst[0].row())
 
     def setMethod(self):
-        from crayfishviewer import ColorMap
         self.colormap.method = ColorMap.Linear if self.radIntLinear.isChecked() else ColorMap.Discrete
         self.updatePreview()
+
+
+    """
+    # QGIS Generated Color Map Export File
+    INTERPOLATION:INTERPOLATED
+    152.402,215,25,28,255,152.402000
+    177.554,253,174,97,255,177.553500
+    202.705,255,255,191,255,202.705000
+    227.857,171,221,164,255,227.856500
+    253.008,43,131,186,255,253.008000
+    """
+
+    def loadColorMap(self):
+
+        settings = QSettings()
+        lastUsedDir = settings.value("crayfishViewer/lastFolder")
+        fileName = QFileDialog.getOpenFileName(self, "Load color map", lastUsedDir, "Textfile (*.txt)")
+        if not fileName:
+            return
+
+        self.model.beginResetModel
+        self.colormap.clearItems()
+
+        f = open(fileName, "r")
+        for line in f.read().splitlines():
+            if line.startswith("#"):
+                continue
+            elif line.startswith("INTERPOLATION:"):
+                txt, method = line.split(":")
+                self.colormap.method = ColorMap.Discrete if method == "DISCRETE" else ColorMap.Linear
+            else:
+                value, r,g,b,a, label = line.split(",")
+                self.colormap.addItem(ColorMap.Item(float(value), qRgba(int(r),int(g),int(b),int(a))))
+
+        self.model.endResetModel()
+
+        self.colormap.dump()
+
+        self.updateGUI()
+
+
+    def saveColorMap(self):
+
+        settings = QSettings()
+        lastUsedDir = settings.value("crayfishViewer/lastFolder")
+        fileName = QFileDialog.getSaveFileName(self, "Save color map", lastUsedDir, "Textfile (*.txt)")
+        if not fileName:
+            return
+
+        f = open(fileName, "w")
+        f.write("# QGIS Generated Color Map Export File\n")
+        f.write("INTERPOLATION:%s\n" % ("INTERPOLATED" if self.colormap.method == ColorMap.Linear else "DISCRETE"))
+        for i in range(len(self.colormap.items)):
+            item = self.colormap.items[i]
+            c = QColor(item.color)
+            f.write("%.3f,%d,%d,%d,%d,%.3f\n" % (item.value, c.red(), c.green(), c.blue(), c.alpha(), item.value))
+        f.close()

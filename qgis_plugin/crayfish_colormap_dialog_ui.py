@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'crayfish_colormap_dialog.ui'
 #
-# Created: Fri Oct 25 11:28:29 2013
+# Created: Fri Oct 25 17:16:41 2013
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -52,6 +52,12 @@ class Ui_CrayfishColorMapDialog(object):
         self.btnRemove = QtGui.QToolButton(CrayfishColorMapDialog)
         self.btnRemove.setObjectName(_fromUtf8("btnRemove"))
         self.horizontalLayout_2.addWidget(self.btnRemove)
+        self.btnLoad = QtGui.QToolButton(CrayfishColorMapDialog)
+        self.btnLoad.setObjectName(_fromUtf8("btnLoad"))
+        self.horizontalLayout_2.addWidget(self.btnLoad)
+        self.btnSave = QtGui.QToolButton(CrayfishColorMapDialog)
+        self.btnSave.setObjectName(_fromUtf8("btnSave"))
+        self.horizontalLayout_2.addWidget(self.btnSave)
         spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem)
         self.verticalLayout_2.addLayout(self.horizontalLayout_2)
@@ -131,7 +137,9 @@ class Ui_CrayfishColorMapDialog(object):
         CrayfishColorMapDialog.setTabOrder(self.radIntLinear, self.radIntDiscrete)
         CrayfishColorMapDialog.setTabOrder(self.radIntDiscrete, self.btnAdd)
         CrayfishColorMapDialog.setTabOrder(self.btnAdd, self.btnRemove)
-        CrayfishColorMapDialog.setTabOrder(self.btnRemove, self.viewColorMap)
+        CrayfishColorMapDialog.setTabOrder(self.btnRemove, self.btnLoad)
+        CrayfishColorMapDialog.setTabOrder(self.btnLoad, self.btnSave)
+        CrayfishColorMapDialog.setTabOrder(self.btnSave, self.viewColorMap)
         CrayfishColorMapDialog.setTabOrder(self.viewColorMap, self.cboColorRamp)
         CrayfishColorMapDialog.setTabOrder(self.cboColorRamp, self.chkInvert)
         CrayfishColorMapDialog.setTabOrder(self.chkInvert, self.spinClasses)
@@ -147,6 +155,8 @@ class Ui_CrayfishColorMapDialog(object):
         self.radIntDiscrete.setText(_translate("CrayfishColorMapDialog", "Discrete", None))
         self.btnAdd.setText(_translate("CrayfishColorMapDialog", "...", None))
         self.btnRemove.setText(_translate("CrayfishColorMapDialog", "...", None))
+        self.btnLoad.setText(_translate("CrayfishColorMapDialog", "...", None))
+        self.btnSave.setText(_translate("CrayfishColorMapDialog", "...", None))
         self.groupBox.setTitle(_translate("CrayfishColorMapDialog", "Generate new color map", None))
         self.chkInvert.setText(_translate("CrayfishColorMapDialog", "Invert", None))
         self.label_2.setText(_translate("CrayfishColorMapDialog", "Min", None))
