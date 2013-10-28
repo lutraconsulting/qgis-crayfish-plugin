@@ -153,6 +153,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             meshRendering = qstring2bool(meshElem.attribute("enabled"))
             if meshRendering is not None:
                 self.provider.setMeshRenderingEnabled(meshRendering)
+            meshColor = qstring2rgb(meshElem.attribute("color"))
+            if meshColor is not None:
+                self.provider.setMeshColor(QColor(meshColor))
 
         return True
 
@@ -167,6 +170,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         element.setAttribute("current-dataset", self.provider.currentDataSetIndex())
         meshElem = doc.createElement("render-mesh")
         meshElem.setAttribute("enabled", "1" if self.provider.isMeshRenderingEnabled() else "0")
+        clr = self.provider.meshColor()
+        meshElem.setAttribute("color", "%d,%d,%d" % (clr.red(), clr.green(), clr.blue()))
         element.appendChild(meshElem)
 
         for i in range(self.provider.dataSetCount()):

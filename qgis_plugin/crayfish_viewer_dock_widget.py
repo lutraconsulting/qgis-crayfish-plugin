@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'crayfish_viewer_dock_widget.ui'
 #
-# Created: Fri Oct 25 14:54:17 2013
+# Created: Mon Oct 28 22:08:35 2013
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -131,6 +131,9 @@ class Ui_DockWidget(object):
         self.displayMeshCheckBox = QtGui.QCheckBox(self.dockWidgetContents)
         self.displayMeshCheckBox.setObjectName(_fromUtf8("displayMeshCheckBox"))
         self.gridLayout_3.addWidget(self.displayMeshCheckBox, 2, 0, 1, 1)
+        self.btnMeshColor = QgsColorButton(self.dockWidgetContents)
+        self.btnMeshColor.setObjectName(_fromUtf8("btnMeshColor"))
+        self.gridLayout_3.addWidget(self.btnMeshColor, 2, 1, 1, 1)
         self.verticalLayout_2.addLayout(self.gridLayout_3)
         self.valueLabel = QtGui.QLabel(self.dockWidgetContents)
         self.valueLabel.setObjectName(_fromUtf8("valueLabel"))
@@ -172,5 +175,5 @@ class Ui_DockWidget(object):
         self.displayMeshCheckBox.setText(_translate("DockWidget", "Display Mesh", None))
         self.valueLabel.setText(_translate("DockWidget", "(0.000) 0.000", None))
 
+from qgis.gui import QgsColorButton, QgsColorRampComboBox
 from crayfish_gui_utils import QgsCollapsibleGroupBox
-from qgis.gui import QgsColorRampComboBox

@@ -235,6 +235,9 @@
         </property>
        </widget>
       </item>
+      <item row="2" column="1">
+       <widget class="QgsColorButton" name="btnMeshColor"/>
+      </item>
      </layout>
     </item>
     <item>
@@ -257,6 +260,11 @@
   <customwidget>
    <class>QgsColorRampComboBox</class>
    <extends>QComboBox</extends>
+   <header>qgis.gui</header>
+  </customwidget>
+  <customwidget>
+   <class>QgsColorButton</class>
+   <extends>QPushButton</extends>
    <header>qgis.gui</header>
   </customwidget>
  </customwidgets>

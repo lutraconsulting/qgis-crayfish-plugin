@@ -97,7 +97,7 @@ class CrayfishPlugin:
             notFoundTxt = "Crayfish Viewer depends on a platform specific compiled library which was not found."
         
             if platformVersion != 'Windows':
-              QMessageBox.critical(self.iface.mainWindow(), 'Could Not Locate Appropriate Library', notFoundText + " A library for your platform could not be found on the developer's website.  Please see the About section for details of how to compile your own library or how to contact us for assistance." )
+              QMessageBox.critical(self.iface.mainWindow(), 'Could Not Locate Appropriate Library', notFoundTxt + " A library for your platform could not be found on the developer's website.  Please see the About section for details of how to compile your own library or how to contact us for assistance." )
               return
 
             # The crayfishviewer binary cannot be found

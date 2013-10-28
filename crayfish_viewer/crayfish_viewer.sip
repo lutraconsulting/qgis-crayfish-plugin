@@ -43,6 +43,9 @@ public:
     void setMeshRenderingEnabled(bool enabled);
     bool isMeshRenderingEnabled() const;
 
+    void setMeshColor(const QColor& color);
+    QColor meshColor() const;
+
     void setCurrentDataSetIndex(int index);
     int currentDataSetIndex() const;
     int dataSetCount() const;

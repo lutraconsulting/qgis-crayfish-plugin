@@ -87,6 +87,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
   , mUrX(0.0), mUrY(0.0)
   , mPixelSize(0.0)
   , mRenderMesh(0)
+  , mMeshColor(Qt::black)
   , mCurDataSetIdx(0)
   , mElemCount(0)
   , mElems(0)
@@ -584,6 +585,16 @@ bool CrayfishViewer::isMeshRenderingEnabled() const
   return mRenderMesh;
 }
 
+void CrayfishViewer::setMeshColor(const QColor& color)
+{
+  mMeshColor = color;
+}
+
+QColor CrayfishViewer::meshColor() const
+{
+  return mMeshColor;
+}
+
 void CrayfishViewer::setCurrentDataSetIndex(int index)
 {
   mCurDataSetIdx = index;
@@ -1005,6 +1016,7 @@ void CrayfishViewer::renderMesh()
       // render mesh as a wireframe
 
       QPainter p(mImage);
+      p.setPen(mMeshColor);
       QPoint pts[5];
       for (uint i=0; i < mElemCount; ++i)
       {

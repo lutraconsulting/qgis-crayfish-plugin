@@ -75,6 +75,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         QObject.connect(self.btnAdvanced, SIGNAL("clicked()"), self.editAdvanced)
         QObject.connect(self.radContourBasic, SIGNAL("clicked()"), self.setContourType)
         QObject.connect(self.radContourAdvanced, SIGNAL("clicked()"), self.setContourType)
+        QObject.connect(self.btnMeshColor, SIGNAL("colorChanged(QColor)"), self.setMeshColor)
 
         
     def currentDataSet(self):
@@ -113,6 +114,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         """
             displayMeshCheckBox has been toggled
         """
+
+        self.btnMeshColor.setEnabled(newState)
+
         l = self.iface.mapCanvas().currentLayer()
         l.provider.setMeshRenderingEnabled(newState)
         self.redrawCurrentLayer()
@@ -346,6 +350,11 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.displayMeshCheckBox.setChecked(l.provider.isMeshRenderingEnabled())
         self.displayMeshCheckBox.blockSignals(False)
 
+        self.btnMeshColor.setEnabled(l.provider.isMeshRenderingEnabled())
+        self.btnMeshColor.blockSignals(True)
+        self.btnMeshColor.setColor(l.provider.meshColor())
+        self.btnMeshColor.blockSignals(False)
+
         #self.redrawCurrentLayer()
 
 
@@ -405,3 +414,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         pix = cm.previewPixmap(self.lblAdvancedPreview.size(), ds.minZValue(), ds.maxZValue())
         self.lblAdvancedPreview.setPixmap(pix)
 
+
+
+    def setMeshColor(self, clr):
+        l = self.iface.mapCanvas().currentLayer()
+        l.provider.setMeshColor(clr)
+        self.redrawCurrentLayer()

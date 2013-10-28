@@ -81,6 +81,9 @@ public:
     void setMeshRenderingEnabled(bool enabled);
     bool isMeshRenderingEnabled() const;
 
+    void setMeshColor(const QColor& color);
+    QColor meshColor() const;
+
     void setCurrentDataSetIndex(int index);
     int currentDataSetIndex() const;
     int dataSetCount() const { return mDataSets.size(); }
@@ -109,6 +112,7 @@ private:
     double mUrY;        //!< Y of current view's upper-right point (mesh coords)
     double mPixelSize;  //!< units (in mesh) per pixel (on screen)
     bool mRenderMesh;   //!< whether to render the mesh as a wireframe
+    QColor mMeshColor;  //!< color used for rendering of the wireframe
     int mCurDataSetIdx; //!< index of the current dataset
 
     // envelope of the mesh
