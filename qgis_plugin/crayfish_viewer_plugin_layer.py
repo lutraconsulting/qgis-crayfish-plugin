@@ -329,6 +329,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         else:
             cm = self._colorMapBasic(ds)
 
+        if not cm:
+            return
+
         cm.alpha = ds.customValue("c_alpha")
         ds.setContourColorMap(cm)
 
@@ -344,6 +347,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             zMax = ds.maxZValue()
 
         qcm = ds.customValue("c_basicRamp")
+        if not qcm:
+            return   # something went wrong (e.g. user selected "new color ramp...")
 
         # if the color ramp is a gradient, we will use the defined stops
         # otherwise (unknown type of color ramp) we will just take few samples
