@@ -32,7 +32,6 @@ from qgis.gui import QgsColorRampComboBox
 from crayfish_viewer_dock_widget import Ui_DockWidget
 import crayfish_viewer_vector_options_dialog
 from crayfish_viewer_render_settings import CrayfishViewerRenderSettings
-from crayfish_colormap_dialog import CrayfishColorMapDialog
 
 
 class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
