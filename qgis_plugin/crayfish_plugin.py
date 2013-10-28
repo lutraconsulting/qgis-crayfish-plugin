@@ -276,6 +276,15 @@ class CrayfishPlugin:
         QObject.disconnect(self.lr, SIGNAL("layerWillBeRemoved(QString)"), self.layerRemoved)
         QObject.disconnect(self.lr, SIGNAL("layerWasAdded(QgsMapLayer*)"), self.layerWasAdded)
 
+    def lastFolder(self):
+
+        # Retrieve the last place we looked if stored
+        settings = QSettings()
+        try:
+            return settings.value("crayfishViewer/lastFolder").toString()
+        except AttributeError:  # QGIS 2
+            return settings.value("crayfishViewer/lastFolder")
+
     def run(self):
         """
             The user wants to view an Crayfish layer
@@ -287,15 +296,9 @@ class CrayfishPlugin:
         
         # First get the file name of the 'thing' the user wants to view
         
-        # Retrieve the last place we looked if stored
-        settings = QSettings()
-        try:
-            lastFolder = settings.value("crayfishViewer/lastFolder").toString()
-        except AttributeError:  # QGIS 2
-            lastFolder = settings.value("crayfishViewer/lastFolder")
-        
         # Get the file name
-        inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Crayfish Dat File', lastFolder, "DAT Results (*.dat);;2DM Mesh Files (*.2dm)")
+        inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Crayfish Dat File', self.lastFolder(),
+                                                 "DAT Results (*.dat);;2DM Mesh Files (*.2dm)")
         inFileName = unicode(inFileName)
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel 
             return
@@ -303,6 +306,7 @@ class CrayfishPlugin:
         # Store the path we just looked in
         head, tail = os.path.split(inFileName)
         if head <> os.sep and head.lower() <> 'c:\\' and head <> '':
+            settings = QSettings()
             settings.setValue("crayfishViewer/lastFolder", head)
         
         # Determine what type of file it is
@@ -327,34 +331,8 @@ class CrayfishPlugin:
             self.dock.currentLayerChanged()
 
         elif fileType == '.dat':
-            """
-                The user is adding a result set:
-                    Determine its dat file name
-                    If we have that layer open, add this result to the layer
-                    Else create a new layer and add to that one
-            """
+            self.loadDatFile(inFileName)
             
-            parentLayer = self.loadMeshForFile(inFileName)
-            if not parentLayer:
-                return   # error message has been shown already
-            
-            if parentLayer.provider.isDataSetLoaded(inFileName):
-                qgis_message_bar.pushMessage("Crayfish", "The .dat file is already loaded in layer " + parentLayer.name(), level=QgsMessageBar.INFO)
-                return
-
-            if not parentLayer.provider.loadDataSet( inFileName ):
-                qgis_message_bar.pushMessage("Crayfish", "Failed to load the .DAT file", level=QgsMessageBar.CRITICAL)
-                return
-
-            dsIndex = parentLayer.provider.dataSetCount()-1
-            parentLayer.initCustomValues(parentLayer.provider.dataSet(dsIndex))
-            # set to most recent data set
-            parentLayer.provider.setCurrentDataSetIndex(dsIndex)
-            # update GUI
-            self.dock.currentLayerChanged()
-            # allow user to go through the time steps with arrow keys
-            self.dock.listWidget_2.setFocus()
-
         else:
             # This is an unsupported file type
             qgis_message_bar.pushMessage("Crayfish", "The file type you are trying to load is not supported: " + fileType, level=QgsMessageBar.CRITICAL)
@@ -374,7 +352,16 @@ class CrayfishPlugin:
 
         # check whether the file exists
         if not os.path.exists(meshFileName):
-            qgis_message_bar.pushMessage("Crayfish", "The mesh file does not exist ("+meshFileName+")", level=QgsMessageBar.CRITICAL)
+
+            self.lastFailedWidget = self.iface.messageBar().createMessage("Crayfish", "The mesh file does not exist ("+meshFileName+")")
+            self.lastFailedWidget._inFileName = inFileName
+            button = QPushButton("Locate", self.lastFailedWidget)
+            button.pressed.connect(self.locateMeshForFailedDatFile)
+            self.lastFailedWidget.layout().addWidget(button)
+            self.iface.messageBar().pushWidget(self.lastFailedWidget, QgsMessageBar.CRITICAL)
+
+            # TODO: QGIS < 2.0
+            #qgis_message_bar.pushMessage("Crayfish", "The mesh file does not exist ("+meshFileName+")", level=QgsMessageBar.CRITICAL)
             return
         
         if not self.addLayer(meshFileName):
@@ -383,6 +370,63 @@ class CrayfishPlugin:
         parentLayer = self.getLayerWith2DM(meshFileName)
         assert( parentLayer is not None)
         return parentLayer
+
+
+    def loadDatFile(self, inFileName, parentLayer=None):
+        """
+            The user is adding a result set:
+                Determine its dat file name
+                If we have that layer open, add this result to the layer
+                Else create a new layer and add to that one
+        """
+
+        if not parentLayer:
+            parentLayer = self.loadMeshForFile(inFileName)
+            if not parentLayer:
+                return   # error message has been shown already
+
+        if parentLayer.provider.isDataSetLoaded(inFileName):
+            qgis_message_bar.pushMessage("Crayfish", "The .dat file is already loaded in layer " + parentLayer.name(), level=QgsMessageBar.INFO)
+            return
+
+        if not parentLayer.provider.loadDataSet( inFileName ):
+            qgis_message_bar.pushMessage("Crayfish", "Failed to load the .DAT file", level=QgsMessageBar.CRITICAL)
+            return
+
+        dsIndex = parentLayer.provider.dataSetCount()-1
+        parentLayer.initCustomValues(parentLayer.provider.dataSet(dsIndex))
+        # set to most recent data set
+        parentLayer.provider.setCurrentDataSetIndex(dsIndex)
+        # update GUI
+        self.dock.currentLayerChanged()
+        # allow user to go through the time steps with arrow keys
+        self.dock.listWidget_2.setFocus()
+
+
+
+    def locateMeshForFailedDatFile(self):
+        """ the user wants to specify the mesh file """
+
+        inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Mesh File', self.lastFolder(), "2DM Mesh Files (*.2dm)")
+        inFileName = unicode(inFileName)
+        if len(inFileName) == 0: # If the length is 0 the user pressed cancel
+            return
+
+        datFileName = self.lastFailedWidget._inFileName
+
+        # remove the widget from message bar
+        self.iface.messageBar().popWidget(self.lastFailedWidget)
+        del self.lastFailedWidget
+
+        layerWith2dm = self.getLayerWith2DM(inFileName)
+        if not layerWith2dm:
+            layerWith2dm = self.addLayer(inFileName)
+            if not layerWith2dm:
+                return # addLayer() reports errors/warnings
+
+        # mesh file is ready, now load the .dat file
+        self.loadDatFile(datFileName, layerWith2dm)
+
 
     def about(self):
         d = crayfish_about_dialog.CrayfishAboutDialog(self.iface)
@@ -426,7 +470,7 @@ class CrayfishPlugin:
             elif e == 2: # cannot open
               qgis_message_bar.pushMessage("Crayfish", "Failed to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
 
-            return False
+            return None
             
         # Add to layer registry
         QgsMapLayerRegistry.instance().addMapLayer(layer)
@@ -439,7 +483,7 @@ class CrayfishPlugin:
             elif w == 2:
                 qgis_message_bar.pushMessage("Crayfish", "The mesh contains some invalid elements, they will not be rendered.", level=QgsMessageBar.WARNING)
         
-        return True
+        return layer
 
     def layerWasAdded(self, layer):
         if layer.type() != QgsMapLayer.PluginLayer:
