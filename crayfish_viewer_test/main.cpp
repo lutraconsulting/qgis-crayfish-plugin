@@ -2,6 +2,10 @@
 #include <QLibrary>
 #include "crayfish_viewer.h"
 #include "crayfish_e4q.h"
+#include "crayfish_colormap.h"
+#include "crayfish_dataset.h"
+
+#if 0
 
 void dumpL2P(double x, double y, const E4Qtmp& t)
 {
@@ -18,10 +22,6 @@ void dumpP2L(double x, double y, const E4Qtmp& t)
 }
 
 
-
-int main(int argc, char *argv[])
-{
-#if 0
   // create our E4Q
   Node nodes[] = {
     { -1, -1 },
@@ -62,6 +62,9 @@ int main(int argc, char *argv[])
   qDebug("complex: %d", E4Q_isComplex(testElem, nodes));
 #endif
 
+
+int main(int argc, char *argv[])
+{
     QCoreApplication a(argc, argv);
 
     if (argc != 3)

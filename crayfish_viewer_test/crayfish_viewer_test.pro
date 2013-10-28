@@ -19,7 +19,7 @@ CONFIG(debug, debug|release) {
 }
 
 DESTDIR = $$PWD/build/$${BUILDTYPE}
-LIBS +=  -L../../crayfish_viewer/build/$${BUILDTYPE}  -lcrayfishViewer
-DEPENDPATH += . ../crayfish_viewer/build/$${BUILDTYPE}
+LIBS +=  -L$${PWD}/../crayfish_viewer/build/$${BUILDTYPE}  -lcrayfishViewer
+DEPENDPATH += . $${PWD}/../crayfish_viewer/build/$${BUILDTYPE}
 
 SOURCES += main.cpp
