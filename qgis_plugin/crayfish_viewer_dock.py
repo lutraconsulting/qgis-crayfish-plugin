@@ -57,7 +57,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.cboContourBasic.insertItem(0, iconRamp, "[default]")
         self.cboContourBasic.setCurrentIndex(0)
 
-        self.btnAdvanced.setIcon(QgsApplication.getThemeIcon( "/mActionOptions.svg" ))
+        iconOptions = QgsApplication.getThemeIcon( "/mActionOptions.svg" )
+        self.btnAdvanced.setIcon(iconOptions)
+        self.btnVectorOptions.setIcon(iconOptions)
 
         self.setEnabled(False)
         self.vectorPropsDialog = None
@@ -108,7 +110,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             displayVectorsCheckBox has been toggled
         """
         self.currentDataSet().setVectorRenderingEnabled(newState)
-        self.vectorOptionsPushButton.setEnabled(newState)
+        self.btnVectorOptions.setEnabled(newState)
         self.redrawCurrentLayer()
         
     def displayMeshButtonToggled(self, newState):
@@ -240,7 +242,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         # Get contour / vector render preferences
         self.contoursGroupBox.setChecked(dataSet.isContourRenderingEnabled())
         self.displayVectorsCheckBox.setChecked(dataSet.isVectorRenderingEnabled())
-        
+        self.btnVectorOptions.setEnabled(dataSet.isVectorRenderingEnabled())
+
         # Disable the vector options if we are looking at a scalar dataset
         from crayfishviewer import DataSetType
         self.displayVectorsCheckBox.setEnabled(dataSet.type() == DataSetType.Vector)

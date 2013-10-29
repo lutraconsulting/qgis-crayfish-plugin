@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'crayfish_viewer_dock_widget.ui'
 #
-# Created: Mon Oct 28 22:08:35 2013
+# Created: Tue Oct 29 11:16:50 2013
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -26,7 +26,7 @@ except AttributeError:
 class Ui_DockWidget(object):
     def setupUi(self, DockWidget):
         DockWidget.setObjectName(_fromUtf8("DockWidget"))
-        DockWidget.resize(351, 566)
+        DockWidget.resize(349, 565)
         self.dockWidgetContents = QtGui.QWidget()
         self.dockWidgetContents.setObjectName(_fromUtf8("dockWidgetContents"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.dockWidgetContents)
@@ -119,22 +119,30 @@ class Ui_DockWidget(object):
         self.horizontalLayout_4.addWidget(self.btnAdvanced)
         self.verticalLayout.addLayout(self.horizontalLayout_4)
         self.verticalLayout_2.addWidget(self.contoursGroupBox)
-        self.gridLayout_3 = QtGui.QGridLayout()
-        self.gridLayout_3.setObjectName(_fromUtf8("gridLayout_3"))
-        self.displayVectorsCheckBox = QtGui.QCheckBox(self.dockWidgetContents)
-        self.displayVectorsCheckBox.setObjectName(_fromUtf8("displayVectorsCheckBox"))
-        self.gridLayout_3.addWidget(self.displayVectorsCheckBox, 1, 0, 1, 1)
-        self.vectorOptionsPushButton = QtGui.QPushButton(self.dockWidgetContents)
-        self.vectorOptionsPushButton.setEnabled(False)
-        self.vectorOptionsPushButton.setObjectName(_fromUtf8("vectorOptionsPushButton"))
-        self.gridLayout_3.addWidget(self.vectorOptionsPushButton, 1, 1, 1, 1)
+        self.gridLayout = QtGui.QGridLayout()
+        self.gridLayout.setContentsMargins(-1, -1, 7, -1)
+        self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
         self.displayMeshCheckBox = QtGui.QCheckBox(self.dockWidgetContents)
         self.displayMeshCheckBox.setObjectName(_fromUtf8("displayMeshCheckBox"))
-        self.gridLayout_3.addWidget(self.displayMeshCheckBox, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.displayMeshCheckBox, 1, 0, 1, 1)
         self.btnMeshColor = QgsColorButton(self.dockWidgetContents)
         self.btnMeshColor.setObjectName(_fromUtf8("btnMeshColor"))
-        self.gridLayout_3.addWidget(self.btnMeshColor, 2, 1, 1, 1)
-        self.verticalLayout_2.addLayout(self.gridLayout_3)
+        self.gridLayout.addWidget(self.btnMeshColor, 1, 2, 1, 1)
+        self.horizontalLayout_5 = QtGui.QHBoxLayout()
+        self.horizontalLayout_5.setObjectName(_fromUtf8("horizontalLayout_5"))
+        spacerItem1 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout_5.addItem(spacerItem1)
+        self.btnVectorOptions = QtGui.QToolButton(self.dockWidgetContents)
+        self.btnVectorOptions.setAutoRaise(True)
+        self.btnVectorOptions.setObjectName(_fromUtf8("btnVectorOptions"))
+        self.horizontalLayout_5.addWidget(self.btnVectorOptions)
+        self.gridLayout.addLayout(self.horizontalLayout_5, 0, 2, 1, 1)
+        self.displayVectorsCheckBox = QtGui.QCheckBox(self.dockWidgetContents)
+        self.displayVectorsCheckBox.setObjectName(_fromUtf8("displayVectorsCheckBox"))
+        self.gridLayout.addWidget(self.displayVectorsCheckBox, 0, 0, 1, 1)
+        spacerItem2 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.gridLayout.addItem(spacerItem2, 0, 1, 2, 1)
+        self.verticalLayout_2.addLayout(self.gridLayout)
         self.valueLabel = QtGui.QLabel(self.dockWidgetContents)
         self.valueLabel.setObjectName(_fromUtf8("valueLabel"))
         self.verticalLayout_2.addWidget(self.valueLabel)
@@ -142,8 +150,8 @@ class Ui_DockWidget(object):
 
         self.retranslateUi(DockWidget)
         QtCore.QObject.connect(self.displayVectorsCheckBox, QtCore.SIGNAL(_fromUtf8("toggled(bool)")), DockWidget.displayVectorsButtonToggled)
-        QtCore.QObject.connect(self.vectorOptionsPushButton, QtCore.SIGNAL(_fromUtf8("clicked()")), DockWidget.displayVectorPropsDialog)
         QtCore.QObject.connect(self.displayMeshCheckBox, QtCore.SIGNAL(_fromUtf8("toggled(bool)")), DockWidget.displayMeshButtonToggled)
+        QtCore.QObject.connect(self.btnVectorOptions, QtCore.SIGNAL(_fromUtf8("clicked()")), DockWidget.displayVectorPropsDialog)
         QtCore.QMetaObject.connectSlotsByName(DockWidget)
         DockWidget.setTabOrder(self.listWidget, self.listWidget_2)
         DockWidget.setTabOrder(self.listWidget_2, self.contoursGroupBox)
@@ -156,8 +164,8 @@ class Ui_DockWidget(object):
         DockWidget.setTabOrder(self.contourMaxLineEdit, self.radContourAdvanced)
         DockWidget.setTabOrder(self.radContourAdvanced, self.btnAdvanced)
         DockWidget.setTabOrder(self.btnAdvanced, self.displayVectorsCheckBox)
-        DockWidget.setTabOrder(self.displayVectorsCheckBox, self.vectorOptionsPushButton)
-        DockWidget.setTabOrder(self.vectorOptionsPushButton, self.displayMeshCheckBox)
+        DockWidget.setTabOrder(self.displayVectorsCheckBox, self.btnVectorOptions)
+        DockWidget.setTabOrder(self.btnVectorOptions, self.displayMeshCheckBox)
 
     def retranslateUi(self, DockWidget):
         DockWidget.setWindowTitle(_translate("DockWidget", "Crayfish Viewer", None))
@@ -169,10 +177,12 @@ class Ui_DockWidget(object):
         self.contourMinLabel.setText(_translate("DockWidget", "Min", None))
         self.contourMaxLabel.setText(_translate("DockWidget", "Max", None))
         self.radContourAdvanced.setText(_translate("DockWidget", "Advanced", None))
+        self.btnAdvanced.setToolTip(_translate("DockWidget", "Advanced Contour Options", None))
         self.btnAdvanced.setText(_translate("DockWidget", "...", None))
-        self.displayVectorsCheckBox.setText(_translate("DockWidget", "Display Vectors", None))
-        self.vectorOptionsPushButton.setText(_translate("DockWidget", "Vector Options", None))
         self.displayMeshCheckBox.setText(_translate("DockWidget", "Display Mesh", None))
+        self.btnVectorOptions.setToolTip(_translate("DockWidget", "Vector Options", None))
+        self.btnVectorOptions.setText(_translate("DockWidget", "...", None))
+        self.displayVectorsCheckBox.setText(_translate("DockWidget", "Display Vectors", None))
         self.valueLabel.setText(_translate("DockWidget", "(0.000) 0.000", None))
 
 from qgis.gui import QgsColorButton, QgsColorRampComboBox
