@@ -340,6 +340,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         cm.alpha = ds.customValue("c_alpha")
         ds.setContourColorMap(cm)
 
+        iface.legendInterface().refreshLayerSymbology(self)
+
 
     def _colorMapBasic(self, ds):
 
@@ -493,3 +495,18 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
     def rasterUnitsPerPixelY(self):
         # Only required so far for the profile tool
         return self.rasterUnitsPerPixel()
+
+
+    def legendSymbologyItems(self, iconSize):
+        """ implementation of method from QgsPluginLayer to show legend entries (in QGIS >= 2.1) """
+        lst = []
+        ds = self.provider.currentDataSet()
+        if not ds.isContourRenderingEnabled():
+            return lst
+
+        cm = ds.contourColorMap()
+        for item in cm.items:
+            pix = QPixmap(iconSize)
+            pix.fill(QColor(item.color))
+            lst.append( ("%.3f" % item.value, pix) )
+        return lst

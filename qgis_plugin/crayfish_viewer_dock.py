@@ -99,6 +99,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             displayContoursCheckBox has been toggled
         """
         self.currentDataSet().setContourRenderingEnabled(newState)
+        self.iface.legendInterface().refreshLayerSymbology(self.currentCrayfishLayer())
         self.redrawCurrentLayer()
             
             
@@ -244,6 +245,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         from crayfishviewer import DataSetType
         self.displayVectorsCheckBox.setEnabled(dataSet.type() == DataSetType.Vector)
         
+        self.iface.legendInterface().refreshLayerSymbology(l)
+
         self.redrawCurrentLayer()
 
 
