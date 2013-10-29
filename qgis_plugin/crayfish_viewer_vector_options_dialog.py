@@ -64,30 +64,38 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         self.filterByMagGroupBox.setChecked( self.rs.filterByMag )
         self.minimumMagLineEdit.setText( str(self.rs.minMag) )
         self.maximumMagLineEdit.setText( str(self.rs.maxMag) )
+
+        # set validators so that user cannot type text into numeric line edits
+        doubleWidgets = [ self.minimumShaftLineEdit, self.maximumShaftLineEdit,
+                          self.scaleByFactorOfLineEdit, self.lengthLineEdit,
+                          self.xSpacingLineEdit, self.ySpacingLineEdit,
+                          self.headWidthLineEdit, self.headLengthLineEdit ]
+        for w in doubleWidgets:
+            w.setValidator(QDoubleValidator(w))
         
         # Connect each of the widgets to the redraw function
         QObject.connect( self.shaftLengthComboBox, SIGNAL('currentIndexChanged(int)'), self.inputFocusChanged )
-        QObject.connect( self.minimumShaftLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        QObject.connect( self.maximumShaftLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        QObject.connect( self.scaleByFactorOfLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        QObject.connect( self.lengthLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
+        QObject.connect( self.minimumShaftLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.connect( self.maximumShaftLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.connect( self.scaleByFactorOfLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.connect( self.lengthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.lineWidthSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged )
-        QObject.connect( self.xSpacingLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        QObject.connect( self.ySpacingLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        QObject.connect( self.headWidthLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        QObject.connect( self.headLengthLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
+        QObject.connect( self.xSpacingLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.connect( self.ySpacingLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.connect( self.headWidthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.connect( self.headLengthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
 
     def __del__(self):
         QObject.disconnect( self.shaftLengthComboBox, SIGNAL('currentIndexChanged(int)'), self.inputFocusChanged )
-        QObject.disconnect( self.minimumShaftLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        QObject.disconnect( self.maximumShaftLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        QObject.disconnect( self.scaleByFactorOfLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        QObject.disconnect( self.lengthLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
+        QObject.disconnect( self.minimumShaftLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.disconnect( self.maximumShaftLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.disconnect( self.scaleByFactorOfLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.disconnect( self.lengthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.disconnect( self.lineWidthSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged )
-        QObject.disconnect( self.xSpacingLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        QObject.disconnect( self.ySpacingLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        QObject.disconnect( self.headWidthLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
-        QObject.disconnect( self.headLengthLineEdit, SIGNAL('editingFinished()'), self.inputFocusChanged )
+        QObject.disconnect( self.xSpacingLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.disconnect( self.ySpacingLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.disconnect( self.headWidthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.disconnect( self.headLengthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
     
     def inputFocusChanged(self, arg=None):
         self.saveRenderSettings()
