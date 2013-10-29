@@ -874,12 +874,6 @@ void CrayfishViewer::renderVectorData(
         float minVal = ds->minZValue();
         float maxVal = ds->maxZValue();
 
-        // Determine the range of vector sizes specified by the user for
-        // rendering vectors with a min and max length
-        float vectorLengthRange = maxShaftLength - minShaftLength;
-        // Ensure that vectors at 45 degrees do not exceed the max user specified vector length
-        vectorLengthRange *= 0.707106781;
-
         // Get a list of nodes that are within the current render extent
         std::vector<int> candidateNodes;
 
@@ -920,6 +914,7 @@ void CrayfishViewer::renderVectorData(
 
             float xVal = output->values_x[nodeIndex];
             float yVal = output->values_y[nodeIndex];
+            float V = output->values[nodeIndex];  // pre-calculated magnitude
 
             if(xVal == 0.0 && yVal == 0.0){
                 continue;
@@ -937,11 +932,10 @@ void CrayfishViewer::renderVectorData(
             double sinAlpha = sin( vectorAngle ) * mag(xVal);
 
             if(shaftLengthCalculationMethod == MinMax){
-                float valRange = ( maxVal - minVal );
-                float percX = (absolute(xVal) - minVal) / valRange;
-                float percY = (absolute(yVal) - minVal) / valRange;
-                xDist = ( minShaftLength + (vectorLengthRange * percX) ) * mag(xVal);
-                yDist = ( minShaftLength + (vectorLengthRange * percY) ) * mag(yVal);
+                double k = (V - minVal) / (maxVal - minVal);
+                double L = minShaftLength + k * (maxShaftLength - minShaftLength);
+                xDist = cosAlpha * L;
+                yDist = sinAlpha * L;
             }else if(shaftLengthCalculationMethod == Scaled){
                 xDist = scaleFactor * xVal;
                 yDist = scaleFactor * yVal;
@@ -954,7 +948,7 @@ void CrayfishViewer::renderVectorData(
             // Flip the Y axis (pixel vs real-world axis)
             yDist *= -1.0;
 
-            if(absolute(xDist) < 1 && absolute(yDist) < 1){
+            if(qAbs(xDist) < 1 && qAbs(yDist) < 1){
                 continue;
             }
 
