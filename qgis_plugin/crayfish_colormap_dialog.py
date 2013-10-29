@@ -33,6 +33,8 @@ from crayfish_colormap_dialog_ui import Ui_CrayfishColorMapDialog
 
 from crayfishviewer import ColorMap
 
+from crayfish_gui_utils import qv2string, qv2float, qv2int
+
 
 
 class ColorMapModel(QAbstractTableModel):
@@ -69,12 +71,12 @@ class ColorMapModel(QAbstractTableModel):
 
     def setData(self, index, value, role):
         if role == Qt.EditRole and index.column() == 0:
-            self.cm.item(index.row()).value = value
+            self.cm.item(index.row()).value = qv2float(value)
             self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), index,index)
             self.ensureSorted()
             return True
         elif role == Qt.BackgroundRole and index.column() == 1:
-            self.cm.item(index.row()).color = value
+            self.cm.item(index.row()).color = qv2int(value)
             self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), index,index)
             return True
         return False
@@ -232,7 +234,7 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
     def loadColorMap(self):
 
         settings = QSettings()
-        lastUsedDir = settings.value("crayfishViewer/lastFolder")
+        lastUsedDir = qv2string(settings.value("crayfishViewer/lastFolder"))
         fileName = QFileDialog.getOpenFileName(self, "Load color map", lastUsedDir, "Textfile (*.txt)")
         if not fileName:
             return
@@ -261,7 +263,7 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
     def saveColorMap(self):
 
         settings = QSettings()
-        lastUsedDir = settings.value("crayfishViewer/lastFolder")
+        lastUsedDir = qv2string(settings.value("crayfishViewer/lastFolder"))
         fileName = QFileDialog.getSaveFileName(self, "Save color map", lastUsedDir, "Textfile (*.txt)")
         if not fileName:
             return

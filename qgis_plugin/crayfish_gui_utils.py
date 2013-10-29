@@ -56,3 +56,78 @@ except ImportError:
       self.msgbox[level](None, title, message)
 
   qgis_message_bar = QgsMessageBar()
+
+
+import qgis.core
+import qgis.gui
+
+from PyQt4.QtCore import QSize, QVariant, SIGNAL
+from PyQt4.QtGui import QComboBox, QIcon, QPixmap, QColor, QColorDialog
+
+
+if not hasattr(qgis.gui, "QgsColorRampComboBox"):
+  qgis.gui.QgsColorRampComboBox = QComboBox
+  def _populate(self, style):
+    if self.count() != 0:
+      return
+    self._style = style
+    rampIconSize = QSize(50,16)
+    self.setIconSize(rampIconSize)
+    for rampName in style.colorRampNames():
+      ramp = style.colorRamp(rampName)
+      icon = qgis.core.QgsSymbolLayerV2Utils.colorRampPreviewIcon(ramp, rampIconSize)
+      self.addItem(icon, rampName)
+    #self.connect(self, SIGNAL("activated(int)"), self.colorRampChanged)
+  qgis.gui.QgsColorRampComboBox.populate = _populate
+  def _currentColorRamp(self):
+    return self._style.colorRamp(self.currentText())
+  qgis.gui.QgsColorRampComboBox.currentColorRamp = _currentColorRamp
+
+
+def initColorButton(button):
+  if not hasattr(button, "colorDialogTitle"):  # QGIS 1.x
+    def _colorButtonClicked(self):
+      clr = QColorDialog.getColor(self.color())
+      if clr.isValid():
+        self.setColor(clr)
+        self.emit(SIGNAL("colorChanged(QColor)"), clr)
+    button.colorButtonClicked = lambda: _colorButtonClicked(button)
+    button.connect(button, SIGNAL("clicked()"), button.colorButtonClicked)
+
+
+if not hasattr(qgis.core.QgsApplication, "getThemeIcon"):
+  def _themeIcon(fileName):
+    pix = QPixmap(qgis.core.QgsApplication.defaultThemePath()+"/"+fileName)
+    if not pix.isNull():
+        return QIcon(pix)
+    # mapping from QGIS 2.0 icon file names to QGIS 1.x
+    alternatives = { "/mActionOptions.svg" : "/mActionOptions.png",
+      "/mActionFileSaveAs.svg" : "/mActionFileSaveAs.png", "/mActionFileOpen.svg" : "/mActionFileOpen.png",
+      "/mActionSignPlus.png" : "/symbologyAdd.png", "/mActionSignMinus.png" : "/symbologyRemove.png" }
+    if fileName in alternatives:
+      return QIcon(qgis.core.QgsApplication.defaultThemePath()+"/"+alternatives[fileName])
+    else:
+      return QIcon()
+  qgis.core.QgsApplication.getThemeIcon = staticmethod(_themeIcon)
+
+if not hasattr(qgis.core.QgsVectorGradientColorRampV2, "count"):
+  qgis.core.QgsVectorGradientColorRampV2.count = lambda self: len(self.stops())+2
+
+
+#def qv2color(v):
+#    return QColor(v) if isinstance(v, QVariant) else v
+
+def qv2pyObj(v):
+    return v.toPyObject() if isinstance(v, QVariant) else v
+
+def qv2float(v):
+    return v.toDouble()[0] if isinstance(v, QVariant) else v
+
+def qv2int(v):
+    return v.toInt()[0] if isinstance(v, QVariant) else v
+
+def qv2bool(v):
+    return v.toBool() if isinstance(v, QVariant) else v
+
+def qv2string(v):
+    return v.toString() if isinstance(v, QVariant) else v

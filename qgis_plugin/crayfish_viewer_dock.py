@@ -27,12 +27,11 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
-from qgis.gui import QgsColorRampComboBox
 
 from crayfish_viewer_dock_widget import Ui_DockWidget
 import crayfish_viewer_vector_options_dialog
 from crayfish_viewer_render_settings import CrayfishViewerRenderSettings
-
+from crayfish_gui_utils import qv2pyObj, qv2float, qv2int, qv2bool, qv2string, initColorButton
 
 class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
     
@@ -60,6 +59,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         iconOptions = QgsApplication.getThemeIcon( "/mActionOptions.svg" )
         self.btnAdvanced.setIcon(iconOptions)
         self.btnVectorOptions.setIcon(iconOptions)
+
+        initColorButton(self.btnMeshColor)
 
         self.setEnabled(False)
         self.vectorPropsDialog = None
@@ -155,15 +156,15 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
     def updateContourGUI(self, ds):
         """ update GUI from provider's range """
-        isBasic = ds.customValue("c_basic")
+        isBasic = qv2bool(ds.customValue("c_basic"))
         self.cboContourBasic.setEnabled(isBasic)
         self.contourCustomRangeCheckBox.setEnabled(isBasic)
         self.btnAdvanced.setEnabled(not isBasic)
         self.lblAdvancedPreview.setEnabled(not isBasic)
 
-        manualRange = ds.customValue("c_basicCustomRange")
-        zMin = ds.customValue("c_basicCustomRangeMin") if manualRange else ds.minZValue()
-        zMax = ds.customValue("c_basicCustomRangeMax") if manualRange else ds.maxZValue()
+        manualRange = qv2bool(ds.customValue("c_basicCustomRange"))
+        zMin = qv2float(ds.customValue("c_basicCustomRangeMin")) if manualRange else ds.minZValue()
+        zMax = qv2float(ds.customValue("c_basicCustomRangeMax")) if manualRange else ds.maxZValue()
         self.contourMinLineEdit.setEnabled(isBasic and manualRange)
         self.contourMaxLineEdit.setEnabled(isBasic and manualRange)
         self.contourMinLineEdit.setText( str("%.3f" % zMin) )
@@ -218,22 +219,22 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             
         # Get the contour settings from the provider
 
-        rad = self.radContourBasic if dataSet.customValue("c_basic") else self.radContourAdvanced
+        rad = self.radContourBasic if qv2bool(dataSet.customValue("c_basic")) else self.radContourAdvanced
         rad.blockSignals(True)
         rad.setChecked(True)
         rad.blockSignals(False)
 
         self.contourTransparencySlider.blockSignals(True)
-        self.contourTransparencySlider.setValue( 255 - dataSet.customValue("c_alpha") )
+        self.contourTransparencySlider.setValue( 255 - qv2int(dataSet.customValue("c_alpha")) )
         self.contourTransparencySlider.blockSignals(False)
 
-        index = self.cboContourBasic.findText( dataSet.customValue("c_basicName") )
+        index = self.cboContourBasic.findText( qv2string(dataSet.customValue("c_basicName")) )
         self.cboContourBasic.blockSignals(True)
         self.cboContourBasic.setCurrentIndex(index)
         self.cboContourBasic.blockSignals(False)
 
         self.contourCustomRangeCheckBox.blockSignals(True)
-        self.contourCustomRangeCheckBox.setChecked( dataSet.customValue("c_basicCustomRange") )
+        self.contourCustomRangeCheckBox.setChecked( qv2bool(dataSet.customValue("c_basicCustomRange")) )
         self.contourCustomRangeCheckBox.blockSignals(False)
 
         self.updateContourGUI(dataSet)
@@ -388,7 +389,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
     def updateColorMapAndRedraw(self, ds):
         self.iface.mapCanvas().currentLayer().updateColorMap(ds)
-        if not ds.customValue("c_basic"):
+        if not qv2bool(ds.customValue("c_basic")):
             self.updateAdvancedPreview()
         self.redrawCurrentLayer()
 
@@ -396,7 +397,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
     def editAdvanced(self):
 
         ds = self.currentDataSet()
-        colormap = ds.customValue("c_advancedColorMap")
+        colormap = qv2pyObj(ds.customValue("c_advancedColorMap"))
 
         from crayfish_colormap_dialog import CrayfishColorMapDialog
         dlg = CrayfishColorMapDialog(colormap, ds.minZValue(), ds.maxZValue(), lambda: self.updateColorMapAndRedraw(ds), self)
@@ -416,7 +417,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
     def updateAdvancedPreview(self):
         ds = self.currentDataSet()
-        cm = ds.customValue("c_advancedColorMap")
+        cm = qv2pyObj(ds.customValue("c_advancedColorMap"))
         pix = cm.previewPixmap(self.lblAdvancedPreview.size(), ds.minZValue(), ds.maxZValue())
         self.lblAdvancedPreview.setPixmap(pix)
 

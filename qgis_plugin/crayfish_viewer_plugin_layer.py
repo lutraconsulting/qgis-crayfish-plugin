@@ -1,7 +1,7 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
-from crayfish_gui_utils import QgsMessageBar, qgis_message_bar
+from crayfish_gui_utils import QgsMessageBar, qgis_message_bar, qv2pyObj, qv2float, qv2int, qv2bool, qv2string
 from qgis.utils import iface
 
 from crayfishviewer import CrayfishViewer, DataSetType, ColorMap
@@ -43,6 +43,16 @@ def qstring2rgb(s):
     return qRgb(int(r),int(g),int(b))
 
 
+def gradientColorRampStop(ramp, i):
+    stops = ramp.stops()
+    if isinstance(stops, dict):  # QGIS 1.8 returns map "value -> color"
+      keys = sorted(stops.keys())
+      key = keys[i]
+      return (key, stops[key])
+    else:  # QGIS 2.0 returns list of structures
+      return (stops[i].offset, stops[i].color)
+
+
 def defaultColorRamp():
     props = {
       'color1': '0,0,255,255',
@@ -66,6 +76,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     
     def loadMesh(self, meshFileName):
+        meshFileName = unicode(meshFileName)
         self.provider = CrayfishViewer(meshFileName)
         if self.provider.loadedOk():
             self.setValid(True)
@@ -261,21 +272,21 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         # contour options
         contElem = doc.createElement("render-contour")
         contElem.setAttribute("enabled", "1" if ds.isContourRenderingEnabled() else "0")
-        contElem.setAttribute("alpha", ds.customValue("c_alpha"))
-        contElem.setAttribute("basic", "1" if ds.customValue("c_basic") else "0")
-        contElem.setAttribute("auto-range", "1" if not ds.customValue("c_basicCustomRange") else "0")
-        contElem.setAttribute("range-min", str(ds.customValue("c_basicCustomRangeMin")))
-        contElem.setAttribute("range-max", str(ds.customValue("c_basicCustomRangeMax")))
+        contElem.setAttribute("alpha", qv2int(ds.customValue("c_alpha")))
+        contElem.setAttribute("basic", "1" if qv2bool(ds.customValue("c_basic")) else "0")
+        contElem.setAttribute("auto-range", "1" if not qv2bool(ds.customValue("c_basicCustomRange")) else "0")
+        contElem.setAttribute("range-min", str(qv2float(ds.customValue("c_basicCustomRangeMin"))))
+        contElem.setAttribute("range-max", str(qv2float(ds.customValue("c_basicCustomRangeMax"))))
 
-        rampName = ds.customValue("c_basicName")
-        ramp = ds.customValue("c_basicRamp")
+        rampName = qv2string(ds.customValue("c_basicName"))
+        ramp = qv2pyObj(ds.customValue("c_basicRamp"))
         if ramp:
             rampElem = QgsSymbolLayerV2Utils.saveColorRamp(rampName, ramp, doc)
             contElem.appendChild(rampElem)
         elem.appendChild(contElem)
 
         advElem = doc.createElement("advanced")
-        self.writeColorMapXml(ds.customValue("c_advancedColorMap"), advElem, doc)
+        self.writeColorMapXml(qv2pyObj(ds.customValue("c_advancedColorMap")), advElem, doc)
         contElem.appendChild(advElem)
 
         # vector options (if applicable)
@@ -329,15 +340,15 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
     def updateColorMap(self, ds):
         """ update color map of the current data set given the settings """
 
-        if not ds.customValue("c_basic"):
-            cm = ds.customValue("c_advancedColorMap")
+        if not qv2bool(ds.customValue("c_basic")):
+            cm = qv2pyObj(ds.customValue("c_advancedColorMap"))
         else:
             cm = self._colorMapBasic(ds)
 
         if not cm:
             return
 
-        cm.alpha = ds.customValue("c_alpha")
+        cm.alpha = qv2int(ds.customValue("c_alpha"))
         ds.setContourColorMap(cm)
 
         iface.legendInterface().refreshLayerSymbology(self)
@@ -346,14 +357,14 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
     def _colorMapBasic(self, ds):
 
         # contour colormap
-        if ds.customValue("c_basicCustomRange"):
-            zMin = ds.customValue("c_basicCustomRangeMin")
-            zMax = ds.customValue("c_basicCustomRangeMax")
+        if qv2bool(ds.customValue("c_basicCustomRange")):
+            zMin = qv2float(ds.customValue("c_basicCustomRangeMin"))
+            zMax = qv2float(ds.customValue("c_basicCustomRangeMax"))
         else:
             zMin = ds.minZValue()
             zMax = ds.maxZValue()
 
-        qcm = ds.customValue("c_basicRamp")
+        qcm = qv2pyObj(ds.customValue("c_basicRamp"))
         if not qcm:
             return   # something went wrong (e.g. user selected "new color ramp...")
 
@@ -368,7 +379,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           if isGradient:
             if i == 0: v,c = 0.0, qcm.color1()
             elif i == count-1: v,c = 1.0, qcm.color2()
-            else: v,c = qcm.stops()[i-1].offset, qcm.stops()[i-1].color
+            else: v,c = gradientColorRampStop(qcm, i-1)
           else:
             v = i/float(count-1)
             c = qcm.color(v)

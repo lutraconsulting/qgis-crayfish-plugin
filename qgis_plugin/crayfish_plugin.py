@@ -353,15 +353,21 @@ class CrayfishPlugin:
         # check whether the file exists
         if not os.path.exists(meshFileName):
 
+            # compatibility for QGIS 1.x
+            if not hasattr(self.iface, "messageBar"):
+                res = QMessageBox.question(None, "Crayfish", "The mesh file does not exist:\n"+meshFileName+"\nWould you like to locate it manually?", QMessageBox.Yes|QMessageBox.No)
+                if res != QMessageBox.Yes:
+                    return
+                self.locateMeshForFailedDatFile(inFileName)
+                return
+
+            # QGIS >= 2.0
             self.lastFailedWidget = self.iface.messageBar().createMessage("Crayfish", "The mesh file does not exist ("+meshFileName+")")
             self.lastFailedWidget._inFileName = inFileName
             button = QPushButton("Locate", self.lastFailedWidget)
             button.pressed.connect(self.locateMeshForFailedDatFile)
             self.lastFailedWidget.layout().addWidget(button)
             self.iface.messageBar().pushWidget(self.lastFailedWidget, QgsMessageBar.CRITICAL)
-
-            # TODO: QGIS < 2.0
-            #qgis_message_bar.pushMessage("Crayfish", "The mesh file does not exist ("+meshFileName+")", level=QgsMessageBar.CRITICAL)
             return
         
         if not self.addLayer(meshFileName):
@@ -404,7 +410,7 @@ class CrayfishPlugin:
 
 
 
-    def locateMeshForFailedDatFile(self):
+    def locateMeshForFailedDatFile(self, datFileName=None):
         """ the user wants to specify the mesh file """
 
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Mesh File', self.lastFolder(), "2DM Mesh Files (*.2dm)")
@@ -412,11 +418,11 @@ class CrayfishPlugin:
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel
             return
 
-        datFileName = self.lastFailedWidget._inFileName
-
-        # remove the widget from message bar
-        self.iface.messageBar().popWidget(self.lastFailedWidget)
-        del self.lastFailedWidget
+        if hasattr(self.iface, "messageBar"):  # QGIS >= 2.0 only
+            datFileName = self.lastFailedWidget._inFileName
+            # remove the widget from message bar
+            self.iface.messageBar().popWidget(self.lastFailedWidget)
+            del self.lastFailedWidget
 
         layerWith2dm = self.getLayerWith2DM(inFileName)
         if not layerWith2dm:
