@@ -764,11 +764,11 @@ QImage* CrayfishViewer::draw(){
     if(ds->isContourRenderingEnabled())
         renderContourData(ds, output);
 
-    if(ds->isVectorRenderingEnabled() && ds->type() == DataSetType::Vector)
-        renderVectorData(ds, output);
-
     if (mRenderMesh)
         renderMesh();
+
+    if(ds->isVectorRenderingEnabled() && ds->type() == DataSetType::Vector)
+        renderVectorData(ds, output);
 
     return mImage;
 }
@@ -884,10 +884,12 @@ void CrayfishViewer::renderVectorData(
 
 
         QPainter p;
-        // p.setRenderHint( QPainter::Antialiasing );
         p.begin(mImage);
+        p.setRenderHint(QPainter::Antialiasing);
         p.setBrush( Qt::SolidPattern );
         QPen pen = p.pen();
+        pen.setCapStyle(Qt::FlatCap);
+        pen.setJoinStyle(Qt::MiterJoin);
         pen.setWidth( lineWidth );
         p.setPen(pen);
 
