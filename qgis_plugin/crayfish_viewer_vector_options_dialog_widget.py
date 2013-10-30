@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'vector_options_dialog_widget.ui'
+# Form implementation generated from reading ui file 'crayfish_viewer_vector_options_dialog_widget.ui'
 #
-# Created: Wed Oct 10 22:54:26 2012
-#      by: PyQt4 UI code generator 4.9.1
+# Created: Wed Oct 30 10:52:28 2013
+#      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -12,12 +12,21 @@ from PyQt4 import QtCore, QtGui
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
-    _fromUtf8 = lambda s: s
+    def _fromUtf8(s):
+        return s
+
+try:
+    _encoding = QtGui.QApplication.UnicodeUTF8
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+except AttributeError:
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig)
 
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName(_fromUtf8("Dialog"))
-        Dialog.resize(563, 351)
+        Dialog.resize(652, 351)
         self.gridLayout_9 = QtGui.QGridLayout(Dialog)
         self.gridLayout_9.setObjectName(_fromUtf8("gridLayout_9"))
         self.verticalLayout_3 = QtGui.QVBoxLayout()
@@ -199,7 +208,6 @@ class Ui_Dialog(object):
         self.retranslateUi(Dialog)
         self.stackedWidget.setCurrentIndex(2)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Dialog.accept)
-        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("clicked(QAbstractButton*)")), Dialog.apply)
         QtCore.QObject.connect(self.shaftLengthComboBox, QtCore.SIGNAL(_fromUtf8("currentIndexChanged(int)")), Dialog.shaftLengthMethodChanged)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), Dialog.reject)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -219,29 +227,29 @@ class Ui_Dialog(object):
         Dialog.setTabOrder(self.maximumMagLineEdit, self.buttonBox)
 
     def retranslateUi(self, Dialog):
-        Dialog.setWindowTitle(QtGui.QApplication.translate("Dialog", "Vector Rendering Options", None, QtGui.QApplication.UnicodeUTF8))
-        self.generalOptionsGroupBox.setTitle(QtGui.QApplication.translate("Dialog", "General Options", None, QtGui.QApplication.UnicodeUTF8))
-        self.shaftLengthLabel.setText(QtGui.QApplication.translate("Dialog", "Shaft Length", None, QtGui.QApplication.UnicodeUTF8))
-        self.shaftLengthComboBox.setItemText(0, QtGui.QApplication.translate("Dialog", "Defined by Min and Max", None, QtGui.QApplication.UnicodeUTF8))
-        self.shaftLengthComboBox.setItemText(1, QtGui.QApplication.translate("Dialog", "Scaled to Magnitude", None, QtGui.QApplication.UnicodeUTF8))
-        self.shaftLengthComboBox.setItemText(2, QtGui.QApplication.translate("Dialog", "Fixed", None, QtGui.QApplication.UnicodeUTF8))
-        self.maximumShaftLabel.setText(QtGui.QApplication.translate("Dialog", "Maximum", None, QtGui.QApplication.UnicodeUTF8))
-        self.minimumShaftLabel.setText(QtGui.QApplication.translate("Dialog", "Minimum", None, QtGui.QApplication.UnicodeUTF8))
-        self.scaleByFactorOfLabel.setText(QtGui.QApplication.translate("Dialog", "Scale by a Factor of:", None, QtGui.QApplication.UnicodeUTF8))
-        self.LengthLabel.setText(QtGui.QApplication.translate("Dialog", "Length", None, QtGui.QApplication.UnicodeUTF8))
-        self.lineWidthLabel.setText(QtGui.QApplication.translate("Dialog", "Line Width", None, QtGui.QApplication.UnicodeUTF8))
-        self.pxLabel.setText(QtGui.QApplication.translate("Dialog", "px", None, QtGui.QApplication.UnicodeUTF8))
-        self.displayVectorsOnGridGroupBox.setTitle(QtGui.QApplication.translate("Dialog", "Display Vectors on User Grid", None, QtGui.QApplication.UnicodeUTF8))
-        self.xSpacingLabel.setText(QtGui.QApplication.translate("Dialog", "X Spacing", None, QtGui.QApplication.UnicodeUTF8))
-        self.pxLabel_2.setText(QtGui.QApplication.translate("Dialog", "px", None, QtGui.QApplication.UnicodeUTF8))
-        self.ySpacingLabel.setText(QtGui.QApplication.translate("Dialog", "Y Spacing", None, QtGui.QApplication.UnicodeUTF8))
-        self.pxLabel_3.setText(QtGui.QApplication.translate("Dialog", "px", None, QtGui.QApplication.UnicodeUTF8))
-        self.headOptionsGroupBox.setTitle(QtGui.QApplication.translate("Dialog", "Head Options", None, QtGui.QApplication.UnicodeUTF8))
-        self.headWidthLabel.setText(QtGui.QApplication.translate("Dialog", "Width", None, QtGui.QApplication.UnicodeUTF8))
-        self.percShaftLenLabel.setText(QtGui.QApplication.translate("Dialog", "% of Shaft Length", None, QtGui.QApplication.UnicodeUTF8))
-        self.headLengthLabel.setText(QtGui.QApplication.translate("Dialog", "Length", None, QtGui.QApplication.UnicodeUTF8))
-        self.percShaftLenLabel_2.setText(QtGui.QApplication.translate("Dialog", "% of Shaft Length", None, QtGui.QApplication.UnicodeUTF8))
-        self.filterByMagGroupBox.setTitle(QtGui.QApplication.translate("Dialog", "Filter by Magnitude", None, QtGui.QApplication.UnicodeUTF8))
-        self.minimumMagLabel.setText(QtGui.QApplication.translate("Dialog", "Minimum", None, QtGui.QApplication.UnicodeUTF8))
-        self.maximumMagLabel.setText(QtGui.QApplication.translate("Dialog", "Maximum", None, QtGui.QApplication.UnicodeUTF8))
+        Dialog.setWindowTitle(_translate("Dialog", "Vector Rendering Options", None))
+        self.generalOptionsGroupBox.setTitle(_translate("Dialog", "General Options", None))
+        self.shaftLengthLabel.setText(_translate("Dialog", "Shaft Length", None))
+        self.shaftLengthComboBox.setItemText(0, _translate("Dialog", "Defined by Min and Max", None))
+        self.shaftLengthComboBox.setItemText(1, _translate("Dialog", "Scaled to Magnitude", None))
+        self.shaftLengthComboBox.setItemText(2, _translate("Dialog", "Fixed", None))
+        self.maximumShaftLabel.setText(_translate("Dialog", "Maximum", None))
+        self.minimumShaftLabel.setText(_translate("Dialog", "Minimum", None))
+        self.scaleByFactorOfLabel.setText(_translate("Dialog", "Scale by a Factor of:", None))
+        self.LengthLabel.setText(_translate("Dialog", "Length", None))
+        self.lineWidthLabel.setText(_translate("Dialog", "Line Width", None))
+        self.pxLabel.setText(_translate("Dialog", "px", None))
+        self.displayVectorsOnGridGroupBox.setTitle(_translate("Dialog", "Display Vectors on User Grid", None))
+        self.xSpacingLabel.setText(_translate("Dialog", "X Spacing", None))
+        self.pxLabel_2.setText(_translate("Dialog", "px", None))
+        self.ySpacingLabel.setText(_translate("Dialog", "Y Spacing", None))
+        self.pxLabel_3.setText(_translate("Dialog", "px", None))
+        self.headOptionsGroupBox.setTitle(_translate("Dialog", "Head Options", None))
+        self.headWidthLabel.setText(_translate("Dialog", "Width", None))
+        self.percShaftLenLabel.setText(_translate("Dialog", "% of Shaft Length", None))
+        self.headLengthLabel.setText(_translate("Dialog", "Length", None))
+        self.percShaftLenLabel_2.setText(_translate("Dialog", "% of Shaft Length", None))
+        self.filterByMagGroupBox.setTitle(_translate("Dialog", "Filter by Magnitude", None))
+        self.minimumMagLabel.setText(_translate("Dialog", "Minimum", None))
+        self.maximumMagLabel.setText(_translate("Dialog", "Maximum", None))
 

@@ -58,6 +58,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
         self.setEnabled(False)
         self.vectorPropsDialog = None
+        self.advancedColorMapDialog = None
         
         # Ensure refresh() is called when the layer changes
         QObject.connect(self.listWidget, SIGNAL("currentRowChanged(int)"), self.dataSetChanged)
@@ -81,14 +82,11 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         
     def displayVectorPropsDialog(self):
         if self.vectorPropsDialog is not None:
-            self.vectorPropsDialog.raise_()
-            return
+            self.vectorPropsDialog.close()
+
         rs = CrayfishViewerRenderSettings( self.currentDataSet() )
-        self.vectorPropsDialog = crayfish_viewer_vector_options_dialog.CrayfishViewerVectorOptionsDialog(self.iface, rs, self.redrawCurrentLayer)
+        self.vectorPropsDialog = crayfish_viewer_vector_options_dialog.CrayfishViewerVectorOptionsDialog(self.iface, rs, self.redrawCurrentLayer, self)
         self.vectorPropsDialog.show()
-        res = self.vectorPropsDialog.exec_()
-        self.redrawCurrentLayer()
-        self.vectorPropsDialog = None
 
     
     def displayContoursButtonToggled(self, newState):
@@ -385,12 +383,15 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
     def editAdvanced(self):
 
+        if self.advancedColorMapDialog is not None:
+          self.advancedColorMapDialog.close()
+
         ds = self.currentDataSet()
         colormap = qv2pyObj(ds.customValue("c_advancedColorMap"))
 
         from crayfish_colormap_dialog import CrayfishColorMapDialog
-        dlg = CrayfishColorMapDialog(colormap, ds.minZValue(), ds.maxZValue(), lambda: self.updateColorMapAndRedraw(ds), self)
-        dlg.show()
+        self.advancedColorMapDialog = CrayfishColorMapDialog(colormap, ds.minZValue(), ds.maxZValue(), lambda: self.updateColorMapAndRedraw(ds), self)
+        self.advancedColorMapDialog.show()
         self.updateColorMapAndRedraw(ds)
 
 

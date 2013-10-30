@@ -32,17 +32,16 @@ from crayfish_viewer_vector_options_dialog_widget import Ui_Dialog
 
 class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
     
-    def __init__(self, iface, renderSettings, redrawFunction):
+    def __init__(self, iface, renderSettings, redrawFunction, parent=None):
         
-        QDialog.__init__(self)
-        Ui_Dialog.__init__(self)
+        QDialog.__init__(self, parent)
         
         self.setupUi(self)
         self.iface = iface
         self.rs = renderSettings
         self.redraw = redrawFunction
-        
-        self.rs.save()
+
+        self.buttonBox.hide()  # not used currently
         
         # Populate the various widgets
         self.shaftLengthComboBox.setCurrentIndex( self.rs.shaftLength )
@@ -84,18 +83,6 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         QObject.connect( self.ySpacingLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.headWidthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.headLengthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
-
-    def __del__(self):
-        QObject.disconnect( self.shaftLengthComboBox, SIGNAL('currentIndexChanged(int)'), self.inputFocusChanged )
-        QObject.disconnect( self.minimumShaftLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
-        QObject.disconnect( self.maximumShaftLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
-        QObject.disconnect( self.scaleByFactorOfLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
-        QObject.disconnect( self.lengthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
-        QObject.disconnect( self.lineWidthSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged )
-        QObject.disconnect( self.xSpacingLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
-        QObject.disconnect( self.ySpacingLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
-        QObject.disconnect( self.headWidthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
-        QObject.disconnect( self.headLengthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
     
     def inputFocusChanged(self, arg=None):
         self.saveRenderSettings()
@@ -128,18 +115,7 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
             The method has been changed, show the appropriate UI
         """
         self.stackedWidget.setCurrentIndex( newIdx )
-    
-    def accept(self):
-        #if not self.valuesOK():
-        #    # Does this return cancel the commit or does it still effectively save the values?
-        #    return
-        self.saveRenderSettings()
-        self.done(0)
-        
-    def apply(self):
-        self.saveRenderSettings()
-        self.redraw()
-    
+
     def valuesOK(self):
         
         # minimumShaftLineEdit should be less and maximumShaftLineEdit and greater than 0
@@ -164,8 +140,3 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         """
         
         return True
-    
-    def reject(self):
-        self.rs.restore()
-        self.redraw()
-        self.done(1)

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>563</width>
+    <width>652</width>
     <height>351</height>
    </rect>
   </property>
@@ -414,22 +414,6 @@
     <hint type="destinationlabel">
      <x>460</x>
      <y>270</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>clicked(QAbstractButton*)</signal>
-   <receiver>Dialog</receiver>
-   <slot>apply()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>326</x>
-     <y>340</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>387</x>
-     <y>255</y>
     </hint>
    </hints>
   </connection>
