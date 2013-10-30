@@ -452,7 +452,7 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
             }
             if(name[39] != 0)
                 name[39] = 0;
-            ds->setName(name);
+            ds->setName(QString(name).trimmed());
             break;
 
         case 200:

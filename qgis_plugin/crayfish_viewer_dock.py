@@ -31,7 +31,7 @@ from qgis.core import *
 from crayfish_viewer_dock_widget import Ui_DockWidget
 import crayfish_viewer_vector_options_dialog
 from crayfish_viewer_render_settings import CrayfishViewerRenderSettings
-from crayfish_gui_utils import qv2pyObj, qv2float, qv2int, qv2bool, qv2string, initColorButton
+from crayfish_gui_utils import qv2pyObj, qv2float, qv2int, qv2bool, qv2string, initColorButton, initColorRampComboBox, name2ramp
 
 class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
     
@@ -48,13 +48,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.contourMinLineEdit.setValidator(QDoubleValidator(self.contourMinLineEdit))
         self.contourMaxLineEdit.setValidator(QDoubleValidator(self.contourMaxLineEdit))
 
-        self.cboContourBasic.populate(QgsStyleV2.defaultStyle())
-        iconSize = QSize(50,16)
-        from crayfish_viewer_plugin_layer import defaultColorRamp
-        iconRamp = QgsSymbolLayerV2Utils.colorRampPreviewIcon(defaultColorRamp(), iconSize)
-        self.cboContourBasic.setIconSize(iconSize)
-        self.cboContourBasic.insertItem(0, iconRamp, "[default]")
-        self.cboContourBasic.setCurrentIndex(0)
+        initColorRampComboBox(self.cboContourBasic)
 
         iconOptions = QgsApplication.getThemeIcon( "/mActionOptions.svg" )
         self.btnAdvanced.setIcon(iconOptions)
@@ -376,12 +370,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
     def contourColorMapChanged(self, idx):
         ds = self.currentDataSet()
         rampName = self.cboContourBasic.currentText()
-
-        if rampName == "[default]":
-          from crayfish_viewer_plugin_layer import defaultColorRamp
-          ramp = defaultColorRamp()
-        else:
-          ramp = QgsStyleV2.defaultStyle().colorRamp(rampName)
+        ramp = name2ramp(rampName)
 
         ds.setCustomValue("c_basicName", rampName)
         ds.setCustomValue("c_basicRamp", ramp)

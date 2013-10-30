@@ -1,7 +1,7 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
-from crayfish_gui_utils import QgsMessageBar, qgis_message_bar, qv2pyObj, qv2float, qv2int, qv2bool, qv2string
+from crayfish_gui_utils import QgsMessageBar, qgis_message_bar, qv2pyObj, qv2float, qv2int, qv2bool, qv2string, defaultColorRamp
 from qgis.utils import iface
 
 from crayfishviewer import CrayfishViewer, DataSetType, ColorMap
@@ -51,16 +51,6 @@ def gradientColorRampStop(ramp, i):
       return (key, stops[key])
     else:  # QGIS 2.0 returns list of structures
       return (stops[i].offset, stops[i].color)
-
-
-def defaultColorRamp():
-    props = {
-      'color1': '0,0,255,255',
-      'color2': '255,0,0,255',
-      'stops' : '0.25;0,255,255,255:0.5;0,255,0,255:0.75;255,255,0,255'}
-    return QgsVectorGradientColorRampV2.create(props)
-    #stops = [ QgsGradientStop(0.25, Qt.yellow), QgsGradientStop(0.5, Qt.green) ]
-    #return QgsVectorGradientColorRampV2(Qt.blue, Qt.red, False, stops)
 
 
 
@@ -510,8 +500,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     def legendSymbologyItems(self, iconSize):
         """ implementation of method from QgsPluginLayer to show legend entries (in QGIS >= 2.1) """
-        lst = []
         ds = self.provider.currentDataSet()
+        lst = [ (ds.name(), QPixmap()) ]
         if not ds.isContourRenderingEnabled():
             return lst
 

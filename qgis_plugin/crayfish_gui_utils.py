@@ -84,6 +84,31 @@ if not hasattr(qgis.gui, "QgsColorRampComboBox"):
   qgis.gui.QgsColorRampComboBox.currentColorRamp = _currentColorRamp
 
 
+
+
+def defaultColorRamp():
+    props = {
+      'color1': '0,0,255,255',
+      'color2': '255,0,0,255',
+      'stops' : '0.25;0,255,255,255:0.5;0,255,0,255:0.75;255,255,0,255'}
+    return qgis.core.QgsVectorGradientColorRampV2.create(props)
+    #stops = [ QgsGradientStop(0.25, Qt.yellow), QgsGradientStop(0.5, Qt.green) ]
+    #return QgsVectorGradientColorRampV2(Qt.blue, Qt.red, False, stops)
+
+
+def initColorRampComboBox(cbo):
+    cbo.populate(qgis.core.QgsStyleV2.defaultStyle())
+    iconSize = QSize(50,16)
+    iconRamp = qgis.core.QgsSymbolLayerV2Utils.colorRampPreviewIcon(defaultColorRamp(), iconSize)
+    cbo.setIconSize(iconSize)
+    cbo.insertItem(0, iconRamp, "[default]")
+    cbo.setCurrentIndex(0)
+
+
+def name2ramp(rampName):
+    return defaultColorRamp() if rampName == "[default]" else qgis.core.QgsStyleV2.defaultStyle().colorRamp(rampName)
+
+
 def initColorButton(button):
   if not hasattr(button, "colorDialogTitle"):  # QGIS 1.x
     def _colorButtonClicked(self):

@@ -33,7 +33,7 @@ from crayfish_colormap_dialog_ui import Ui_CrayfishColorMapDialog
 
 from crayfishviewer import ColorMap
 
-from crayfish_gui_utils import qv2string, qv2float, qv2int
+from crayfish_gui_utils import qv2string, qv2float, qv2int, initColorRampComboBox, name2ramp
 
 
 
@@ -133,7 +133,7 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         self.model = ColorMapModel(self.colormap)
         self.viewColorMap.setModel(self.model)
 
-        self.cboColorRamp.populate(QgsStyleV2.defaultStyle())
+        initColorRampComboBox(self.cboColorRamp)
 
         self.btnAdd.setIcon(QgsApplication.getThemeIcon("/mActionSignPlus.png"))
         self.btnRemove.setIcon(QgsApplication.getThemeIcon("/mActionSignMinus.png"))
@@ -167,13 +167,18 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         """ update GUI from stored color map """
         if self.colormap.method == ColorMap.Discrete:
             self.radIntDiscrete.setChecked(True)
+        else:
+            self.radIntLinear.setChecked(True)
 
         self.updatePreview()
 
 
     def classify(self):
 
-        ramp = self.cboColorRamp.currentColorRamp()
+        ramp = name2ramp(self.cboColorRamp.currentText())
+        if not ramp:
+            return
+
         inv = self.chkInvert.isChecked()
 
         count = self.spinClasses.value()
@@ -254,8 +259,6 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
                 self.colormap.addItem(ColorMap.Item(float(value), qRgba(int(r),int(g),int(b),int(a))))
 
         self.model.endResetModel()
-
-        self.colormap.dump()
 
         self.updateGUI()
 
