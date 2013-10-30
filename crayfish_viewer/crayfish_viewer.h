@@ -77,6 +77,7 @@ public:
 
     void setExtent(double llX, double llY, double pixelSize);
     QRectF extent() const;
+    double pixelSize() const { return mPixelSize; }
 
     void setMeshRenderingEnabled(bool enabled);
     bool isMeshRenderingEnabled() const;
