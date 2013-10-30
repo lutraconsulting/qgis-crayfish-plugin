@@ -6,13 +6,21 @@ qgisMaximumVersion=2.99
 description=A collection of tools for TUFLOW and other hydraulic 
     modelling packages
 ; category=Raster ; Did not know what my available choices where
-version=version 1.1.1
+version=version 1.2
 author=Peter Wells for Lutra Consulting
 email=peter.wells@lutraconsulting.co.uk
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=1.1.1 - Bug fixes:
+changelog=1.2 - New features:
+ - Added various contouring options
+ - Support for QGIS legend (in QGIS >= 2.1)
+ - Save all layer settings to project file
+ - Anti-aliasing for vector results
+ - Change mesh color
+ - Give user a chance to locate mesh file for a result file
+ - Export raster grid (API only)
+<p>1.1.1 - Bug fixes:
  - Fixed bug where python exception would be generated when both contour and vector display disabled.
  - Updated identify() to mesh with changes made to the crayfish view library's valueAtCoord function.
  - Made calls to QString in identify() QGIS version agnostic.
