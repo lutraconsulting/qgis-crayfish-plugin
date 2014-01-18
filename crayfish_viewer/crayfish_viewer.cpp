@@ -33,6 +33,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <iostream>
 
+#include <QFileInfo>
 #include <QVector2D>
 
 #include <proj_api.h>
@@ -529,8 +530,92 @@ bool CrayfishViewer::loadDataSet(QString datFileName){
         return true;
     }
 
+    delete ds;
     return false;
 }
+
+bool CrayfishViewer::loadAsciiDataSet(QString fileName)
+{
+  QFile file(fileName);
+  if (!file.open(QIODevice::ReadOnly)){
+      // Couldn't open the file
+      return false;
+  }
+
+  QTextStream stream(&file);
+  QString firstLine = stream.readLine();
+
+  // http://www.xmswiki.com/xms/SMS:ASCII_Dataset_Files_*.dat
+  // The format of ASCII .dat files is a bit different from what we read here
+  // e.g. different kind of header, block markers
+
+  if (firstLine != "SCALAR" && firstLine != "VECTOR")
+    return false; // unknown type
+
+  bool isVector = (firstLine == "VECTOR");
+
+  DataSet* ds = new DataSet(fileName);
+  ds->setIsTimeVarying(true);
+  ds->setType(isVector ? DataSetType::Vector : DataSetType::Scalar);
+  ds->setName(QFileInfo(fileName).baseName());
+
+  QString cardType;
+  uint fileNodeCount = 0;
+
+  while (!stream.atEnd())
+  {
+    stream >> cardType;
+    if (cardType == "ND")
+    {
+      stream >> fileNodeCount;
+      if (mNodeCount != fileNodeCount)
+        return false;
+    }
+    else if (cardType == "TS")
+    {
+      float t;
+      stream >> t;
+
+      Output* o = new Output;
+      o->init(mNodeCount, mElemCount, isVector);
+      o->time = t / 3600.;
+
+      memset(o->statusFlags, 1, mElemCount); // there is no status flag -> everything is active
+
+      for (uint i = 0; i < mNodeCount; ++i)
+      {
+        if (isVector)
+        {
+          float unknown; // TODO: what is the third value??
+          stream >> o->values_x[i] >> o->values_y[i] >> unknown;
+          o->values[i] = sqrt( pow(o->values_x[i],2) + pow(o->values_y[i],2) ); // Determine the magnitude
+        }
+        else
+        {
+          stream >> o->values[i];
+        }
+      }
+
+      ds->addOutput(o);
+    }
+    else if (!cardType.isEmpty())
+      qDebug("Crafish: Unknown card type: %s", cardType.toAscii().data());
+  }
+
+  if(ds->outputCount() > 0){
+
+      ds->updateZRange(mNodeCount);
+
+      ds->setVectorRenderingEnabled(ds->type() == DataSetType::Vector);
+
+      mDataSets.push_back(ds);
+      return true;
+  }
+
+  delete ds;
+  return false;
+}
+
 
 bool CrayfishViewer::isDataSetLoaded(QString fileName)
 {

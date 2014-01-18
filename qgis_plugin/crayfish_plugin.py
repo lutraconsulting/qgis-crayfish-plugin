@@ -313,7 +313,7 @@ class CrayfishPlugin:
         
         # Get the file name
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Crayfish Dat File', self.lastFolder(),
-                                                 "DAT Results (*.dat);;2DM Mesh Files (*.2dm)")
+                                                 "DAT Results (*.dat);;SOL Results (*.sol);;2DM Mesh Files (*.2dm)")
         inFileName = unicode(inFileName)
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel 
             return
@@ -345,7 +345,7 @@ class CrayfishPlugin:
             # update GUI
             self.dock.currentLayerChanged()
 
-        elif fileType == '.dat':
+        elif fileType == '.dat' or fileType == '.sol':
             self.loadDatFile(inFileName)
             
         else:
@@ -410,9 +410,11 @@ class CrayfishPlugin:
             qgis_message_bar.pushMessage("Crayfish", "The .dat file is already loaded in layer " + parentLayer.name(), level=QgsMessageBar.INFO)
             return
 
+        # try to load it as binary file, if not successful, try as ASCII format
         if not parentLayer.provider.loadDataSet( inFileName ):
-            qgis_message_bar.pushMessage("Crayfish", "Failed to load the .DAT file", level=QgsMessageBar.CRITICAL)
-            return
+            if not parentLayer.provider.loadAsciiDataSet( inFileName ):
+                qgis_message_bar.pushMessage("Crayfish", "Failed to load the data file", level=QgsMessageBar.CRITICAL)
+                return
 
         dsIndex = parentLayer.provider.dataSetCount()-1
         parentLayer.initCustomValues(parentLayer.provider.dataSet(dsIndex))

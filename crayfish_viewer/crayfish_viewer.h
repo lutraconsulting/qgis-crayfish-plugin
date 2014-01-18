@@ -58,6 +58,7 @@ public:
     int getLastWarning(){ return mLastWarning; }
     int getLastError() { return mLastError; }
     bool loadDataSet(QString);
+    bool loadAsciiDataSet(QString fileName);
     bool isDataSetLoaded(QString fileName);
 
     double valueAtCoord(const Output *output, double xCoord, double yCoord);
