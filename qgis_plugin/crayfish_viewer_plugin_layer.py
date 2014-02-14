@@ -457,7 +457,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         x = pt.x()
         y = pt.y()
         
-        outputOfInterest = self.provider.currentDataSet().currentOutputTime()
+        outputOfInterest = self.provider.currentDataSet().currentOutput()
         value = self.provider.valueAtCoord( outputOfInterest, x, y)
         
         v = None
