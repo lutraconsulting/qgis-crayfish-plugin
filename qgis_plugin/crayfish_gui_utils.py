@@ -97,6 +97,8 @@ def defaultColorRamp():
 
 
 def initColorRampComboBox(cbo):
+    if hasattr(cbo, "setShowGradientOnly"):
+      cbo.setShowGradientOnly(True)
     cbo.populate(qgis.core.QgsStyleV2.defaultStyle())
     iconSize = QSize(50,16)
     iconRamp = qgis.core.QgsSymbolLayerV2Utils.colorRampPreviewIcon(defaultColorRamp(), iconSize)
