@@ -15,6 +15,7 @@ email=peter.wells@lutraconsulting.co.uk
 changelog=1.2 - New features:
  - Added various contouring options
  - Support for QGIS legend (in QGIS >= 2.1)
+ - Support for BASEMENT output
  - Save all layer settings to project file
  - Anti-aliasing for vector results
  - Change mesh color
