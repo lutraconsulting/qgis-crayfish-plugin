@@ -55,7 +55,7 @@ install_files.remove("install.py")  # exclude this file!
 
 if pkg:
   import zipfile
-  with zipfile.ZipFile("crayfish.zip", "w") as z:
+  with zipfile.ZipFile("crayfish.zip", "w", zipfile.ZIP_DEFLATED) as z:
     for filename in install_files:
       z.write(filename, "crayfish/"+filename)
 

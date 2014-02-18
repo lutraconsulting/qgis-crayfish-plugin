@@ -62,7 +62,7 @@ build_file_python = os.path.join("build-python", build_mode, file_python)
 
 if pkg:
   import zipfile
-  with zipfile.ZipFile("crayfish_viewer_library.zip", "w") as z:
+  with zipfile.ZipFile("crayfish_viewer_library.zip", "w", zipfile.ZIP_DEFLATED) as z:
     z.write(build_file_cpp, file_cpp)
     z.write(build_file_python, file_python)
 
