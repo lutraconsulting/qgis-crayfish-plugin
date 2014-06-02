@@ -168,15 +168,21 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
     in.seek(0);
     QStringList chunks = QStringList();
 
+    uint elemIndex = 0;
+    QMap<int, int> elemIDtoIndex;
+
     while (!in.atEnd()) {
         QString line = in.readLine();
         if( line.startsWith("E4Q") ){
             chunks = line.split(" ", QString::SkipEmptyParts);
-            uint index = chunks[1].toInt()-1;
-            Q_ASSERT(index < mElemCount);
+            Q_ASSERT(elemIndex < mElemCount);
 
-            Element& elem = mElems[index];
-            elem.index = index;
+            uint elemID = chunks[1].toInt();
+            Q_ASSERT(!elemIDtoIndex.contains(elemID));
+            elemIDtoIndex[elemID] = elemIndex;
+
+            Element& elem = mElems[elemIndex];
+            elem.index = elemIndex;
             elem.eType = ElementType::E4Q;
             elem.nodeCount = 4;
             elem.isDummy = false;
@@ -184,14 +190,18 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
             for (int i = 0; i < 4; ++i)
               elem.p[i] = chunks[i+2].toInt()-1; // -1 (crayfish Dat is 1-based indexing)
 
+            elemIndex++;
         }
         else if( line.startsWith("E3T") ){
             chunks = line.split(" ", QString::SkipEmptyParts);
-            uint index = chunks[1].toInt()-1;
-            Q_ASSERT(index < mElemCount);
+            Q_ASSERT(elemIndex < mElemCount);
 
-            Element& elem = mElems[index];
-            elem.index = index;
+            uint elemID = chunks[1].toInt();
+            Q_ASSERT(!elemIDtoIndex.contains(elemID));
+            elemIDtoIndex[elemID] = elemIndex;
+
+            Element& elem = mElems[elemIndex];
+            elem.index = elemIndex;
             elem.eType = ElementType::E3T;
             elem.nodeCount = 3;
             elem.isDummy = false;
@@ -199,6 +209,8 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
             for (int i = 0; i < 3; ++i)
               elem.p[i] = chunks[i+2].toInt()-1; // -1 (crayfish Dat is 1-based indexing)
             elem.p[3] = -1; // only three points
+
+            elemIndex++;
         }
         else if( line.startsWith("E2L") ||
                  line.startsWith("E3L") ||
@@ -207,11 +219,12 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
                  line.startsWith("E9Q")){
             // We do not yet support these elements
             chunks = line.split(" ", QString::SkipEmptyParts);
-            uint index = chunks[1].toInt()-1;
-            Q_ASSERT(index < mElemCount);
+            Q_ASSERT(elemIndex < mElemCount);
 
-            mElems[index].index = index;
-            mElems[index].isDummy = true;
+            mElems[elemIndex].index = elemIndex;
+            mElems[elemIndex].isDummy = true;
+
+            elemIndex++;
         }
         else if( line.startsWith("ND") ){
             chunks = line.split(" ", QString::SkipEmptyParts);
