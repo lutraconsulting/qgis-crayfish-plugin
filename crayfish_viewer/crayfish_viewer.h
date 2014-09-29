@@ -66,7 +66,9 @@ public:
     // mesh information
 
     uint nodeCount() const { return mNodeCount; }
+    Node* nodes() const { return mNodes; }
     uint elementCount() const { return mElemCount; }
+    Element* elements() const { return mElems; }
     uint elementCount_E4Q() const { return mE4Qcount; }
     uint elementCount_E3T() const { return mE3Tcount; }
     QRectF meshExtent() const { return QRectF(QPointF(mXMin,mYMin), QPointF(mXMax,mYMax)); }
