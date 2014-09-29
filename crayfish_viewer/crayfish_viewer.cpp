@@ -559,24 +559,35 @@ bool CrayfishViewer::loadAsciiDataSet(QString fileName)
   QString firstLine = stream.readLine();
 
   // http://www.xmswiki.com/xms/SMS:ASCII_Dataset_Files_*.dat
-  // The format of ASCII .dat files is a bit different from what we read here
-  // e.g. different kind of header, block markers
+  // Apart from the format specified above, there is an older supported format used in BASEMENT (and SMS?)
+  // which is simpler (has only one dataset in one file, no status flags etc)
 
-  if (firstLine != "SCALAR" && firstLine != "VECTOR")
+  bool oldFormat;
+  bool isVector = false;
+  DataSet* ds = 0;
+
+  if (firstLine == "DATASET")
+    oldFormat = false;
+  else if (firstLine == "SCALAR" || firstLine == "VECTOR")
+  {
+    oldFormat = true;
+    isVector = (firstLine == "VECTOR");
+
+    ds = new DataSet(fileName);
+    ds->setIsTimeVarying(true);
+    ds->setType(isVector ? DataSetType::Vector : DataSetType::Scalar);
+    ds->setVectorRenderingEnabled(isVector);
+    ds->setName(QFileInfo(fileName).baseName());
+  }
+  else
     return false; // unknown type
 
   QRegExp reSpaces("\\s+");
 
-  bool isVector = (firstLine == "VECTOR");
-
-  DataSet* ds = new DataSet(fileName);
-  ds->setIsTimeVarying(true);
-  ds->setType(isVector ? DataSetType::Vector : DataSetType::Scalar);
-  ds->setName(QFileInfo(fileName).baseName());
-
   while (!stream.atEnd())
   {
-    QStringList items = stream.readLine().split(reSpaces, QString::SkipEmptyParts);
+    QString line = stream.readLine();
+    QStringList items = line.split(reSpaces, QString::SkipEmptyParts);
     if (items.count() < 1)
       continue; // empty line?? let's skip it
 
@@ -587,23 +598,72 @@ bool CrayfishViewer::loadAsciiDataSet(QString fileName)
       if (mNodeCount != fileNodeCount)
         return false;
     }
-    else if (cardType == "SCALAR")
+    else if (!oldFormat && cardType == "NC" && items.count() >= 2)
     {
-      isVector = false;
+      uint fileElemCount = items[1].toUInt();
+      if (mElemCount != fileElemCount)
+        return false;
     }
-    else if (cardType == "VECTOR")
+    else if (!oldFormat && (cardType == "BEGSCL" || cardType == "BEGVEC"))
     {
-      isVector = true;
+      if (ds)
+      {
+        qDebug("Crayfish: New dataset while previous one is still active!");
+        return false;
+      }
+      isVector = cardType == "BEGVEC";
+      ds = new DataSet(fileName);
+      ds->setIsTimeVarying(true);
+      ds->setVectorRenderingEnabled(isVector);
+      ds->setType(isVector ? DataSetType::Vector : DataSetType::Scalar);
     }
-    else if (cardType == "TS" && items.count() >= 2)
+    else if (!oldFormat && cardType == "ENDDS")
     {
-      float t = items[1].toFloat();
+      if (!ds)
+      {
+        qDebug("Crayfish: ENDDS card for no active dataset!");
+        return false;
+      }
+      ds->updateZRange(mNodeCount);
+      mDataSets.push_back(ds);
+      ds = 0;
+    }
+    else if (!oldFormat && cardType == "NAME" && items.count() >= 2)
+    {
+      if (!ds)
+      {
+        qDebug("Crayfish: NAME card for no active dataset!");
+        return false;
+      }
+
+      int quoteIdx1 = line.indexOf('\"');
+      int quoteIdx2 = line.indexOf('\"', quoteIdx1+1);
+      if (quoteIdx1 > 0 && quoteIdx2 > 0)
+        ds->setName(line.mid(quoteIdx1+1, quoteIdx2-quoteIdx1-1));
+    }
+    else if (oldFormat && (cardType == "SCALAR" || cardType == "VECTOR"))
+    {
+      // just ignore - we know the type from earlier...
+    }
+    else if (cardType == "TS" && items.count() >= (oldFormat ? 2 : 3))
+    {
+      bool hasStatus = (oldFormat ? false : items[1].toInt());
+      float t = items[oldFormat ? 1 : 2].toFloat();
 
       Output* o = new Output;
       o->init(mNodeCount, mElemCount, isVector);
       o->time = t / 3600.;
 
-      memset(o->statusFlags, 1, mElemCount); // there is no status flag -> everything is active
+      if (hasStatus)
+      {
+        // only for new format
+        for (uint i = 0; i < mElemCount; ++i)
+        {
+          o->statusFlags[i] = stream.readLine().toInt();
+        }
+      }
+      else
+        memset(o->statusFlags, 1, mElemCount); // there is no status flag -> everything is active
 
       for (uint i = 0; i < mNodeCount; ++i)
       {
@@ -642,18 +702,22 @@ bool CrayfishViewer::loadAsciiDataSet(QString fileName)
     }
   }
 
-  if(ds->outputCount() > 0){
-
+  if (oldFormat)
+  {
+    if (ds->outputCount() > 0)
+    {
       ds->updateZRange(mNodeCount);
-
-      ds->setVectorRenderingEnabled(ds->type() == DataSetType::Vector);
-
       mDataSets.push_back(ds);
       return true;
+    }
+    else
+    {
+      delete ds;
+      return false;
+    }
   }
 
-  delete ds;
-  return false;
+  return true;
 }
 
 
