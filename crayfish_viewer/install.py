@@ -65,6 +65,7 @@ if pkg:
   with zipfile.ZipFile("crayfish_viewer_library.zip", "w", zipfile.ZIP_DEFLATED) as z:
     z.write(build_file_cpp, file_cpp)
     z.write(build_file_python, file_python)
+  print "Written crayfish_viewer_library.zip"
 
 else:
   qgis_folder = ".qgis" if qgis1 else ".qgis2"
@@ -75,3 +76,6 @@ else:
 
   shutil.copy(build_file_cpp, plugin_dir)
   shutil.copy(build_file_python, plugin_dir)
+  print "Written " + ("[debug] " if debug else "") + file_cpp + " and " + file_python + " to " + plugin_dir
+
+

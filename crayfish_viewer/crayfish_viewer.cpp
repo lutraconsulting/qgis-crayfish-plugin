@@ -565,6 +565,8 @@ bool CrayfishViewer::loadAsciiDataSet(QString fileName)
   if (firstLine != "SCALAR" && firstLine != "VECTOR")
     return false; // unknown type
 
+  QRegExp reSpaces("\\s+");
+
   bool isVector = (firstLine == "VECTOR");
 
   DataSet* ds = new DataSet(fileName);
@@ -572,22 +574,30 @@ bool CrayfishViewer::loadAsciiDataSet(QString fileName)
   ds->setType(isVector ? DataSetType::Vector : DataSetType::Scalar);
   ds->setName(QFileInfo(fileName).baseName());
 
-  QString cardType;
-  uint fileNodeCount = 0;
-
   while (!stream.atEnd())
   {
-    stream >> cardType;
-    if (cardType == "ND")
+    QStringList items = stream.readLine().split(reSpaces, QString::SkipEmptyParts);
+    if (items.count() < 1)
+      continue; // empty line?? let's skip it
+
+    QString cardType = items[0];
+    if (cardType == "ND" && items.count() >= 2)
     {
-      stream >> fileNodeCount;
+      uint fileNodeCount = items[1].toUInt();
       if (mNodeCount != fileNodeCount)
         return false;
     }
-    else if (cardType == "TS")
+    else if (cardType == "SCALAR")
     {
-      float t;
-      stream >> t;
+      isVector = false;
+    }
+    else if (cardType == "VECTOR")
+    {
+      isVector = true;
+    }
+    else if (cardType == "TS" && items.count() >= 2)
+    {
+      float t = items[1].toFloat();
 
       Output* o = new Output;
       o->init(mNodeCount, mElemCount, isVector);
@@ -597,22 +607,39 @@ bool CrayfishViewer::loadAsciiDataSet(QString fileName)
 
       for (uint i = 0; i < mNodeCount; ++i)
       {
+        QStringList tsItems = stream.readLine().split(reSpaces, QString::SkipEmptyParts);
         if (isVector)
         {
-          float unknown; // TODO: what is the third value??
-          stream >> o->values_x[i] >> o->values_y[i] >> unknown;
+          if (tsItems.count() >= 2) // BASEMENT files with vectors have 3 columns
+          {
+            o->values_x[i] = tsItems[0].toFloat();
+            o->values_y[i] = tsItems[1].toFloat();
+          }
+          else
+          {
+            qDebug("Crayfish: invalid timestep line");
+            o->values_x[i] = o->values_y[i] = 0;
+          }
           o->values[i] = sqrt( pow(o->values_x[i],2) + pow(o->values_y[i],2) ); // Determine the magnitude
         }
         else
         {
-          stream >> o->values[i];
+          if (tsItems.count() >= 1)
+            o->values[i] = tsItems[0].toFloat();
+          else
+          {
+            qDebug("Crayfish: invalid timestep line");
+            o->values[i] = 0;
+          }
         }
       }
 
       ds->addOutput(o);
     }
-    else if (!cardType.isEmpty())
-      qDebug("Crafish: Unknown card type: %s", cardType.toAscii().data());
+    else
+    {
+      qDebug("Crafish: Unknown card: %s", items.join(" ").toAscii().data());
+    }
   }
 
   if(ds->outputCount() > 0){
