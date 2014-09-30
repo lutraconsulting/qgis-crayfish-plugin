@@ -412,9 +412,8 @@ class CrayfishPlugin:
 
         # try to load it as binary file, if not successful, try as ASCII format
         if not parentLayer.provider.loadDataSet( inFileName ):
-            if not parentLayer.provider.loadAsciiDataSet( inFileName ):
-                qgis_message_bar.pushMessage("Crayfish", "Failed to load the data file", level=QgsMessageBar.CRITICAL)
-                return
+            qgis_message_bar.pushMessage("Crayfish", "Failed to load the data file", level=QgsMessageBar.CRITICAL)
+            return
 
         dsIndex = parentLayer.provider.dataSetCount()-1
         parentLayer.initCustomValues(parentLayer.provider.dataSet(dsIndex))

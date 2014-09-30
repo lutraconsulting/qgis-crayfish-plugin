@@ -319,7 +319,16 @@ void CrayfishViewer::computeMeshExtent()
 }
 
 
-bool CrayfishViewer::loadDataSet(QString datFileName){
+bool CrayfishViewer::loadDataSet(QString fileName)
+{
+  if (loadBinaryDataSet(fileName))
+    return true;
+
+  return loadAsciiDataSet(fileName);
+}
+
+bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
+{
 
     QFile file(datFileName);
     if (!file.open(QIODevice::ReadOnly)){

@@ -134,7 +134,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             datElem = datNodes.item(i).toElement()
             datFilePath = prj.readPath( datElem.attribute('path') )
             if not self.provider.loadDataSet(datFilePath):
-                return False
+                qgis_message_bar.pushMessage("Crayfish", "Unable to load dataset " + datFilePath, level=QgsMessageBar.WARNING)
+                continue
             ds = self.provider.dataSet(self.provider.dataSetCount()-1)
             self.readDataSetXml(ds, datElem)
 

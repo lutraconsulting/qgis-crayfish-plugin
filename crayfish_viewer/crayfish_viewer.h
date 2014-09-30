@@ -57,8 +57,7 @@ public:
     bool warningsEncountered(){ return mWarningsEncountered; }
     int getLastWarning(){ return mLastWarning; }
     int getLastError() { return mLastError; }
-    bool loadDataSet(QString);
-    bool loadAsciiDataSet(QString fileName);
+    bool loadDataSet(QString fileName);
     bool isDataSetLoaded(QString fileName);
 
     double valueAtCoord(const Output *output, double xCoord, double yCoord);
@@ -141,6 +140,9 @@ private:
     QString mDestProj4; //!< CRS's proj.4 string of the destination (project)
     Node* mProjNodes; //!< reprojected nodes
     BBox* mProjBBoxes; //!< reprojected bounding boxes of elements
+
+    bool loadBinaryDataSet(QString fileName);
+    bool loadAsciiDataSet(QString fileName);
 
     void computeMeshExtent();
     bool nodeInsideView(uint nodeIndex);

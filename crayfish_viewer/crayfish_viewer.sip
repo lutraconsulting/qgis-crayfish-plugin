@@ -19,8 +19,7 @@ public:
     bool warningsEncountered();
     int getLastWarning();
     int getLastError();
-    bool loadDataSet(QString);
-    bool loadAsciiDataSet(QString fileName);
+    bool loadDataSet(QString fileName);
     bool isDataSetLoaded(QString fileName);
 
     double valueAtCoord(const Output *output, double xCoord, double yCoord);
