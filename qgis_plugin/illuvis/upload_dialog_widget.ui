@@ -1,0 +1,700 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>499</width>
+    <height>343</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>illuvis Uploader</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/plugins/illuvis/illuvis_u_32w.png</normaloff>:/plugins/illuvis/illuvis_u_32w.png</iconset>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="16" column="1">
+    <widget class="QComboBox" name="resultTypeComboBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>100</width>
+       <height>0</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1" colspan="2">
+    <widget class="QComboBox" name="projectComboBox"/>
+   </item>
+   <item row="7" column="1" colspan="2">
+    <widget class="QComboBox" name="scenarioComboBox"/>
+   </item>
+   <item row="16" column="3" colspan="2">
+    <widget class="QPushButton" name="uploadPushButton">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Upload</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="projectLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Project</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="3">
+    <widget class="QPushButton" name="deleteProjectPushButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Delete</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="4">
+    <widget class="QPushButton" name="newProjectPushButton">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>New</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QLabel" name="scenarioLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Scenario</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="3">
+    <widget class="QPushButton" name="deleteScenarioPushButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Delete</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="4">
+    <widget class="QPushButton" name="newScenarioPushButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>New</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0">
+    <widget class="QLabel" name="eventLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Event</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="3">
+    <widget class="QPushButton" name="deleteEventPushButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Delete</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="4">
+    <widget class="QPushButton" name="newEventPushButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>New</string>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0" colspan="5">
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="15" column="0">
+    <widget class="QLabel" name="resultFileLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Result File</string>
+     </property>
+    </widget>
+   </item>
+   <item row="15" column="3" colspan="2">
+    <widget class="QPushButton" name="browsePushButton">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Browse</string>
+     </property>
+    </widget>
+   </item>
+   <item row="16" column="0">
+    <widget class="QLabel" name="resultTypeLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Result Type</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="1" colspan="2">
+    <widget class="QComboBox" name="eventComboBox"/>
+   </item>
+   <item row="15" column="1" colspan="2">
+    <widget class="QLineEdit" name="resultFileLineEdit"/>
+   </item>
+   <item row="18" column="3" colspan="2">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Close|QDialogButtonBox::Help</set>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="3">
+    <widget class="QLabel" name="connectedAsLabel">
+     <property name="text">
+      <string>Connected as:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="4" column="0" colspan="5">
+    <widget class="Line" name="line_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QPushButton" name="connectionSettingsPushButton">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Connection Settings</string>
+     </property>
+    </widget>
+   </item>
+   <item row="16" column="2">
+    <widget class="QProgressBar" name="progressBar">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="value">
+      <number>0</number>
+     </property>
+     <property name="textVisible">
+      <bool>true</bool>
+     </property>
+     <property name="invertedAppearance">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="17" column="1" colspan="2">
+    <widget class="QProgressBar" name="diskUseProgressBar">
+     <property name="minimum">
+      <number>0</number>
+     </property>
+     <property name="maximum">
+      <number>500</number>
+     </property>
+     <property name="value">
+      <number>0</number>
+     </property>
+     <property name="textVisible">
+      <bool>true</bool>
+     </property>
+     <property name="format">
+      <string>%v MB</string>
+     </property>
+    </widget>
+   </item>
+   <item row="17" column="0">
+    <widget class="QLabel" name="diskUsageLabel">
+     <property name="text">
+      <string>Disk Usage</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2" rowspan="3" colspan="3">
+    <widget class="QLabel" name="iconLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="resources.qrc">:/plugins/illuvis/illuvis_logo_150w.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>false</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignBottom|Qt::AlignRight|Qt::AlignTrailing</set>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="4">
+    <spacer name="verticalSpacer_2">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="18" column="0" colspan="3">
+    <widget class="QLabel" name="statusLabel">
+     <property name="text">
+      <string>statusLabel</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="0" colspan="5">
+    <widget class="Line" name="line_3">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="0">
+    <widget class="QLabel" name="overlaysLabel">
+     <property name="text">
+      <string>Overlays</string>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="1" colspan="2">
+    <widget class="QComboBox" name="overlayComboBox"/>
+   </item>
+   <item row="12" column="3">
+    <widget class="QPushButton" name="deleteOverlayPushButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Delete</string>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="4">
+    <widget class="QPushButton" name="newOverlayPushButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>New</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>connectionSettingsPushButton</tabstop>
+  <tabstop>projectComboBox</tabstop>
+  <tabstop>deleteProjectPushButton</tabstop>
+  <tabstop>newProjectPushButton</tabstop>
+  <tabstop>scenarioComboBox</tabstop>
+  <tabstop>deleteScenarioPushButton</tabstop>
+  <tabstop>newScenarioPushButton</tabstop>
+  <tabstop>eventComboBox</tabstop>
+  <tabstop>deleteEventPushButton</tabstop>
+  <tabstop>newEventPushButton</tabstop>
+  <tabstop>resultFileLineEdit</tabstop>
+  <tabstop>browsePushButton</tabstop>
+  <tabstop>resultTypeComboBox</tabstop>
+  <tabstop>uploadPushButton</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>Dialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>489</x>
+     <y>318</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>308</x>
+     <y>253</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>uploadPushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>489</x>
+     <y>277</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>448</x>
+     <y>101</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>browsePushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>browseForFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>489</x>
+     <y>248</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>328</x>
+     <y>87</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>connectionSettingsPushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>connectionSettingsButtonPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>109</x>
+     <y>74</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>142</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>scenarioComboBox</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>Dialog</receiver>
+   <slot>refreshEvents()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>236</x>
+     <y>136</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>52</x>
+     <y>159</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>newProjectPushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>newProjectPushButtonPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>489</x>
+     <y>110</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>23</x>
+     <y>16</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>newScenarioPushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>newScenarioPushButtonPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>489</x>
+     <y>137</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>74</x>
+     <y>33</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>newEventPushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>newEventPushButtonPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>489</x>
+     <y>165</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>182</x>
+     <y>51</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>deleteProjectPushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>deleteProjectPushButtonPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>408</x>
+     <y>110</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>72</x>
+     <y>11</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>deleteScenarioPushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>deleteScenarioPushButtonPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>408</x>
+     <y>137</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>196</x>
+     <y>22</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>deleteEventPushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>deleteEventPushButtonPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>408</x>
+     <y>165</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>55</x>
+     <y>125</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>helpRequested()</signal>
+   <receiver>Dialog</receiver>
+   <slot>helpPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>489</x>
+     <y>318</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>375</x>
+     <y>7</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>newOverlayPushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>newOverlayPushButtonPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>469</x>
+     <y>192</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>462</x>
+     <y>87</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>projectComboBox</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>Dialog</receiver>
+   <slot>projectComboBoxChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>179</x>
+     <y>102</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>220</x>
+     <y>80</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>deleteOverlayPushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>deleteOverlayPushButtonPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>366</x>
+     <y>203</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>342</x>
+     <y>184</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>browseForFile()</slot>
+  <slot>connectionSettingsButtonPressed()</slot>
+  <slot>refreshScenarios()</slot>
+  <slot>refreshEvents()</slot>
+  <slot>newProjectPushButtonPressed()</slot>
+  <slot>newScenarioPushButtonPressed()</slot>
+  <slot>newEventPushButtonPressed()</slot>
+  <slot>deleteProjectPushButtonPressed()</slot>
+  <slot>deleteScenarioPushButtonPressed()</slot>
+  <slot>deleteEventPushButtonPressed()</slot>
+  <slot>helpPressed()</slot>
+  <slot>newOverlayPushButtonPressed()</slot>
+  <slot>projectComboBoxChanged()</slot>
+  <slot>deleteOverlayPushButtonPressed()</slot>
+ </slots>
+</ui>

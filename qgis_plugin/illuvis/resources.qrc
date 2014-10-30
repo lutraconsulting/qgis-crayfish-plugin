@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/plugins/illuvis">
+        <file>illuvis_logo_220w.png</file>
+        <file>illuvis_logo_150w.png</file>
+        <file>illuvis_u_32w.png</file>
+        <file>illuvis_u_24w.png</file>
+        <file>illuvis_u_16w.png</file>
+    </qresource>
+</RCC>

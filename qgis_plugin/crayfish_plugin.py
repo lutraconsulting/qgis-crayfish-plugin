@@ -41,11 +41,7 @@ from crayfish_viewer_dock import CrayfishViewerDock
 #from crayfish_viewer_plugin_layer_type import *
 import crayfish_about_dialog
 
-haveUpload = True
-try:
-    import upload_dialog
-except:
-    haveUpload = False
+from illuvis import upload_dialog
 
 import platform
 import urllib2
@@ -84,15 +80,13 @@ class CrayfishPlugin:
         QObject.connect(self.aboutAction, SIGNAL("triggered()"), self.about)
         
         # Create action for upload
-        if haveUpload:
-            self.uploadAction = QAction(QIcon(":/plugins/crayfish/upload.png"), "Upload", self.iface.mainWindow())
-            QObject.connect(self.uploadAction, SIGNAL("triggered()"), self.upload)
+        self.uploadAction = QAction(QIcon(":/plugins/crayfish/upload.png"), "Upload to illuvis", self.iface.mainWindow())
+        QObject.connect(self.uploadAction, SIGNAL("triggered()"), self.upload)
         
         # Add menu items
         self.menu = self.iface.pluginMenu().addMenu(QIcon(":/plugins/crayfish/crayfish.png"), "Crayfish")
         self.menu.addAction(self.aboutAction)
-        if haveUpload:
-            self.menu.addAction(self.uploadAction)
+        self.menu.addAction(self.uploadAction)
 
         # Try to import the binary library:
         restartRequired = False
@@ -267,8 +261,7 @@ class CrayfishPlugin:
             self.iface.removeDockWidget(self.dock)
             
         self.menu.removeAction(self.aboutAction)
-        if haveUpload:
-            self.menu.removeAction(self.uploadAction)
+        self.menu.removeAction(self.uploadAction)
             
         if not self.crayfishViewerLibFound:
             self.iface.pluginMenu().removeAction(self.menu.menuAction())
