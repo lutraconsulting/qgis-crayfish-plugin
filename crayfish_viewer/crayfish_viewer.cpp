@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_dataset.h"
 #include "crayfish_e4q.h"
+#include "crayfish_gdal.h"
 #include "crayfish_mesh.h"
 #include "crayfish_output.h"
 
@@ -1381,6 +1382,7 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
 QPointF CrayfishViewer::pixelToReal(int i, int j){
     double x = mLlX + (i * mPixelSize);
     // double y = mCanvasHeight - (mLlY + (j * mPixelSize));
+    // TODO: shouldn't this be without "-1" ???
     double y = mLlY + mPixelSize * (mCanvasHeight-1-j);
     return QPointF(x,y);
 }
@@ -1425,4 +1427,101 @@ double CrayfishViewer::valueAtCoord(const Output* output, double xCoord, double 
     }
 
     return -9999.0;
+}
+
+
+bool CrayfishViewer::exportRawDataToTIF(int dataSetIndex, int outputTime, double mupp, const QString& outFilename, const QString& projWkt)
+{
+  RawData* rd = exportRawData(dataSetIndex, outputTime, mupp);
+  if (!rd)
+    return false;
+
+  bool res = CrayfishGDAL::writeGeoTIFF(outFilename, rd, projWkt);
+  delete rd;
+
+  return res;
+}
+
+
+RawData* CrayfishViewer::exportRawData(int dataSetIndex, int outputTime, double mupp)
+{
+  const DataSet* ds = dataSet(dataSetIndex);
+  if (!ds)
+    return 0;
+  const Output* output = ds->output(outputTime);
+  if (!output)
+    return 0;
+
+  // keep one pixel around
+  // e.g. if we have mesh with coords 0..10 with sampling of 1, then we actually need 11 pixels
+  double xMin = mXMin - mupp;
+  double xMax = mXMax + mupp;
+  double yMin = mYMin - mupp;
+  double yMax = mYMax + mupp;
+
+  // calculate transform
+  // (uses envelope of the mesh)
+  int imgWidth = ceil((xMax - xMin) / mupp);
+  int imgHeight = ceil((yMax - yMin) / mupp);
+  MapToPixel xform(xMin, yMin, mupp, imgHeight);
+
+  // prepare geometry transform
+  yMax = yMin + imgHeight*mupp;  // this is different from yMax previously - due to using fixed pixel size
+  // also shift the exported raster by half of pixel size in both directions
+  // sampled value for X needs to occupy interval (X-mupp/2,X+mupp/2) - without the shift the value would be misaligned to (X,X+mupp)
+  QVector<double> geo;
+  geo << xMin - mupp/2 << mupp << 0
+      << yMax + mupp/2 << 0    << -mupp;
+
+  RawData* rd = new RawData(imgWidth, imgHeight, geo);
+
+  // First export quads, then triangles.
+  // We use this ordering because from 1D simulation we will get tesselated river polygons from linestrings
+  // and we want them to be on top of the terrain (quads)
+  exportRawDataElements(ElementType::E4Q, output, rd, xform);
+  exportRawDataElements(ElementType::E3T, output, rd, xform);
+
+  return rd;
+}
+
+void CrayfishViewer::exportRawDataElements(ElementType::Enum elemType, const Output* output, RawData* rd, const MapToPixel& xform)
+{
+  for (uint i=0; i < mElemCount; i++)
+  {
+    const Element& elem = mElems[i];
+    if(elem.eType != elemType)
+      continue;
+
+    if(elem.isDummy)
+      continue;
+
+    // If the element's activity flag is off, ignore it
+    if(!output->statusFlags[i])
+      continue;
+
+    const BBox& bbox = elem.bbox;
+
+    // Get the BBox of the element in pixels
+    QPointF ll = xform.realToPixel(bbox.minX, bbox.minY);
+    QPointF ur = xform.realToPixel(bbox.maxX, bbox.maxY);
+
+    // TODO: floor/ceil ?
+    int topLim = ur.y();
+    int bottomLim = ll.y();
+    int leftLim = ll.x();
+    int rightLim = ur.x();
+
+    double val;
+    for (int j=topLim; j<=bottomLim; j++)
+    {
+      float* line = rd->scanLine(j);
+      for (int k=leftLim; k<=rightLim; k++)
+      {
+        Q_ASSERT(k >= 0 && k < rd->cols());
+        QPointF p = xform.pixelToReal(k, j);
+        if( interpolatValue(i, p.x(), p.y(), &val, output) )
+            line[k] = val; // The supplied point was inside the element
+      }
+    }
+  }
 }

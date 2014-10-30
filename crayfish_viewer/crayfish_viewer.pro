@@ -34,11 +34,11 @@ win32 {
   }
 
   INCLUDEPATH += $${OSGEO_PATH}/include
-  LIBS += -L$${OSGEO_PATH}/lib -lproj_i
+  LIBS += -L$${OSGEO_PATH}/lib -lproj_i -lgdal
 }
 
 unix {
-  LIBS += -lproj
+  LIBS += -lproj -lgdal
 }
 
 TARGET = crayfishViewer
@@ -50,7 +50,8 @@ SOURCES += crayfish_viewer.cpp\
         version.cpp \
         crayfish_e4q.cpp \
         crayfish_colormap.cpp \
-    crayfish_dataset.cpp
+    crayfish_dataset.cpp \
+    crayfish_gdal.cpp
 
 HEADERS += crayfish_viewer.h\
         crayfish_viewer_global.h\
@@ -59,7 +60,8 @@ HEADERS += crayfish_viewer.h\
         crayfish_colormap.h \
     crayfish_dataset.h \
     crayfish_output.h \
-    crayfish_mesh.h
+    crayfish_mesh.h \
+    crayfish_gdal.h
 
 CONFIG(debug, debug|release) {
     DESTDIR = $$PWD/build/debug

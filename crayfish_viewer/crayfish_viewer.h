@@ -46,6 +46,63 @@ struct E4Qtmp;
 struct DataSet;
 struct Output;
 
+
+class CRAYFISHVIEWERSHARED_EXPORT RawData
+{
+public:
+  RawData(int c, int r, QVector<double> g): mCols(c), mRows(r), mData(new float[r*c]), mGeo(g)
+  {
+    int size = r*c;
+    for (int i = 0; i < size; ++i)
+      mData[i] = -999; // nodata value
+  }
+  ~RawData() { delete [] mData; }
+
+  int cols() const { return mCols; }
+  int rows() const { return mRows; }
+  QVector<double> geoTransform() const { return mGeo; }
+  float* data() const { return mData; }
+  float* scanLine(int row) const { Q_ASSERT(row >= 0 && row < mRows); return mData+row*mCols; }
+  float dataAt(int index) const { return mData[index]; }
+
+private:
+  int mCols;
+  int mRows;
+  float* mData;
+  QVector<double> mGeo;  // georef data (2x3 matrix): xp = a0 + x*a1 + y*a2    yp = a3 + x*a4 + y*a5
+
+  Q_DISABLE_COPY(RawData)
+};
+
+
+// TODO: use also directly for viewer rendering
+class MapToPixel
+{
+public:
+  MapToPixel(double llX, double llY, double mupp, int rows)
+    : mLlX(llX), mLlY(llY), mMupp(mupp), mRows(rows) {}
+
+  QPointF realToPixel(double rx, double ry) const
+  {
+    double px = (rx - mLlX) / mMupp;
+    double py = mRows - (ry - mLlY) / mMupp;
+    return QPointF(px, py);
+  }
+
+  QPointF pixelToReal(double px, double py) const
+  {
+      double rx = mLlX + (px * mMupp);
+      double ry = mLlY + mMupp * (mRows - py);
+      return QPointF(rx,ry);
+  }
+
+private:
+  double mLlX, mLlY;
+  double mMupp; // map units per pixel
+  double mRows; // (actually integer value)
+};
+
+
 class CRAYFISHVIEWERSHARED_EXPORT CrayfishViewer {
 public:
 
@@ -71,6 +128,10 @@ public:
     uint elementCount_E4Q() const { return mE4Qcount; }
     uint elementCount_E3T() const { return mE3Tcount; }
     QRectF meshExtent() const { return QRectF(QPointF(mXMin,mYMin), QPointF(mXMax,mYMax)); }
+
+    // data export
+
+    bool exportRawDataToTIF(int dataSetIndex, int outputTime, double mupp, const QString& outFilename, const QString& projWkt);
 
     // rendering options
 
@@ -160,9 +221,15 @@ private:
     void renderContourData(const DataSet* ds, const Output* output);
     void renderVectorData(const DataSet* ds, const Output* output);
     void renderMesh();
+
+    //! Return new raw data image for the given dataset/output time, sampled with given resolution
+    RawData* exportRawData(int dataSetIndex, int outputTime, double mupp);
+
+    void exportRawDataElements(ElementType::Enum elemType, const Output* output, RawData* rd, const MapToPixel& xform);
 };
 
-float mag(float input){
+inline float mag(float input)
+{
     if(input < 0.0){
         return -1.0;
     }

@@ -32,6 +32,10 @@ public:
     uint elementCount_E3T() const;
     QRectF meshExtent() const;
 
+    // data export
+
+    bool exportRawDataToTIF(int dataSetIndex, int outputTime, double mupp, const QString& outFilename, const QString& projWkt);
+
     // rendering options
 
     void setCanvasSize(const QSize& size);
