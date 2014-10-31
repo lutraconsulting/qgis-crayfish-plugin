@@ -40,6 +40,7 @@ from crayfish_viewer_dock import CrayfishViewerDock
 #from crayfish_viewer_plugin_layer import *
 #from crayfish_viewer_plugin_layer_type import *
 import crayfish_about_dialog
+import crayfish_export_config_dialog
 
 from illuvis import upload_dialog
 
@@ -82,7 +83,7 @@ class CrayfishPlugin:
         # Create action for upload
         self.uploadAction = QAction(QIcon(":/plugins/crayfish/upload.png"), "Upload to illuvis", self.iface.mainWindow())
         QObject.connect(self.uploadAction, SIGNAL("triggered()"), self.upload)
-        
+
         # Add menu items
         self.menu = self.iface.pluginMenu().addMenu(QIcon(":/plugins/crayfish/crayfish.png"), "Crayfish")
         self.menu.addAction(self.aboutAction)
@@ -143,20 +144,27 @@ class CrayfishPlugin:
         
         # Create action that will load a layer to view
         self.action = QAction(QIcon(":/plugins/crayfish/crayfish_viewer_add_layer.png"), "Add Crayfish Layer", self.iface.mainWindow())
-        QObject.connect(self.action, SIGNAL("triggered()"), self.run)
+        QObject.connect(self.action, SIGNAL("triggered()"), self.addCrayfishLayer)
         
+        self.actionExportGrid = QAction(QIcon(), "Export to Raster Grid ...", self.iface.mainWindow())
+        QObject.connect(self.actionExportGrid, SIGNAL("triggered()"), self.exportGrid)
+
         # Add toolbar button and menu item
         layerTB = self.iface.layerToolBar()
         layerTB.insertAction(self.iface.actionAddPgLayer(), self.action)
         
         # Add menu item
         self.menu.addAction(self.action)
-        
+        self.menu.addAction(self.actionExportGrid)
+
         # Register plugin layer type
         from crayfish_viewer_plugin_layer_type import CrayfishViewerPluginLayerType
         self.lt = CrayfishViewerPluginLayerType()
         QgsPluginLayerRegistry.instance().addPluginLayerType(self.lt)
-        
+
+        # Register actions for context menu
+        self.iface.legendInterface().addLegendLayerAction(self.actionExportGrid, '', '', QgsMapLayer.PluginLayer, False)
+
         # Make connections
         QObject.connect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)
         QObject.connect(self.lr, SIGNAL("layerWillBeRemoved(QString)"), self.layerRemoved)
@@ -259,7 +267,7 @@ class CrayfishPlugin:
         if self.dock is not None:
             self.dock.close()
             self.iface.removeDockWidget(self.dock)
-            
+
         self.menu.removeAction(self.aboutAction)
         self.menu.removeAction(self.uploadAction)
             
@@ -267,12 +275,15 @@ class CrayfishPlugin:
             self.iface.pluginMenu().removeAction(self.menu.menuAction())
             return
         
+        self.iface.legendInterface().removeLegendLayerAction(self.actionExportGrid)
+
         # Remove the plugin menu item and icon
         layerTB = self.iface.layerToolBar()
         layerTB.removeAction(self.action)
         # Remove menu item
         self.menu.removeAction(self.action)
-        
+        self.menu.removeAction(self.actionExportGrid)
+
         self.iface.pluginMenu().removeAction(self.menu.menuAction())
         
         # Unregister plugin layer type
@@ -293,7 +304,13 @@ class CrayfishPlugin:
         except AttributeError:  # QGIS 2
             return settings.value("crayfishViewer/lastFolder")
 
-    def run(self):
+    def setLastFolder(self, path):
+        if path <> os.sep and path.lower() <> 'c:\\' and path <> '':
+            settings = QSettings()
+            settings.setValue("crayfishViewer/lastFolder", path)
+
+
+    def addCrayfishLayer(self):
         """
             The user wants to view an Crayfish layer
             This layer could be either a .2dm file or a .dat file
@@ -313,9 +330,7 @@ class CrayfishPlugin:
             
         # Store the path we just looked in
         head, tail = os.path.split(inFileName)
-        if head <> os.sep and head.lower() <> 'c:\\' and head <> '':
-            settings = QSettings()
-            settings.setValue("crayfishViewer/lastFolder", head)
+        self.setLastFolder(head)
         
         # Determine what type of file it is
         prefix, fileType = os.path.splitext(tail)
@@ -495,7 +510,7 @@ class CrayfishPlugin:
             
         # Add to layer registry
         QgsMapLayerRegistry.instance().addMapLayer(layer)
-        
+
         if layer.provider.warningsEncountered():
             w = layer.provider.getLastWarning() 
             if w == 1:
@@ -512,6 +527,9 @@ class CrayfishPlugin:
         if layer.LAYER_TYPE != 'crayfish_viewer':
             return
 
+        # Add custom legend actions
+        self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportGrid, layer)
+
         # make sure the dock is visible and up-to-date
         self.dock.show()
 
@@ -520,3 +538,36 @@ class CrayfishPlugin:
         if visible and len(self.getCrayfishLayers()) == 0:
             # force hidden on startup
             QTimer.singleShot(0, self.dock.hide)
+
+
+    def exportGrid(self):
+        """ export current layer's data to a raster grid """
+        layer = self.dock.currentCrayfishLayer()
+        if not layer:
+            QMessageBox.warning(None, "Crayfish", "Please select a Crayfish layer for export")
+            return
+
+        dsIndex = layer.provider.currentDataSetIndex()
+        tsIndex = layer.provider.currentDataSet().currentOutputTime()
+        crsWkt = layer.crs().toWkt()  # TODO: custom destination CRS(?)
+
+        dlgConfig = crayfish_export_config_dialog.CrayfishExportConfigDialog()
+        if not dlgConfig.exec_():
+            return
+        dlgConfig.saveSettings()
+
+        filenameTIF = os.path.join(self.lastFolder(), layer.provider.currentDataSet().name() + ".tif")
+        filenameTIF = QFileDialog.getSaveFileName(None, "Export as Raster Grid", filenameTIF, "TIFF raster (*.tif)")
+        if not filenameTIF:
+            return
+
+        self.setLastFolder(os.path.dirname(filenameTIF))
+
+        res = layer.provider.exportRawDataToTIF(dsIndex, tsIndex, dlgConfig.resolution(), filenameTIF, crsWkt)
+        if not res:
+            QMessageBox.critical(None, "Crayfish", "Failed to export to raster grid")
+            return
+
+        if dlgConfig.addToCanvas():
+            name = os.path.splitext(os.path.basename(filenameTIF))[0]
+            self.iface.addRasterLayer(filenameTIF, name, "gdal")
