@@ -36,6 +36,8 @@ import new_overlay_dialog
 import new_scenario_dialog
 import new_event_dialog
 
+import os
+import tempfile
 import traceback
 import zipfile
 import base64
@@ -81,7 +83,7 @@ class ResultPrepper(QThread):
 
 class UploadDialog(QDialog, Ui_Dialog):
     
-    def __init__(self, iface):
+    def __init__(self, iface, currentLayer=None):
         
         QDialog.__init__(self)
         Ui_Dialog.__init__(self)
@@ -89,9 +91,8 @@ class UploadDialog(QDialog, Ui_Dialog):
         self.setupUi(self)
         self.connected = False
         self.frozen = False
-        self.setStoredStates()
-        self.progressBar.setVisible(False)
         self.iface = iface
+        self.layer = currentLayer
         
         self.statusLabel.setText('')
         self.ilCon = IlluvisInterface()
@@ -116,7 +117,22 @@ class UploadDialog(QDialog, Ui_Dialog):
         self.supportedResultTypes = ['Depth', 'Velocity']
         for sR in self.supportedResultTypes:
             self.resultTypeComboBox.addItem(sR)
-        
+
+        if self.layer:
+            ds = self.layer.provider.currentDataSet()
+            self.fromCurrentRadioButton.setText("From current layer: " + self.layer.name() + " / " + ds.name())
+        else:
+            self.fromFileRadioButton.setChecked(True)
+            self.fromCurrentRadioButton.setText("From current layer: (none)")
+            self.fromCurrentRadioButton.setEnabled(False)
+
+        self.fromCurrentRadioButton.clicked.connect(self.updateResultSourceGUI)
+        self.fromFileRadioButton.clicked.connect(self.updateResultSourceGUI)
+        self.updateResultSourceGUI()
+
+        self.setStoredStates()
+        self.progressBar.setVisible(False)
+
         self.connectedAsLabel.setText('Connected as: [Not connected]')
         self.freezeUi('', omitConnectButton=True, omitButtonBox=True)
         
@@ -327,10 +343,10 @@ class UploadDialog(QDialog, Ui_Dialog):
             self.eventComboBox.setCurrentIndex(newestEventComboId)
             self.deleteEventPushButton.setEnabled(True)
             self.deleteEventPushButtonState = True
-            self.resultFileLineEdit.setEnabled(True)
-            self.resultFileLineEditState = True
-            self.browsePushButton.setEnabled(True)
-            self.browsePushButtonState = True
+            self.updateResultSourceGUI()
+            self.resolutionSpinBoxState = self.resolutionSpinBox.isEnabled()
+            self.resultFileLineEditState = self.resultFileLineEdit.isEnabled()
+            self.browsePushButtonState = self.browsePushButton.isEnabled()
             self.resultTypeComboBox.setEnabled(True)
             self.resultTypeComboBoxState = True
             self.uploadPushButton.setEnabled(True)
@@ -338,6 +354,8 @@ class UploadDialog(QDialog, Ui_Dialog):
         else:
             self.deleteEventPushButton.setEnabled(False)
             self.deleteEventPushButtonState = False
+            self.resolutionSpinBox.setEnabled(False)
+            self.resolutionSpinBoxState = False
             self.resultFileLineEdit.setEnabled(False)
             self.resultFileLineEditState = False
             self.browsePushButton.setEnabled(False)
@@ -385,6 +403,9 @@ class UploadDialog(QDialog, Ui_Dialog):
         self.overlayComboBoxState = self.overlayComboBox.isEnabled()
         self.newOverlayPushButtonState = self.newOverlayPushButton.isEnabled()
         self.deleteOverlayPushButtonState = self.deleteOverlayPushButton.isEnabled()
+        self.fromCurrentRadioButtonState = self.fromCurrentRadioButton.isEnabled()
+        self.fromFileRadioButtonState = self.fromFileRadioButton.isEnabled()
+        self.resolutionSpinBoxState = self.resolutionSpinBox.isEnabled()
         self.resultFileLineEditState = self.resultFileLineEdit.isEnabled()
         self.browsePushButtonState = self.browsePushButton.isEnabled()
         self.resultTypeComboBoxState = self.resultTypeComboBox.isEnabled()
@@ -412,6 +433,9 @@ class UploadDialog(QDialog, Ui_Dialog):
         self.overlayComboBox.setEnabled( False )
         self.newOverlayPushButton.setEnabled( False )
         self.deleteOverlayPushButton.setEnabled( False )
+        self.fromCurrentRadioButton.setEnabled( False )
+        self.fromFileRadioButton.setEnabled( False )
+        self.resolutionSpinBox.setEnabled( False )
         self.resultFileLineEdit.setEnabled( False )
         self.browsePushButton.setEnabled( False )
         self.resultTypeComboBox.setEnabled( False )
@@ -440,6 +464,9 @@ class UploadDialog(QDialog, Ui_Dialog):
         self.overlayComboBox.setEnabled( self.overlayComboBoxState )
         self.newOverlayPushButton.setEnabled( self.newOverlayPushButtonState )
         self.deleteOverlayPushButton.setEnabled( self.deleteOverlayPushButtonState )
+        self.fromCurrentRadioButton.setEnabled( self.fromCurrentRadioButtonState )
+        self.fromFileRadioButton.setEnabled( self.fromFileRadioButtonState )
+        self.resolutionSpinBox.setEnabled( self.resolutionSpinBoxState )
         self.resultFileLineEdit.setEnabled( self.resultFileLineEditState )
         self.browsePushButton.setEnabled( self.browsePushButtonState )
         self.resultTypeComboBox.setEnabled( self.resultTypeComboBoxState )
@@ -502,11 +529,23 @@ class UploadDialog(QDialog, Ui_Dialog):
         
         eventId = self.eventComboBox.currentIndex()
         fileType = self.resultTypeComboBox.currentText().lower()
-        resultFilePath = self.resultFileLineEdit.text()
-        
-        if len(resultFilePath) < 1:
-            QMessageBox.critical(self, 'Upload Result', 'Please specify a result file to upload')
-            return
+
+        fromCurrent = self.fromCurrentRadioButton.isChecked()
+
+        if fromCurrent:
+            dsIndex = self.layer.provider.currentDataSetIndex()
+            tsIndex = self.layer.provider.currentDataSet().currentOutputTime()
+            crsWkt = self.layer.crs().toWkt()
+            resultFilePath = os.path.join(tempfile.gettempdir(), 'crayfish-illuvis-export.tif')
+            res = self.layer.provider.exportRawDataToTIF(dsIndex, tsIndex, self.resolutionSpinBox.value(), resultFilePath, crsWkt)
+            if not res:
+                QMessageBox.critical(None, "Crayfish", "Failed to export to raster grid")
+                return
+        else:
+            resultFilePath = self.resultFileLineEdit.text()
+            if len(resultFilePath) < 1:
+                QMessageBox.critical(self, 'Upload Result', 'Please specify a result file to upload')
+                return
         
         if not os.path.isfile(resultFilePath):
             QMessageBox.critical(self, 'Upload Result', '%s does not appear to be a valid file' % resultFilePath)
@@ -519,7 +558,7 @@ class UploadDialog(QDialog, Ui_Dialog):
         
         self.resultPrepper.configure(self.tmpArchiveFilePath, resultFilePath, fileType, resultPrjFilePath, eventId)
         self.resultPrepper.start()
-        
+
         self.freezeUi('Preparing data for upload')
         self.progressBar.setMinimum(0)
         self.progressBar.setMaximum(0)
@@ -693,3 +732,11 @@ class UploadDialog(QDialog, Ui_Dialog):
         
     def helpPressed(self):
         QDesktopServices.openUrl(QUrl('https://www.illuvis.com/docs/uploading'))
+
+
+    def updateResultSourceGUI(self):
+        hasEvents = self.eventComboBox.count() > 0
+        fromCurrent = self.fromCurrentRadioButton.isChecked()
+        self.resolutionSpinBox.setEnabled(hasEvents and fromCurrent)
+        self.resultFileLineEdit.setEnabled(hasEvents and not fromCurrent)
+        self.browsePushButton.setEnabled(hasEvents and not fromCurrent)

@@ -81,7 +81,7 @@ class CrayfishPlugin:
         QObject.connect(self.aboutAction, SIGNAL("triggered()"), self.about)
         
         # Create action for upload
-        self.uploadAction = QAction(QIcon(":/plugins/crayfish/upload.png"), "Upload to illuvis", self.iface.mainWindow())
+        self.uploadAction = QAction(QIcon(":/plugins/illuvis/illuvis_u_32w.png"), "Upload to illuvis ...", self.iface.mainWindow())
         QObject.connect(self.uploadAction, SIGNAL("triggered()"), self.upload)
 
         # Add menu items
@@ -164,6 +164,7 @@ class CrayfishPlugin:
 
         # Register actions for context menu
         self.iface.legendInterface().addLegendLayerAction(self.actionExportGrid, '', '', QgsMapLayer.PluginLayer, False)
+        self.iface.legendInterface().addLegendLayerAction(self.uploadAction, '', '', QgsMapLayer.PluginLayer, False)
 
         # Make connections
         QObject.connect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)
@@ -276,6 +277,7 @@ class CrayfishPlugin:
             return
         
         self.iface.legendInterface().removeLegendLayerAction(self.actionExportGrid)
+        self.iface.legendInterface().removeLegendLayerAction(self.uploadAction)
 
         # Remove the plugin menu item and icon
         layerTB = self.iface.layerToolBar()
@@ -465,9 +467,8 @@ class CrayfishPlugin:
     
     
     def upload(self):
-        d = upload_dialog.UploadDialog(self.iface)
-        d.show()
-        res = d.exec_()
+        d = upload_dialog.UploadDialog(self.iface, self.dock.currentCrayfishLayer())
+        d.exec_()
 
     
     def getCrayfishLayers(self):
@@ -529,6 +530,7 @@ class CrayfishPlugin:
 
         # Add custom legend actions
         self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportGrid, layer)
+        self.iface.legendInterface().addLegendLayerActionForLayer(self.uploadAction, layer)
 
         # make sure the dock is visible and up-to-date
         self.dock.show()
