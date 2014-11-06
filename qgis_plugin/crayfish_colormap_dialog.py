@@ -161,6 +161,8 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         self.connect(self.viewColorMap, SIGNAL("doubleClicked(QModelIndex)"), self.viewDoubleClicked)
         self.connect(self.radIntLinear, SIGNAL("clicked()"), self.setMethod)
         self.connect(self.radIntDiscrete, SIGNAL("clicked()"), self.setMethod)
+        self.connect(self.chkFillValuesBelow, SIGNAL("clicked()"), self.setClipLow)
+        self.connect(self.chkFillValuesAbove, SIGNAL("clicked()"), self.setClipHigh)
 
 
     def updateGUI(self):
@@ -169,6 +171,9 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
             self.radIntDiscrete.setChecked(True)
         else:
             self.radIntLinear.setChecked(True)
+
+        self.chkFillValuesBelow.setChecked(not self.colormap.clipLow)
+        self.chkFillValuesAbove.setChecked(not self.colormap.clipHigh)
 
         self.updatePreview()
 
@@ -223,6 +228,14 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
 
     def setMethod(self):
         self.colormap.method = ColorMap.Linear if self.radIntLinear.isChecked() else ColorMap.Discrete
+        self.updatePreview()
+
+    def setClipLow(self):
+        self.colormap.clipLow  = not self.chkFillValuesBelow.isChecked()
+        self.updatePreview()
+
+    def setClipHigh(self):
+        self.colormap.clipHigh = not self.chkFillValuesAbove.isChecked()
         self.updatePreview()
 
 

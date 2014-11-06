@@ -2,8 +2,8 @@
 
 # Form implementation generated from reading ui file 'crayfish_colormap_dialog.ui'
 #
-# Created: Fri Oct 25 17:16:41 2013
-#      by: PyQt4 UI code generator 4.10.3
+# Created: Thu Nov  6 17:07:56 2014
+#      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -26,7 +26,7 @@ except AttributeError:
 class Ui_CrayfishColorMapDialog(object):
     def setupUi(self, CrayfishColorMapDialog):
         CrayfishColorMapDialog.setObjectName(_fromUtf8("CrayfishColorMapDialog"))
-        CrayfishColorMapDialog.resize(554, 416)
+        CrayfishColorMapDialog.resize(570, 420)
         self.gridLayout = QtGui.QGridLayout(CrayfishColorMapDialog)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
         self.verticalLayout_2 = QtGui.QVBoxLayout()
@@ -65,6 +65,12 @@ class Ui_CrayfishColorMapDialog(object):
         self.viewColorMap.setRootIsDecorated(False)
         self.viewColorMap.setObjectName(_fromUtf8("viewColorMap"))
         self.verticalLayout_2.addWidget(self.viewColorMap)
+        self.chkFillValuesBelow = QtGui.QCheckBox(CrayfishColorMapDialog)
+        self.chkFillValuesBelow.setObjectName(_fromUtf8("chkFillValuesBelow"))
+        self.verticalLayout_2.addWidget(self.chkFillValuesBelow)
+        self.chkFillValuesAbove = QtGui.QCheckBox(CrayfishColorMapDialog)
+        self.chkFillValuesAbove.setObjectName(_fromUtf8("chkFillValuesAbove"))
+        self.verticalLayout_2.addWidget(self.chkFillValuesAbove)
         self.gridLayout.addLayout(self.verticalLayout_2, 0, 0, 2, 1)
         self.groupBox = QtGui.QGroupBox(CrayfishColorMapDialog)
         self.groupBox.setObjectName(_fromUtf8("groupBox"))
@@ -124,6 +130,8 @@ class Ui_CrayfishColorMapDialog(object):
         self.lblPreview.setAlignment(QtCore.Qt.AlignCenter)
         self.lblPreview.setObjectName(_fromUtf8("lblPreview"))
         self.verticalLayout.addWidget(self.lblPreview)
+        spacerItem1 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+        self.verticalLayout.addItem(spacerItem1)
         self.gridLayout.addWidget(self.groupBox_2, 1, 1, 1, 1)
         self.buttonBox = QtGui.QDialogButtonBox(CrayfishColorMapDialog)
         self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
@@ -140,7 +148,9 @@ class Ui_CrayfishColorMapDialog(object):
         CrayfishColorMapDialog.setTabOrder(self.btnRemove, self.btnLoad)
         CrayfishColorMapDialog.setTabOrder(self.btnLoad, self.btnSave)
         CrayfishColorMapDialog.setTabOrder(self.btnSave, self.viewColorMap)
-        CrayfishColorMapDialog.setTabOrder(self.viewColorMap, self.cboColorRamp)
+        CrayfishColorMapDialog.setTabOrder(self.viewColorMap, self.chkFillValuesBelow)
+        CrayfishColorMapDialog.setTabOrder(self.chkFillValuesBelow, self.chkFillValuesAbove)
+        CrayfishColorMapDialog.setTabOrder(self.chkFillValuesAbove, self.cboColorRamp)
         CrayfishColorMapDialog.setTabOrder(self.cboColorRamp, self.chkInvert)
         CrayfishColorMapDialog.setTabOrder(self.chkInvert, self.spinClasses)
         CrayfishColorMapDialog.setTabOrder(self.spinClasses, self.editMin)
@@ -157,6 +167,8 @@ class Ui_CrayfishColorMapDialog(object):
         self.btnRemove.setText(_translate("CrayfishColorMapDialog", "...", None))
         self.btnLoad.setText(_translate("CrayfishColorMapDialog", "...", None))
         self.btnSave.setText(_translate("CrayfishColorMapDialog", "...", None))
+        self.chkFillValuesBelow.setText(_translate("CrayfishColorMapDialog", "Fill values below", None))
+        self.chkFillValuesAbove.setText(_translate("CrayfishColorMapDialog", "Fill values above", None))
         self.groupBox.setTitle(_translate("CrayfishColorMapDialog", "Generate new color map", None))
         self.chkInvert.setText(_translate("CrayfishColorMapDialog", "Invert", None))
         self.label_2.setText(_translate("CrayfishColorMapDialog", "Min", None))

@@ -64,7 +64,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         if meshFileName is not None:
             self.loadMesh(meshFileName)
 
-    
+
     def loadMesh(self, meshFileName):
         meshFileName = unicode(meshFileName)
         self.provider = CrayfishViewer(meshFileName)
@@ -302,6 +302,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             return
         cm = ColorMap()
         cm.method = ColorMap.Discrete if cmElem.attribute("method") == "discrete" else ColorMap.Linear
+        cm.clipLow  = cmElem.attribute("clip-low")  == "1"
+        cm.clipHigh = cmElem.attribute("clip-high") == "1"
         itemElems = cmElem.elementsByTagName("item")
         for i in range(itemElems.length()):
             itemElem = itemElems.item(i).toElement()
@@ -315,6 +317,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         elem = doc.createElement("colormap")
         elem.setAttribute("method", "discrete" if cm.method == ColorMap.Discrete else "linear")
+        elem.setAttribute("clip-low",  "1" if cm.clipLow  else "0")
+        elem.setAttribute("clip-high", "1" if cm.clipHigh else "0")
         for item in cm.items:
             itemElem = doc.createElement("item")
             itemElem.setAttribute("value", str(item.value))

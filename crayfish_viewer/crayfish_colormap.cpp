@@ -59,6 +59,8 @@ QRgb ColorMap::valueDiscrete(double v) const
     }
     else if (v <= currentItem.value || valueVeryClose)
     {
+      if (clipLow && currentIdx == 0 && v < currentItem.value)
+        return qRgba(0,0,0,0); // clipped - transparent
       return qRgba( qRed(currentItem.color), qGreen(currentItem.color), qBlue(currentItem.color), alpha);
     }
     else
@@ -68,14 +70,17 @@ QRgb ColorMap::valueDiscrete(double v) const
     }
   }
 
-  return qRgba(0,0,0,0);
+  if (clipHigh)
+    return qRgba(0,0,0,0); // clipped - transparent
+
+  const Item& lastItem = items[items.count()-1];
+  return qRgba( qRed(lastItem.color), qGreen(lastItem.color), qBlue(lastItem.color), alpha);
 }
 
 
 QRgb ColorMap::valueLinear(double v) const
 {
   // interpolate
-  bool clip = false;
   int currentIdx = items.count() / 2; // TODO: keep last used index
 
   while (currentIdx >= 0 && currentIdx < items.count())
@@ -97,8 +102,8 @@ QRgb ColorMap::valueLinear(double v) const
       int vB = (int)((double) qBlue(prevItem.color)  + ((double)(qBlue(currentItem.color)  - qBlue(prevItem.color) ) * scale) + 0.5);
       return qRgba(vR, vG, vB, alpha);
     }
-    else if ((currentIdx == 0               && ( ( !clip && v <= currentItem.value ) || valueVeryClose ) )
-          || (currentIdx == items.count()-1 && ( ( !clip && v >= currentItem.value ) || valueVeryClose ) ) )
+    else if ((currentIdx == 0               && ( ( !clipLow  && v <= currentItem.value ) || valueVeryClose ) )
+          || (currentIdx == items.count()-1 && ( ( !clipHigh && v >= currentItem.value ) || valueVeryClose ) ) )
     {
       // outside of the range
       return qRgba( qRed(currentItem.color), qGreen(currentItem.color), qBlue(currentItem.color), alpha);

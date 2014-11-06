@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>554</width>
-    <height>416</height>
+    <width>570</width>
+    <height>420</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -93,6 +93,20 @@
       <widget class="QTreeView" name="viewColorMap">
        <property name="rootIsDecorated">
         <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="chkFillValuesBelow">
+       <property name="text">
+        <string>Fill values below</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="chkFillValuesAbove">
+       <property name="text">
+        <string>Fill values above</string>
        </property>
       </widget>
      </item>
@@ -206,6 +220,19 @@
         </property>
        </widget>
       </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
      </layout>
     </widget>
    </item>
@@ -233,6 +260,8 @@
   <tabstop>btnLoad</tabstop>
   <tabstop>btnSave</tabstop>
   <tabstop>viewColorMap</tabstop>
+  <tabstop>chkFillValuesBelow</tabstop>
+  <tabstop>chkFillValuesAbove</tabstop>
   <tabstop>cboColorRamp</tabstop>
   <tabstop>chkInvert</tabstop>
   <tabstop>spinClasses</tabstop>

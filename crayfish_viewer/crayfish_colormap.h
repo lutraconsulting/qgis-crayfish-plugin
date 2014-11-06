@@ -52,8 +52,10 @@ struct CRAYFISHVIEWERSHARED_EXPORT ColorMap
 
   QVector<Item> items;
   int alpha;
+  bool clipLow;  //!< values lower than first item's value will not be painted
+  bool clipHigh; //!< values higher than last item's value will not be painted
 
-  ColorMap() : method(Linear), alpha(255) {}
+  ColorMap() : method(Linear), alpha(255), clipLow(false), clipHigh(false) {}
 
   void clearItems() { items.clear(); }
   void addItem(const Item& item) { items.append(item); }

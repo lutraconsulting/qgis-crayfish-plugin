@@ -194,6 +194,8 @@ struct ColorMap
 
   QVector<ColorMap::Item> items;
   int alpha;
+  bool clipLow;  //!< values lower than first item's value will not be painted
+  bool clipHigh; //!< values higher than last item's value will not be painted
 
   void clearItems();
   void addItem(const ColorMap::Item& item);
