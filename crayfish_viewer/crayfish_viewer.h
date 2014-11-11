@@ -110,10 +110,25 @@ public:
     ~CrayfishViewer();
     QImage* draw();
 
-    bool loadedOk(){ return mLoadedSuccessfully; }
-    bool warningsEncountered(){ return mWarningsEncountered; }
-    int getLastWarning(){ return mLastWarning; }
-    int getLastError() { return mLastError; }
+    enum Error
+    {
+        Err_None,
+        Err_NotEnoughMemory,
+        Err_FileNotFound,
+        Err_UnknownFormat
+    };
+
+    enum Warning
+    {
+        Warn_None,
+        Warn_UnsupportedElement,
+        Warn_InvalidElements
+    };
+
+    bool loadedOk(){ return mLastError == Err_None; }
+    bool warningsEncountered(){ return mLastWarning != Warn_None; }
+    Warning getLastWarning(){ return mLastWarning; }
+    Error getLastError() { return mLastError; }
     bool loadDataSet(QString fileName);
     bool isDataSetLoaded(QString fileName);
 
@@ -161,10 +176,8 @@ public:
     QString destCrsProj4() const { return mDestProj4; }
 
 private:
-    bool mLoadedSuccessfully;
-    bool mWarningsEncountered;
-    ViewerError::Enum mLastError;
-    ViewerWarning::Enum mLastWarning;
+    Error mLastError;
+    Warning mLastWarning;
     QImage* mImage;
 
     // global rendering options

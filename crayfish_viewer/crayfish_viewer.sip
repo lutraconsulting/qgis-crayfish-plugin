@@ -15,10 +15,26 @@ public:
     CrayfishViewer(QString);
     ~CrayfishViewer();
     QImage* draw();
+
+    enum Error
+    {
+        Err_None,
+        Err_NotEnoughMemory,
+        Err_FileNotFound,
+        Err_UnknownFormat
+    };
+
+    enum Warning
+    {
+        Warn_None,
+        Warn_UnsupportedElement,
+        Warn_InvalidElements
+    };
+
     bool loadedOk();
     bool warningsEncountered();
-    int getLastWarning();
-    int getLastError();
+    CrayfishViewer::Warning getLastWarning();
+    CrayfishViewer::Error getLastError();
     bool loadDataSet(QString fileName);
     bool isDataSetLoaded(QString fileName);
 

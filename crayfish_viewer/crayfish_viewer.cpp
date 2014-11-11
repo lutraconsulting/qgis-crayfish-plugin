@@ -78,10 +78,8 @@ CrayfishViewer::~CrayfishViewer(){
 }
 
 CrayfishViewer::CrayfishViewer( QString twoDMFileName )
-  : mLoadedSuccessfully(true)
-  , mWarningsEncountered(false)
-  , mLastError(ViewerError::None)
-  , mLastWarning(ViewerWarning::None)
+  : mLastError(Err_None)
+  , mLastWarning(Warn_None)
   , mImage(new QImage(0, 0, QImage::Format_ARGB32))
   , mCanvasWidth(0)
   , mCanvasHeight(0)
@@ -107,14 +105,19 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
 
     QFile file(twoDMFileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
-        mLoadedSuccessfully = false;
-        mLastError = ViewerError::FileNotFound;
+        mLastError = Err_FileNotFound;
         //std::cerr << "CF: ERROR open" << std::endl;
         return;
     }
 
-    // Find out how many nodes and elements are contained in the .2dm mesh file
     QTextStream in(&file);
+    if (!in.readLine().startsWith("MESH2D"))
+    {
+        mLastError = Err_UnknownFormat;
+        return;
+    }
+
+    // Find out how many nodes and elements are contained in the .2dm mesh file
     while (!in.atEnd()) {
         QString line = in.readLine();
         if( line.startsWith("E4Q") ){
@@ -133,8 +136,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
                  line.startsWith("E6T") ||
                  line.startsWith("E8Q") ||
                  line.startsWith("E9Q")){
-            mLastWarning = ViewerWarning::UnsupportedElement;
-            mWarningsEncountered = true;
+            mLastWarning = Warn_UnsupportedElement;
             mElemCount += 1; // We still count them as elements
         }
     }
@@ -150,8 +152,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
         o = new Output;
         o->init(mNodeCount, mElemCount, false);
     } catch (const std::bad_alloc &) {
-        mLoadedSuccessfully = false;
-        mLastError = ViewerError::NotEnoughMemory;
+        mLastError = Err_NotEnoughMemory;
         //std::cerr << "CF: ERROR alloc" << std::endl;
         return;
     }
@@ -289,8 +290,7 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
           {
             elem.isDummy = true; // mark element as unusable
 
-            mLastWarning = ViewerWarning::InvalidElements;
-            mWarningsEncountered = true;
+            mLastWarning = Warn_InvalidElements;
           }
         }
 

@@ -46,21 +46,6 @@ namespace ElementType{
     };
 }
 
-namespace ViewerError{
-    enum Enum{
-        None,
-        NotEnoughMemory,
-        FileNotFound
-    };
-}
-
-namespace ViewerWarning{
-    enum Enum{
-        None,
-        UnsupportedElement,
-        InvalidElements
-    };
-}
 
 namespace DataSetType{
     enum Enum{
