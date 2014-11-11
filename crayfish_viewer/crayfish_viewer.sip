@@ -21,7 +21,8 @@ public:
         Err_None,
         Err_NotEnoughMemory,
         Err_FileNotFound,
-        Err_UnknownFormat
+        Err_UnknownFormat,
+        Err_IncompatibleMesh
     };
 
     enum Warning

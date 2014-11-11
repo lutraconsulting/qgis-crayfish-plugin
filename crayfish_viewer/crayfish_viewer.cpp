@@ -322,8 +322,18 @@ void CrayfishViewer::computeMeshExtent()
 
 bool CrayfishViewer::loadDataSet(QString fileName)
 {
+  mLastError = Err_None;
+  mLastWarning = Warn_None;
+
   if (loadBinaryDataSet(fileName))
     return true;
+
+  // if the file format was not recognized, try to load it as ASCII dataset
+  if (mLastError != Err_UnknownFormat)
+    return false;
+
+  mLastError = Err_None;
+  mLastWarning = Warn_None;
 
   return loadAsciiDataSet(fileName);
 }
@@ -332,8 +342,10 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
 {
 
     QFile file(datFileName);
-    if (!file.open(QIODevice::ReadOnly)){
+    if (!file.open(QIODevice::ReadOnly))
+    {
         // Couldn't open the file
+        mLastError = Err_FileNotFound;
         return false;
     }
 
@@ -353,11 +365,16 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
     QDataStream in(&file);
 
     card = 0;
-    if( in.readRawData( (char*)&version, 4) != 4 ){
+    if( in.readRawData( (char*)&version, 4) != 4 )
+    {
+        mLastError = Err_UnknownFormat;
         return false;
     }
     if( version != 3000 ) // Version should be 3000
+    {
+        mLastError = Err_UnknownFormat;
         return false;
+    }
 
     DataSet* ds = 0;
     ds = new DataSet(datFileName);
@@ -375,10 +392,12 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
             // Object type
             if( in.readRawData( (char*)&objecttype, 4) != 4 ){
                 delete ds;
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             if(objecttype != 3){
                 delete ds;
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             break;
@@ -388,10 +407,12 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
             // Float size
             if( in.readRawData( (char*)&sflt, 4) != 4 ){
                 delete ds;
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             if(sflt != 4){
                 delete ds;
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             break;
@@ -401,10 +422,12 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
             // Flag size
             if( in.readRawData( (char*)&sflg, 4) != 4 ){
                 delete ds;
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             if(sflg != 1){
                 delete ds;
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             break;
@@ -424,10 +447,12 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
             // Vector type
             if( in.readRawData( (char*)&vectype, 4) != 4 ){
                 delete ds;
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             if(vectype != 0){
                 delete ds;
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             break;
@@ -437,6 +462,7 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
             // Object id
             if( in.readRawData( (char*)&objid, 4) != 4 ){
                 delete ds;
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             break;
@@ -446,10 +472,12 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
             // Num data
             if( in.readRawData( (char*)&numdata, 4) != 4 ){
                 delete ds;
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             if(numdata != mNodeCount){
                 delete ds;
+                mLastError = Err_IncompatibleMesh;
                 return false;
             }
             break;
@@ -459,10 +487,12 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
             // Num data
             if( in.readRawData( (char*)&numcells, 4) != 4 ){
                 delete ds;
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             if(numcells != mElemCount){
                 delete ds;
+                mLastError = Err_IncompatibleMesh;
                 return false;
             }
             break;
@@ -472,6 +502,7 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
             // Name
             if( in.readRawData( (char*)&name, 40) != 40 ){
                 delete ds;
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             if(name[39] != 0)
@@ -483,9 +514,11 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
 
             // Time step!
             if( in.readRawData( (char*)&istat, 1) != 1 ){
+                mLastError = Err_UnknownFormat;
                 return false;
             }
             if( in.readRawData( (char*)&time, 4) != 4 ){
+                mLastError = Err_UnknownFormat;
                 return false;
             }
 
@@ -496,6 +529,7 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
             } catch (const std::bad_alloc &) {
                 delete o;
                 delete ds;
+                mLastError = Err_NotEnoughMemory;
                 return false;
             }
 
@@ -508,6 +542,7 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
                     if( in.readRawData( (char*)&o->statusFlags[i], 1) != 1 ){
                         delete o;
                         delete ds;
+                        mLastError = Err_UnknownFormat;
                         return false;
                     }
                 }
@@ -519,11 +554,13 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
                     if( in.readRawData( (char*)&o->values_x[i], 4) != 4 ){
                         delete o;
                         delete ds;
+                        mLastError = Err_UnknownFormat;
                         return false;
                     }
                     if( in.readRawData( (char*)&o->values_y[i], 4) != 4 ){
                         delete o;
                         delete ds;
+                        mLastError = Err_UnknownFormat;
                         return false;
                     }
                     o->values[i] = sqrt( pow(o->values_x[i],2) + pow(o->values_y[i],2) ); // Determine the magnitude
@@ -531,6 +568,7 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
                     if( in.readRawData( (char*)&o->values[i], 4) != 4 ){
                         delete o;
                         delete ds;
+                        mLastError = Err_UnknownFormat;
                         return false;
                     }
                 }
@@ -554,6 +592,7 @@ bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
     }
 
     delete ds;
+    mLastError = Err_UnknownFormat;
     return false;
 }
 
@@ -562,6 +601,7 @@ bool CrayfishViewer::loadAsciiDataSet(QString fileName)
   QFile file(fileName);
   if (!file.open(QIODevice::ReadOnly)){
       // Couldn't open the file
+      mLastError = Err_FileNotFound;
       return false;
   }
 
@@ -590,7 +630,10 @@ bool CrayfishViewer::loadAsciiDataSet(QString fileName)
     ds->setName(QFileInfo(fileName).baseName());
   }
   else
+  {
+    mLastError = Err_UnknownFormat;
     return false; // unknown type
+  }
 
   QRegExp reSpaces("\\s+");
 
@@ -606,19 +649,26 @@ bool CrayfishViewer::loadAsciiDataSet(QString fileName)
     {
       uint fileNodeCount = items[1].toUInt();
       if (mNodeCount != fileNodeCount)
+      {
+        mLastError = Err_IncompatibleMesh;
         return false;
+      }
     }
     else if (!oldFormat && cardType == "NC" && items.count() >= 2)
     {
       uint fileElemCount = items[1].toUInt();
       if (mElemCount != fileElemCount)
+      {
+        mLastError = Err_IncompatibleMesh;
         return false;
+      }
     }
     else if (!oldFormat && (cardType == "BEGSCL" || cardType == "BEGVEC"))
     {
       if (ds)
       {
         qDebug("Crayfish: New dataset while previous one is still active!");
+        mLastError = Err_UnknownFormat;
         return false;
       }
       isVector = cardType == "BEGVEC";
@@ -632,6 +682,7 @@ bool CrayfishViewer::loadAsciiDataSet(QString fileName)
       if (!ds)
       {
         qDebug("Crayfish: ENDDS card for no active dataset!");
+        mLastError = Err_UnknownFormat;
         return false;
       }
       ds->updateZRange(mNodeCount);
@@ -643,6 +694,7 @@ bool CrayfishViewer::loadAsciiDataSet(QString fileName)
       if (!ds)
       {
         qDebug("Crayfish: NAME card for no active dataset!");
+        mLastError = Err_UnknownFormat;
         return false;
       }
 
@@ -723,6 +775,7 @@ bool CrayfishViewer::loadAsciiDataSet(QString fileName)
     else
     {
       delete ds;
+      mLastError = Err_UnknownFormat;
       return false;
     }
   }

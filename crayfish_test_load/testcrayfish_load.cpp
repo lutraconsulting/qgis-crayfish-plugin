@@ -25,6 +25,7 @@ private Q_SLOTS:
   void testLoadOldAsciiDataFile();
   void testLoadNewAsciiDataFile();
   void testLoadBinaryDataFile();
+  void testLoadIncompatibleBinaryDataFile();
 };
 
 void TestCrayfish_load::testLoadMissingMeshFile()
@@ -66,6 +67,7 @@ void TestCrayfish_load::testLoadMissingDataFile()
 
   bool res = s.loadDataSet(TEST_DIR "missing_data_file.dat");
   QVERIFY(!res);
+  QVERIFY(s.getLastError() == CrayfishViewer::Err_FileNotFound);
 }
 
 void TestCrayfish_load::testLoadInvalidDataFile()
@@ -75,6 +77,7 @@ void TestCrayfish_load::testLoadInvalidDataFile()
 
   bool res = s.loadDataSet(TEST_DIR "not_a_data_file.dat");
   QVERIFY(!res);
+  QVERIFY(s.getLastError() == CrayfishViewer::Err_UnknownFormat);
 }
 
 void TestCrayfish_load::testLoadOldAsciiDataFile()
@@ -84,6 +87,7 @@ void TestCrayfish_load::testLoadOldAsciiDataFile()
 
   bool res = s.loadDataSet(TEST_DIR "quad_and_triangle_ascii_old.dat");
   QVERIFY(res);
+  QVERIFY(s.getLastError() == CrayfishViewer::Err_None);
 
   QCOMPARE(s.dataSetCount(), 2);
   const DataSet* ds = s.dataSet(1);
@@ -107,6 +111,7 @@ void TestCrayfish_load::testLoadNewAsciiDataFile()
 
   bool res = s.loadDataSet(TEST_DIR "quad_and_triangle_ascii_new.dat");
   QVERIFY(res);
+  QVERIFY(s.getLastError() == CrayfishViewer::Err_None);
 
   QCOMPARE(s.dataSetCount(), 2);
   const DataSet* ds = s.dataSet(1);
@@ -131,6 +136,7 @@ void TestCrayfish_load::testLoadBinaryDataFile()
 
   bool res = s.loadDataSet(TEST_DIR "quad_and_triangle_binary.dat");
   QVERIFY(res);
+  QVERIFY(s.getLastError() == CrayfishViewer::Err_None);
 
   QCOMPARE(s.dataSetCount(), 2);
   const DataSet* ds = s.dataSet(1);
@@ -145,6 +151,20 @@ void TestCrayfish_load::testLoadBinaryDataFile()
   QCOMPARE(output->time, 0.f);
   QCOMPARE(output->values[0], 1.f);
   QCOMPARE(output->values[4], 5.f);
+}
+
+
+
+void TestCrayfish_load::testLoadIncompatibleBinaryDataFile()
+{
+  // the mesh size (elements, nodes) is different from the data file
+
+  CrayfishViewer s(TEST_DIR "quad_and_triangle.2dm");
+  QVERIFY(s.loadedOk());
+
+  bool res = s.loadDataSet(TEST_DIR "incompatible_data_binary.dat");
+  QVERIFY(!res);
+  QVERIFY(s.getLastError() == CrayfishViewer::Err_IncompatibleMesh);
 }
 
 
