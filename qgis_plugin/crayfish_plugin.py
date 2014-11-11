@@ -366,6 +366,13 @@ class CrayfishPlugin:
 
 
     def loadMeshForFile(self, inFileName):
+
+        # if there is a selected Crayfish layer, use the mesh
+        currCrayfishLayer = self.dock.currentCrayfishLayer()
+        if currCrayfishLayer:
+          return currCrayfishLayer
+
+        # if no crayfish layer is selected, try to guess the mesh file name
         first, sep, last = inFileName.rpartition('_')
         meshFileName = first + '.2dm'
         
