@@ -422,7 +422,18 @@ class CrayfishPlugin:
 
         # try to load it as binary file, if not successful, try as ASCII format
         if not parentLayer.provider.loadDataSet( inFileName ):
-            qgis_message_bar.pushMessage("Crayfish", "Failed to load the data file", level=QgsMessageBar.CRITICAL)
+            err = parentLayer.provider.getLastError()
+            from crayfishviewer import CrayfishViewer
+            err_msgs = {
+              CrayfishViewer.Err_NotEnoughMemory : 'Not enough memory',
+              CrayfishViewer.Err_FileNotFound : 'Unable to read the file - missing file or no read access',
+              CrayfishViewer.Err_UnknownFormat : 'File format not recognized',
+              CrayfishViewer.Err_IncompatibleMesh : 'Mesh is not compatible'
+            }
+            msg = "Failed to load the data file"
+            if err in err_msgs:
+              msg += " (%s)" % err_msgs[err]
+            qgis_message_bar.pushMessage("Crayfish", msg, level=QgsMessageBar.CRITICAL)
             return
 
         dsIndex = parentLayer.provider.dataSetCount()-1
@@ -500,12 +511,15 @@ class CrayfishPlugin:
         layer = CrayfishViewerPluginLayer(twoDMFileName)
         if not layer.isValid():
 
+            from crayfishviewer import CrayfishViewer
             # Failed to load 2DM
             e = layer.provider.getLastError()
-            if e == 1:  # not enough memory
+            if e == CrayfishViewer.Err_NotEnoughMemory:
               qgis_message_bar.pushMessage("Crayfish", "Not enough memory to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
-            elif e == 2: # cannot open
+            elif e == CrayfishViewer.Err_FileNotFound:
               qgis_message_bar.pushMessage("Crayfish", "Failed to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
+            elif e == CrayfishViewer.Err_UnknownFormat:
+              qgis_message_bar.pushMessage("Crayfish", "Mesh file format not recognized (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
 
             return None
             

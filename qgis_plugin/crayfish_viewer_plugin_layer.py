@@ -72,6 +72,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             self.setValid(True)
         else:
             self.setValid(False)
+            return
         self.twoDMFileName = ''
         self.meshLoaded = True
         
