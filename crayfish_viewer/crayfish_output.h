@@ -59,7 +59,7 @@ struct CRAYFISHVIEWERSHARED_EXPORT Output{
       }
     }
 
-    float time;
+    float time;          //!< time since beginning of simulation (in hours)
     char* statusFlags;   //!< array determining which elements are active and therefore if they should be rendered (size = element count)
     float* values;       //!< array of values per node (size = node count)
     float* values_x;     //!< in case of dataset with vector data - array of X coords - otherwise 0
