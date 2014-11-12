@@ -50,7 +50,7 @@ if len(sys.argv) > 1:
       print "  -pkg      Create a package for upload instead of installing"
       sys.exit(0)
 
-install_files = ['metadata.txt'] + glob.glob("*.py") + glob.glob("*.png") + glob.glob("illuvis/*.py")
+install_files = ['metadata.txt'] + glob.glob("*.py") + glob.glob("*.png") + glob.glob("illuvis/*.py") + glob.glob("doc/*")
 install_files.remove("install.py")  # exclude this file!
 
 if pkg:
@@ -64,7 +64,7 @@ else:
   plugin_dir = os.path.expanduser(os.path.join("~", qgis_folder, "python", "plugins", "crayfish"))
   if not os.path.exists(plugin_dir):
     os.makedirs(plugin_dir)
-  for subdir in ['illuvis']:
+  for subdir in ['illuvis', 'doc']:
     subdir_path = os.path.join(plugin_dir, subdir)
     if not os.path.exists(subdir_path): os.makedirs(subdir_path)
     

@@ -6,13 +6,19 @@ qgisMaximumVersion=2.99
 description=A collection of tools for TUFLOW and other hydraulic 
     modelling packages
 ; category=Raster ; Did not know what my available choices where
-version=version 1.2
+version=version 1.3
 author=Peter Wells for Lutra Consulting
 email=peter.wells@lutraconsulting.co.uk
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=1.2 - New features:
+changelog=1.3 - New features:
+ - Export to raster grid
+ - Upload to illuvis
+ - New contour options: Fill above/below
+ - Improved load error handling
+ - Improved support for ASCII datasets
+<p>1.2 - New features:
  - Added various contouring options
  - Support for QGIS legend (in QGIS >= 2.1)
  - Support for BASEMENT output
