@@ -102,6 +102,16 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         self.initCustomValues(self.provider.dataSet(0)) # bed
 
 
+    def showMeshLoadError(self, twoDMFileName):
+        e = self.provider.getLastError()
+        if e == CrayfishViewer.Err_NotEnoughMemory:
+          qgis_message_bar.pushMessage("Crayfish", "Not enough memory to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
+        elif e == CrayfishViewer.Err_FileNotFound:
+          qgis_message_bar.pushMessage("Crayfish", "Failed to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
+        elif e == CrayfishViewer.Err_UnknownFormat:
+          qgis_message_bar.pushMessage("Crayfish", "Mesh file format not recognized (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
+
+
     def initCustomValues(self, ds):
         """ set defaults for data source """
         ds.setCustomValue("c_basic", True)
@@ -122,6 +132,10 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         # load mesh
         twoDmFile = prj.readPath( element.attribute('meshfile') )
         self.loadMesh(twoDmFile)
+
+        if not self.isValid():
+            self.showMeshLoadError(twoDmFile)
+            return False
 
         # load bed settings
         bedElem = element.firstChildElement("bed")

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'illuvis/upload_dialog_widget.ui'
 #
-# Created: Fri Oct 31 15:21:11 2014
+# Created: Wed Nov 12 11:26:54 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -125,6 +125,7 @@ class Ui_Dialog(object):
         self.tab = QtGui.QWidget()
         self.tab.setObjectName(_fromUtf8("tab"))
         self.gridLayout_2 = QtGui.QGridLayout(self.tab)
+        self.gridLayout_2.setContentsMargins(0, -1, 0, -1)
         self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
         self.deleteScenarioPushButton = QtGui.QPushButton(self.tab)
         self.deleteScenarioPushButton.setEnabled(False)
@@ -233,10 +234,6 @@ class Ui_Dialog(object):
         self.browsePushButton.setSizePolicy(sizePolicy)
         self.browsePushButton.setObjectName(_fromUtf8("browsePushButton"))
         self.gridLayout_2.addWidget(self.browsePushButton, 10, 3, 1, 1)
-        self.fromCurrentRadioButton = QtGui.QRadioButton(self.tab)
-        self.fromCurrentRadioButton.setChecked(True)
-        self.fromCurrentRadioButton.setObjectName(_fromUtf8("fromCurrentRadioButton"))
-        self.gridLayout_2.addWidget(self.fromCurrentRadioButton, 7, 0, 1, 2)
         self.fromFileRadioButton = QtGui.QRadioButton(self.tab)
         self.fromFileRadioButton.setObjectName(_fromUtf8("fromFileRadioButton"))
         self.gridLayout_2.addWidget(self.fromFileRadioButton, 10, 0, 1, 1)
@@ -262,10 +259,15 @@ class Ui_Dialog(object):
         self.resolutionSpinBox.setProperty("value", 10.0)
         self.resolutionSpinBox.setObjectName(_fromUtf8("resolutionSpinBox"))
         self.gridLayout_2.addWidget(self.resolutionSpinBox, 8, 1, 1, 1)
+        self.fromCurrentRadioButton = QtGui.QRadioButton(self.tab)
+        self.fromCurrentRadioButton.setChecked(True)
+        self.fromCurrentRadioButton.setObjectName(_fromUtf8("fromCurrentRadioButton"))
+        self.gridLayout_2.addWidget(self.fromCurrentRadioButton, 7, 0, 1, 4)
         self.tabWidget.addTab(self.tab, _fromUtf8(""))
         self.tab_2 = QtGui.QWidget()
         self.tab_2.setObjectName(_fromUtf8("tab_2"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.tab_2)
+        self.verticalLayout_2.setContentsMargins(0, -1, 0, -1)
         self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
         self.horizontalLayout_2 = QtGui.QHBoxLayout()
         self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
@@ -381,10 +383,10 @@ class Ui_Dialog(object):
         self.newScenarioPushButton.setText(_translate("Dialog", "New", None))
         self.deleteEventPushButton.setText(_translate("Dialog", "Delete", None))
         self.browsePushButton.setText(_translate("Dialog", "Browse", None))
-        self.fromCurrentRadioButton.setText(_translate("Dialog", "From current layer", None))
         self.fromFileRadioButton.setText(_translate("Dialog", "From file", None))
         self.label_4.setText(_translate("Dialog", "Resolution", None))
         self.resolutionSpinBox.setSuffix(_translate("Dialog", " m", None))
+        self.fromCurrentRadioButton.setText(_translate("Dialog", "From current layer", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("Dialog", "Results", None))
         self.deleteOverlayPushButton.setText(_translate("Dialog", "Delete", None))
         self.newOverlayPushButton.setText(_translate("Dialog", "New", None))

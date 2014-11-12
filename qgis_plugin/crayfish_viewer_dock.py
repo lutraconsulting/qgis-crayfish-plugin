@@ -31,7 +31,7 @@ from qgis.core import *
 from crayfish_viewer_dock_widget import Ui_DockWidget
 import crayfish_viewer_vector_options_dialog
 from crayfish_viewer_render_settings import CrayfishViewerRenderSettings
-from crayfish_gui_utils import qv2pyObj, qv2float, qv2int, qv2bool, qv2string, initColorButton, initColorRampComboBox, name2ramp
+from crayfish_gui_utils import qv2pyObj, qv2float, qv2int, qv2bool, qv2string, initColorButton, initColorRampComboBox, name2ramp, timeToString
 
 class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
     
@@ -167,15 +167,6 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         ds = self.currentDataSet()
         ds.setCustomValue("c_alpha", 255-value)
         self.updateColorMapAndRedraw(ds)
-    
-        
-    def timeToString(self, hours):
-
-        seconds = round(hours * 3600.0, 2)
-        m, s = divmod(seconds, 60)
-        h, m = divmod(m, 60)
-        d, h = divmod(h, 24)
-        return "%3d %02d:%02d:%05.2f" % (d, h, m, s)
 
         
     def dataSetChanged(self, dataSetRow):
@@ -200,8 +191,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             self.listWidget_2.setEnabled(True)
             for i in range( dataSet.outputCount() ):
                 t = dataSet.output(i).time
-                timeString = self.timeToString(t)
-                self.listWidget_2.addItem(timeString)
+                self.listWidget_2.addItem(timeToString(t))
             # Restore the selection of the last time step that we viewed
             # for this dataset
             timeIdx = dataSet.currentOutputTime()

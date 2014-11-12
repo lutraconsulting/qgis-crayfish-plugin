@@ -1440,7 +1440,10 @@ QPointF CrayfishViewer::pixelToReal(int i, int j){
     return QPointF(x,y);
 }
 
-double CrayfishViewer::valueAtCoord(const Output* output, double xCoord, double yCoord){
+double CrayfishViewer::valueAtCoord(const Output* output, double xCoord, double yCoord)
+{
+    if (!output)
+      return -9999.0;
 
     /*
       We want to find the value at the given coordinate
@@ -1504,6 +1507,8 @@ RawData* CrayfishViewer::exportRawData(int dataSetIndex, int outputTime, double 
   const Output* output = ds->output(outputTime);
   if (!output)
     return 0;
+  if (mupp <= 0)
+    return 0;
 
   // keep one pixel around
   // e.g. if we have mesh with coords 0..10 with sampling of 1, then we actually need 11 pixels
@@ -1516,6 +1521,8 @@ RawData* CrayfishViewer::exportRawData(int dataSetIndex, int outputTime, double 
   // (uses envelope of the mesh)
   int imgWidth = ceil((xMax - xMin) / mupp);
   int imgHeight = ceil((yMax - yMin) / mupp);
+  if (!imgWidth || !imgHeight)
+    return 0;
   MapToPixel xform(xMin, yMin, mupp, imgHeight);
 
   // prepare geometry transform

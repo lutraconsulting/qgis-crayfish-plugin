@@ -517,17 +517,7 @@ class CrayfishPlugin:
         from crayfish_viewer_plugin_layer import CrayfishViewerPluginLayer
         layer = CrayfishViewerPluginLayer(twoDMFileName)
         if not layer.isValid():
-
-            from crayfishviewer import CrayfishViewer
-            # Failed to load 2DM
-            e = layer.provider.getLastError()
-            if e == CrayfishViewer.Err_NotEnoughMemory:
-              qgis_message_bar.pushMessage("Crayfish", "Not enough memory to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
-            elif e == CrayfishViewer.Err_FileNotFound:
-              qgis_message_bar.pushMessage("Crayfish", "Failed to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
-            elif e == CrayfishViewer.Err_UnknownFormat:
-              qgis_message_bar.pushMessage("Crayfish", "Mesh file format not recognized (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
-
+            layer.showMeshLoadError(twoDMFileName)
             return None
             
         # Add to layer registry

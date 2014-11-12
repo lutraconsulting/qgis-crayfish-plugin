@@ -158,3 +158,14 @@ def qv2bool(v):
 
 def qv2string(v):
     return v.toString() if isinstance(v, QVariant) else v
+
+
+
+
+def timeToString(hours):
+
+    seconds = round(hours * 3600.0, 2)
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    d, h = divmod(h, 24)
+    return "%3d %02d:%02d:%05.2f" % (d, h, m, s)
