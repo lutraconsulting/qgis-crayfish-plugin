@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 # Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
-# Copyright (C) 2012 Peter Wells for Lutra Consulting
+# Copyright (C) 2014 Lutra Consulting
 
-# peter dot wells at lutraconsulting dot co dot uk
+# info at lutraconsulting dot co dot uk
 # Lutra Consulting
 # 23 Chestnut Close
 # Burgess Hill
@@ -34,11 +34,11 @@ def version():
 def qgisMinimumVersion():
     return "1.7"
 def authorName():
-    return "Peter Wells for Lutra Consulting"
+    return "Lutra Consulting"
 def author():
-    return "Peter Wells for Lutra Consulting"
+    return "Lutra Consulting"
 def email():
-    return "peter.wells@lutraconsulting.co.uk"
+    return "info@lutraconsulting.co.uk"
 def homepage():
     return "http://www.lutraconsulting.co.uk/resources/crayfish"
 def classFactory(iface):
