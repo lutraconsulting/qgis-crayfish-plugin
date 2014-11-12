@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_gdal.h"
 
-#include <gdal/gdal.h>
+#include <gdal.h>
 
 #include "crayfish_viewer.h"
 

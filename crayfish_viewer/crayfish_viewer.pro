@@ -34,10 +34,11 @@ win32 {
   }
 
   INCLUDEPATH += $${OSGEO_PATH}/include
-  LIBS += -L$${OSGEO_PATH}/lib -lproj_i -lgdal
+  LIBS += -L$${OSGEO_PATH}/lib -lproj_i -lgdal_i
 }
 
 unix {
+  INCLUDEPATH += /usr/include/gdal
   LIBS += -lproj -lgdal
 }
 
