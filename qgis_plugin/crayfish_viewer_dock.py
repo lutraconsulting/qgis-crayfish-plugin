@@ -43,7 +43,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.setupUi(self)
         self.setObjectName("CrayfishViewerDock") # used by main window to save/restore state
         self.iface = iface
-        
+
+        self.addIlluvisPromo()
+
         # make sure we accept only doubles for min/max values
         self.contourMinLineEdit.setValidator(QDoubleValidator(self.contourMinLineEdit))
         self.contourMaxLineEdit.setValidator(QDoubleValidator(self.contourMaxLineEdit))
@@ -407,3 +409,34 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         l = self.iface.mapCanvas().currentLayer()
         l.provider.setMeshColor(clr)
         self.redrawCurrentLayer()
+
+
+    def addIlluvisPromo(self):
+
+        if QSettings().value("/crayfishViewer/hideIlluvisPromo"):
+          return
+
+        self.labelPromo = QLabel(self)
+        self.labelPromo.setStyleSheet("QLabel { background-color: #e7f5fe; border: 1px solid #b9cfe4; }")
+        self.labelPromo.setWordWrap(True)
+        self.labelPromo.setObjectName("labelPromo")
+        self.labelPromo.setText(
+          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+          "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+          "p, li { white-space: pre-wrap; }\n"
+          "</style></head><body><table<tr><td><span style=\" font-weight:600;\">Publish to the Web</span>"
+          " - new integration with <span style=\" font-style:italic;\">illuvis</span> allows you to easily"
+          " and securely share flood maps with colleagues, clients and other stakeholders. "
+          "<a href=\"https://www.illuvis.com/?referrer=crayfish\">"
+          "<span style=\" text-decoration: underline; color:#0057ae;\">Find out more</span></a></p></td>"
+          "<td><a href=\"crayfish:closePromo\"><span style=\"text-decoration: none; color: #0057ae; font-weight:600;\">x</span></a>"
+          "</td></tr></table></body></html>")
+        self.labelPromo.linkActivated.connect(self.promoLinkActivated)
+        self.verticalLayout_2.insertWidget(0, self.labelPromo)
+
+    def promoLinkActivated(self, link):
+        if link == "crayfish:closePromo":
+          self.labelPromo.hide()
+          QSettings().setValue("/crayfishViewer/hideIlluvisPromo", 1)
+        elif link.startswith('http'):
+          QDesktopServices.openUrl(QUrl(link))
