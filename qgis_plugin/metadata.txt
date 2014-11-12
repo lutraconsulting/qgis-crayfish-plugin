@@ -18,7 +18,7 @@ changelog=1.3 - New features:
  - New contour options: Fill above/below
  - Improved load error handling
  - Improved support for ASCII datasets
-<p>1.2 - New features:
+ <p>1.2 - New features:
  - Added various contouring options
  - Support for QGIS legend (in QGIS >= 2.1)
  - Support for BASEMENT output
@@ -27,7 +27,7 @@ changelog=1.3 - New features:
  - Change mesh color
  - Give user a chance to locate mesh file for a result file
  - Export raster grid (API only)
-<p>1.1.1 - Bug fixes:
+ <p>1.1.1 - Bug fixes:
  - Fixed bug where python exception would be generated when both contour and vector display disabled.
  - Updated identify() to mesh with changes made to the crayfish view library's valueAtCoord function.
  - Made calls to QString in identify() QGIS version agnostic.
