@@ -1,7 +1,7 @@
 ; the next section is mandatory
 [general]
 name=Crayfish
-qgisMinimumVersion=1.7.4
+qgisMinimumVersion=2.0
 qgisMaximumVersion=2.99
 description=A collection of tools for TUFLOW and other hydraulic 
     modelling packages
