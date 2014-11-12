@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>458</width>
-    <height>470</height>
+    <height>586</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -289,7 +289,7 @@
          </property>
         </widget>
        </item>
-       <item row="13" column="3">
+       <item row="15" column="3">
         <widget class="QPushButton" name="uploadPushButton">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -360,7 +360,7 @@
          </property>
         </widget>
        </item>
-       <item row="13" column="0" colspan="3">
+       <item row="15" column="0" colspan="3">
         <widget class="QProgressBar" name="progressBar">
          <property name="enabled">
           <bool>true</bool>
@@ -448,6 +448,23 @@
          </property>
         </widget>
        </item>
+       <item row="13" column="0" colspan="4">
+        <widget class="Line" name="line_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="0" colspan="4">
+        <widget class="QLabel" name="labelInfo">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;illuvis may automatically adjust the projection of your results for web presentation&lt;a href=&quot;http://en.wikipedia.org/wiki/Web_Mercator&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0057ae; vertical-align:super;&quot;&gt;1&lt;/span&gt;&lt;/a&gt;. This will have no noticeable effect when viewing maps at typical scales. Please read &lt;a href=&quot;https://www.illuvis.com/docs/uploading#best_practices&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0057ae;&quot;&gt;Uploading data – best practices&lt;/span&gt;&lt;/a&gt; to learn more.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
       </layout>
       <zorder>uploadPushButton</zorder>
       <zorder>newEventPushButton</zorder>
@@ -468,6 +485,8 @@
       <zorder>resultTypeComboBox</zorder>
       <zorder>label_4</zorder>
       <zorder>resolutionSpinBox</zorder>
+      <zorder>line_3</zorder>
+      <zorder>labelInfo</zorder>
      </widget>
      <widget class="QWidget" name="tab_2">
       <attribute name="title">

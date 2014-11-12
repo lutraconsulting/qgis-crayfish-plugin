@@ -83,6 +83,38 @@ class ResultPrepper(QThread):
         return
 
 
+class MessageDialog(QDialog):
+    """ Message dialog that remembers whether it should not be shown again """
+    def __init__(self, dlgId, text, title, parent=None):
+        QDialog.__init__(self)
+        self.dlgId = dlgId
+
+        self.tb = QTextBrowser()
+        self.tb.setHtml(text)
+        self.tb.anchorClicked.connect(QDesktopServices.openUrl)
+        self.tb.setOpenExternalLinks(True)
+        self.tb.setOpenLinks(True)
+        self.chk = QCheckBox("Don't show this message again")
+        self.bb = QDialogButtonBox(QDialogButtonBox.Ok)
+        l = QVBoxLayout()
+        for w in [self.tb, self.chk, self.bb]: l.addWidget(w)
+        self.setLayout(l)
+
+        self.setWindowTitle(title)
+        self.resize(400,300)
+        self.bb.accepted.connect(self.accept)
+
+    def exec_(self):
+        if QSettings().value("crayfishViewer/noShow_"+self.dlgId):
+           return
+        QDialog.exec_(self)
+
+    def accept(self):
+        if self.chk.isChecked():
+            QSettings().setValue("crayfishViewer/noShow_"+self.dlgId, 1)
+        QDialog.accept(self)
+
+
 class UploadDialog(QDialog, Ui_Dialog):
     
     def __init__(self, iface, currentLayer=None):
@@ -95,7 +127,7 @@ class UploadDialog(QDialog, Ui_Dialog):
         self.frozen = False
         self.iface = iface
         self.layer = currentLayer
-        
+
         self.statusLabel.setText('')
         self.ilCon = IlluvisInterface()
         self.resultPrepper = ResultPrepper()
@@ -131,6 +163,8 @@ class UploadDialog(QDialog, Ui_Dialog):
             self.fromFileRadioButton.setChecked(True)
             self.fromCurrentRadioButton.setText("From current layer: (none)")
             self.fromCurrentRadioButton.setEnabled(False)
+
+        self.labelInfo.linkActivated.connect(self.openLink)
 
         self.fromCurrentRadioButton.clicked.connect(self.updateResultSourceGUI)
         self.fromFileRadioButton.clicked.connect(self.updateResultSourceGUI)
@@ -539,11 +573,20 @@ class UploadDialog(QDialog, Ui_Dialog):
         fromCurrent = self.fromCurrentRadioButton.isChecked()
 
         if fromCurrent:
+            res = self.resolutionSpinBox.value()
+            if res < 10:
+              msg = """The file you're uploading has a higher resolution (%.2fm) than that supported
+              by your current account type and will be resampled to 10m.<p>
+              Please see <a href="https://www.illuvis.com/plans">illuvis pricing plans</a> for more options."""
+              msg = msg % res
+              d = MessageDialog("warnResample", msg, "Results will be downscaled", self)
+              d.exec_()
+
             dsIndex = self.layer.provider.currentDataSetIndex()
             tsIndex = self.layer.provider.currentDataSet().currentOutputTime()
             crsWkt = self.layer.crs().toWkt()
             resultFilePath = os.path.join(tempfile.gettempdir(), 'crayfish-illuvis-export.tif')
-            res = self.layer.provider.exportRawDataToTIF(dsIndex, tsIndex, self.resolutionSpinBox.value(), resultFilePath, crsWkt)
+            res = self.layer.provider.exportRawDataToTIF(dsIndex, tsIndex, res, resultFilePath, crsWkt)
             if not res:
                 QMessageBox.critical(None, "Crayfish", "Failed to export to raster grid")
                 return
@@ -738,6 +781,9 @@ class UploadDialog(QDialog, Ui_Dialog):
         
     def helpPressed(self):
         QDesktopServices.openUrl(QUrl('https://www.illuvis.com/docs/uploading'))
+
+    def openLink(self, link):
+        QDesktopServices.openUrl(QUrl(link))
 
 
     def updateResultSourceGUI(self):

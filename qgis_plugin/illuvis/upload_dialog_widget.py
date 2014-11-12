@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'illuvis/upload_dialog_widget.ui'
 #
-# Created: Wed Nov 12 11:26:54 2014
+# Created: Wed Nov 12 16:08:08 2014
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -27,7 +27,7 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName(_fromUtf8("Dialog"))
         Dialog.setWindowModality(QtCore.Qt.ApplicationModal)
-        Dialog.resize(458, 470)
+        Dialog.resize(458, 586)
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/plugins/illuvis/illuvis_u_32w.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         Dialog.setWindowIcon(icon)
@@ -183,7 +183,7 @@ class Ui_Dialog(object):
         sizePolicy.setHeightForWidth(self.uploadPushButton.sizePolicy().hasHeightForWidth())
         self.uploadPushButton.setSizePolicy(sizePolicy)
         self.uploadPushButton.setObjectName(_fromUtf8("uploadPushButton"))
-        self.gridLayout_2.addWidget(self.uploadPushButton, 13, 3, 1, 1)
+        self.gridLayout_2.addWidget(self.uploadPushButton, 15, 3, 1, 1)
         self.newEventPushButton = QtGui.QPushButton(self.tab)
         self.newEventPushButton.setEnabled(False)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
@@ -225,7 +225,7 @@ class Ui_Dialog(object):
         self.progressBar.setTextVisible(True)
         self.progressBar.setInvertedAppearance(False)
         self.progressBar.setObjectName(_fromUtf8("progressBar"))
-        self.gridLayout_2.addWidget(self.progressBar, 13, 0, 1, 3)
+        self.gridLayout_2.addWidget(self.progressBar, 15, 0, 1, 3)
         self.browsePushButton = QtGui.QPushButton(self.tab)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -263,6 +263,15 @@ class Ui_Dialog(object):
         self.fromCurrentRadioButton.setChecked(True)
         self.fromCurrentRadioButton.setObjectName(_fromUtf8("fromCurrentRadioButton"))
         self.gridLayout_2.addWidget(self.fromCurrentRadioButton, 7, 0, 1, 4)
+        self.line_3 = QtGui.QFrame(self.tab)
+        self.line_3.setFrameShape(QtGui.QFrame.HLine)
+        self.line_3.setFrameShadow(QtGui.QFrame.Sunken)
+        self.line_3.setObjectName(_fromUtf8("line_3"))
+        self.gridLayout_2.addWidget(self.line_3, 13, 0, 1, 4)
+        self.labelInfo = QtGui.QLabel(self.tab)
+        self.labelInfo.setWordWrap(True)
+        self.labelInfo.setObjectName(_fromUtf8("labelInfo"))
+        self.gridLayout_2.addWidget(self.labelInfo, 14, 0, 1, 4)
         self.tabWidget.addTab(self.tab, _fromUtf8(""))
         self.tab_2 = QtGui.QWidget()
         self.tab_2.setObjectName(_fromUtf8("tab_2"))
@@ -387,6 +396,7 @@ class Ui_Dialog(object):
         self.label_4.setText(_translate("Dialog", "Resolution", None))
         self.resolutionSpinBox.setSuffix(_translate("Dialog", " m", None))
         self.fromCurrentRadioButton.setText(_translate("Dialog", "From current layer", None))
+        self.labelInfo.setText(_translate("Dialog", "<html><head/><body><p>illuvis may automatically adjust the projection of your results for web presentation<a href=\"http://en.wikipedia.org/wiki/Web_Mercator\"><span style=\" text-decoration: underline; color:#0057ae; vertical-align:super;\">1</span></a>. This will have no noticeable effect when viewing maps at typical scales. Please read <a href=\"https://www.illuvis.com/docs/uploading#best_practices\"><span style=\" text-decoration: underline; color:#0057ae;\">Uploading data – best practices</span></a> to learn more.</p></body></html>", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("Dialog", "Results", None))
         self.deleteOverlayPushButton.setText(_translate("Dialog", "Delete", None))
         self.newOverlayPushButton.setText(_translate("Dialog", "New", None))
