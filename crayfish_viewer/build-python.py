@@ -113,3 +113,12 @@ res = os.system(make_cmd)
 if res != 0:
   print "=== make failed ==="
   sys.exit(1)
+
+# strip extra stuff
+if not win and not build_debug:
+  os.chdir("../..")
+  res = os.system("strip build-python/release/crayfishviewer.so")
+  if res != 0:
+    print "=== strip failed ==="
+    sys.exit(1)
+
