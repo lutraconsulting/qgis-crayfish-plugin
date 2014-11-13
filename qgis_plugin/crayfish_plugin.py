@@ -64,6 +64,11 @@ def qv2unicode(v):
     except Exception:
         return v    # QGIS 2.x
 
+# Base URL for downloading of prepared binaries
+downloadBaseUrl = 'http://www.lutraconsulting.co.uk/'
+#downloadBaseUrl = 'http://localhost:8000/'  # for testing
+
+
 class CrayfishPlugin:
 
     def __init__(self, iface):
@@ -118,15 +123,33 @@ class CrayfishPlugin:
             if platform.architecture()[0] == '64bit':
                 platformVersion += '64'
             packageUrl = 'resources/crayfish/viewer/binaries/' + platformVersion + '/' + libVersion + '/' + crayfishVersion + '/crayfish_viewer_library.zip'
-            packageUrl = 'http://www.lutraconsulting.co.uk/' + urllib2.quote(packageUrl)
+            packageUrl = downloadBaseUrl + urllib2.quote(packageUrl)
             
             # Download it
             try:
-                filename = self.downloadBinPackage(packageUrl)
+                filename = os.path.join(os.path.dirname(__file__), 'crayfish_viewer_library.zip')
+                self.downloadBinPackage(packageUrl, filename)
             except IOError, err:
                 QMessageBox.critical(self.iface.mainWindow(), 'Could Not Download Library', "The library for your platform could not be found on the developer's website.  Please see the About section for details of how to compile your own library or how to contact us for assistance.\n\n(Error: %s)" % str(err) )
                 return
             
+            # check whether we need to download GDAL library extra (on older QGIS installs there is older version than the one required by the compiled binary)
+            if platformVersion == 'Windows':
+                try:
+                    from ctypes import windll
+                    x = windll.gdal111
+                except WindowsError:
+                    try:
+                        QMessageBox.information(self.iface.mainWindow(), 'Download Extra Libraries', 'It is necessary to download newer GDAL library - this may take some time (~10MB), please wait.')
+                        qApp.setOverrideCursor(QCursor(Qt.WaitCursor))
+                        gdalFilename = os.path.join(os.path.dirname(__file__), 'gdal111.dll')
+                        self.downloadBinPackage(downloadBaseUrl+'resources/crayfish/viewer/binaries/'+platformVersion+'/extra/gdal111.dll', gdalFilename)
+                        qApp.restoreOverrideCursor()
+                    except IOError, err:
+                        qApp.restoreOverrideCursor()
+                        QMessageBox.critical(self.iface.mainWindow(), 'Could Not Download Extra Libraries', "Download of the library failed. Please try again or contact us for further assistance.\n\n(Error: %s)" % str(err) )
+                        return
+
             # try to extract the downloaded file - may require a restart if the files exist already
             if not self.extractBinPackage(filename):
                 QMessageBox.information(self.iface.mainWindow(), 'Restart Required', "QGIS needs to be restarted in order to complete an update to the Crayfish Viewer Library.  Please restart QGIS." )
@@ -172,9 +195,8 @@ class CrayfishPlugin:
         self.iface.addDockWidget( Qt.LeftDockWidgetArea, self.dock )
         self.dock.hide()   # do not show the dock by default
         QObject.connect(self.dock, SIGNAL("visibilityChanged(bool)"), self.dockVisibilityChanged)
-        
-    def downloadBinPackage(self, packageUrl):
-        destFolder = os.path.dirname(__file__)
+
+    def downloadBinPackage(self, packageUrl, destinationFileName):
         s = QSettings()
         # FIXME - does this work from behind a proxy?
         try:
@@ -195,13 +217,11 @@ class CrayfishPlugin:
             opener = urllib2.build_opener(proxy, auth, urllib2.HTTPHandler)
             urllib2.install_opener(opener)
         conn = urllib2.urlopen(packageUrl)
-        destinationFileName = os.path.join(destFolder, 'crayfish_viewer_library.zip')
         if os.path.isfile(destinationFileName):
             os.unlink(destinationFileName)
         destinationFile = open(destinationFileName, 'wb')
         destinationFile.write( conn.read() )
         destinationFile.close()
-        return destinationFileName
             
     def extractBinPackage(self, destinationFileName):
         """ extract the downloaded package with .dll and .pyd files.
