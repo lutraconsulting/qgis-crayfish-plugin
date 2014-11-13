@@ -104,10 +104,6 @@ class CrayfishPlugin:
         
             notFoundTxt = "Crayfish Viewer depends on a platform specific compiled library which was not found."
         
-            if platformVersion != 'Windows':
-              QMessageBox.critical(self.iface.mainWindow(), 'Could Not Locate Appropriate Library', notFoundTxt + " A library for your platform could not be found on the developer's website.  Please see the About section for details of how to compile your own library or how to contact us for assistance." )
-              return
-
             # The crayfishviewer binary cannot be found
             reply = QMessageBox.question(self.iface.mainWindow(), 'Crayfish Viewer Library Not Found', notFoundTxt + " Would you like to attempt to automatically download and install one from the developer's website?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
             if reply != QMessageBox.Yes:
@@ -128,7 +124,7 @@ class CrayfishPlugin:
             try:
                 filename = self.downloadBinPackage(packageUrl)
             except IOError, err:
-                QMessageBox.critical(self.iface.mainWindow(), 'Download Failed', "Failed to download the Crayfish Viewer library.\n\n%s" % str(err) )
+                QMessageBox.critical(self.iface.mainWindow(), 'Could Not Download Library', "The library for your platform could not be found on the developer's website.  Please see the About section for details of how to compile your own library or how to contact us for assistance.\n\n(Error: %s)" % str(err) )
                 return
             
             # try to extract the downloaded file - may require a restart if the files exist already
