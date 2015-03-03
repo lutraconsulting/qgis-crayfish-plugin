@@ -38,13 +38,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #  define CRAYFISHVIEWERSHARED_EXPORT Q_DECL_IMPORT
 #endif
 
-namespace ElementType{
-    enum Enum{
-        Undefined,
-        E4Q,
-        E3T
-    };
-}
 
 
 namespace DataSetType{

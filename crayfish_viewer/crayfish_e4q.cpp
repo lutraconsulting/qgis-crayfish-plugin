@@ -33,9 +33,9 @@ Physical vs logical mapping of quads:
 http://www.particleincell.com/blog/2012/quad-interpolation/
 */
 
-void E4Q_computeMapping(Element& elem, E4Qtmp& e4q, Node* nodes)
+void E4Q_computeMapping(const Element& elem, E4Qtmp& e4q, const Node* nodes)
 {
-  Q_ASSERT(elem.eType == ElementType::E4Q);
+  Q_ASSERT(elem.eType == Element::E4Q);
 
   const Node& n1 = nodes[elem.p[0]];
   const Node& n2 = nodes[elem.p[1]];

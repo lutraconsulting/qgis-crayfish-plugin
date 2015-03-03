@@ -27,11 +27,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef CRAYFISH_MESH_H
 #define CRAYFISH_MESH_H
 
-#include "crayfish_viewer_global.h"
-
 #include <QPointF>
+#include <QVector>
 
-struct Node{
+struct Node
+{
+    int id;    //!< just a reference to the ID in the input file (internally we use indices)
     double x;
     double y;
 
@@ -39,7 +40,8 @@ struct Node{
     QPointF toPointF() const { return QPointF(x,y); }
 };
 
-struct BBox {
+struct BBox
+{
   double minX;
   double maxX;
   double minY;
@@ -50,21 +52,55 @@ struct BBox {
   bool isPointInside(double x, double y) const { return x >= minX && x <= maxX && y >= minY && y <= maxY; }
 };
 
-struct Element{
-    uint index;
-    ElementType::Enum eType;
-    int nodeCount;
-    bool isDummy;
-    uint p[4];     //!< indices of nodes
-    BBox bbox;     //!< bounding box of the element
+struct Element
+{
+    enum Type
+    {
+      Undefined,
+      E4Q,
+      E3T
+    };
 
-    int indexTmp; //!< index into array with temporary information for particular element type
+    int nodeCount() const { switch (eType) { case E4Q: return 4; case E3T: return 3; default: return 0; } }
+    bool isDummy() const { return eType == Undefined; }
+
+    int id;        //!< just a reference to the ID in the input file (internally we use indices)
+    Type eType;
+    uint p[4];     //!< indices of nodes
 };
 
-/** auxilliary cached data used for rendering of E4Q elements */
-struct E4Qtmp
+
+class DataSet;
+
+class Mesh
 {
-  double a[4], b[4]; //!< coefficients for mapping between physical and logical coords
+public:
+  typedef QVector<Node> Nodes;
+  typedef QVector<Element> Elements;
+  typedef QVector<DataSet*> DataSets;
+
+  Mesh(const Nodes& nodes, const Elements& elements);
+  ~Mesh();
+
+  const Nodes& nodes() const { return mNodes; }
+  const Elements& elements() const { return mElems; }
+  const DataSets& dataSets() const { return mDataSets; }
+
+  Nodes& nodes() { return mNodes; }
+  Elements& elements() { return mElems; }
+  DataSets& dataSets() { return mDataSets; }
+
+  int elementCountForType(Element::Type type);
+
+protected:
+
+  // mesh topology
+  Nodes mNodes;
+  Elements mElems;
+
+  // associated data
+  DataSets mDataSets;  //!< pointers to datasets are owned by this class
+
 };
 
 

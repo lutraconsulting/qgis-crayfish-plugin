@@ -36,8 +36,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_mesh.h"
 
+/** auxilliary cached data used for rendering of E4Q elements */
+struct E4Qtmp
+{
+  double a[4], b[4]; //!< coefficients for mapping between physical and logical coords
+};
+
 //! precalculate coefficients for the mapping between logical and physical coordinates
-void E4Q_computeMapping(Element& elem, E4Qtmp& e4q, Node* nodes);
+void E4Q_computeMapping(const Element& elem, E4Qtmp& e4q, const Node* nodes);
 
 void E4Q_mapLogicalToPhysical(const E4Qtmp& e4q, double Lx, double Ly, double& Px, double& Py);
 bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx, double& Ly);

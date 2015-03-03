@@ -38,7 +38,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <math.h>
 
-struct Element;
+#include "crayfish.h"
+#include "crayfish_mesh.h"
+//struct Element;
 struct Node;
 struct BBox;
 struct E4Qtmp;
@@ -110,26 +112,10 @@ public:
     ~CrayfishViewer();
     QImage* draw();
 
-    enum Error
-    {
-        Err_None,
-        Err_NotEnoughMemory,
-        Err_FileNotFound,
-        Err_UnknownFormat,
-        Err_IncompatibleMesh
-    };
-
-    enum Warning
-    {
-        Warn_None,
-        Warn_UnsupportedElement,
-        Warn_InvalidElements
-    };
-
-    bool loadedOk(){ return mLastError == Err_None; }
-    bool warningsEncountered(){ return mLastWarning != Warn_None; }
-    Warning getLastWarning(){ return mLastWarning; }
-    Error getLastError() { return mLastError; }
+    bool loadedOk(){ return mLoadStatus.mLastError == LoadStatus::Err_None; }
+    bool warningsEncountered(){ return mLoadStatus.mLastWarning != LoadStatus::Warn_None; }
+    LoadStatus::Warning getLastWarning(){ return mLoadStatus.mLastWarning; }
+    LoadStatus::Error getLastError() { return mLoadStatus.mLastError; }
     bool loadDataSet(QString fileName);
     bool isDataSetLoaded(QString fileName);
 
@@ -137,12 +123,12 @@ public:
 
     // mesh information
 
-    uint nodeCount() const { return mNodeCount; }
-    Node* nodes() const { return mNodes; }
-    uint elementCount() const { return mElemCount; }
-    Element* elements() const { return mElems; }
-    uint elementCount_E4Q() const { return mE4Qcount; }
-    uint elementCount_E3T() const { return mE3Tcount; }
+    int nodeCount() const { return mMesh->nodes().count(); }
+    Node* nodes() const { return mMesh->nodes().data(); }
+    int elementCount() const { return mMesh->elements().count(); }
+    Element* elements() const { return mMesh->elements().data(); }
+    int elementCount_E4Q() const { return mMesh ? mMesh->elementCountForType(Element::E4Q) : 0; }
+    int elementCount_E3T() const { return mMesh ? mMesh->elementCountForType(Element::E3T) : 0; }
     QRectF meshExtent() const { return QRectF(QPointF(mXMin,mYMin), QPointF(mXMax,mYMax)); }
 
     // data export
@@ -166,7 +152,7 @@ public:
 
     void setCurrentDataSetIndex(int index);
     int currentDataSetIndex() const;
-    int dataSetCount() const { return mDataSets.size(); }
+    int dataSetCount() const { return mMesh->dataSets().count(); }
     const DataSet* dataSet(int dataSetIndex) const;
     const DataSet* currentDataSet() const;
 
@@ -177,8 +163,6 @@ public:
     QString destCrsProj4() const { return mDestProj4; }
 
 private:
-    Error mLastError;
-    Warning mLastWarning;
     QImage* mImage;
 
     // global rendering options
@@ -199,25 +183,21 @@ private:
     double mYMin;
     double mYMax;
 
-    // mesh topology - nodes and elements
-    uint mElemCount;
-    Element* mElems;
-    uint mNodeCount;
-    Node* mNodes;
-    E4Qtmp* mE4Qtmp;
-    uint mE4Qcount;
-    uint mE3Tcount;
+    //! mesh topology - nodes and elements
+    Mesh* mMesh;
 
-    std::vector<DataSet*> mDataSets;  //!< datasets associated with the mesh
+    LoadStatus mLoadStatus;
+
+    E4Qtmp* mE4Qtmp;   //!< contains rendering information for quads
+    int* mE4QtmpIndex; //!< for conversion from element index to mE4Qtmp indexes
+
+    BBox* mBBoxes; //! bounding boxes of elements (non-projected)
 
     bool mProjection; //!< whether doing reprojection from mesh coords to map coords
     QString mSrcProj4;  //!< CRS's proj.4 string of the source (layer)
     QString mDestProj4; //!< CRS's proj.4 string of the destination (project)
     Node* mProjNodes; //!< reprojected nodes
     BBox* mProjBBoxes; //!< reprojected bounding boxes of elements
-
-    bool loadBinaryDataSet(QString fileName);
-    bool loadAsciiDataSet(QString fileName);
 
     void computeMeshExtent();
     bool nodeInsideView(uint nodeIndex);
@@ -229,8 +209,6 @@ private:
     void paintRow(uint, int, int, int, const DataSet* ds, const Output* output);
     bool interpolatValue(uint, double, double, double*, const Output* output);
     QPointF pixelToReal(int, int);
-    void updateBBox(BBox& bbox, const Element& elem, Node* nodes);
-
 
     void renderContourData(const DataSet* ds, const Output* output);
     void renderVectorData(const DataSet* ds, const Output* output);
@@ -239,8 +217,10 @@ private:
     //! Return new raw data image for the given dataset/output time, sampled with given resolution
     RawData* exportRawData(int dataSetIndex, int outputTime, double mupp);
 
-    void exportRawDataElements(ElementType::Enum elemType, const Output* output, RawData* rd, const MapToPixel& xform);
+    void exportRawDataElements(Element::Type elemType, const Output* output, RawData* rd, const MapToPixel& xform);
 };
+
+void updateBBox(BBox& bbox, const Element& elem, const Node* nodes);
 
 inline float mag(float input)
 {

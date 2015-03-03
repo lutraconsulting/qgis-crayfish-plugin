@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_gdal.h"
 #include "crayfish_mesh.h"
 #include "crayfish_output.h"
+#include "crayfish.h"
 
 #include <iostream>
 
@@ -46,26 +47,22 @@ CrayfishViewer::~CrayfishViewer(){
 
     //std::cerr << "CF: terminating!" << std::endl;
 
+    delete mMesh;
+    mMesh = 0;
+
+    delete mBBoxes;
+    mBBoxes = 0;
+
     if(mImage){
         delete mImage;
         mImage = 0;
     }
-    if(mElems){
-        delete[] mElems;
-        mElems = 0;
-    }
-    if(mNodes){
-        delete[] mNodes;
-        mNodes = 0;
-    }
-    if (mE4Qtmp){
-        delete[] mE4Qtmp;
-        mE4Qtmp = 0;
-    }
 
-    for(size_t i=0; i<mDataSets.size(); i++)
-        delete mDataSets.at(i);
-    mDataSets.clear();
+    delete[] mE4Qtmp;
+    mE4Qtmp = 0;
+
+    delete [] mE4QtmpIndex;
+    mE4QtmpIndex = 0;
 
     if(mProjNodes){
         delete[] mProjNodes;
@@ -78,9 +75,7 @@ CrayfishViewer::~CrayfishViewer(){
 }
 
 CrayfishViewer::CrayfishViewer( QString twoDMFileName )
-  : mLastError(Err_None)
-  , mLastWarning(Warn_None)
-  , mImage(new QImage(0, 0, QImage::Format_ARGB32))
+  : mImage(new QImage(0, 0, QImage::Format_ARGB32))
   , mCanvasWidth(0)
   , mCanvasHeight(0)
   , mLlX(0.0), mLlY(0.0)
@@ -89,704 +84,91 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
   , mRenderMesh(0)
   , mMeshColor(Qt::black)
   , mCurDataSetIdx(0)
-  , mElemCount(0)
-  , mElems(0)
-  , mNodeCount(0)
-  , mNodes(0)
+  , mMesh(0)
   , mE4Qtmp(0)
-  , mE4Qcount(0)
-  , mE3Tcount(0)
+  , mE4QtmpIndex(0)
+  , mBBoxes(0)
   , mProjection(false)
   , mProjNodes(0)
   , mProjBBoxes(0)
 {
+  mMesh = Crayfish::loadMesh(twoDMFileName, &mLoadStatus);
+  if (!mMesh)
+    return;
 
-  //std::cerr << "CF: opening 2DM: " << twoDMFileName.toAscii().data() << std::endl;
+  computeMeshExtent();
 
-    QFile file(twoDMFileName);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
-        mLastError = Err_FileNotFound;
-        //std::cerr << "CF: ERROR open" << std::endl;
-        return;
-    }
+  // In order to keep things running quickly, we pre-compute many
+  // element properties to speed up drawing at the expenses of memory.
 
-    QTextStream in(&file);
-    if (!in.readLine().startsWith("MESH2D"))
+  // Element bounding box (xmin, xmax and friends)
+
+  Mesh::Nodes& nodes = mMesh->nodes();
+  Mesh::Elements& elements = mMesh->elements();
+
+  mBBoxes = new BBox[elements.count()];
+
+  int E4Qcount = mMesh->elementCountForType(Element::E4Q);
+  mE4Qtmp = new E4Qtmp[E4Qcount];
+  mE4QtmpIndex = new int[elements.count()];
+  memset(mE4QtmpIndex, -1, sizeof(int)*elements.count());
+  int e4qIndex = 0;
+
+  int i = 0;
+  for (Mesh::Elements::iterator it = elements.begin(); it != elements.end(); ++it, ++i)
+  {
+    if( it->isDummy() )
+      continue;
+
+    Element& elem = *it;
+
+    updateBBox(mBBoxes[i], elem, nodes.constData());
+
+    if (elem.eType == Element::E4Q)
     {
-        mLastError = Err_UnknownFormat;
-        return;
+      // cache some temporary data for faster rendering
+      mE4QtmpIndex[i] = e4qIndex;
+      E4Qtmp& e4q = mE4Qtmp[e4qIndex];
+
+      E4Q_computeMapping(elem, e4q, nodes.constData());
+      e4qIndex++;
     }
-
-    // Find out how many nodes and elements are contained in the .2dm mesh file
-    while (!in.atEnd()) {
-        QString line = in.readLine();
-        if( line.startsWith("E4Q") ){
-            mE4Qcount += 1;
-            mElemCount += 1;
-        }
-        else if( line.startsWith("E3T") ){
-            mE3Tcount += 1;
-            mElemCount += 1;
-        }
-        else if( line.startsWith("ND") ){
-            mNodeCount += 1;
-        }
-        else if( line.startsWith("E2L") ||
-                 line.startsWith("E3L") ||
-                 line.startsWith("E6T") ||
-                 line.startsWith("E8Q") ||
-                 line.startsWith("E9Q")){
-            mLastWarning = Warn_UnsupportedElement;
-            mElemCount += 1; // We still count them as elements
-        }
-    }
-
-    // Allocate memory
-    DataSet* bedDs = 0;
-    Output* o = 0;
-    try{
-        mElems = new Element[mElemCount];
-        mNodes = new Node[mNodeCount];
-        mE4Qtmp = new E4Qtmp[mE4Qcount];
-        bedDs = new DataSet(twoDMFileName);
-        o = new Output;
-        o->init(mNodeCount, mElemCount, false);
-    } catch (const std::bad_alloc &) {
-        mLastError = Err_NotEnoughMemory;
-        //std::cerr << "CF: ERROR alloc" << std::endl;
-        return;
-    }
-
-    // Create a dataset for the bed elevation
-    bedDs->setType(DataSetType::Bed);
-    bedDs->setName("Bed Elevation");
-    bedDs->setIsTimeVarying(false);
-
-    o->time = 0.0;
-    memset(o->statusFlags, 1, mElemCount); // All cells active
-    bedDs->addOutput(o);
-    mDataSets.push_back(bedDs);
-
-    in.seek(0);
-    QStringList chunks = QStringList();
-
-    uint elemIndex = 0;
-    QMap<int, int> elemIDtoIndex;
-
-    while (!in.atEnd()) {
-        QString line = in.readLine();
-        if( line.startsWith("E4Q") ){
-            chunks = line.split(" ", QString::SkipEmptyParts);
-            Q_ASSERT(elemIndex < mElemCount);
-
-            uint elemID = chunks[1].toInt();
-            Q_ASSERT(!elemIDtoIndex.contains(elemID));
-            elemIDtoIndex[elemID] = elemIndex;
-
-            Element& elem = mElems[elemIndex];
-            elem.index = elemIndex;
-            elem.eType = ElementType::E4Q;
-            elem.nodeCount = 4;
-            elem.isDummy = false;
-            // Bear in mind that no check is done to ensure that the the p1-p4 pointers will point to a valid location
-            for (int i = 0; i < 4; ++i)
-              elem.p[i] = chunks[i+2].toInt()-1; // -1 (crayfish Dat is 1-based indexing)
-
-            elemIndex++;
-        }
-        else if( line.startsWith("E3T") ){
-            chunks = line.split(" ", QString::SkipEmptyParts);
-            Q_ASSERT(elemIndex < mElemCount);
-
-            uint elemID = chunks[1].toInt();
-            Q_ASSERT(!elemIDtoIndex.contains(elemID));
-            elemIDtoIndex[elemID] = elemIndex;
-
-            Element& elem = mElems[elemIndex];
-            elem.index = elemIndex;
-            elem.eType = ElementType::E3T;
-            elem.nodeCount = 3;
-            elem.isDummy = false;
-            // Bear in mind that no check is done to ensure that the the p1-p4 pointers will point to a valid location
-            for (int i = 0; i < 3; ++i)
-              elem.p[i] = chunks[i+2].toInt()-1; // -1 (crayfish Dat is 1-based indexing)
-            elem.p[3] = -1; // only three points
-
-            elemIndex++;
-        }
-        else if( line.startsWith("E2L") ||
-                 line.startsWith("E3L") ||
-                 line.startsWith("E6T") ||
-                 line.startsWith("E8Q") ||
-                 line.startsWith("E9Q")){
-            // We do not yet support these elements
-            chunks = line.split(" ", QString::SkipEmptyParts);
-            Q_ASSERT(elemIndex < mElemCount);
-
-            mElems[elemIndex].index = elemIndex;
-            mElems[elemIndex].isDummy = true;
-
-            elemIndex++;
-        }
-        else if( line.startsWith("ND") ){
-            chunks = line.split(" ", QString::SkipEmptyParts);
-            uint index = chunks[1].toInt()-1;
-            Q_ASSERT(index < mNodeCount);
-
-            //mNodes[index].index = index;
-            mNodes[index].x = chunks[2].toDouble();
-            mNodes[index].y = chunks[3].toDouble();
-            bedDs->output(0)->values[index] = chunks[4].toFloat();
-        }
-    }
-
-    // Determine stats
-    computeMeshExtent(); // mXMin, mXMax, mYMin, mYMax
-
-    bedDs->updateZRange(mNodeCount);
-
-    int e4qIndex = 0;
-
-    /*
-      In order to keep things running quickly, we pre-compute many
-      element properties to speed up drawing at the expenses of memory.
-
-        Element bounding box (xmin, xmax and friends)
-      */
-
-    for(uint i=0; i<mElemCount; i++){
-
-        if( mElems[i].isDummy )
-            continue;
-
-        Element& elem = mElems[i];
-
-        updateBBox(elem.bbox, elem, mNodes);
-
-        /*
-          E4Q elements are re-ordered to ensure nodes are listed counter-clockwise from top-right
-          */
-
-        if(elem.eType == ElementType::E4Q){
-
-            // cache some temporary data for faster rendering
-
-            elem.indexTmp = e4qIndex;
-            E4Qtmp& e4q = mE4Qtmp[e4qIndex];
-
-            E4Q_computeMapping(elem, e4q, mNodes);
-
-            e4qIndex++;
-
-        }else if(elem.eType == ElementType::E3T){
-            // Anything?
-
-            // check validity of the triangle
-            // for now just checking if we have three distinct nodes
-          const Node& n1 = mNodes[elem.p[0]];
-          const Node& n2 = mNodes[elem.p[1]];
-          const Node& n3 = mNodes[elem.p[2]];
-          if (n1 == n2 || n1 == n3 || n2 == n3)
-          {
-            elem.isDummy = true; // mark element as unusable
-
-            mLastWarning = Warn_InvalidElements;
-          }
-        }
-
-    }
-
+  }
 }
 
 
 void CrayfishViewer::computeMeshExtent()
 {
-    mXMin = mNodes[0].x;
-    mXMax = mNodes[0].x;
-    mYMin = mNodes[0].y;
-    mYMax = mNodes[0].y;
+    const Mesh::Nodes& nodes = mMesh->nodes();
 
-    for(uint i=0; i<mNodeCount; i++){
-        if(mNodes[i].x > mXMax)
-            mXMax = mNodes[i].x;
-        if(mNodes[i].x < mXMin)
-            mXMin = mNodes[i].x;
+    mXMin = nodes[0].x;
+    mXMax = nodes[0].x;
+    mYMin = nodes[0].y;
+    mYMax = nodes[0].y;
 
-        if(mNodes[i].y > mYMax)
-            mYMax = mNodes[i].y;
-        if(mNodes[i].y < mYMin)
-            mYMin = mNodes[i].y;
+    for (int i = 0; i < nodes.count(); i++)
+    {
+        const Node& n = nodes[i];
+        if(n.x > mXMax) mXMax = n.x;
+        if(n.x < mXMin) mXMin = n.x;
+        if(n.y > mYMax) mYMax = n.y;
+        if(n.y < mYMin) mYMin = n.y;
     }
 }
 
 
 bool CrayfishViewer::loadDataSet(QString fileName)
 {
-  mLastError = Err_None;
-  mLastWarning = Warn_None;
-
-  if (loadBinaryDataSet(fileName))
-    return true;
-
-  // if the file format was not recognized, try to load it as ASCII dataset
-  if (mLastError != Err_UnknownFormat)
-    return false;
-
-  mLastError = Err_None;
-  mLastWarning = Warn_None;
-
-  return loadAsciiDataSet(fileName);
-}
-
-bool CrayfishViewer::loadBinaryDataSet(QString datFileName)
-{
-
-    QFile file(datFileName);
-    if (!file.open(QIODevice::ReadOnly))
-    {
-        // Couldn't open the file
-        mLastError = Err_FileNotFound;
-        return false;
-    }
-
-    int card;
-    int version;
-    int objecttype;
-    int sflt;
-    int sflg;
-    int vectype;
-    int objid;
-    uint numdata;
-    uint numcells;
-    char name[40];
-    char istat;
-    float time;
-
-    QDataStream in(&file);
-
-    card = 0;
-    if( in.readRawData( (char*)&version, 4) != 4 )
-    {
-        mLastError = Err_UnknownFormat;
-        return false;
-    }
-    if( version != 3000 ) // Version should be 3000
-    {
-        mLastError = Err_UnknownFormat;
-        return false;
-    }
-
-    DataSet* ds = 0;
-    ds = new DataSet(datFileName);
-    ds->setIsTimeVarying(true);
-
-    while( card != 210 ){
-        if( in.readRawData( (char*)&card, 4) != 4 ){
-            // We've reached the end of the file and there was no ends card
-            break;
-        }
-        switch(card){
-
-        case 100:
-
-            // Object type
-            if( in.readRawData( (char*)&objecttype, 4) != 4 ){
-                delete ds;
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            if(objecttype != 3){
-                delete ds;
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            break;
-
-        case 110:
-
-            // Float size
-            if( in.readRawData( (char*)&sflt, 4) != 4 ){
-                delete ds;
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            if(sflt != 4){
-                delete ds;
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            break;
-
-        case 120:
-
-            // Flag size
-            if( in.readRawData( (char*)&sflg, 4) != 4 ){
-                delete ds;
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            if(sflg != 1){
-                delete ds;
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            break;
-
-        case 130:
-
-            ds->setType(DataSetType::Scalar);
-            break;
-
-        case 140:
-
-            ds->setType(DataSetType::Vector);
-            break;
-
-        case 150:
-
-            // Vector type
-            if( in.readRawData( (char*)&vectype, 4) != 4 ){
-                delete ds;
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            if(vectype != 0){
-                delete ds;
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            break;
-
-        case 160:
-
-            // Object id
-            if( in.readRawData( (char*)&objid, 4) != 4 ){
-                delete ds;
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            break;
-
-        case 170:
-
-            // Num data
-            if( in.readRawData( (char*)&numdata, 4) != 4 ){
-                delete ds;
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            if(numdata != mNodeCount){
-                delete ds;
-                mLastError = Err_IncompatibleMesh;
-                return false;
-            }
-            break;
-
-        case 180:
-
-            // Num data
-            if( in.readRawData( (char*)&numcells, 4) != 4 ){
-                delete ds;
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            if(numcells != mElemCount){
-                delete ds;
-                mLastError = Err_IncompatibleMesh;
-                return false;
-            }
-            break;
-
-        case 190:
-
-            // Name
-            if( in.readRawData( (char*)&name, 40) != 40 ){
-                delete ds;
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            if(name[39] != 0)
-                name[39] = 0;
-            ds->setName(QString(name).trimmed());
-            break;
-
-        case 200:
-
-            // Time step!
-            if( in.readRawData( (char*)&istat, 1) != 1 ){
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-            if( in.readRawData( (char*)&time, 4) != 4 ){
-                mLastError = Err_UnknownFormat;
-                return false;
-            }
-
-            Output* o = 0;
-            try{
-                o = new Output;
-                o->init(mNodeCount, mElemCount, ds->type() == DataSetType::Vector);
-            } catch (const std::bad_alloc &) {
-                delete o;
-                delete ds;
-                mLastError = Err_NotEnoughMemory;
-                return false;
-            }
-
-            o->time = time;
-
-
-            if(istat){
-                for(uint i=0; i<mElemCount; i++){
-                    // Read status flags
-                    if( in.readRawData( (char*)&o->statusFlags[i], 1) != 1 ){
-                        delete o;
-                        delete ds;
-                        mLastError = Err_UnknownFormat;
-                        return false;
-                    }
-                }
-            }
-
-            for(uint i=0; i<mNodeCount; i++){
-                // Read values flags
-              if(ds->type() == DataSetType::Vector){
-                    if( in.readRawData( (char*)&o->values_x[i], 4) != 4 ){
-                        delete o;
-                        delete ds;
-                        mLastError = Err_UnknownFormat;
-                        return false;
-                    }
-                    if( in.readRawData( (char*)&o->values_y[i], 4) != 4 ){
-                        delete o;
-                        delete ds;
-                        mLastError = Err_UnknownFormat;
-                        return false;
-                    }
-                    o->values[i] = sqrt( pow(o->values_x[i],2) + pow(o->values_y[i],2) ); // Determine the magnitude
-                }else{
-                    if( in.readRawData( (char*)&o->values[i], 4) != 4 ){
-                        delete o;
-                        delete ds;
-                        mLastError = Err_UnknownFormat;
-                        return false;
-                    }
-                }
-            }
-
-            ds->addOutput(o);
-
-            break;
-
-        }
-    }
-
-    if(ds->outputCount() > 0){
-
-        ds->updateZRange(mNodeCount);
-
-        ds->setVectorRenderingEnabled(ds->type() == DataSetType::Vector);
-
-        mDataSets.push_back(ds);
-        return true;
-    }
-
-    delete ds;
-    mLastError = Err_UnknownFormat;
-    return false;
-}
-
-bool CrayfishViewer::loadAsciiDataSet(QString fileName)
-{
-  QFile file(fileName);
-  if (!file.open(QIODevice::ReadOnly)){
-      // Couldn't open the file
-      mLastError = Err_FileNotFound;
-      return false;
-  }
-
-  QTextStream stream(&file);
-  QString firstLine = stream.readLine();
-
-  // http://www.xmswiki.com/xms/SMS:ASCII_Dataset_Files_*.dat
-  // Apart from the format specified above, there is an older supported format used in BASEMENT (and SMS?)
-  // which is simpler (has only one dataset in one file, no status flags etc)
-
-  bool oldFormat;
-  bool isVector = false;
-  DataSet* ds = 0;
-
-  if (firstLine == "DATASET")
-    oldFormat = false;
-  else if (firstLine == "SCALAR" || firstLine == "VECTOR")
-  {
-    oldFormat = true;
-    isVector = (firstLine == "VECTOR");
-
-    ds = new DataSet(fileName);
-    ds->setIsTimeVarying(true);
-    ds->setType(isVector ? DataSetType::Vector : DataSetType::Scalar);
-    ds->setVectorRenderingEnabled(isVector);
-    ds->setName(QFileInfo(fileName).baseName());
-  }
-  else
-  {
-    mLastError = Err_UnknownFormat;
-    return false; // unknown type
-  }
-
-  QRegExp reSpaces("\\s+");
-
-  while (!stream.atEnd())
-  {
-    QString line = stream.readLine();
-    QStringList items = line.split(reSpaces, QString::SkipEmptyParts);
-    if (items.count() < 1)
-      continue; // empty line?? let's skip it
-
-    QString cardType = items[0];
-    if (cardType == "ND" && items.count() >= 2)
-    {
-      uint fileNodeCount = items[1].toUInt();
-      if (mNodeCount != fileNodeCount)
-      {
-        mLastError = Err_IncompatibleMesh;
-        return false;
-      }
-    }
-    else if (!oldFormat && cardType == "NC" && items.count() >= 2)
-    {
-      uint fileElemCount = items[1].toUInt();
-      if (mElemCount != fileElemCount)
-      {
-        mLastError = Err_IncompatibleMesh;
-        return false;
-      }
-    }
-    else if (!oldFormat && (cardType == "BEGSCL" || cardType == "BEGVEC"))
-    {
-      if (ds)
-      {
-        qDebug("Crayfish: New dataset while previous one is still active!");
-        mLastError = Err_UnknownFormat;
-        return false;
-      }
-      isVector = cardType == "BEGVEC";
-      ds = new DataSet(fileName);
-      ds->setIsTimeVarying(true);
-      ds->setVectorRenderingEnabled(isVector);
-      ds->setType(isVector ? DataSetType::Vector : DataSetType::Scalar);
-    }
-    else if (!oldFormat && cardType == "ENDDS")
-    {
-      if (!ds)
-      {
-        qDebug("Crayfish: ENDDS card for no active dataset!");
-        mLastError = Err_UnknownFormat;
-        return false;
-      }
-      ds->updateZRange(mNodeCount);
-      mDataSets.push_back(ds);
-      ds = 0;
-    }
-    else if (!oldFormat && cardType == "NAME" && items.count() >= 2)
-    {
-      if (!ds)
-      {
-        qDebug("Crayfish: NAME card for no active dataset!");
-        mLastError = Err_UnknownFormat;
-        return false;
-      }
-
-      int quoteIdx1 = line.indexOf('\"');
-      int quoteIdx2 = line.indexOf('\"', quoteIdx1+1);
-      if (quoteIdx1 > 0 && quoteIdx2 > 0)
-        ds->setName(line.mid(quoteIdx1+1, quoteIdx2-quoteIdx1-1));
-    }
-    else if (oldFormat && (cardType == "SCALAR" || cardType == "VECTOR"))
-    {
-      // just ignore - we know the type from earlier...
-    }
-    else if (cardType == "TS" && items.count() >= (oldFormat ? 2 : 3))
-    {
-      bool hasStatus = (oldFormat ? false : items[1].toInt());
-      float t = items[oldFormat ? 1 : 2].toFloat();
-
-      Output* o = new Output;
-      o->init(mNodeCount, mElemCount, isVector);
-      o->time = t / 3600.;
-
-      if (hasStatus)
-      {
-        // only for new format
-        for (uint i = 0; i < mElemCount; ++i)
-        {
-          o->statusFlags[i] = stream.readLine().toInt();
-        }
-      }
-      else
-        memset(o->statusFlags, 1, mElemCount); // there is no status flag -> everything is active
-
-      for (uint i = 0; i < mNodeCount; ++i)
-      {
-        QStringList tsItems = stream.readLine().split(reSpaces, QString::SkipEmptyParts);
-        if (isVector)
-        {
-          if (tsItems.count() >= 2) // BASEMENT files with vectors have 3 columns
-          {
-            o->values_x[i] = tsItems[0].toFloat();
-            o->values_y[i] = tsItems[1].toFloat();
-          }
-          else
-          {
-            qDebug("Crayfish: invalid timestep line");
-            o->values_x[i] = o->values_y[i] = 0;
-          }
-          o->values[i] = sqrt( pow(o->values_x[i],2) + pow(o->values_y[i],2) ); // Determine the magnitude
-        }
-        else
-        {
-          if (tsItems.count() >= 1)
-            o->values[i] = tsItems[0].toFloat();
-          else
-          {
-            qDebug("Crayfish: invalid timestep line");
-            o->values[i] = 0;
-          }
-        }
-      }
-
-      ds->addOutput(o);
-    }
-    else
-    {
-      qDebug("Crafish: Unknown card: %s", items.join(" ").toAscii().data());
-    }
-  }
-
-  if (oldFormat)
-  {
-    if (ds->outputCount() > 0)
-    {
-      ds->updateZRange(mNodeCount);
-      mDataSets.push_back(ds);
-      return true;
-    }
-    else
-    {
-      delete ds;
-      mLastError = Err_UnknownFormat;
-      return false;
-    }
-  }
-
-  return true;
+  DataSet* ds = Crayfish::loadDataSet(fileName, mMesh, &mLoadStatus);
+  if (ds)
+    mMesh->dataSets().append(ds);
+  return ds;
 }
 
 
 bool CrayfishViewer::isDataSetLoaded(QString fileName)
 {
-  for (size_t i = 0; i < mDataSets.size(); ++i)
+  for (int i = 0; i < mMesh->dataSets().count(); ++i)
   {
     if (dataSet(i)->fileName() == fileName)
       return true;
@@ -859,10 +241,10 @@ int CrayfishViewer::currentDataSetIndex() const
 
 const DataSet* CrayfishViewer::dataSet(int dataSetIndex) const
 {
-  if (dataSetIndex < 0 || dataSetIndex >= (int)mDataSets.size())
+  if (dataSetIndex < 0 || dataSetIndex >= mMesh->dataSets().count())
     return 0;
 
-  return mDataSets.at(dataSetIndex);
+  return mMesh->dataSets().at(dataSetIndex);
 }
 
 const DataSet *CrayfishViewer::currentDataSet() const
@@ -880,10 +262,15 @@ void CrayfishViewer::setNoProjection()
   delete [] mProjBBoxes;
   mProjBBoxes = 0;
 
-  for (uint i = 0; i < mElemCount; ++i)
+  const Mesh::Elements& elems = mMesh->elements();
+  for (int i = 0; i < elems.count(); ++i)
   {
-    if (mElems[i].eType == ElementType::E4Q)
-      E4Q_computeMapping(mElems[i], mE4Qtmp[mElems[i].indexTmp], mNodes);
+    const Element& elem = elems[i];
+    if (elem.eType == Element::E4Q)
+    {
+      int e4qIndex = mE4QtmpIndex[i];
+      E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mMesh->nodes().constData());
+    }
   }
 
   mProjection = false;
@@ -919,22 +306,24 @@ bool CrayfishViewer::setProjection(const QString& srcProj4, const QString& destP
     return false;
   }
 
-  if (mProjNodes == 0)
-    mProjNodes = new Node[mNodeCount];
+  const Mesh::Nodes& nodes = mMesh->nodes();
 
-  memcpy(mProjNodes, mNodes, sizeof(Node)*mNodeCount);
+  if (mProjNodes == 0)
+    mProjNodes = new Node[nodes.count()];
+
+  memcpy(mProjNodes, mMesh->nodes().constData(), sizeof(Node)*nodes.count());
 
   if (pj_is_latlong(projSrc))
   {
     // convert source from degrees to radians
-    for (uint i = 0; i < mNodeCount; ++i)
+    for (int i = 0; i < nodes.count(); ++i)
     {
       mProjNodes[i].x *= DEG2RAD;
       mProjNodes[i].y *= DEG2RAD;
     }
   }
 
-  int res = pj_transform(projSrc, projDst, mNodeCount, 2, &mProjNodes->x, &mProjNodes->y, NULL);
+  int res = pj_transform(projSrc, projDst, nodes.count(), 2, &mProjNodes->x, &mProjNodes->y, NULL);
 
   if (res != 0)
   {
@@ -946,7 +335,8 @@ bool CrayfishViewer::setProjection(const QString& srcProj4, const QString& destP
   if (pj_is_latlong(projDst))
   {
     // convert source from degrees to radians
-    for (uint i = 0; i < mNodeCount; ++i)
+    const Mesh::Nodes& nodes = mMesh->nodes();
+    for (int i = 0; i < nodes.count(); ++i)
     {
       mProjNodes[i].x *= RAD2DEG;
       mProjNodes[i].y *= RAD2DEG;
@@ -956,15 +346,21 @@ bool CrayfishViewer::setProjection(const QString& srcProj4, const QString& destP
   pj_free(projSrc);
   pj_free(projDst);
 
+  const Mesh::Elements& elems = mMesh->elements();
+
   if (mProjBBoxes == 0)
-    mProjBBoxes = new BBox[mElemCount];
+    mProjBBoxes = new BBox[elems.count()];
 
-  for (uint i = 0; i < mElemCount; ++i)
+  for (int i = 0; i < elems.count(); ++i)
   {
-    updateBBox(mProjBBoxes[i], mElems[i], mProjNodes);
+    const Element& elem = elems[i];
+    updateBBox(mProjBBoxes[i], elem, mProjNodes);
 
-    if (mElems[i].eType == ElementType::E4Q)
-      E4Q_computeMapping(mElems[i], mE4Qtmp[mElems[i].indexTmp], mProjNodes); // update interpolation coefficients
+    if (elem.eType == Element::E4Q)
+    {
+      int e4qIndex = mE4QtmpIndex[i];
+      E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mProjNodes); // update interpolation coefficients
+    }
   }
 
   return true;
@@ -975,7 +371,7 @@ bool CrayfishViewer::hasProjection() const
   return mProjection;
 }
 
-void CrayfishViewer::updateBBox(BBox& bbox, const Element& elem, Node* nodes)
+void updateBBox(BBox& bbox, const Element& elem, const Node* nodes)
 {
   const Node& node0 = nodes[elem.p[0]];
 
@@ -984,7 +380,7 @@ void CrayfishViewer::updateBBox(BBox& bbox, const Element& elem, Node* nodes)
   bbox.maxX = node0.x;
   bbox.maxY = node0.y;
 
-  for (int j = 1; j < elem.nodeCount; ++j)
+  for (int j = 1; j < elem.nodeCount(); ++j)
   {
     const Node& n = nodes[elem.p[j]];
     if (n.x < bbox.minX) bbox.minX = n.x;
@@ -1029,21 +425,22 @@ QImage* CrayfishViewer::draw(){
 void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
 {
         // Render E4Q before E3T
-        QVector<ElementType::Enum> typesToRender;
-        typesToRender.append(ElementType::E4Q);
-        typesToRender.append(ElementType::E3T);
-        QVectorIterator<ElementType::Enum> it(typesToRender);
+        QVector<Element::Type> typesToRender;
+        typesToRender.append(Element::E4Q);
+        typesToRender.append(Element::E3T);
+        QVectorIterator<Element::Type> it(typesToRender);
         while(it.hasNext()){
 
-            ElementType::Enum elemTypeToRender = it.next();
+            Element::Type elemTypeToRender = it.next();
 
-            for(uint i=0; i<mElemCount; i++){
+            const Mesh::Elements& elems = mMesh->elements();
+            for(int i = 0; i < elems.count(); i++){
 
-                const Element& elem = mElems[i];
+                const Element& elem = elems[i];
                 if( elem.eType != elemTypeToRender )
                     continue;
 
-                if( elem.isDummy )
+                if( elem.isDummy() )
                     continue;
 
                 // For each element
@@ -1059,7 +456,8 @@ void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
                 }
 
                 //
-                const BBox& bbox = (mProjection ? mProjBBoxes[i] : elem.bbox);
+                const BBox& bbox = (mProjection ? mProjBBoxes[i] : mBBoxes[i]);
+#if 0
                 if( bbox.maxSize < mPixelSize ){
                     // The element is smaller than the pixel size so there is no point rendering the element properly
                     // Just take the value of the first point associated with the element instead
@@ -1073,7 +471,9 @@ void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
                     float val = output->values[ elem.p[0] ];
                     line[pp.x()] = ds->contourColorMap().value(val);
 
-                }else{
+                }else
+#endif
+                {
                     // Get the BBox of the element in pixels
                     QPoint ll = realToPixel(bbox.minX, bbox.minY);
                     QPoint ur = realToPixel(bbox.maxX, bbox.maxY);
@@ -1129,7 +529,9 @@ void CrayfishViewer::renderVectorData(
         // Get a list of nodes that are within the current render extent
         std::vector<int> candidateNodes;
 
-        for(uint i=0; i<mNodeCount; i++){
+        const Mesh::Nodes& nodes = mMesh->nodes();
+        for(int i = 0; i < nodes.count(); i++)
+        {
             if (nodeInsideView(i))
                 candidateNodes.push_back( i );
         }
@@ -1266,35 +668,37 @@ void CrayfishViewer::renderMesh()
       QPainter p(mImage);
       p.setPen(mMeshColor);
       QPoint pts[5];
-      for (uint i=0; i < mElemCount; ++i)
+      const Mesh::Elements& elems = mMesh->elements();
+      for (int i=0; i < elems.count(); ++i)
       {
-        if( mElems[i].isDummy )
+        const Element& elem = elems[i];
+        if( elem.isDummy() )
             continue;
 
         // If the element is outside the view of the canvas, skip it
         if( elemOutsideView(i) )
             continue;
 
-        if (mElems[i].eType == ElementType::E4Q)
+        if (elem.eType == Element::E4Q)
         {
-          pts[0] = pts[4] = realToPixel( mElems[i].p[0] ); // first and last point
-          pts[1] = realToPixel( mElems[i].p[1] );
-          pts[2] = realToPixel( mElems[i].p[2] );
-          pts[3] = realToPixel( mElems[i].p[3] );
+          pts[0] = pts[4] = realToPixel( elem.p[0] ); // first and last point
+          pts[1] = realToPixel( elem.p[1] );
+          pts[2] = realToPixel( elem.p[2] );
+          pts[3] = realToPixel( elem.p[3] );
           p.drawPolyline(pts, 5);
         }
-        else if (mElems[i].eType == ElementType::E3T)
+        else if (elem.eType == Element::E3T)
         {
-          pts[0] = pts[3] = realToPixel( mElems[i].p[0] ); // first and last point
-          pts[1] = realToPixel( mElems[i].p[1] );
-          pts[2] = realToPixel( mElems[i].p[2] );
+          pts[0] = pts[3] = realToPixel( elem.p[0] ); // first and last point
+          pts[1] = realToPixel( elem.p[1] );
+          pts[2] = realToPixel( elem.p[2] );
           p.drawPolyline(pts, 4);
         }
       }
 }
 
 QPoint CrayfishViewer::realToPixel(int nodeIndex){
-  const Node& n = (mProjection ? mProjNodes[nodeIndex] : mNodes[nodeIndex]);
+  const Node& n = (mProjection ? mProjNodes[nodeIndex] : mMesh->nodes()[nodeIndex]);
   return realToPixel(n.x, n.y);
 }
 
@@ -1305,7 +709,7 @@ QPoint CrayfishViewer::realToPixel(double x, double y){
 }
 
 QPointF CrayfishViewer::realToPixelF(int nodeIndex){
-  const Node& n = (mProjection ? mProjNodes[nodeIndex] : mNodes[nodeIndex]);
+  const Node& n = (mProjection ? mProjNodes[nodeIndex] : mMesh->nodes()[nodeIndex]);
   return realToPixel(n.x, n.y);
 }
 
@@ -1338,23 +742,24 @@ void CrayfishViewer::paintRow(uint elementIdx, int rowIdx, int leftLim, int righ
 
 bool CrayfishViewer::nodeInsideView(uint nodeIndex)
 {
-  const Node& n = (mProjection ? mProjNodes[nodeIndex] : mNodes[nodeIndex]);
+  const Node& n = (mProjection ? mProjNodes[nodeIndex] : mMesh->nodes()[nodeIndex]);
   return n.x > mLlX && n.x < mUrX && n.y > mLlY && n.y < mUrY;
 }
 
 bool CrayfishViewer::elemOutsideView(uint i){
-  const BBox& bbox = (mProjection ? mProjBBoxes[i] : mElems[i].bbox);
+  const BBox& bbox = (mProjection ? mProjBBoxes[i] : mBBoxes[i]);
   // Determine if this element is visible within the view
   return bbox.maxX < mLlX || bbox.minX > mUrX || bbox.minY > mUrY || bbox.maxY < mLlY;
 }
 
 bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, double* interpolatedVal, const Output* output){
 
-    Element& elem = mElems[elementIndex];
+    const Element& elem = mMesh->elements()[elementIndex];
 
-    if(elem.eType == ElementType::E4Q){
+    if(elem.eType == Element::E4Q){
 
-        E4Qtmp& e4q = mE4Qtmp[elem.indexTmp];
+        int e4qIndex = mE4QtmpIndex[elementIndex];
+        E4Qtmp& e4q = mE4Qtmp[e4qIndex];
 
         double Lx, Ly;
         if (!E4Q_mapPhysicalToLogical(e4q, x, y, Lx, Ly))
@@ -1372,7 +777,7 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
 
         return true;
 
-    }else if(elem.eType == ElementType::E3T){
+    }else if(elem.eType == Element::E3T){
 
         /*
             So - we're interpoalting a 3-noded triangle
@@ -1385,7 +790,7 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
           described here:  http://www.blackpawn.com/texts/pointinpoly/
           */
 
-        Node* nodes = mProjection ? mProjNodes : mNodes;
+        const Node* nodes = mProjection ? mProjNodes : mMesh->nodes().constData();
         QPointF pA(nodes[elem.p[0]].toPointF());
         QPointF pB(nodes[elem.p[1]].toPointF());
         QPointF pC(nodes[elem.p[2]].toPointF());
@@ -1455,9 +860,11 @@ double CrayfishViewer::valueAtCoord(const Output* output, double xCoord, double 
 
     std::vector<uint> candidateElementIds;
 
-    for(uint i=0; i<mElemCount; i++){
+    const Mesh::Elements& elems = mMesh->elements();
+    for (int i = 0; i < elems.count(); i++)
+    {
 
-        const BBox& bbox = (mProjection ? mProjBBoxes[i] : mElems[i].bbox);
+        const BBox& bbox = (mProjection ? mProjBBoxes[i] : mBBoxes[i]);
         if( bbox.isPointInside(xCoord, yCoord) ){
 
             candidateElementIds.push_back(i);
@@ -1538,28 +945,29 @@ RawData* CrayfishViewer::exportRawData(int dataSetIndex, int outputTime, double 
   // First export quads, then triangles.
   // We use this ordering because from 1D simulation we will get tesselated river polygons from linestrings
   // and we want them to be on top of the terrain (quads)
-  exportRawDataElements(ElementType::E4Q, output, rd, xform);
-  exportRawDataElements(ElementType::E3T, output, rd, xform);
+  exportRawDataElements(Element::E4Q, output, rd, xform);
+  exportRawDataElements(Element::E3T, output, rd, xform);
 
   return rd;
 }
 
-void CrayfishViewer::exportRawDataElements(ElementType::Enum elemType, const Output* output, RawData* rd, const MapToPixel& xform)
+void CrayfishViewer::exportRawDataElements(Element::Type elemType, const Output* output, RawData* rd, const MapToPixel& xform)
 {
-  for (uint i=0; i < mElemCount; i++)
+  const Mesh::Elements& elems = mMesh->elements();
+  for (int i=0; i < elems.count(); i++)
   {
-    const Element& elem = mElems[i];
+    const Element& elem = elems[i];
     if(elem.eType != elemType)
       continue;
 
-    if(elem.isDummy)
+    if (elem.isDummy())
       continue;
 
     // If the element's activity flag is off, ignore it
     if(!output->statusFlags[i])
       continue;
 
-    const BBox& bbox = elem.bbox;
+    const BBox& bbox = mBBoxes[i];
 
     // Get the BBox of the element in pixels
     QPointF ll = xform.realToPixel(bbox.minX, bbox.minY);

@@ -52,7 +52,12 @@ SOURCES += crayfish_viewer.cpp\
         crayfish_e4q.cpp \
         crayfish_colormap.cpp \
     crayfish_dataset.cpp \
-    crayfish_gdal.cpp
+    crayfish_gdal.cpp \
+    crayfish_mesh.cpp \
+    crayfish_mesh_2dm.cpp \
+    crayfish.cpp \
+    crayfish_capi.cpp \
+    crayfish_dataset_dat.cpp
 
 HEADERS += crayfish_viewer.h\
         crayfish_viewer_global.h\
@@ -62,7 +67,10 @@ HEADERS += crayfish_viewer.h\
     crayfish_dataset.h \
     crayfish_output.h \
     crayfish_mesh.h \
-    crayfish_gdal.h
+    crayfish_gdal.h \
+    crayfish.h \
+    crayfish_mesh_2dm.h \
+    crayfish_capi.h
 
 CONFIG(debug, debug|release) {
     DESTDIR = $$PWD/build/debug

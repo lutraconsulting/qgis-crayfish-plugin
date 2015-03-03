@@ -446,12 +446,12 @@ class CrayfishPlugin:
         # try to load it as binary file, if not successful, try as ASCII format
         if not parentLayer.provider.loadDataSet( inFileName ):
             err = parentLayer.provider.getLastError()
-            from crayfishviewer import CrayfishViewer
+            from crayfishviewer import LoadStatus
             err_msgs = {
-              CrayfishViewer.Err_NotEnoughMemory : 'Not enough memory',
-              CrayfishViewer.Err_FileNotFound : 'Unable to read the file - missing file or no read access',
-              CrayfishViewer.Err_UnknownFormat : 'File format not recognized',
-              CrayfishViewer.Err_IncompatibleMesh : 'Mesh is not compatible'
+              LoadStatus.Err_NotEnoughMemory : 'Not enough memory',
+              LoadStatus.Err_FileNotFound : 'Unable to read the file - missing file or no read access',
+              LoadStatus.Err_UnknownFormat : 'File format not recognized',
+              LoadStatus.Err_IncompatibleMesh : 'Mesh is not compatible'
             }
             msg = "Failed to load the data file"
             if err in err_msgs:

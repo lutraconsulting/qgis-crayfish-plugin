@@ -16,26 +16,10 @@ public:
     ~CrayfishViewer();
     QImage* draw();
 
-    enum Error
-    {
-        Err_None,
-        Err_NotEnoughMemory,
-        Err_FileNotFound,
-        Err_UnknownFormat,
-        Err_IncompatibleMesh
-    };
-
-    enum Warning
-    {
-        Warn_None,
-        Warn_UnsupportedElement,
-        Warn_InvalidElements
-    };
-
     bool loadedOk();
     bool warningsEncountered();
-    CrayfishViewer::Warning getLastWarning();
-    CrayfishViewer::Error getLastError();
+    LoadStatus::Warning getLastWarning();
+    LoadStatus::Error getLastError();
     bool loadDataSet(QString fileName);
     bool isDataSetLoaded(QString fileName);
 
@@ -43,10 +27,10 @@ public:
 
     // mesh information
 
-    uint nodeCount() const;
-    uint elementCount() const;
-    uint elementCount_E4Q() const;
-    uint elementCount_E3T() const;
+    int nodeCount() const;
+    int elementCount() const;
+    int elementCount_E4Q() const;
+    int elementCount_E3T() const;
     QRectF meshExtent() const;
 
     // data export
@@ -82,6 +66,39 @@ public:
 
 };
 
+
+struct LoadStatus
+{
+%TypeHeaderCode
+#include <crayfish.h>
+%End
+
+  LoadStatus();
+
+  void clear();
+
+  enum Error
+  {
+      Err_None,
+      Err_NotEnoughMemory,
+      Err_FileNotFound,
+      Err_UnknownFormat,
+      Err_IncompatibleMesh
+  };
+
+  enum Warning
+  {
+      Warn_None,
+      Warn_UnsupportedElement,
+      Warn_InvalidElements,
+      Warn_ElementWithInvalidNode,
+      Warn_ElementNotUnique,
+      Warn_NodeNotUnique
+  };
+
+  Error mLastError;
+  Warning mLastWarning;
+};
 
 enum VectorLengthMethod{
     MinMax,  //!< minimal and maximal length
