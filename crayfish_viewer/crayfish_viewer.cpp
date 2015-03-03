@@ -323,7 +323,7 @@ bool CrayfishViewer::setProjection(const QString& srcProj4, const QString& destP
     }
   }
 
-  int res = pj_transform(projSrc, projDst, nodes.count(), 2, &mProjNodes->x, &mProjNodes->y, NULL);
+  int res = pj_transform(projSrc, projDst, nodes.count(), 3, &mProjNodes->x, &mProjNodes->y, NULL);
 
   if (res != 0)
   {
