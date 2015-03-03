@@ -441,7 +441,14 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         
         mapToPixel = rendererContext.mapToPixel()
         pixelSize = mapToPixel.mapUnitsPerPixel()
-        extent = iface.mapCanvas().mapRenderer().extent() # non-projected map extent # rendererContext.extent()
+        ct = rendererContext.coordinateTransform()
+        extent = rendererContext.extent()  # this is extent in layer's coordinate system - but we need
+        if ct:
+          # TODO: need a proper way how to get visible extent without using map canvas from interface
+          if iface.mapCanvas().isDrawing():
+            extent = iface.mapCanvas().extent()
+          else:
+            extent = ct.transformBoundingBox(extent)  # TODO: this is just approximate :-(
         topleft = mapToPixel.transform(extent.xMinimum(), extent.yMaximum())
         bottomright = mapToPixel.transform(extent.xMaximum(), extent.yMinimum())
         width = (bottomright.x() - topleft.x())
@@ -460,10 +467,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         self.provider.setCanvasSize(QSize(int(width), int(height)))
         self.provider.setExtent(extent.xMinimum(), extent.yMinimum(), pixelSize)
 
-        mr = iface.mapCanvas().mapRenderer()
-        projEnabled = mr.hasCrsTransformEnabled()
-        if projEnabled:
-          res = self.provider.setProjection(self.crs().toProj4(), mr.destinationCrs().toProj4())
+        if ct:
+          res = self.provider.setProjection(self.crs().toProj4(), ct.destCRS().toProj4())
           if not res:
             qgis_message_bar.pushMessage("Crayfish", "Failed to reproject the mesh!", level=QgsMessageBar.WARNING)
         else:
