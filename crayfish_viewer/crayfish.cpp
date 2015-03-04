@@ -9,26 +9,40 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
   return loadMesh2DM(meshFile, status);
 }
 
-DataSet* Crayfish::loadDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status)
+Mesh::DataSets Crayfish::loadDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status)
 {
   if (status) status->clear();
 
   LoadStatus s;
+  Mesh::DataSets lst;
 
-  DataSet* ds = loadBinaryDataSet(fileName, mesh, &s);
+  lst = loadBinaryDataSet(fileName, mesh, &s);
   if (status) *status = s;
 
-  if (ds)
-    return ds;
+  if (lst.count())
+    return lst;
 
   // if the file format was not recognized, try to load it as ASCII dataset
   if (s.mLastError != LoadStatus::Err_UnknownFormat)
-    return 0;
+    return Mesh::DataSets();
 
   s.clear();
 
-  ds = loadAsciiDataSet(fileName, mesh, &s);
+  lst = loadAsciiDataSet(fileName, mesh, &s);
   if (status) *status = s;
-  return ds;
+
+  if (lst.count())
+    return lst;
+
+  // if the file format was not recognized, try to load it as XMDF dataset
+  if (s.mLastError != LoadStatus::Err_UnknownFormat)
+    return Mesh::DataSets();
+
+  s.clear();
+
+  lst = loadXmdfDataSet(fileName, mesh, &s);
+  if (status) *status = s;
+
+  return lst;
 }
 

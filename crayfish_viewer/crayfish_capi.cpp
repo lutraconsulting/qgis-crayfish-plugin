@@ -131,14 +131,18 @@ float CF_O_valueAt(OutputH o, int index)
   return o->values[index];
 }
 
+char CF_O_statusAt(OutputH o, int index)
+{
+  return o->statusFlags[index];
+}
 
 bool CF_Mesh_loadDataSet(MeshH mesh, const char* path)
 {
-  DataSet* ds = Crayfish::loadDataSet(QString::fromUtf8(path), mesh, &sLastLoadStatus);
-  if (!ds)
+  Mesh::DataSets lst = Crayfish::loadDataSet(QString::fromUtf8(path), mesh, &sLastLoadStatus);
+  if (!lst.count())
     return false;
 
-  mesh->dataSets().append(ds);
+  mesh->dataSets() << lst;
   return true;
 }
 
@@ -153,3 +157,5 @@ int CF_LastLoadWarning()
 {
   return sLastLoadStatus.mLastWarning;
 }
+
+

@@ -159,10 +159,9 @@ void CrayfishViewer::computeMeshExtent()
 
 bool CrayfishViewer::loadDataSet(QString fileName)
 {
-  DataSet* ds = Crayfish::loadDataSet(fileName, mMesh, &mLoadStatus);
-  if (ds)
-    mMesh->dataSets().append(ds);
-  return ds;
+  Mesh::DataSets lst = Crayfish::loadDataSet(fileName, mMesh, &mLoadStatus);
+  mMesh->dataSets() << lst;
+  return lst.count();
 }
 
 

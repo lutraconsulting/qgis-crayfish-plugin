@@ -43,6 +43,7 @@ OutputH CF_DS_outputAt(DataSetH ds, int index);
 // Output functions
 float CF_O_time(OutputH o);
 float CF_O_valueAt(OutputH o, int index);
+char CF_O_statusAt(OutputH o, int index);
 
 }
 

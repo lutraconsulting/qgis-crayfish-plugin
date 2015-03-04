@@ -29,10 +29,10 @@ static const int CT_ENDDS     = 210;
 static const int CT_RT_JULIAN = 240;
 static const int CT_TIMEUNITS = 250;
 
-#define EXIT_WITH_ERROR(error)       {  if (status) status->mLastError = (error); return 0; }
+#define EXIT_WITH_ERROR(error)       {  if (status) status->mLastError = (error); return Mesh::DataSets(); }
 
 
-DataSet* Crayfish::loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status)
+Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status)
 {
   // implementation based on information from:
   // http://www.xmswiki.com/wiki/SMS:Binary_Dataset_Files_*.dat
@@ -198,7 +198,10 @@ DataSet* Crayfish::loadBinaryDataSet(const QString& datFileName, const Mesh* mes
 
   ds->updateZRange(nodeCount);
   ds->setVectorRenderingEnabled(ds->type() == DataSetType::Vector);
-  return ds.take();
+
+  Mesh::DataSets datasets;
+  datasets << ds.take();
+  return datasets;
 }
 
 // for both nodes and elements
@@ -223,7 +226,7 @@ QVector<int> _mapIDToIndex(const T& items)
   return map;
 }
 
-DataSet* Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status)
+Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status)
 {
   QFile file(fileName);
   if (!file.open(QIODevice::ReadOnly))
@@ -263,6 +266,8 @@ DataSet* Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* mesh, L
   QVector<int> elemIDToIndex = _mapIDToIndex(mesh->elements());
 
   QRegExp reSpaces("\\s+");
+
+  Mesh::DataSets datasets;
 
   while (!stream.atEnd())
   {
@@ -310,7 +315,7 @@ DataSet* Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* mesh, L
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
       }
       ds->updateZRange(nodeCount);
-      return ds.take();  // assuming there is only one
+      datasets << ds.take();
     }
     else if (!oldFormat && cardType == "NAME" && items.count() >= 2)
     {
@@ -396,11 +401,8 @@ DataSet* Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* mesh, L
       EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
 
     ds->updateZRange(nodeCount);
-    return ds.take();
+    datasets << ds.take();
   }
-  else
-  {
-    // new format should have already finished and returned earlier
-    EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
-  }
+
+  return datasets;
 }

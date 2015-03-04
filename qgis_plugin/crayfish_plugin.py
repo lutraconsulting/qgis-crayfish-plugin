@@ -341,7 +341,7 @@ class CrayfishPlugin:
         
         # Get the file name
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Crayfish Dat File', self.lastFolder(),
-                                                 "DAT Results (*.dat);;SOL Results (*.sol);;2DM Mesh Files (*.2dm)")
+                                                 "Results Files (DAT, SOL, XMDF) (*.dat *.sol *.xmdf);;2DM Mesh Files (*.2dm)")
         inFileName = unicode(inFileName)
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel 
             return
@@ -371,7 +371,7 @@ class CrayfishPlugin:
             # update GUI
             self.dock.currentLayerChanged()
 
-        elif fileType == '.dat' or fileType == '.sol':
+        elif fileType == '.dat' or fileType == '.sol' or fileType == '.xmdf':
             self.loadDatFile(inFileName)
             
         else:
@@ -443,6 +443,8 @@ class CrayfishPlugin:
             qgis_message_bar.pushMessage("Crayfish", "The .dat file is already loaded in layer " + parentLayer.name(), level=QgsMessageBar.INFO)
             return
 
+        dsCountBefore = parentLayer.provider.dataSetCount()
+
         # try to load it as binary file, if not successful, try as ASCII format
         if not parentLayer.provider.loadDataSet( inFileName ):
             err = parentLayer.provider.getLastError()
@@ -459,10 +461,13 @@ class CrayfishPlugin:
             qgis_message_bar.pushMessage("Crayfish", msg, level=QgsMessageBar.CRITICAL)
             return
 
-        dsIndex = parentLayer.provider.dataSetCount()-1
-        parentLayer.initCustomValues(parentLayer.provider.dataSet(dsIndex))
-        # set to most recent data set
-        parentLayer.provider.setCurrentDataSetIndex(dsIndex)
+        dsCountAfter = parentLayer.provider.dataSetCount()
+
+        for index in xrange(dsCountBefore, dsCountAfter):
+            parentLayer.initCustomValues(parentLayer.provider.dataSet(index))
+
+        # set to most recent data set (first one from the newly added datasets)
+        parentLayer.provider.setCurrentDataSetIndex(dsCountBefore)
         # update GUI
         self.dock.currentLayerChanged()
         # allow user to go through the time steps with arrow keys

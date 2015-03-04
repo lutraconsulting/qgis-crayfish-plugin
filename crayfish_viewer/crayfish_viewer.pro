@@ -39,7 +39,7 @@ win32 {
 
 unix {
   INCLUDEPATH += /usr/include/gdal
-  LIBS += -lproj -lgdal
+  LIBS += -lproj -lgdal -lhdf5
 }
 
 TARGET = crayfishViewer
@@ -57,7 +57,8 @@ SOURCES += crayfish_viewer.cpp\
     crayfish_mesh_2dm.cpp \
     crayfish.cpp \
     crayfish_capi.cpp \
-    crayfish_dataset_dat.cpp
+    crayfish_dataset_dat.cpp \
+    crayfish_dataset_xmdf.cpp
 
 HEADERS += crayfish_viewer.h\
         crayfish_viewer_global.h\
@@ -70,7 +71,8 @@ HEADERS += crayfish_viewer.h\
     crayfish_gdal.h \
     crayfish.h \
     crayfish_mesh_2dm.h \
-    crayfish_capi.h
+    crayfish_capi.h \
+    crayfish_hdf5.h
 
 CONFIG(debug, debug|release) {
     DESTDIR = $$PWD/build/debug

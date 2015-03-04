@@ -3,7 +3,9 @@
 
 #include <QString>
 
-class Mesh;
+#include "crayfish_mesh.h"
+
+//class Mesh;
 class DataSet;
 class LoadStatus;
 
@@ -45,11 +47,13 @@ public:
 
   static Mesh* loadMesh(const QString& meshFile, LoadStatus* status = 0);
 
-  static DataSet* loadDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);
+  static Mesh::DataSets loadDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);
 
 protected:
-  static DataSet* loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
-  static DataSet* loadAsciiDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);
+  static Mesh::DataSets loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
+  static Mesh::DataSets loadAsciiDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);
+  static Mesh::DataSets loadXmdfDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
+
 };
 
 #endif // CRAYFISH_H

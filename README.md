@@ -1,5 +1,5 @@
-qgis-crayfish-plugin
-====================
+Crayfish (QGIS plugin)
+======================
 
 The Crayfish Plugin for QGIS aspires to be a complete set of pre and post-processing tools for hydraulic modellers using TUFLOW and other packages.
 
@@ -9,8 +9,20 @@ For instructions of how to install and use Crayfish, please refer to the [Crayfi
 
 ### Installing Crayfish on Linux
 
-For installing Crayfish on Linux you need the development environment and a compiler installed (the build-essential package on debian based distributions should provide that).
-You also need the libqt4-dev package and qt4-qmake.
+For installing Crayfish on Linux you need:
+
+* development environment and a compiler installed
+* Qt4 and development tools
+* HDF5 library
+* GDAL library
+
+On Debian/Ubuntu you need to install the following packages:
+
+```bash
+sudo apt-get install build-essential libqt4-dev qt4-qmake libgdal-dev libhdf5-dev
+```
+
+
 If all this packages are installed you can clone the crayfish plugin using the command:
 
 
@@ -33,17 +45,9 @@ make
 
 This copies the compiled cpp library to its place in the users homedirectory
 
-~/.qgis/python/plugins/crayfish/
+~/.qgis2/python/plugins/crayfish/
 
 Now restart QGIS and you are able to use crayfish plugin on your Linux Computer.
 
-
-### Todo
-
-* Anti-aliasing
-* Consider removing apply button as it seems redundant
-* Implement full sanity checking of user input values in Vector properties dialog and suitable error mesages
-* Implement display vectors on arbitrary grid
-* Implement filter vectors by magnitude
 
 [crp]: http://www.lutraconsulting.co.uk/resources/crayfish
