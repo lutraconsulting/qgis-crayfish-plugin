@@ -124,9 +124,9 @@ public:
     // mesh information
 
     int nodeCount() const { return mMesh->nodes().count(); }
-    Node* nodes() const { return mMesh->nodes().data(); }
+    const Node* nodes() const { return mMesh->nodes().data(); }
     int elementCount() const { return mMesh->elements().count(); }
-    Element* elements() const { return mMesh->elements().data(); }
+    const Element* elements() const { return mMesh->elements().data(); }
     int elementCount_E4Q() const { return mMesh ? mMesh->elementCountForType(Element::E4Q) : 0; }
     int elementCount_E3T() const { return mMesh ? mMesh->elementCountForType(Element::E3T) : 0; }
     QRectF meshExtent() const { return QRectF(QPointF(mXMin,mYMin), QPointF(mXMax,mYMax)); }
@@ -219,6 +219,7 @@ private:
 
     void exportRawDataElements(Element::Type elemType, const Output* output, RawData* rd, const MapToPixel& xform);
 };
+
 
 void updateBBox(BBox& bbox, const Element& elem, const Node* nodes);
 

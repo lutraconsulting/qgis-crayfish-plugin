@@ -13,6 +13,12 @@ Mesh::~Mesh()
   qDeleteAll(mDataSets);
 }
 
+void Mesh::addDataSet(DataSet* ds)
+{
+  mDataSets.append(ds);
+  ds->setMesh(this);
+}
+
 int Mesh::elementCountForType(Element::Type type)
 {
   int cnt = 0;

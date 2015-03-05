@@ -86,9 +86,7 @@ public:
   const Elements& elements() const { return mElems; }
   const DataSets& dataSets() const { return mDataSets; }
 
-  Nodes& nodes() { return mNodes; }
-  Elements& elements() { return mElems; }
-  DataSets& dataSets() { return mDataSets; }
+  void addDataSet(DataSet* ds);
 
   int elementCountForType(Element::Type type);
 

@@ -40,10 +40,13 @@ const char* CF_DS_name(DataSetH ds);
 int CF_DS_outputCount(DataSetH ds);
 OutputH CF_DS_outputAt(DataSetH ds, int index);
 
+MeshH CF_DS_mesh(DataSetH ds);
+
 // Output functions
 float CF_O_time(OutputH o);
 float CF_O_valueAt(OutputH o, int index);
 char CF_O_statusAt(OutputH o, int index);
+DataSetH CF_O_dataSet(OutputH o);
 
 }
 

@@ -103,8 +103,8 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
 
   // Element bounding box (xmin, xmax and friends)
 
-  Mesh::Nodes& nodes = mMesh->nodes();
-  Mesh::Elements& elements = mMesh->elements();
+  const Mesh::Nodes& nodes = mMesh->nodes();
+  const Mesh::Elements& elements = mMesh->elements();
 
   mBBoxes = new BBox[elements.count()];
 
@@ -115,12 +115,12 @@ CrayfishViewer::CrayfishViewer( QString twoDMFileName )
   int e4qIndex = 0;
 
   int i = 0;
-  for (Mesh::Elements::iterator it = elements.begin(); it != elements.end(); ++it, ++i)
+  for (Mesh::Elements::const_iterator it = elements.begin(); it != elements.end(); ++it, ++i)
   {
     if( it->isDummy() )
       continue;
 
-    Element& elem = *it;
+    const Element& elem = *it;
 
     updateBBox(mBBoxes[i], elem, nodes.constData());
 
@@ -160,7 +160,8 @@ void CrayfishViewer::computeMeshExtent()
 bool CrayfishViewer::loadDataSet(QString fileName)
 {
   Mesh::DataSets lst = Crayfish::loadDataSet(fileName, mMesh, &mLoadStatus);
-  mMesh->dataSets() << lst;
+  foreach (DataSet* ds, lst)
+    mMesh->addDataSet(ds);
   return lst.count();
 }
 

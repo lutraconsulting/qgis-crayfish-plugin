@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QMap>
 #include <QVariant>
 
+class Mesh;
 struct Output;
 
 /**
@@ -45,6 +46,10 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
     DataSet(const QString& fileName);
     ~DataSet();
 
+    //! mesh to which this dataset is associated
+    const Mesh* mesh() const { return mMesh; }
+    void setMesh(const Mesh* m) { mMesh = m; }
+
     QString fileName() const { return mFileName; }
 
     void setName(const QString& name) { mName = name; }
@@ -55,7 +60,7 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
 
     uint outputCount() const { return outputs.size(); }
 
-    void addOutput(Output* output) { outputs.push_back(output); }
+    void addOutput(Output* output);
 
     void setCurrentOutputTime(int outputTime);
     int currentOutputTime() const { return mCurrentOutputTime; }
@@ -112,6 +117,7 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
 
 protected:
 
+    const Mesh* mMesh;
     QString mFileName;
     DataSetType::Enum mType;
     QString mName;

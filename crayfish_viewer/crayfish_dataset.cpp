@@ -31,7 +31,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
 DataSet::DataSet(const QString& fileName)
-  : mFileName(fileName)
+  : mMesh(0)
+  , mFileName(fileName)
   , mCurrentOutputTime(0)
   , mRenderContours(true)
   , mRenderVectors(false)
@@ -52,6 +53,12 @@ DataSet::~DataSet()
   for (size_t j=0; j<outputs.size(); j++)
       delete outputs.at(j);
   outputs.clear();
+}
+
+void DataSet::addOutput(Output* output)
+{
+  outputs.push_back(output);
+  output->dataSet = this;
 }
 
 

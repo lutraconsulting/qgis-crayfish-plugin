@@ -29,10 +29,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_viewer_global.h"
 
+class DataSet;
+
 struct CRAYFISHVIEWERSHARED_EXPORT Output{
 
     Output()
-      : statusFlags(0)
+      : dataSet(0)
+      , time(-1)
+      , statusFlags(0)
       , values(0)
       , values_x(0)
       , values_y(0)
@@ -58,6 +62,8 @@ struct CRAYFISHVIEWERSHARED_EXPORT Output{
         values_y = new float[nodeCount];
       }
     }
+
+    const DataSet* dataSet;  //!< dataset to which this data belong
 
     float time;          //!< time since beginning of simulation (in hours)
     char* statusFlags;   //!< array determining which elements are active and therefore if they should be rendered (size = element count)

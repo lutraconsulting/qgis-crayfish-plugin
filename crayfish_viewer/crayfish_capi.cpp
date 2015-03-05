@@ -120,6 +120,12 @@ OutputH CF_DS_outputAt(DataSetH ds, int index)
 }
 
 
+MeshH CF_DS_mesh(DataSetH ds)
+{
+  return (MeshH)ds->mesh();
+}
+
+
 float CF_O_time(OutputH o)
 {
   return o->time;
@@ -136,13 +142,20 @@ char CF_O_statusAt(OutputH o, int index)
   return o->statusFlags[index];
 }
 
+DataSetH CF_O_dataSet(OutputH o)
+{
+  return (DataSetH)o->dataSet;
+}
+
+
 bool CF_Mesh_loadDataSet(MeshH mesh, const char* path)
 {
   Mesh::DataSets lst = Crayfish::loadDataSet(QString::fromUtf8(path), mesh, &sLastLoadStatus);
   if (!lst.count())
     return false;
 
-  mesh->dataSets() << lst;
+  foreach (DataSet* ds, lst)
+    mesh->addDataSet(ds);
   return true;
 }
 
@@ -157,5 +170,3 @@ int CF_LastLoadWarning()
 {
   return sLastLoadStatus.mLastWarning;
 }
-
-

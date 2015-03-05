@@ -230,7 +230,7 @@ Mesh* loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
   bedDs->setIsTimeVarying(false);
   bedDs->addOutput(o);  // takes ownership of the Output
   bedDs->updateZRange(nodeCount);
-  mesh->dataSets().append(bedDs);
+  mesh->addDataSet(bedDs);
 
   return mesh;
 }
