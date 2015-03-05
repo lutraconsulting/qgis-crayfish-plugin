@@ -93,8 +93,8 @@ Mesh::DataSets Crayfish::loadXmdfDataSet(const QString& datFileName, const Mesh*
       Output* o = new Output;
       o->init(nNodes, nElems, false);
       o->time = times[i];
-      memcpy(o->values, values.constData()+(i*nNodes), sizeof(float)*nNodes);
-      memcpy(o->statusFlags, active.constData()+(i*nElems), sizeof(uchar)*nElems);
+      memcpy(o->values.data(), values.constData()+(i*nNodes), sizeof(float)*nNodes);
+      memcpy(o->active.data(), active.constData()+(i*nElems), sizeof(uchar)*nElems);
       ds->addOutput(o);
     }
 

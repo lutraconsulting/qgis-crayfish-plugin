@@ -29,6 +29,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_viewer_global.h"
 
+#include <QVector>
+
+#include <math.h>
+
 class DataSet;
 
 struct CRAYFISHVIEWERSHARED_EXPORT Output{
@@ -36,40 +40,35 @@ struct CRAYFISHVIEWERSHARED_EXPORT Output{
     Output()
       : dataSet(0)
       , time(-1)
-      , statusFlags(0)
-      , values(0)
-      , values_x(0)
-      , values_y(0)
     {
     }
 
     ~Output()
     {
-      delete[] statusFlags;
-      delete[] values;
-      delete[] values_x;
-      delete[] values_y;
     }
 
     void init(int nodeCount, int elemCount, bool isVector)
     {
-      Q_ASSERT(statusFlags == 0 && values == 0 && values_x == 0 && values_y == 0);
-      statusFlags = new char[elemCount];
-      values = new float[nodeCount];
+      active.resize(elemCount);
+      values.resize(nodeCount);
       if (isVector)
       {
-        values_x = new float[nodeCount];
-        values_y = new float[nodeCount];
+        valuesV.resize(nodeCount);
       }
     }
 
+    typedef struct
+    {
+      float x,y;
+      float length() const { return sqrt( x*x + y*y ); }
+    } float2D;
+
     const DataSet* dataSet;  //!< dataset to which this data belong
 
-    float time;          //!< time since beginning of simulation (in hours)
-    char* statusFlags;   //!< array determining which elements are active and therefore if they should be rendered (size = element count)
-    float* values;       //!< array of values per node (size = node count)
-    float* values_x;     //!< in case of dataset with vector data - array of X coords - otherwise 0
-    float* values_y;     //!< in case of dataset with vector data - array of Y coords - otherwise 0
+    float time;               //!< time since beginning of simulation (in hours)
+    QVector<char> active;     //!< array determining which elements are active and therefore if they should be rendered (size = element count)
+    QVector<float> values;    //!< array of values per node (size = node count)
+    QVector<float2D> valuesV; //!< in case of dataset with vector data - array of X,Y coords - otherwise empty
 };
 
 #endif // CRAYFISH_OUTPUT_H

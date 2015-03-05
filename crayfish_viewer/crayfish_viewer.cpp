@@ -446,7 +446,7 @@ void CrayfishViewer::renderContourData(const DataSet* ds, const Output* output)
                 // For each element
 
                 // If the element's activity flag is off, ignore it
-                if( ! output->statusFlags[i] ){
+                if( ! output->active[i] ){
                     continue;
                 }
 
@@ -568,8 +568,8 @@ void CrayfishViewer::renderVectorData(
             // Get the value
             uint nodeIndex = candidateNodes.at(i);
 
-            float xVal = output->values_x[nodeIndex];
-            float yVal = output->values_y[nodeIndex];
+            float xVal = output->valuesV[nodeIndex].x;
+            float yVal = output->valuesV[nodeIndex].y;
             float V = output->values[nodeIndex];  // pre-calculated magnitude
 
             if(xVal == 0.0 && yVal == 0.0){
@@ -755,6 +755,7 @@ bool CrayfishViewer::elemOutsideView(uint i){
 bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, double* interpolatedVal, const Output* output){
 
     const Element& elem = mMesh->elements()[elementIndex];
+    const float* values = output->values.constData();
 
     if(elem.eType == Element::E4Q){
 
@@ -768,10 +769,10 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
         if (Lx < 0 || Ly < 0 || Lx > 1 || Ly > 1)
           return false;
 
-        double q11 = output->values[ elem.p[2] ];
-        double q12 = output->values[ elem.p[1] ];
-        double q21 = output->values[ elem.p[3] ];
-        double q22 = output->values[ elem.p[0] ];
+        double q11 = values[ elem.p[2] ];
+        double q12 = values[ elem.p[1] ];
+        double q21 = values[ elem.p[3] ];
+        double q22 = values[ elem.p[0] ];
 
         *interpolatedVal = q11*Lx*Ly + q21*(1-Lx)*Ly + q12*Lx*(1-Ly) + q22*(1-Lx)*(1-Ly);
 
@@ -825,9 +826,9 @@ bool CrayfishViewer::interpolatValue(uint elementIndex, double x, double y, doub
 
         // Now interpolate
 
-        double z1 = output->values[ elem.p[0] ];
-        double z2 = output->values[ elem.p[1] ];
-        double z3 = output->values[ elem.p[2] ];
+        double z1 = values[ elem.p[0] ];
+        double z2 = values[ elem.p[1] ];
+        double z3 = values[ elem.p[2] ];
         *interpolatedVal = lam1 * z3 + lam2 * z2 + lam3 * z1;
         return true;
 
@@ -880,7 +881,7 @@ double CrayfishViewer::valueAtCoord(const Output* output, double xCoord, double 
     for(uint i=0; i<candidateElementIds.size(); i++){
 
         uint elemIndex = candidateElementIds.at(i);
-        if( ! output->statusFlags[elemIndex] ){
+        if( ! output->active[elemIndex] ){
             continue;
         }
         if( interpolatValue(elemIndex, xCoord, yCoord, &value, output) ){
@@ -964,7 +965,7 @@ void CrayfishViewer::exportRawDataElements(Element::Type elemType, const Output*
       continue;
 
     // If the element's activity flag is off, ignore it
-    if(!output->statusFlags[i])
+    if(!output->active[i])
       continue;
 
     const BBox& bbox = mBBoxes[i];

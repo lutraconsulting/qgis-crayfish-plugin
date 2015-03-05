@@ -88,19 +88,20 @@ void DataSet::updateZRange(uint nodeCount)
   float zMax = 0.0;
   for(uint i=0; i<outputCount(); i++){
       const Output* out = output(i);
+      const float* values = out->values.constData();
       for(uint j=0; j<nodeCount; j++){
-          if(out->values[j] != -9999.0){
+          if(values[j] != -9999.0){
               // This is not a NULL value
               if(first){
                   first = false;
-                  zMin = out->values[j];
-                  zMax = out->values[j];
+                  zMin = values[j];
+                  zMax = values[j];
               }
-              if( out->values[j] < zMin ){
-                  zMin = out->values[j];
+              if( values[j] < zMin ){
+                  zMin = values[j];
               }
-              if( out->values[j] > zMax ){
-                  zMax = out->values[j];
+              if( values[j] > zMax ){
+                  zMax = values[j];
               }
           }
       }

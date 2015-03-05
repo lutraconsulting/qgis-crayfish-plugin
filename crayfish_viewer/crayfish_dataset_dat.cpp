@@ -163,27 +163,32 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
       if (istat)
       {
         // Read status flags
+        char* active = o->active.data();
         for (int i=0; i < elemCount; i++)
         {
-          if( in.readRawData( (char*)&o->statusFlags[i], 1) != 1 )
+          if( in.readRawData( active+i, 1) != 1 )
             EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
         }
       }
 
+      float* values = o->values.data();
+      Output::float2D* valuesV = o->valuesV.data();
       for (int i=0; i<nodeCount; i++)
       {
         // Read values flags
         if (ds->type() == DataSetType::Vector)
         {
-          if( in.readRawData( (char*)&o->values_x[i], 4) != 4 )
+          Output::float2D v;
+          if( in.readRawData( (char*)&v.x, 4) != 4 )
             EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
-          if( in.readRawData( (char*)&o->values_y[i], 4) != 4 )
+          if( in.readRawData( (char*)&v.y, 4) != 4 )
             EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
-          o->values[i] = sqrt( pow(o->values_x[i],2) + pow(o->values_y[i],2) ); // Determine the magnitude
+          valuesV[i] = v;
+          values[i] = v.length(); // Determine the magnitude
         }
         else
         {
-          if( in.readRawData( (char*)&o->values[i], 4) != 4 )
+          if( in.readRawData( (char*)&values[i], 4) != 4 )
             EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
         }
       }
@@ -346,14 +351,17 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
       if (hasStatus)
       {
         // only for new format
+        char* active = o->active.data();
         for (int i = 0; i < elemCount; ++i)
         {
-          o->statusFlags[i] = stream.readLine().toInt();
+          active[i] = stream.readLine().toInt();
         }
       }
       else
-        memset(o->statusFlags, 1, elemCount); // there is no status flag -> everything is active
+        memset(o->active.data(), 1, elemCount); // there is no status flag -> everything is active
 
+      float* values = o->values.data();
+      Output::float2D* valuesV = o->valuesV.data();
       for (int i = 0; i < nodeIDToIndex.count(); ++i)
       {
         QStringList tsItems = stream.readLine().split(reSpaces, QString::SkipEmptyParts);
@@ -363,26 +371,28 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
 
         if (isVector)
         {
+          Output::float2D v;
           if (tsItems.count() >= 2) // BASEMENT files with vectors have 3 columns
           {
-            o->values_x[index] = tsItems[0].toFloat();
-            o->values_y[index] = tsItems[1].toFloat();
+            v.x = tsItems[0].toFloat();
+            v.y = tsItems[1].toFloat();
           }
           else
           {
             qDebug("Crayfish: invalid timestep line");
-            o->values_x[index] = o->values_y[index] = 0;
+            v.x = v.y = 0;
           }
-          o->values[index] = sqrt( pow(o->values_x[index],2) + pow(o->values_y[index],2) ); // Determine the magnitude
+          valuesV[index] = v;
+          values[index] = v.length(); // Determine the magnitude
         }
         else
         {
           if (tsItems.count() >= 1)
-            o->values[index] = tsItems[0].toFloat();
+            values[index] = tsItems[0].toFloat();
           else
           {
             qDebug("Crayfish: invalid timestep line");
-            o->values[index] = 0;
+            values[index] = 0;
           }
         }
       }

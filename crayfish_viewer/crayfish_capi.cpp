@@ -139,7 +139,7 @@ float CF_O_valueAt(OutputH o, int index)
 
 char CF_O_statusAt(OutputH o, int index)
 {
-  return o->statusFlags[index];
+  return o->active[index];
 }
 
 DataSetH CF_O_dataSet(OutputH o)

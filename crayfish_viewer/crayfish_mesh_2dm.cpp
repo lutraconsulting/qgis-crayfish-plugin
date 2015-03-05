@@ -66,7 +66,7 @@ Mesh* loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
   Output* o = new Output;
   o->init(nodeCount, elemCount, false);
   o->time = 0.0;
-  memset(o->statusFlags, 1, elemCount); // All cells active
+  memset(o->active.data(), 1, elemCount); // All cells active
 
   in.seek(0);
   QStringList chunks = QStringList();
