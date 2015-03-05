@@ -415,7 +415,7 @@ QImage* CrayfishViewer::draw(){
     if (mRenderMesh)
         renderMesh();
 
-    if(ds->isVectorRenderingEnabled() && ds->type() == DataSetType::Vector)
+    if(ds->isVectorRenderingEnabled() && ds->type() == DataSet::Vector)
         renderVectorData(ds, output);
 
     return mImage;
@@ -496,7 +496,7 @@ void CrayfishViewer::renderVectorData(
     const DataSet* ds,
     const Output* output)
 {
-    VectorLengthMethod shaftLengthCalculationMethod = ds->vectorShaftLengthMethod();
+    DataSet::VectorLengthMethod shaftLengthCalculationMethod = ds->vectorShaftLengthMethod();
     float minShaftLength   = ds->vectorShaftLengthMin();
     float maxShaftLength   = ds->vectorShaftLengthMax();
     float scaleFactor      = ds->vectorShaftLengthScaleFactor();
@@ -587,12 +587,12 @@ void CrayfishViewer::renderVectorData(
             double cosAlpha = cos( vectorAngle ) * mag(xVal);
             double sinAlpha = sin( vectorAngle ) * mag(xVal);
 
-            if(shaftLengthCalculationMethod == MinMax){
+            if(shaftLengthCalculationMethod == DataSet::MinMax){
                 double k = (V - minVal) / (maxVal - minVal);
                 double L = minShaftLength + k * (maxShaftLength - minShaftLength);
                 xDist = cosAlpha * L;
                 yDist = sinAlpha * L;
-            }else if(shaftLengthCalculationMethod == Scaled){
+            }else if(shaftLengthCalculationMethod == DataSet::Scaled){
                 xDist = scaleFactor * xVal;
                 yDist = scaleFactor * yVal;
             }else{

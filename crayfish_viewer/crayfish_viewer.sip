@@ -100,20 +100,6 @@ struct LoadStatus
   Warning mLastWarning;
 };
 
-enum VectorLengthMethod{
-    MinMax,  //!< minimal and maximal length
-    Scaled,  //!< length is scaled proportionally to the magnitude
-    Fixed    //!< length is fixed to a certain value
-};
-
-
-namespace DataSetType{
-    enum Enum{
-        Bed,
-        Scalar,
-        Vector
-    };
-};
 
 struct DataSet
 {
@@ -129,8 +115,15 @@ struct DataSet
     void setName(const QString& name);
     QString name() const;
 
-    void setType(DataSetType::Enum t);
-    DataSetType::Enum type() const;
+    enum Type
+    {
+      Bed,
+      Scalar,
+      Vector
+    };
+
+    void setType(DataSet::Type t);
+    DataSet::Type type() const;
 
     uint outputCount() const;
 
@@ -160,6 +153,13 @@ struct DataSet
 
     void setVectorRenderingEnabled(bool enabled);
     bool isVectorRenderingEnabled() const;
+
+    enum VectorLengthMethod
+    {
+      MinMax,  //!< minimal and maximal length
+      Scaled,  //!< length is scaled proportionally to the magnitude
+      Fixed    //!< length is fixed to a certain value
+    };
 
     void setVectorShaftLengthMethod(VectorLengthMethod method);
     VectorLengthMethod vectorShaftLengthMethod() const;

@@ -55,8 +55,15 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
     void setName(const QString& name) { mName = name; }
     QString name() const { return mName; }
 
-    void setType(DataSetType::Enum t) { mType = t; }
-    DataSetType::Enum type() const { return mType; }
+    enum Type
+    {
+      Bed,
+      Scalar,
+      Vector
+    };
+
+    void setType(Type t) { mType = t; }
+    Type type() const { return mType; }
 
     uint outputCount() const { return outputs.size(); }
 
@@ -87,6 +94,13 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
 
     void setVectorRenderingEnabled(bool enabled) { mRenderVectors = enabled; }
     bool isVectorRenderingEnabled() const { return mRenderVectors; }
+
+    enum VectorLengthMethod
+    {
+      MinMax,  //!< minimal and maximal length
+      Scaled,  //!< length is scaled proportionally to the magnitude
+      Fixed    //!< length is fixed to a certain value
+    };
 
     void setVectorShaftLengthMethod(VectorLengthMethod method) { mShaftLengthMethod = method; }
     VectorLengthMethod vectorShaftLengthMethod() const { return mShaftLengthMethod; }
@@ -119,7 +133,7 @@ protected:
 
     const Mesh* mMesh;
     QString mFileName;
-    DataSetType::Enum mType;
+    Type mType;
     QString mName;
     std::vector<Output*> outputs;
     float mZMin;   //!< min Z value of data

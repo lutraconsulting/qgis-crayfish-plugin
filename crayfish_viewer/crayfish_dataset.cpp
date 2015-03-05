@@ -65,7 +65,7 @@ void DataSet::addOutput(Output* output)
 void DataSet::setCurrentOutputTime(int outputTime)
 {
   // If we're looking at bed elevation, ensure the time output is the first (and only)
-  if (mType == DataSetType::Bed)
+  if (mType == DataSet::Bed)
       outputTime = 0;
 
   mCurrentOutputTime = outputTime;

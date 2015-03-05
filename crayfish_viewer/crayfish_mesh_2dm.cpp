@@ -225,7 +225,7 @@ Mesh* loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
 
   // Create a dataset for the bed elevation
   DataSet* bedDs = new DataSet(twoDMFileName);
-  bedDs->setType(DataSetType::Bed);
+  bedDs->setType(DataSet::Bed);
   bedDs->setName("Bed Elevation");
   bedDs->setIsTimeVarying(false);
   bedDs->addOutput(o);  // takes ownership of the Output

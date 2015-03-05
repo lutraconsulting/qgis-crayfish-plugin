@@ -230,8 +230,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.btnVectorOptions.setEnabled(dataSet.isVectorRenderingEnabled())
 
         # Disable the vector options if we are looking at a scalar dataset
-        from crayfishviewer import DataSetType
-        self.displayVectorsCheckBox.setEnabled(dataSet.type() == DataSetType.Vector)
+        from crayfishviewer import DataSet
+        self.displayVectorsCheckBox.setEnabled(dataSet.type() == DataSet.Vector)
         
         self.iface.legendInterface().refreshLayerSymbology(l)
 
@@ -296,8 +296,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         
         dataSet = self.currentDataSet()
         ts = dataSet.output(currentTs)
-        from crayfishviewer import DataSetType
-        if dataSet.type() != DataSetType.Bed:
+        from crayfishviewer import DataSet
+        if dataSet.type() != DataSet.Bed:
             # We're looking at an actual dataset rather than just the bed level
             dsValue = l.provider.valueAtCoord(ts, xCoord, yCoord)
             if dsValue != nullValue:

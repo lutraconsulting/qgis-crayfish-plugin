@@ -40,20 +40,4 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
 
-namespace DataSetType{
-    enum Enum{
-        Bed,
-        Scalar,
-        Vector
-    };
-}
-
-
-enum VectorLengthMethod{
-    MinMax,  //!< minimal and maximal length
-    Scaled,  //!< length is scaled proportionally to the magnitude
-    Fixed    //!< length is fixed to a certain value
-};
-
-
 #endif // CRAYFISHVIEWER_GLOBAL_H

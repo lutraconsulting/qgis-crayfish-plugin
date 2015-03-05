@@ -86,7 +86,7 @@ Mesh::DataSets Crayfish::loadXmdfDataSet(const QString& datFileName, const Mesh*
     DataSet* ds = new DataSet(datFileName);
     ds->setIsTimeVarying(true);
     ds->setName(name);
-    ds->setType(DataSetType::Scalar);
+    ds->setType(DataSet::Scalar);
 
     for (int i = 0; i < nTimeSteps; ++i)
     {

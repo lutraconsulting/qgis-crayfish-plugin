@@ -30,7 +30,7 @@ from qgis.core import *
 from crayfish_gui_utils import QgsMessageBar, qgis_message_bar, qv2pyObj, qv2float, qv2int, qv2bool, qv2string, defaultColorRamp
 from qgis.utils import iface
 
-from crayfishviewer import CrayfishViewer, DataSetType, ColorMap
+from crayfishviewer import CrayfishViewer, DataSet, ColorMap
 
 import os
 import glob
@@ -219,7 +219,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         for i in range(self.provider.dataSetCount()):
             ds = self.provider.dataSet(i)
-            if ds.type() == DataSetType.Bed:
+            if ds.type() == DataSet.Bed:
                 dsElem = doc.createElement("bed")
             else:
                 dsElem = doc.createElement("dat")
@@ -273,7 +273,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             self.updateColorMap(ds)
 
         # vector options (if applicable)
-        if ds.type() == DataSetType.Vector:
+        if ds.type() == DataSet.Vector:
             vectElem = elem.firstChildElement("render-vector")
             enabled = qstring2bool(vectElem.attribute("enabled"))
             if enabled is not None:
@@ -322,7 +322,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         contElem.appendChild(advElem)
 
         # vector options (if applicable)
-        if ds.type() == DataSetType.Vector:
+        if ds.type() == DataSet.Vector:
           vectElem = doc.createElement("render-vector")
           vectElem.setAttribute("enabled", "1" if ds.isVectorRenderingEnabled() else "0")
           vectElem.setAttribute("method", ds.vectorShaftLengthMethod())

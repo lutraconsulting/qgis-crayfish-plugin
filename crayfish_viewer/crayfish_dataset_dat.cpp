@@ -98,11 +98,11 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
       break;
 
     case CT_BEGSCL:
-      ds->setType(DataSetType::Scalar);
+      ds->setType(DataSet::Scalar);
       break;
 
     case CT_BEGVEC:
-      ds->setType(DataSetType::Vector);
+      ds->setType(DataSet::Vector);
       break;
 
     case CT_VECTYPE:
@@ -153,7 +153,7 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
       o->time = time;
       try
       {
-        o->init(nodeCount, elemCount, ds->type() == DataSetType::Vector);
+        o->init(nodeCount, elemCount, ds->type() == DataSet::Vector);
       }
       catch (const std::bad_alloc &)
       {
@@ -176,7 +176,7 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
       for (int i=0; i<nodeCount; i++)
       {
         // Read values flags
-        if (ds->type() == DataSetType::Vector)
+        if (ds->type() == DataSet::Vector)
         {
           Output::float2D v;
           if( in.readRawData( (char*)&v.x, 4) != 4 )
@@ -202,7 +202,7 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
     EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
 
   ds->updateZRange(nodeCount);
-  ds->setVectorRenderingEnabled(ds->type() == DataSetType::Vector);
+  ds->setVectorRenderingEnabled(ds->type() == DataSet::Vector);
 
   Mesh::DataSets datasets;
   datasets << ds.take();
@@ -257,7 +257,7 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
 
     ds.reset(new DataSet(fileName));
     ds->setIsTimeVarying(true);
-    ds->setType(isVector ? DataSetType::Vector : DataSetType::Scalar);
+    ds->setType(isVector ? DataSet::Vector : DataSet::Scalar);
     ds->setVectorRenderingEnabled(isVector);
     ds->setName(QFileInfo(fileName).baseName());
   }
@@ -310,7 +310,7 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
       ds.reset(new DataSet(fileName));
       ds->setIsTimeVarying(true);
       ds->setVectorRenderingEnabled(isVector);
-      ds->setType(isVector ? DataSetType::Vector : DataSetType::Scalar);
+      ds->setType(isVector ? DataSet::Vector : DataSet::Scalar);
     }
     else if (!oldFormat && cardType == "ENDDS")
     {

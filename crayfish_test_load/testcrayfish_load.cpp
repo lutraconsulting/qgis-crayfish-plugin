@@ -82,7 +82,7 @@ void TestCrayfish_load::testLoadValidMeshFile()
   QCOMPARE((int)s.elementCount(), 2);
   QCOMPARE(s.dataSetCount(), 1);
   QVERIFY(s.dataSet(0));
-  QCOMPARE(s.dataSet(0)->type(), DataSetType::Bed);
+  QCOMPARE(s.dataSet(0)->type(), DataSet::Bed);
   QVERIFY(!s.dataSet(1));
 }
 
@@ -118,7 +118,7 @@ void TestCrayfish_load::testLoadOldAsciiDataFile()
   QCOMPARE(s.dataSetCount(), 2);
   const DataSet* ds = s.dataSet(1);
   QVERIFY(ds);
-  QCOMPARE(ds->type(), DataSetType::Scalar);
+  QCOMPARE(ds->type(), DataSet::Scalar);
 
   QCOMPARE((int)ds->outputCount(), 2);
   QVERIFY(ds->output(0));
@@ -142,7 +142,7 @@ void TestCrayfish_load::testLoadNewAsciiDataFile()
   QCOMPARE(s.dataSetCount(), 2);
   const DataSet* ds = s.dataSet(1);
   QVERIFY(ds);
-  QCOMPARE(ds->type(), DataSetType::Scalar);
+  QCOMPARE(ds->type(), DataSet::Scalar);
 
   QCOMPARE((int)ds->outputCount(), 2);
   QVERIFY(ds->output(0));
@@ -167,7 +167,7 @@ void TestCrayfish_load::testLoadBinaryDataFile()
   QCOMPARE(s.dataSetCount(), 2);
   const DataSet* ds = s.dataSet(1);
   QVERIFY(ds);
-  QCOMPARE(ds->type(), DataSetType::Scalar);
+  QCOMPARE(ds->type(), DataSet::Scalar);
 
   QCOMPARE((int)ds->outputCount(), 1);
   QVERIFY(ds->output(0));
