@@ -49,6 +49,8 @@ public:
 
   static Mesh::DataSets loadDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);
 
+  static bool exportRawDataToTIF(const Output* output, double mupp, const QString& outFilename, const QString& projWkt);
+
 protected:
   static Mesh::DataSets loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
   static Mesh::DataSets loadAsciiDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);

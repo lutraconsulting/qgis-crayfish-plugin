@@ -34,16 +34,6 @@ DataSet::DataSet(const QString& fileName)
   : mMesh(0)
   , mFileName(fileName)
   , mCurrentOutputTime(0)
-  , mRenderContours(true)
-  , mRenderVectors(false)
-  , mShaftLengthMethod(MinMax)
-  , mMinShaftLength(3)
-  , mMaxShaftLength(40)
-  , mScaleFactor(10)
-  , mFixedShaftLength(10)
-  , mLineWidth(1)
-  , mVectorHeadWidthPerc(15)
-  , mVectorHeadLengthPerc(40)
 {
 }
 
@@ -110,6 +100,5 @@ void DataSet::updateZRange(uint nodeCount)
   mZMin = zMin;
   mZMax = zMax;
 
-  mColorMap = ColorMap::defaultColorMap(mZMin, mZMax);
 }
 

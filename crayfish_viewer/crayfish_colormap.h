@@ -27,8 +27,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef CRAYFISH_COLORMAP_H
 #define CRAYFISH_COLORMAP_H
 
-#include "crayfish_viewer_global.h"
-
 #include <QColor>
 #include <QVector>
 
@@ -37,7 +35,7 @@ class QSize;
 
 
 /** keep information about how data should be rendered */
-struct CRAYFISHVIEWERSHARED_EXPORT ColorMap
+struct ColorMap
 {
   struct Item
   {
@@ -77,6 +75,7 @@ protected:
   QRgb valueLinear(double v) const;
 };
 
-
+#include <QMetaType>
+Q_DECLARE_METATYPE(ColorMap)  // make available for QVariant
 
 #endif // CRAYFISH_COLORMAP_H

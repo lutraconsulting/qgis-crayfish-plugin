@@ -27,15 +27,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef CRAYFISH_OUTPUT_H
 #define CRAYFISH_OUTPUT_H
 
-#include "crayfish_viewer_global.h"
-
 #include <QVector>
 
 #include <math.h>
 
 class DataSet;
 
-struct CRAYFISHVIEWERSHARED_EXPORT Output{
+struct Output{
 
     Output()
       : dataSet(0)

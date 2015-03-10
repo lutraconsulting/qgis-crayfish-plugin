@@ -202,7 +202,6 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
     EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
 
   ds->updateZRange(nodeCount);
-  ds->setVectorRenderingEnabled(ds->type() == DataSet::Vector);
 
   Mesh::DataSets datasets;
   datasets << ds.take();
@@ -258,7 +257,6 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
     ds.reset(new DataSet(fileName));
     ds->setIsTimeVarying(true);
     ds->setType(isVector ? DataSet::Vector : DataSet::Scalar);
-    ds->setVectorRenderingEnabled(isVector);
     ds->setName(QFileInfo(fileName).baseName());
   }
   else
@@ -309,7 +307,6 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
       isVector = cardType == "BEGVEC";
       ds.reset(new DataSet(fileName));
       ds->setIsTimeVarying(true);
-      ds->setVectorRenderingEnabled(isVector);
       ds->setType(isVector ? DataSet::Vector : DataSet::Scalar);
     }
     else if (!oldFormat && cardType == "ENDDS")

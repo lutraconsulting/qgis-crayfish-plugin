@@ -3,6 +3,7 @@
 #include "crayfish_mesh.h"
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
+#include "crayfish_renderer.h"
 
 #define CF_TYPES
 typedef Mesh* MeshH;
@@ -10,6 +11,11 @@ typedef const Node* NodeH;
 typedef const Element* ElementH;
 typedef DataSet* DataSetH;
 typedef const Output* OutputH;
+typedef Renderer::Config* RendererConfigH;
+typedef Renderer* RendererH;
+typedef QVariant* VariantH;
+typedef QImage* ImageH;
+typedef ColorMap* ColorMapH;
 
 #include "crayfish_capi.h"
 
@@ -169,4 +175,229 @@ int CF_LastLoadError()
 int CF_LastLoadWarning()
 {
   return sLastLoadStatus.mLastWarning;
+}
+
+
+RendererH CF_R_create(RendererConfigH cfg, ImageH img)
+{
+  return new Renderer(*cfg, *img);
+}
+
+
+void CF_R_destroy(RendererH rend)
+{
+  delete rend;
+}
+
+
+void CF_R_draw(RendererH rend)
+{
+  rend->draw();
+}
+
+
+RendererConfigH CF_RC_create()
+{
+  return new Renderer::Config();
+}
+
+
+void CF_RC_destroy(RendererConfigH cfg)
+{
+  delete cfg;
+}
+
+
+void CF_RC_setView(RendererConfigH cfg, int width, int height, double llx, double lly, double pixelSize)
+{
+  cfg->outputSize = QSize(width, height);
+  cfg->llX = llx;
+  cfg->llY = lly;
+  cfg->pixelSize = pixelSize;
+}
+
+
+void CF_RC_setOutput(RendererConfigH cfg, OutputH output)
+{
+  cfg->output = output;
+}
+
+
+void CF_Mesh_extent(MeshH mesh, double* xmin, double* ymin, double* xmax, double* ymax)
+{
+  BBox b = mesh->extent();
+  *xmin = b.minX;
+  *ymin = b.minY;
+  *xmax = b.maxX;
+  *ymax = b.maxY;
+}
+
+
+void CF_DS_valueRange(DataSetH ds, float* vMin, float* vMax)
+{
+  *vMin = ds->minZValue();
+  *vMax = ds->maxZValue();
+}
+
+
+void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
+{
+  QString k = QString::fromAscii(key);
+  if (k == "mesh")
+    cfg->mesh.mRenderMesh = value->toBool();
+  else if (k == "meshcolor")
+    cfg->mesh.mMeshColor = value->value<QColor>();
+  else if (k == "contours")
+    cfg->ds.mRenderContours = value->toBool();
+  else if (k == "colormap")
+    cfg->ds.mColorMap = value->value<ColorMap>();
+  else if (k == "vectors")
+    cfg->ds.mRenderVectors = value->toBool();
+  else
+    qDebug("[setParam] unknown key: %s", key);
+}
+
+
+VariantH CF_V_create()
+{
+  return new QVariant();
+}
+
+
+void CF_V_destroy(VariantH v)
+{
+  delete v;
+}
+
+
+void CF_V_fromInt(VariantH v, int i)
+{
+  *v = QVariant(i);
+}
+
+
+int CF_V_toInt(VariantH v)
+{
+  return v->toInt();
+}
+
+
+void CF_V_fromColor(VariantH v, int r, int g, int b, int a)
+{
+  *v = QVariant::fromValue(QColor(r,g,b,a));
+}
+
+
+ColorMapH CF_CM_create()
+{
+  return new ColorMap();
+}
+
+
+void CF_CM_destroy(ColorMapH cm)
+{
+  delete cm;
+}
+
+
+void CF_V_toColorMap(VariantH v, ColorMapH cm)
+{
+  *cm = v->value<ColorMap>();
+}
+
+
+void CF_V_fromColorMap(VariantH v, ColorMapH cm)
+{
+  *v = QVariant::fromValue(*cm);
+}
+
+
+int CF_CM_itemCount(ColorMapH cm)
+{
+  return cm->items.count();
+}
+
+
+double CF_CM_itemValue(ColorMapH cm, int index)
+{
+  return cm->items[index].value;
+}
+
+
+int CF_CM_itemColor(ColorMapH cm, int index)
+{
+  return cm->items[index].color;
+}
+
+
+const char* CF_CM_itemLabel(ColorMapH cm, int index)
+{
+  return _return_str( cm->items[index].label );
+}
+
+
+void CF_CM_setItemCount(ColorMapH cm, int count)
+{
+  cm->items.resize(count);
+}
+
+
+void CF_CM_setItemValue(ColorMapH cm, int index, double value)
+{
+  cm->items[index].value = value;
+}
+
+
+void CF_CM_setItemColor(ColorMapH cm, int index, int color)
+{
+  cm->items[index].color = color;
+}
+
+
+void CF_CM_setItemLabel(ColorMapH cm, int index, const char* label)
+{
+  cm->items[index].label = QString::fromUtf8(label);
+}
+
+
+ColorMapH CF_CM_createDefault(double vmin, double vmax)
+{
+  return new ColorMap(ColorMap::defaultColorMap(vmin, vmax));
+}
+
+void CF_CM_clip(ColorMapH cm, int* clipLow, int* clipHigh)
+{
+  *clipLow = cm->clipLow;
+  *clipHigh = cm->clipHigh;
+}
+
+
+void CF_CM_setClip(ColorMapH cm, int clipLow, int clipHigh)
+{
+  cm->clipLow = clipLow;
+  cm->clipHigh = clipHigh;
+}
+
+
+int CF_CM_alpha(ColorMapH cm)
+{
+  return cm->alpha;
+}
+
+
+void CF_CM_setAlpha(ColorMapH cm, int alpha)
+{
+  cm->alpha = alpha;
+}
+
+
+int CF_CM_method(ColorMapH cm)
+{
+  return cm->method;
+}
+
+
+void CF_CM_setMethod(ColorMapH cm, int method)
+{
+  cm->method = (ColorMap::Method) method;
 }

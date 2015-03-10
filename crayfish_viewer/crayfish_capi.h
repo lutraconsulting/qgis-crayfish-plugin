@@ -1,52 +1,114 @@
 #ifndef CRAYFISH_CAPI_H
 #define CRAYFISH_CAPI_H
 
+#include <QtCore/qglobal.h>
+
+#if defined(CRAYFISH_LIBRARY)
+#  define CF_EXPORT Q_DECL_EXPORT
+#else
+#  define CF_EXPORT Q_DECL_IMPORT
+#endif
+
 extern "C"
 {
 
-int CF_Version();
-
-/*#ifndef CF_TYPES
+#ifndef CF_TYPES
 #define CF_TYPES
 typedef void* MeshH;
-#endif*/
+typedef void* NodeH;
+typedef void* ElementH;
+typedef void* DataSetH;
+typedef void* OutputH;
+typedef void* RendererConfigH;
+typedef void* RendererH;
+typedef void* VariantH;
+typedef void* ImageH;
+typedef void* ColorMapH;
+#endif
 
-MeshH CF_LoadMesh(const char* meshFile);
+CF_EXPORT int CF_Version();
 
-void CF_CloseMesh(MeshH mesh);
+CF_EXPORT MeshH CF_LoadMesh(const char* meshFile);
 
-int CF_LastLoadError();
-int CF_LastLoadWarning();
+CF_EXPORT void CF_CloseMesh(MeshH mesh);
+
+CF_EXPORT int CF_LastLoadError();
+CF_EXPORT int CF_LastLoadWarning();
 
 // Mesh functions
 
-int CF_Mesh_nodeCount(MeshH mesh);
-NodeH CF_Mesh_nodeAt(MeshH mesh, int index);
+CF_EXPORT int CF_Mesh_nodeCount(MeshH mesh);
+CF_EXPORT NodeH CF_Mesh_nodeAt(MeshH mesh, int index);
 
-int CF_Mesh_elementCount(MeshH mesh);
-ElementH CF_Mesh_elementAt(MeshH mesh, int index);
+CF_EXPORT int CF_Mesh_elementCount(MeshH mesh);
+CF_EXPORT ElementH CF_Mesh_elementAt(MeshH mesh, int index);
 
-int CF_Mesh_dataSetCount(MeshH mesh);
-DataSetH CF_Mesh_dataSetAt(MeshH mesh, int index);
+CF_EXPORT int CF_Mesh_dataSetCount(MeshH mesh);
+CF_EXPORT DataSetH CF_Mesh_dataSetAt(MeshH mesh, int index);
 
 
-bool CF_Mesh_loadDataSet(MeshH mesh, const char* path);
+CF_EXPORT bool CF_Mesh_loadDataSet(MeshH mesh, const char* path);
+
+CF_EXPORT void CF_Mesh_extent(MeshH mesh, double* xmin, double* ymin, double* xmax, double* ymax);
 
 // DataSet functions
 
-int CF_DS_type(DataSetH ds);
-const char* CF_DS_name(DataSetH ds);
+CF_EXPORT int CF_DS_type(DataSetH ds);
+CF_EXPORT const char* CF_DS_name(DataSetH ds);
 
-int CF_DS_outputCount(DataSetH ds);
-OutputH CF_DS_outputAt(DataSetH ds, int index);
+CF_EXPORT int CF_DS_outputCount(DataSetH ds);
+CF_EXPORT OutputH CF_DS_outputAt(DataSetH ds, int index);
 
-MeshH CF_DS_mesh(DataSetH ds);
+CF_EXPORT MeshH CF_DS_mesh(DataSetH ds);
+CF_EXPORT void CF_DS_valueRange(DataSetH ds, float* vMin, float* vMax);
 
 // Output functions
-float CF_O_time(OutputH o);
-float CF_O_valueAt(OutputH o, int index);
-char CF_O_statusAt(OutputH o, int index);
-DataSetH CF_O_dataSet(OutputH o);
+CF_EXPORT float CF_O_time(OutputH o);
+CF_EXPORT float CF_O_valueAt(OutputH o, int index);
+CF_EXPORT char CF_O_statusAt(OutputH o, int index);
+CF_EXPORT DataSetH CF_O_dataSet(OutputH o);
+
+// Renderer Config functions
+CF_EXPORT RendererConfigH CF_RC_create();
+CF_EXPORT void CF_RC_destroy(RendererConfigH cfg);
+CF_EXPORT void CF_RC_setView(RendererConfigH cfg, int width, int height, double llx, double lly, double pixelSize);
+CF_EXPORT void CF_RC_setOutput(RendererConfigH cfg, OutputH output);
+CF_EXPORT void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value);
+
+// Renderer functions
+CF_EXPORT RendererH CF_R_create(RendererConfigH cfg, ImageH img);
+CF_EXPORT void CF_R_destroy(RendererH rend);
+CF_EXPORT void CF_R_draw(RendererH rend);
+
+// Variant value
+CF_EXPORT VariantH CF_V_create();
+CF_EXPORT void CF_V_destroy(VariantH v);
+CF_EXPORT void CF_V_fromInt(VariantH v, int i);
+CF_EXPORT int CF_V_toInt(VariantH v);
+CF_EXPORT void CF_V_fromDouble(VariantH v, double d);
+CF_EXPORT double CF_V_toDouble(VariantH v);
+CF_EXPORT void CF_V_fromColor(VariantH v, int r, int g, int b, int a);
+CF_EXPORT void CF_V_toColorMap(VariantH v, ColorMapH cm);
+CF_EXPORT void CF_V_fromColorMap(VariantH v, ColorMapH cm);
+
+// Colormap
+CF_EXPORT ColorMapH CF_CM_create();
+CF_EXPORT void CF_CM_destroy(ColorMapH cm);
+CF_EXPORT ColorMapH CF_CM_createDefault(double vmin, double vmax);
+CF_EXPORT int CF_CM_itemCount(ColorMapH cm);
+CF_EXPORT double CF_CM_itemValue(ColorMapH cm, int index);
+CF_EXPORT int CF_CM_itemColor(ColorMapH cm, int index);
+CF_EXPORT const char* CF_CM_itemLabel(ColorMapH cm, int index);
+CF_EXPORT void CF_CM_setItemCount(ColorMapH cm, int count);
+CF_EXPORT void CF_CM_setItemValue(ColorMapH cm, int index, double value);
+CF_EXPORT void CF_CM_setItemColor(ColorMapH cm, int index, int color);
+CF_EXPORT void CF_CM_setItemLabel(ColorMapH cm, int index, const char* label);
+CF_EXPORT void CF_CM_clip(ColorMapH cm, int* clipLow, int* clipHigh);
+CF_EXPORT void CF_CM_setClip(ColorMapH cm, int clipLow, int clipHigh);
+CF_EXPORT int CF_CM_alpha(ColorMapH cm);
+CF_EXPORT void CF_CM_setAlpha(ColorMapH cm, int alpha);
+CF_EXPORT int CF_CM_method(ColorMapH cm);
+CF_EXPORT void CF_CM_setMethod(ColorMapH cm, int method);
 
 }
 

@@ -27,8 +27,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef CRAYFISH_DATASET_H
 #define CRAYFISH_DATASET_H
 
-#include "crayfish_viewer_global.h"
-
 #include "crayfish_colormap.h"
 
 #include <QMap>
@@ -41,7 +39,7 @@ struct Output;
  * DataSet represents one sub-layer of the plugin layer.
  * One mesh may have several DataSet instances attached.
  */
-struct CRAYFISHVIEWERSHARED_EXPORT DataSet
+struct DataSet
 {
     DataSet(const QString& fileName);
     ~DataSet();
@@ -82,52 +80,51 @@ struct CRAYFISHVIEWERSHARED_EXPORT DataSet
     void setIsTimeVarying(bool varying) { mTimeVarying = varying; }
     bool isTimeVarying() const { return mTimeVarying; }
 
+
+
+    //const RendererConfig& config() const { return mCfg; }
+
     // -- contour rendering --
+/*
+    void setContourRenderingEnabled(bool enabled) { mCfg.mRenderContours = enabled; }
+    bool isContourRenderingEnabled() const { return mCfg.mRenderContours; }
 
-    void setContourRenderingEnabled(bool enabled) { mRenderContours = enabled; }
-    bool isContourRenderingEnabled() const { return mRenderContours; }
-
-    void setContourColorMap(const ColorMap& cm) { mColorMap = cm; }
-    const ColorMap& contourColorMap() const { return mColorMap; }
+    void setContourColorMap(const ColorMap& cm) { mCfg.mColorMap = cm; }
+    const ColorMap& contourColorMap() const { return mCfg.mColorMap; }
 
     // -- vector rendering --
 
-    void setVectorRenderingEnabled(bool enabled) { mRenderVectors = enabled; }
-    bool isVectorRenderingEnabled() const { return mRenderVectors; }
+    void setVectorRenderingEnabled(bool enabled) { mCfg.mRenderVectors = enabled; }
+    bool isVectorRenderingEnabled() const { return mCfg.mRenderVectors; }
 
-    enum VectorLengthMethod
-    {
-      MinMax,  //!< minimal and maximal length
-      Scaled,  //!< length is scaled proportionally to the magnitude
-      Fixed    //!< length is fixed to a certain value
-    };
+    void setVectorShaftLengthMethod(VectorLengthMethod method) { mCfg.mShaftLengthMethod = method; }
+    VectorLengthMethod vectorShaftLengthMethod() const { return mCfg.mShaftLengthMethod; }
 
-    void setVectorShaftLengthMethod(VectorLengthMethod method) { mShaftLengthMethod = method; }
-    VectorLengthMethod vectorShaftLengthMethod() const { return mShaftLengthMethod; }
+    void setVectorShaftLengthMinMax(float minLen, float maxLen) { mCfg.mMinShaftLength = minLen; mCfg.mMaxShaftLength = maxLen; }
+    float vectorShaftLengthMin() const { return mCfg.mMinShaftLength; }
+    float vectorShaftLengthMax() const { return mCfg.mMaxShaftLength; }
 
-    void setVectorShaftLengthMinMax(float minLen, float maxLen) { mMinShaftLength = minLen; mMaxShaftLength = maxLen; }
-    float vectorShaftLengthMin() const { return mMinShaftLength; }
-    float vectorShaftLengthMax() const { return mMaxShaftLength; }
+    void setVectorShaftLengthScaleFactor(float scaleFactor) { mCfg.mScaleFactor = scaleFactor; }
+    float vectorShaftLengthScaleFactor() const { return mCfg.mScaleFactor; }
 
-    void setVectorShaftLengthScaleFactor(float scaleFactor) { mScaleFactor = scaleFactor; }
-    float vectorShaftLengthScaleFactor() const { return mScaleFactor; }
+    void setVectorShaftLengthFixed(float fixedLen) { mCfg.mFixedShaftLength = fixedLen; }
+    float vectorShaftLengthFixed() const { return mCfg.mFixedShaftLength; }
 
-    void setVectorShaftLengthFixed(float fixedLen) { mFixedShaftLength = fixedLen; }
-    float vectorShaftLengthFixed() const { return mFixedShaftLength; }
+    void setVectorPenWidth(int width) { mCfg.mLineWidth = width; }
+    int vectorPenWidth() const { return mCfg.mLineWidth; }
 
-    void setVectorPenWidth(int width) { mLineWidth = width; }
-    int vectorPenWidth() const { return mLineWidth; }
-
-    void setVectorHeadSize(float widthPerc, float lengthPerc) { mVectorHeadWidthPerc = widthPerc; mVectorHeadLengthPerc = lengthPerc; }
-    float vectorHeadWidth() const { return mVectorHeadWidthPerc; }
-    float vectorHeadLength() const { return mVectorHeadLengthPerc; }
-
+    void setVectorHeadSize(float widthPerc, float lengthPerc) { mCfg.mVectorHeadWidthPerc = widthPerc; mCfg.mVectorHeadLengthPerc = lengthPerc; }
+    float vectorHeadWidth() const { return mCfg.mVectorHeadWidthPerc; }
+    float vectorHeadLength() const { return mCfg.mVectorHeadLengthPerc; }
+*/
     // -- custom (GUI-specific) settings --
 
     void setCustomValue(const QString& key, const QVariant& value) { mCustomSettings.insert(key, value); }
     QVariant customValue(const QString& key) const { return mCustomSettings.value(key); }
     void clearCustomValue(const QString& key) { mCustomSettings.remove(key); }
     QStringList customValues() const { return mCustomSettings.keys(); }
+
+
 
 protected:
 
@@ -142,23 +139,7 @@ protected:
 
     int mCurrentOutputTime; //!< current time index for rendering
 
-    // contour rendering settings
-    bool mRenderContours; //!< whether to render contours
-    ColorMap mColorMap; //!< actual color map used for rendering
-
-    // vector rendering settings
-    bool mRenderVectors;  //!< whether to render vectors (only valid for vector data)
-    VectorLengthMethod mShaftLengthMethod;
-    float mMinShaftLength;    //!< valid if using "min/max" method
-    float mMaxShaftLength;    //!< valid if using "min/max" method
-    float mScaleFactor;       //!< valid if using "scaled" method
-    float mFixedShaftLength;  //!< valid if using "fixed" method
-    int mLineWidth;           //!< pen width for drawing of the vectors
-    float mVectorHeadWidthPerc;   //!< arrow head's width  (in percent to shaft's length)
-    float mVectorHeadLengthPerc;  //!< arrow head's length (in percent to shaft's length)
-
     QMap<QString, QVariant> mCustomSettings;
 };
-
 
 #endif // CRAYFISH_DATASET_H

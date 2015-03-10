@@ -7,8 +7,6 @@
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
 
-#include "crayfish_viewer.h" // temporary
-
 #include <iostream>
 
 Mesh* loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )

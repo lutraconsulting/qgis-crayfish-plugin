@@ -40,6 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish.h"
 #include "crayfish_mesh.h"
+#include "crayfish_renderer.h"
 //struct Element;
 struct Node;
 struct BBox;
@@ -47,70 +48,20 @@ struct E4Qtmp;
 
 struct DataSet;
 struct Output;
+class MapToPixel;
 
 
-class CRAYFISHVIEWERSHARED_EXPORT RawData
-{
-public:
-  RawData(int c, int r, QVector<double> g): mCols(c), mRows(r), mData(new float[r*c]), mGeo(g)
-  {
-    int size = r*c;
-    for (int i = 0; i < size; ++i)
-      mData[i] = -999; // nodata value
-  }
-  ~RawData() { delete [] mData; }
-
-  int cols() const { return mCols; }
-  int rows() const { return mRows; }
-  QVector<double> geoTransform() const { return mGeo; }
-  float* data() const { return mData; }
-  float* scanLine(int row) const { Q_ASSERT(row >= 0 && row < mRows); return mData+row*mCols; }
-  float dataAt(int index) const { return mData[index]; }
-
-private:
-  int mCols;
-  int mRows;
-  float* mData;
-  QVector<double> mGeo;  // georef data (2x3 matrix): xp = a0 + x*a1 + y*a2    yp = a3 + x*a4 + y*a5
-
-  Q_DISABLE_COPY(RawData)
-};
 
 
-// TODO: use also directly for viewer rendering
-class MapToPixel
-{
-public:
-  MapToPixel(double llX, double llY, double mupp, int rows)
-    : mLlX(llX), mLlY(llY), mMupp(mupp), mRows(rows) {}
-
-  QPointF realToPixel(double rx, double ry) const
-  {
-    double px = (rx - mLlX) / mMupp;
-    double py = mRows - (ry - mLlY) / mMupp;
-    return QPointF(px, py);
-  }
-
-  QPointF pixelToReal(double px, double py) const
-  {
-      double rx = mLlX + (px * mMupp);
-      double ry = mLlY + mMupp * (mRows - py);
-      return QPointF(rx,ry);
-  }
-
-private:
-  double mLlX, mLlY;
-  double mMupp; // map units per pixel
-  double mRows; // (actually integer value)
-};
 
 
-class CRAYFISHVIEWERSHARED_EXPORT CrayfishViewer {
+
+class CrayfishViewer {
 public:
 
     CrayfishViewer(QString);
     ~CrayfishViewer();
-    QImage* draw();
+    QImage draw(const QSize& outputSize, double llX, double llY, double pixelSize);
 
     bool loadedOk(){ return mLoadStatus.mLastError == LoadStatus::Err_None; }
     bool warningsEncountered(){ return mLoadStatus.mLastWarning != LoadStatus::Warn_None; }
@@ -118,8 +69,6 @@ public:
     LoadStatus::Error getLastError() { return mLoadStatus.mLastError; }
     bool loadDataSet(QString fileName);
     bool isDataSetLoaded(QString fileName);
-
-    double valueAtCoord(const Output *output, double xCoord, double yCoord);
 
     // mesh information
 
@@ -129,11 +78,7 @@ public:
     const Element* elements() const { return mMesh->elements().data(); }
     int elementCount_E4Q() const { return mMesh ? mMesh->elementCountForType(Element::E4Q) : 0; }
     int elementCount_E3T() const { return mMesh ? mMesh->elementCountForType(Element::E3T) : 0; }
-    QRectF meshExtent() const { return QRectF(QPointF(mXMin,mYMin), QPointF(mXMax,mYMax)); }
-
-    // data export
-
-    bool exportRawDataToTIF(int dataSetIndex, int outputTime, double mupp, const QString& outFilename, const QString& projWkt);
+    //QRectF meshExtent() const { return QRectF(QPointF(mXMin,mYMin), QPointF(mXMax,mYMax)); }
 
     // rendering options
 
@@ -142,7 +87,7 @@ public:
 
     void setExtent(double llX, double llY, double pixelSize);
     QRectF extent() const;
-    double pixelSize() const { return mPixelSize; }
+    double pixelSize() const;
 
     void setMeshRenderingEnabled(bool enabled);
     bool isMeshRenderingEnabled() const;
@@ -156,79 +101,18 @@ public:
     const DataSet* dataSet(int dataSetIndex) const;
     const DataSet* currentDataSet() const;
 
-    void setNoProjection();
-    bool setProjection(const QString& srcProj4, const QString& destProj4);
-    bool hasProjection() const;
-    QString sourceCrsProj4() const { return mSrcProj4; }
-    QString destCrsProj4() const { return mDestProj4; }
-
 private:
-    QImage* mImage;
 
-    // global rendering options
-    int mCanvasWidth;   //!< width of the current view (pixels)
-    int mCanvasHeight;  //!< height of the current view (pixels)
-    double mLlX;        //!< X of current view's lower-left point (mesh coords)
-    double mLlY;        //!< Y of current view's lower-left point (mesh coords)
-    double mUrX;        //!< X of current view's upper-right point (mesh coords)
-    double mUrY;        //!< Y of current view's upper-right point (mesh coords)
-    double mPixelSize;  //!< units (in mesh) per pixel (on screen)
-    bool mRenderMesh;   //!< whether to render the mesh as a wireframe
-    QColor mMeshColor;  //!< color used for rendering of the wireframe
-    int mCurDataSetIdx; //!< index of the current dataset
-
-    // envelope of the mesh
-    double mXMin;
-    double mXMax;
-    double mYMin;
-    double mYMax;
-
-    //! mesh topology - nodes and elements
+    //! mesh topology and associated data
     Mesh* mMesh;
 
-    LoadStatus mLoadStatus;
+    // global rendering options
+    Renderer::Config::Mesh mCfgMesh;
+    int mCurDataSetIdx; //!< index of the current dataset
 
-    E4Qtmp* mE4Qtmp;   //!< contains rendering information for quads
-    int* mE4QtmpIndex; //!< for conversion from element index to mE4Qtmp indexes
+    LoadStatus mLoadStatus; // TODO: remove
 
-    BBox* mBBoxes; //! bounding boxes of elements (non-projected)
-
-    bool mProjection; //!< whether doing reprojection from mesh coords to map coords
-    QString mSrcProj4;  //!< CRS's proj.4 string of the source (layer)
-    QString mDestProj4; //!< CRS's proj.4 string of the destination (project)
-    Node* mProjNodes; //!< reprojected nodes
-    BBox* mProjBBoxes; //!< reprojected bounding boxes of elements
-
-    void computeMeshExtent();
-    bool nodeInsideView(uint nodeIndex);
-    bool elemOutsideView(uint);
-    QPoint realToPixel(double, double);
-    QPoint realToPixel(int nodeIndex);
-    QPointF realToPixelF(double, double);
-    QPointF realToPixelF(int nodeIndex);
-    void paintRow(uint, int, int, int, const DataSet* ds, const Output* output);
-    bool interpolatValue(uint, double, double, double*, const Output* output);
-    QPointF pixelToReal(int, int);
-
-    void renderContourData(const DataSet* ds, const Output* output);
-    void renderVectorData(const DataSet* ds, const Output* output);
-    void renderMesh();
-
-    //! Return new raw data image for the given dataset/output time, sampled with given resolution
-    RawData* exportRawData(int dataSetIndex, int outputTime, double mupp);
-
-    void exportRawDataElements(Element::Type elemType, const Output* output, RawData* rd, const MapToPixel& xform);
 };
 
-
-void updateBBox(BBox& bbox, const Element& elem, const Node* nodes);
-
-inline float mag(float input)
-{
-    if(input < 0.0){
-        return -1.0;
-    }
-    return 1.0;
-}
 
 #endif // CRAYFISHVIEWER_H

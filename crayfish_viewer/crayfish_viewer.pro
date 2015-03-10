@@ -45,34 +45,32 @@ unix {
 TARGET = crayfishViewer
 TEMPLATE = lib
 
-DEFINES += CRAYFISHVIEWER_LIBRARY
+DEFINES += CRAYFISH_LIBRARY
 
-SOURCES += crayfish_viewer.cpp\
-        version.cpp \
-        crayfish_e4q.cpp \
-        crayfish_colormap.cpp \
+SOURCES += crayfish.cpp \
+    crayfish_e4q.cpp \
+    crayfish_colormap.cpp \
     crayfish_dataset.cpp \
     crayfish_gdal.cpp \
     crayfish_mesh.cpp \
     crayfish_mesh_2dm.cpp \
-    crayfish.cpp \
     crayfish_capi.cpp \
     crayfish_dataset_dat.cpp \
-    crayfish_dataset_xmdf.cpp
+    crayfish_dataset_xmdf.cpp \
+    crayfish_renderer.cpp \
+    crayfish_export_grid.cpp
 
-HEADERS += crayfish_viewer.h\
-        crayfish_viewer_global.h\
-        version.h \
-        crayfish_e4q.h \
-        crayfish_colormap.h \
+HEADERS += crayfish.h \
+    crayfish_e4q.h \
+    crayfish_colormap.h \
     crayfish_dataset.h \
     crayfish_output.h \
     crayfish_mesh.h \
     crayfish_gdal.h \
-    crayfish.h \
     crayfish_mesh_2dm.h \
     crayfish_capi.h \
-    crayfish_hdf5.h
+    crayfish_hdf5.h \
+    crayfish_renderer.h
 
 CONFIG(debug, debug|release) {
     DESTDIR = $$PWD/build/debug
@@ -82,4 +80,5 @@ CONFIG(debug, debug|release) {
 
 unix {
   QMAKE_CXXFLAGS += -Wall -Wextra # -Wconversion
+  QMAKE_CXXFLAGS += -fvisibility=hidden
 }
