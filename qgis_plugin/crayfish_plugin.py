@@ -340,10 +340,12 @@ class CrayfishPlugin:
         # First get the file name of the 'thing' the user wants to view
         
         # Get the file name
-        inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Crayfish Dat File', self.lastFolder(),
-                                                 "Results Files (DAT, SOL, XMDF) (*.dat *.sol *.xmdf);;2DM Mesh Files (*.2dm)")
+        inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(),
+            "Open Crayfish Dat File",
+            self.lastFolder(),
+            "Results Files (*.dat *.sol *.xmdf);;2DM Mesh Files (*.2dm)")
         inFileName = unicode(inFileName)
-        if len(inFileName) == 0: # If the length is 0 the user pressed cancel 
+        if len(inFileName) == 0:  # If the length is 0 the user pressed cancel
             return
             
         # Store the path we just looked in
@@ -362,11 +364,13 @@ class CrayfishPlugin:
             
             if layerWith2dm:
                 # This 2dm has already been added
-                qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
+                qgis_message_bar.pushMessage("Crayfish",
+                                             "The mesh file is already loaded in layer " + layerWith2dm.name(),
+                                             level=QgsMessageBar.INFO)
                 return
               
             if not self.addLayer(inFileName):
-                return # addLayer() reports errors/warnings
+                return  # addLayer() reports errors/warnings
 
             # update GUI
             self.dock.currentLayerChanged()
@@ -376,7 +380,9 @@ class CrayfishPlugin:
             
         else:
             # This is an unsupported file type
-            qgis_message_bar.pushMessage("Crayfish", "The file type you are trying to load is not supported: " + fileType, level=QgsMessageBar.CRITICAL)
+            qgis_message_bar.pushMessage("Crayfish",
+                                         "The file type you are trying to load is not supported: " + fileType,
+                                         level=QgsMessageBar.CRITICAL)
             return
 
 
