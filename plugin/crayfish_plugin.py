@@ -457,7 +457,7 @@ class CrayfishPlugin:
           if hasattr(mc, "mapSettings"):
             crsWkt = mc.mapSettings().destinationCrs().toWkt()
           else:
-            crsWkt = ms.mapRenderer().destinationCrs().toWkt()
+            crsWkt = mc.mapRenderer().destinationCrs().toWkt()
         else:
           crsWkt = layer.crs().toWkt()  # no OTF reprojection
 
