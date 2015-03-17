@@ -191,7 +191,8 @@ class DataSet(object):
     self.m = self.mesh()  # keep ref to the mesh so the dataset does not get invalid
 
   def __del__(self):
-    del DataSet.handles[self.handle.value]
+    if hasattr(self, 'handle'):  # only if initialized to a valid dataset
+      del DataSet.handles[self.handle.value]
 
   Bed, Scalar, Vector = range(3)
 
@@ -249,7 +250,8 @@ class Output(object):
     self.ds = self.dataset()  # keep ref to dataset so the output does not get invalid
 
   def __del__(self):
-    del Output.handles[self.handle.value]
+    if hasattr(self, 'handle'):  # only if initialized to a valid output
+      del Output.handles[self.handle.value]
 
   def time(self):
     return self.lib.CF_O_time(self.handle)
