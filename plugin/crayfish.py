@@ -101,7 +101,7 @@ class Mesh:
   def __init__(self, path):
     self.lib = lib
     handle = self.lib.CF_LoadMesh(path)
-    if handle == 0:
+    if handle is None:
       raise ValueError, last_load_status() #, path)
     assert handle not in Mesh.handles
     Mesh.handles[handle] = weakref.ref(self)
@@ -147,8 +147,9 @@ class Mesh:
     return "<Mesh nodes:%d elements:%d datasets:%d>" % (self.node_count(), self.element_count(), self.dataset_count())
 
   def __del__(self):
-    del Mesh.handles[self.handle.value]
-    self.lib.CF_CloseMesh(self.handle)
+    if hasattr(self, 'handle'):  # only if initialized to a valid mesh
+      del Mesh.handles[self.handle.value]
+      self.lib.CF_CloseMesh(self.handle)
 
   def load_data(self, path):
     if not self.lib.CF_Mesh_loadDataSet(self.handle, path):
@@ -182,7 +183,7 @@ class DataSet(object):
 
   def __init__(self, handle):
     self.lib = lib
-    if handle == 0:
+    if handle is None:
       raise ValueError, handle
     assert handle not in DataSet.handles
     DataSet.handles[handle] = weakref.ref(self)
@@ -240,7 +241,7 @@ class Output(object):
 
   def __init__(self, handle):
     self.lib = lib
-    if handle == 0:
+    if handle is None:
       raise ValueError, handle
     assert handle not in Output.handles
     Output.handles[handle] = weakref.ref(self)

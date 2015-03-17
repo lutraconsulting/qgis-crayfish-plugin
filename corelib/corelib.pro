@@ -72,11 +72,7 @@ HEADERS += crayfish.h \
     crayfish_hdf5.h \
     crayfish_renderer.h
 
-CONFIG(debug, debug|release) {
-    DESTDIR = $$PWD/build/debug
-} else {
-    DESTDIR = $$PWD/build/release
-}
+DESTDIR = $$PWD/../plugin
 
 unix {
   QMAKE_CXXFLAGS += -Wall -Wextra # -Wconversion
