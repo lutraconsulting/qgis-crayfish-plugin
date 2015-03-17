@@ -113,7 +113,7 @@ public:
 
   const DataSets& dataSets() const { return mDataSets; }
 
-  BBox extent() const { return mBBox; }
+  BBox extent() const { return mExtent; }
 
   double valueAt(const Output* output, double xCoord, double yCoord) const;
   bool valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const;
@@ -124,18 +124,17 @@ public:
   QString sourceCrsProj4() const { return mSrcProj4; }
   QString destCrsProj4() const { return mDestProj4; }
 
-  const BBox& bbox(int elemIndex) const { return mBBoxes[elemIndex]; }
-
+  BBox projectedExtent() const { return mProjection ? mProjExtent : mExtent; }
   const Node* projectedNodes() const { return mProjection ? mProjNodes : mNodes.constData(); }
   const Node& projectedNode(int nodeIndex) const { return mProjection ? mProjNodes[nodeIndex] : mNodes[nodeIndex]; }
   const BBox& projectedBBox(int elemIndex) const { return mProjection ? mProjBBoxes[elemIndex] : mBBoxes[elemIndex]; }
 
 protected:
 
-  BBox computeMeshExtent();
+  BBox computeMeshExtent(bool projected);
   void computeTempRendererData();
 
-  BBox mBBox;
+  BBox mExtent; //!< unprojected mesh extent
 
   // associated data
   DataSets mDataSets;  //!< pointers to datasets are owned by this class
@@ -154,7 +153,7 @@ protected:
   bool mProjection; //!< whether doing reprojection from mesh coords to map coords
   Node* mProjNodes; //!< reprojected nodes
   BBox* mProjBBoxes; //!< reprojected bounding boxes of elements
-
+  BBox mProjExtent;
 };
 
 

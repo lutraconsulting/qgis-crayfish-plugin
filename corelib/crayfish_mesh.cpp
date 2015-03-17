@@ -52,7 +52,7 @@ Mesh::Mesh(const BasicMesh::Nodes& nodes, const BasicMesh::Elements& elements)
   , mProjNodes(0)
   , mProjBBoxes(0)
 {
-  mBBox = computeMeshExtent();
+  mExtent = computeMeshExtent(false);
   computeTempRendererData();
 }
 
@@ -78,21 +78,23 @@ Mesh::~Mesh()
 }
 
 
-BBox Mesh::computeMeshExtent()
+BBox Mesh::computeMeshExtent(bool projected)
 {
   BBox b;
+
+  const Node* nodes = projected ? projectedNodes() : mNodes.constData();
 
   if (mNodes.count() == 0)
     return b;
 
-  b.minX = mNodes[0].x;
-  b.maxX = mNodes[0].x;
-  b.minY = mNodes[0].y;
-  b.maxY = mNodes[0].y;
+  b.minX = nodes[0].x;
+  b.maxX = nodes[0].x;
+  b.minY = nodes[0].y;
+  b.maxY = nodes[0].y;
 
   for (int i = 0; i < mNodes.count(); i++)
   {
-    const Node& n = mNodes[i];
+    const Node& n = nodes[i];
     if(n.x > b.maxX) b.maxX = n.x;
     if(n.x < b.minX) b.minX = n.x;
     if(n.y > b.maxY) b.maxY = n.y;
@@ -382,6 +384,8 @@ bool Mesh::setProjection(const QString& srcProj4, const QString& destProj4)
 
   pj_free(projSrc);
   pj_free(projDst);
+
+  mProjExtent = computeMeshExtent(true);
 
   if (mProjBBoxes == 0)
     mProjBBoxes = new BBox[mElems.count()];

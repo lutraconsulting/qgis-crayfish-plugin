@@ -24,7 +24,7 @@ static void exportRawDataElements(Element::Type elemType, const Output* output, 
     if(!output->active[i])
       continue;
 
-    const BBox& bbox = mesh->bbox(i);
+    const BBox& bbox = mesh->projectedBBox(i);
 
     // Get the BBox of the element in pixels
     QPointF ll = xform.realToPixel(bbox.minX, bbox.minY);
@@ -65,7 +65,7 @@ static RawData* exportRawData(const Output* output, double mupp)
 
   // keep one pixel around
   // e.g. if we have mesh with coords 0..10 with sampling of 1, then we actually need 11 pixels
-  BBox bbox = mesh->extent();
+  BBox bbox = mesh->projectedExtent();
   double xMin = bbox.minX - mupp;
   double xMax = bbox.maxX + mupp;
   double yMin = bbox.minY - mupp;

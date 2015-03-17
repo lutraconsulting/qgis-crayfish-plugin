@@ -452,7 +452,14 @@ class CrayfishPlugin:
             QMessageBox.warning(None, "Crayfish", "Please select a Crayfish layer for export")
             return
 
-        crsWkt = layer.crs().toWkt()  # TODO: custom destination CRS(?)
+        mc = self.iface.mapCanvas()
+        if mc.hasCrsTransformEnabled():
+          if hasattr(mc, "mapSettings"):
+            crsWkt = mc.mapSettings().destinationCrs().toWkt()
+          else:
+            crsWkt = ms.mapRenderer().destinationCrs().toWkt()
+        else:
+          crsWkt = layer.crs().toWkt()  # no OTF reprojection
 
         dlgConfig = crayfish_export_config_dialog.CrayfishExportConfigDialog()
         if not dlgConfig.exec_():
