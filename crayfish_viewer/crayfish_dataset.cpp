@@ -33,15 +33,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 DataSet::DataSet(const QString& fileName)
   : mMesh(0)
   , mFileName(fileName)
-  , mCurrentOutputTime(0)
 {
 }
 
 
 DataSet::~DataSet()
 {
-  for (size_t j=0; j<outputs.size(); j++)
-      delete outputs.at(j);
+  qDeleteAll(outputs);
   outputs.clear();
 }
 
@@ -49,16 +47,6 @@ void DataSet::addOutput(Output* output)
 {
   outputs.push_back(output);
   output->dataSet = this;
-}
-
-
-void DataSet::setCurrentOutputTime(int outputTime)
-{
-  // If we're looking at bed elevation, ensure the time output is the first (and only)
-  if (mType == DataSet::Bed)
-      outputTime = 0;
-
-  mCurrentOutputTime = outputTime;
 }
 
 
@@ -71,15 +59,15 @@ const Output* DataSet::output(int outputTime) const
 }
 
 
-void DataSet::updateZRange(uint nodeCount)
+void DataSet::updateZRange(int nodeCount)
 {
   bool first = true;
   float zMin = 0.0;
   float zMax = 0.0;
-  for(uint i=0; i<outputCount(); i++){
+  for(int i=0; i<outputCount(); i++){
       const Output* out = output(i);
       const float* values = out->values.constData();
-      for(uint j=0; j<nodeCount; j++){
+      for(int j=0; j<nodeCount; j++){
           if(values[j] != -9999.0){
               // This is not a NULL value
               if(first){

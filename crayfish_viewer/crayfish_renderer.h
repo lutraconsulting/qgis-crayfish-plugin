@@ -45,6 +45,8 @@ class Renderer
 public:
   struct Config
   {
+    Config() : output(0), llX(0), llY(0), pixelSize(0) {}
+
     // data
     const Output* output;
 

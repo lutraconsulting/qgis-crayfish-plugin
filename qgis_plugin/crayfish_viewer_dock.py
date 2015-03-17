@@ -31,7 +31,7 @@ from qgis.core import *
 from crayfish_viewer_dock_widget import Ui_DockWidget
 import crayfish_viewer_vector_options_dialog
 from crayfish_viewer_render_settings import CrayfishViewerRenderSettings
-from crayfish_gui_utils import qv2pyObj, qv2float, qv2int, qv2bool, qv2string, initColorButton, initColorRampComboBox, name2ramp, timeToString
+from crayfish_gui_utils import initColorButton, initColorRampComboBox, name2ramp, timeToString
 
 class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
     
@@ -78,9 +78,16 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         QObject.connect(self.btnMeshColor, SIGNAL("colorChanged(QColor)"), self.setMeshColor)
 
         
-    def currentDataSet(self):
+    def currentCrayfishLayer(self):
+        """ return currently selected crayfish layer or None if there is no selection (of non-crayfish layer is current) """
         l = self.iface.mapCanvas().currentLayer()
-        return l.provider.dataSet( self.listWidget.currentRow() )
+        if l and l.type() == QgsMapLayer.PluginLayer and str(l.pluginLayerType()) == 'crayfish_viewer':
+            return l
+
+    def currentDataSet(self):
+        l = self.currentCrayfishLayer()
+        return l.currentDataSet() if l else None
+
         
     def displayVectorPropsDialog(self):
         if self.vectorPropsDialog is not None:
@@ -104,7 +111,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         """
             displayVectorsCheckBox has been toggled
         """
-        self.currentDataSet().setVectorRenderingEnabled(newState)
+        self.currentDataSet().config["vectors"] = newState
+        #self.currentDataSet().setVectorRenderingEnabled(newState)
         self.btnVectorOptions.setEnabled(newState)
         self.redrawCurrentLayer()
         
@@ -116,7 +124,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.btnMeshColor.setEnabled(newState)
 
         l = self.iface.mapCanvas().currentLayer()
-        l.provider.setMeshRenderingEnabled(newState)
+        l.config["mesh"] = newState
         self.redrawCurrentLayer()
 
 
@@ -125,7 +133,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
         ds = self.currentDataSet()
 
-        ds.setCustomValue("c_basicCustomRange", on)
+        ds.custom["c_basicCustomRange"] = on
 
         self.updateContourGUI(ds)
 
@@ -139,8 +147,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             minContour = float( str(self.contourMinLineEdit.text()) )
             maxContour = float( str(self.contourMaxLineEdit.text()) )
 
-            ds.setCustomValue("c_basicCustomRangeMin", minContour)
-            ds.setCustomValue("c_basicCustomRangeMax", maxContour)
+            ds.custom["c_basicCustomRangeMin"] = minContour
+            ds.custom["c_basicCustomRangeMax"] = maxContour
 
             self.updateColorMapAndRedraw(ds)
 
@@ -150,15 +158,16 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
     def updateContourGUI(self, ds):
         """ update GUI from provider's range """
-        isBasic = qv2bool(ds.customValue("c_basic"))
+        ds = self.currentDataSet()
+        isBasic = ds.custom["c_basic"]
         self.cboContourBasic.setEnabled(isBasic)
         self.contourCustomRangeCheckBox.setEnabled(isBasic)
         self.btnAdvanced.setEnabled(not isBasic)
         self.lblAdvancedPreview.setEnabled(not isBasic)
 
-        manualRange = qv2bool(ds.customValue("c_basicCustomRange"))
-        zMin = qv2float(ds.customValue("c_basicCustomRangeMin")) if manualRange else ds.minZValue()
-        zMax = qv2float(ds.customValue("c_basicCustomRangeMax")) if manualRange else ds.maxZValue()
+        manualRange = ds.custom["c_basicCustomRange"]
+        zMin = ds.custom["c_basicCustomRangeMin"] if manualRange else ds.value_range()[0]
+        zMax = ds.custom["c_basicCustomRangeMax"] if manualRange else ds.value_range()[1]
         self.contourMinLineEdit.setEnabled(isBasic and manualRange)
         self.contourMaxLineEdit.setEnabled(isBasic and manualRange)
         self.contourMinLineEdit.setText( str("%.3f" % zMin) )
@@ -167,7 +176,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         
     def transparencyChanged(self, value):
         ds = self.currentDataSet()
-        ds.setCustomValue("c_alpha", 255-value)
+        ds.custom["c_alpha"] = 255-value
         self.updateColorMapAndRedraw(ds)
 
         
@@ -180,58 +189,58 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         if not l:
             return
           
-        dataSet = l.provider.dataSet(dataSetRow)
-        
+        dataSet = l.mesh.dataset(dataSetRow)
+
         dataSetIdx = self.listWidget.currentRow()
-        l.provider.setCurrentDataSetIndex(dataSetIdx)
+        l.current_ds_index = dataSetIdx
 
         self.listWidget_2.blockSignals(True) # make sure that currentRowChanged(int) will not be emitted
         self.listWidget_2.clear()
         self.listWidget_2.blockSignals(False)
 
-        if dataSet.isTimeVarying():
+        if dataSet.time_varying():
             self.listWidget_2.setEnabled(True)
-            for i in range( dataSet.outputCount() ):
-                t = dataSet.output(i).time
+            for output in dataSet.outputs():
+                t = output.time()
                 self.listWidget_2.addItem(timeToString(t))
             # Restore the selection of the last time step that we viewed
             # for this dataset
-            timeIdx = dataSet.currentOutputTime()
+            timeIdx = dataSet.current_output_index
             self.listWidget_2.setCurrentRow(timeIdx)
         else:
             self.listWidget_2.setEnabled(False)
             
         # Get the contour settings from the provider
 
-        rad = self.radContourBasic if qv2bool(dataSet.customValue("c_basic")) else self.radContourAdvanced
+        rad = self.radContourBasic if dataSet.custom["c_basic"] else self.radContourAdvanced
         rad.blockSignals(True)
         rad.setChecked(True)
         rad.blockSignals(False)
 
         self.contourTransparencySlider.blockSignals(True)
-        self.contourTransparencySlider.setValue( 255 - qv2int(dataSet.customValue("c_alpha")) )
+        self.contourTransparencySlider.setValue( 255 - dataSet.custom["c_alpha"] )
         self.contourTransparencySlider.blockSignals(False)
 
-        index = self.cboContourBasic.findText( qv2string(dataSet.customValue("c_basicName")) )
+        index = self.cboContourBasic.findText( dataSet.custom["c_basicName"] )
         self.cboContourBasic.blockSignals(True)
         self.cboContourBasic.setCurrentIndex(index)
         self.cboContourBasic.blockSignals(False)
 
         self.contourCustomRangeCheckBox.blockSignals(True)
-        self.contourCustomRangeCheckBox.setChecked( qv2bool(dataSet.customValue("c_basicCustomRange")) )
+        self.contourCustomRangeCheckBox.setChecked( dataSet.custom["c_basicCustomRange"] )
         self.contourCustomRangeCheckBox.blockSignals(False)
 
         self.updateContourGUI(dataSet)
         self.updateAdvancedPreview()
             
         # Get contour / vector render preferences
-        self.contoursGroupBox.setChecked(dataSet.isContourRenderingEnabled())
-        self.displayVectorsCheckBox.setChecked(dataSet.isVectorRenderingEnabled())
-        self.btnVectorOptions.setEnabled(dataSet.isVectorRenderingEnabled())
+        self.contoursGroupBox.setChecked(dataSet.config["contours"])
+        self.displayVectorsCheckBox.setChecked(dataSet.config["vectors"])
+        self.btnVectorOptions.setEnabled(dataSet.config["vectors"])
 
         # Disable the vector options if we are looking at a scalar dataset
-        from crayfishviewer import DataSet
-        self.displayVectorsCheckBox.setEnabled(dataSet.type() == DataSet.Vector)
+        from crayfish import DS_Vector
+        self.displayVectorsCheckBox.setEnabled(dataSet.type() == DS_Vector)
         
         self.iface.legendInterface().refreshLayerSymbology(l)
 
@@ -240,12 +249,11 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
     def outputTimeChanged(self, timeIdx):
 
-        l = self.currentCrayfishLayer()
-        if not l:
+        ds = self.currentDataSet()
+        if not ds:
             return
 
-        ds = l.provider.currentDataSet()
-        ds.setCurrentOutputTime(timeIdx)
+        ds.current_output_index = timeIdx
 
         self.redrawCurrentLayer()
 
@@ -284,8 +292,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         currentDs = self.listWidget.currentRow()
         currentTs = self.listWidget_2.currentRow()
         
-        bed = l.provider.dataSet(0).output(0)
-        bedValue = l.provider.valueAtCoord(bed, xCoord, yCoord) # Note that the bed will always be 0, 0
+        bed = l.mesh.dataset(0).output(0)
+        bedValue = l.mesh.value(bed, xCoord, yCoord) # Note that the bed will always be 0, 0
         
         if bedValue == nullValue:
             # The mouse cursor is outside the mesh, exit nicely
@@ -294,23 +302,16 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             
         textValue = str( '(%.3f)' % bedValue )
         
-        dataSet = self.currentDataSet()
-        ts = dataSet.output(currentTs)
-        from crayfishviewer import DataSet
-        if dataSet.type() != DataSet.Bed:
+        dataSet = l.currentDataSet()
+        from crayfish import DS_Bed
+        if dataSet.type() != DS_Bed:
             # We're looking at an actual dataset rather than just the bed level
-            dsValue = l.provider.valueAtCoord(ts, xCoord, yCoord)
+            dsValue = l.mesh.value(l.currentOutput(), xCoord, yCoord)
             if dsValue != nullValue:
                 textValue += str(' %.3f' % dsValue)
         
         self.valueLabel.setText( textValue )
         
-    def currentCrayfishLayer(self):
-        """ return currently selected crayfish layer or None if there is no selection (of non-crayfish layer is current) """
-        l = self.iface.mapCanvas().currentLayer()
-        if l and l.type() == QgsMapLayer.PluginLayer and str(l.pluginLayerType()) == 'crayfish_viewer':
-            return l
-
 
     def currentLayerChanged(self):
         """
@@ -329,21 +330,21 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.listWidget.clear()
 
         # Add datasets
-        for i in range(l.provider.dataSetCount()):
-            ds = l.provider.dataSet(i)
+        for i in range(l.mesh.dataset_count()):
+            ds = l.mesh.dataset(i)
             self.listWidget.addItem(ds.name())
 
         # setup current dataset
-        dataSetIdx = l.provider.currentDataSetIndex()
-        self.listWidget.setCurrentRow( dataSetIdx )
+        self.listWidget.setCurrentRow( l.current_ds_index )
 
         self.displayMeshCheckBox.blockSignals(True)
-        self.displayMeshCheckBox.setChecked(l.provider.isMeshRenderingEnabled())
+        self.displayMeshCheckBox.setChecked(l.config["mesh"])
         self.displayMeshCheckBox.blockSignals(False)
 
-        self.btnMeshColor.setEnabled(l.provider.isMeshRenderingEnabled())
+        self.btnMeshColor.setEnabled(l.config["mesh"])
         self.btnMeshColor.blockSignals(True)
-        self.btnMeshColor.setColor(l.provider.meshColor())
+        c = l.config["m_color"]
+        self.btnMeshColor.setColor(QColor(c[0],c[1],c[2],c[3]))
         self.btnMeshColor.blockSignals(False)
 
         #self.redrawCurrentLayer()
@@ -362,13 +363,13 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         rampName = self.cboContourBasic.currentText()
         ramp = name2ramp(rampName)
 
-        ds.setCustomValue("c_basicName", rampName)
-        ds.setCustomValue("c_basicRamp", ramp)
+        ds.custom["c_basicName"] = rampName
+        ds.custom["c_basicRamp"] = ramp
         self.updateColorMapAndRedraw(ds)
 
     def updateColorMapAndRedraw(self, ds):
         self.iface.mapCanvas().currentLayer().updateColorMap(ds)
-        if not qv2bool(ds.customValue("c_basic")):
+        if not ds.custom["c_basic"]:
             self.updateAdvancedPreview()
         self.redrawCurrentLayer()
 
@@ -379,10 +380,11 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
           self.advancedColorMapDialog.close()
 
         ds = self.currentDataSet()
-        colormap = qv2pyObj(ds.customValue("c_advancedColorMap"))
+        colormap = ds.custom["c_advancedColorMap"]
 
         from crayfish_colormap_dialog import CrayfishColorMapDialog
-        self.advancedColorMapDialog = CrayfishColorMapDialog(colormap, ds.minZValue(), ds.maxZValue(), lambda: self.updateColorMapAndRedraw(ds), self)
+        zmin, zmax = ds.value_range()
+        self.advancedColorMapDialog = CrayfishColorMapDialog(colormap, zmin, zmax, lambda: self.updateColorMapAndRedraw(ds), self)
         self.advancedColorMapDialog.show()
         self.updateColorMapAndRedraw(ds)
 
@@ -390,7 +392,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
     def setContourType(self):
         ds = self.currentDataSet()
         basic = self.radContourBasic.isChecked()
-        ds.setCustomValue("c_basic", basic)
+        ds.custom["c_basic"] = basic
 
         self.updateContourGUI(ds)
 
@@ -399,15 +401,16 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
     def updateAdvancedPreview(self):
         ds = self.currentDataSet()
-        cm = qv2pyObj(ds.customValue("c_advancedColorMap"))
-        pix = cm.previewPixmap(self.lblAdvancedPreview.size(), ds.minZValue(), ds.maxZValue())
+        cm = ds.custom["c_advancedColorMap"]
+        vMin,vMax = ds.value_range()
+        pix = cm.previewPixmap(self.lblAdvancedPreview.size(), vMin, vMax)
         self.lblAdvancedPreview.setPixmap(pix)
 
 
 
     def setMeshColor(self, clr):
         l = self.iface.mapCanvas().currentLayer()
-        l.provider.setMeshColor(clr)
+        l.config["m_color"] = (clr.red(),clr.green(),clr.blue(),clr.alpha())
         self.redrawCurrentLayer()
 
 

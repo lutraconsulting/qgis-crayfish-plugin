@@ -41,6 +41,7 @@ from crayfish_viewer_dock import CrayfishViewerDock
 #from crayfish_viewer_plugin_layer_type import *
 import crayfish_about_dialog
 import crayfish_export_config_dialog
+import crayfish_install_helper
 
 from illuvis import upload_dialog
 
@@ -64,9 +65,6 @@ def qv2unicode(v):
     except Exception:
         return v    # QGIS 2.x
 
-# Base URL for downloading of prepared binaries
-downloadBaseUrl = 'http://www.lutraconsulting.co.uk/'
-#downloadBaseUrl = 'http://localhost:8000/'  # for testing
 
 
 class CrayfishPlugin:
@@ -94,70 +92,8 @@ class CrayfishPlugin:
         self.menu.addAction(self.aboutAction)
         self.menu.addAction(self.uploadAction)
 
-        # Try to import the binary library:
-        restartRequired = False
-        
-        platformVersion = platform.system()
-        if platformVersion == 'Windows':
-            self.extractBinPackageAfterRestart()
-
-        try:
-            from crayfishviewer import CrayfishViewer
-            from crayfishviewer import version as crayfishVersion
-            assert self.version == str( crayfishVersion() )
-        except (ImportError, AttributeError, AssertionError):
-        
-            notFoundTxt = "Crayfish Viewer depends on a platform specific compiled library which was not found."
-        
-            # The crayfishviewer binary cannot be found
-            reply = QMessageBox.question(self.iface.mainWindow(), 'Crayfish Viewer Library Not Found', notFoundTxt + " Would you like to attempt to automatically download and install one from the developer's website?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-            if reply != QMessageBox.Yes:
-                # User did not want to download
-                QMessageBox.critical(self.iface.mainWindow(), 'No Crayfish Viewer Library', "Crayfish Viewer relies on the Crayfish Viewer library.  Either download a library for your platform or download the source code from GitHub and build the library yourself.  Crayfish Viewer will now be disabled." )
-                return
-            
-            libVersion = 'sip ' + sip.SIP_VERSION_STR + ' pyqt ' + PYQT_VERSION_STR
-            crayfishVersion = self.version
-            
-            # Determine where to extract the files
-            if platform.architecture()[0] == '64bit':
-                platformVersion += '64'
-            packageUrl = 'resources/crayfish/viewer/binaries/' + platformVersion + '/' + libVersion + '/' + crayfishVersion + '/crayfish_viewer_library.zip'
-            packageUrl = downloadBaseUrl + urllib2.quote(packageUrl)
-            
-            # Download it
-            try:
-                filename = os.path.join(os.path.dirname(__file__), 'crayfish_viewer_library.zip')
-                self.downloadBinPackage(packageUrl, filename)
-            except IOError, err:
-                QMessageBox.critical(self.iface.mainWindow(), 'Could Not Download Library', "The library for your platform could not be found on the developer's website.  Please see the About section for details of how to compile your own library or how to contact us for assistance.\n\n(Error: %s)" % str(err) )
-                return
-            
-            # check whether we need to download GDAL library extra (on older QGIS installs there is older version than the one required by the compiled binary)
-            if platformVersion == 'Windows':
-                try:
-                    from ctypes import windll
-                    x = windll.gdal111
-                except WindowsError:
-                    try:
-                        QMessageBox.information(self.iface.mainWindow(), 'Download Extra Libraries', 'It is necessary to download newer GDAL library - this may take some time (~10MB), please wait.')
-                        qApp.setOverrideCursor(QCursor(Qt.WaitCursor))
-                        gdalFilename = os.path.join(os.path.dirname(__file__), 'gdal111.dll')
-                        self.downloadBinPackage(downloadBaseUrl+'resources/crayfish/viewer/binaries/'+platformVersion+'/extra/gdal111.dll', gdalFilename)
-                        qApp.restoreOverrideCursor()
-                    except IOError, err:
-                        qApp.restoreOverrideCursor()
-                        QMessageBox.critical(self.iface.mainWindow(), 'Could Not Download Extra Libraries', "Download of the library failed. Please try again or contact us for further assistance.\n\n(Error: %s)" % str(err) )
-                        return
-
-            # try to extract the downloaded file - may require a restart if the files exist already
-            if not self.extractBinPackage(filename):
-                QMessageBox.information(self.iface.mainWindow(), 'Restart Required', "QGIS needs to be restarted in order to complete an update to the Crayfish Viewer Library.  Please restart QGIS." )
-                return
-                
-            # now try again
-            from crayfishviewer import CrayfishViewer
-            QMessageBox.information(self.iface.mainWindow(), 'Succeeded', "Download and installation successful." )
+        if not crayfish_install_helper.ensure_library_installed():
+          return
 
         self.crayfishViewerLibFound = True
         
@@ -196,75 +132,7 @@ class CrayfishPlugin:
         self.dock.hide()   # do not show the dock by default
         QObject.connect(self.dock, SIGNAL("visibilityChanged(bool)"), self.dockVisibilityChanged)
 
-    def downloadBinPackage(self, packageUrl, destinationFileName):
-        s = QSettings()
-        # FIXME - does this work from behind a proxy?
-        try:
-            useProxy = s.value("proxy/proxyEnabled", False).toBool()
-        except:
-            useProxy = s.value("proxy/proxyEnabled", False, type=bool)
-        if useProxy:
-            proxyHost = qv2unicode(s.value("proxy/proxyHost", unicode()))
-            proxyPassword = qv2unicode(s.value("proxy/proxyPassword", unicode()))
-            proxyPort = qv2unicode(s.value("proxy/proxyPort", unicode()))
-            proxyType = qv2unicode(s.value("proxy/proxyType", unicode()))
-            proxyTypes = { 'DefaultProxy' : 'http', 'HttpProxy' : 'http', 'Socks5Proxy' : 'socks', 'HttpCachingProxy' : 'http', 'FtpCachingProxy' : 'ftp' }
-            if proxyType in proxyTypes: proxyType = proxyTypes[proxyType]
-            proxyUser = qv2unicode(s.value("proxy/proxyUser", unicode()))
-            proxyString = 'http://' + proxyUser + ':' + proxyPassword + '@' + proxyHost + ':' + proxyPort
-            proxy = urllib2.ProxyHandler({proxyType : proxyString})
-            auth = urllib2.HTTPBasicAuthHandler()
-            opener = urllib2.build_opener(proxy, auth, urllib2.HTTPHandler)
-            urllib2.install_opener(opener)
-        conn = urllib2.urlopen(packageUrl)
-        if os.path.isfile(destinationFileName):
-            os.unlink(destinationFileName)
-        destinationFile = open(destinationFileName, 'wb')
-        destinationFile.write( conn.read() )
-        destinationFile.close()
-            
-    def extractBinPackage(self, destinationFileName):
-        """ extract the downloaded package with .dll and .pyd files.
-            If they already exist, the operation will fail because they are already loaded into Python.
-            In such case we just keep a marker file 'EXTRACT_DLL' and extract it on the next run
-        """
-        destFolder = os.path.dirname(__file__)
-        try:
-            z = zipfile.ZipFile(destinationFileName)
-            z.extractall(destFolder)
-            z.close()
-            return True
-        except IOError:
-            tmpF = open( os.path.join(destFolder, 'EXTRACT_DLL'), 'w' )
-            tmpF.write(' ')
-            tmpF.close()
-            return False
 
-    def extractBinPackageAfterRestart(self):
-        # Windows users may have opted to download a pre-compiled lib
-        # In this case, if they already had the DLL loaded (they have 
-        # just uypdated) - they will need to restart QGIS to be able to
-        # delete the old DLL
-        destFolder = os.path.dirname(__file__)
-        updateLibraryIndicator = os.path.join(destFolder, 'EXTRACT_DLL')
-        if not os.path.isfile(updateLibraryIndicator):
-            return
-            
-        dllFileName = os.path.join(destFolder, 'crayfishViewer.dll')
-        pydFileName = os.path.join(destFolder, 'crayfishviewer.pyd')
-        for retryCount in range(5):
-            try:
-                os.unlink( dllFileName )
-                break
-            except:
-                time.sleep(3)
-            
-        os.unlink( pydFileName )
-        destinationFileName = os.path.join(destFolder, 'crayfish_viewer_library.zip')
-        z = zipfile.ZipFile(destinationFileName)
-        z.extractall(destFolder)
-        z.close()
-        os.unlink(updateLibraryIndicator)
             
     def layersRemoved(self, layers):
         for layer in layers:
@@ -439,21 +307,24 @@ class CrayfishPlugin:
             if not parentLayer:
                 return   # error message has been shown already
 
-        if parentLayer.provider.isDataSetLoaded(inFileName):
-            qgis_message_bar.pushMessage("Crayfish", "The .dat file is already loaded in layer " + parentLayer.name(), level=QgsMessageBar.INFO)
-            return
+        # TODO: re-enable
+        #if parentLayer.provider.isDataSetLoaded(inFileName):
+        #    qgis_message_bar.pushMessage("Crayfish", "The .dat file is already loaded in layer " + parentLayer.name(), level=QgsMessageBar.INFO)
+        #    return
 
-        dsCountBefore = parentLayer.provider.dataSetCount()
+        dsCountBefore = parentLayer.mesh.dataset_count()
 
         # try to load it as binary file, if not successful, try as ASCII format
-        if not parentLayer.provider.loadDataSet( inFileName ):
-            err = parentLayer.provider.getLastError()
-            from crayfishviewer import LoadStatus
+        try:
+            parentLayer.mesh.load_data( inFileName )
+        except ValueError:
+            import crayfish
+            err = crayfish.last_load_status()[0]
             err_msgs = {
-              LoadStatus.Err_NotEnoughMemory : 'Not enough memory',
-              LoadStatus.Err_FileNotFound : 'Unable to read the file - missing file or no read access',
-              LoadStatus.Err_UnknownFormat : 'File format not recognized',
-              LoadStatus.Err_IncompatibleMesh : 'Mesh is not compatible'
+              crayfish.Err_NotEnoughMemory : 'Not enough memory',
+              crayfish.Err_FileNotFound : 'Unable to read the file - missing file or no read access',
+              crayfish.Err_UnknownFormat : 'File format not recognized',
+              crayfish.Err_IncompatibleMesh : 'Mesh is not compatible'
             }
             msg = "Failed to load the data file"
             if err in err_msgs:
@@ -461,13 +332,13 @@ class CrayfishPlugin:
             qgis_message_bar.pushMessage("Crayfish", msg, level=QgsMessageBar.CRITICAL)
             return
 
-        dsCountAfter = parentLayer.provider.dataSetCount()
+        dsCountAfter = parentLayer.mesh.dataset_count()
 
         for index in xrange(dsCountBefore, dsCountAfter):
-            parentLayer.initCustomValues(parentLayer.provider.dataSet(index))
+            parentLayer.initCustomValues(parentLayer.mesh.dataset(index))
 
         # set to most recent data set (first one from the newly added datasets)
-        parentLayer.provider.setCurrentDataSetIndex(dsCountBefore)
+        parentLayer.current_ds_index = dsCountBefore
         # update GUI
         self.dock.currentLayerChanged()
         # allow user to go through the time steps with arrow keys
@@ -544,12 +415,12 @@ class CrayfishPlugin:
         # Add to layer registry
         QgsMapLayerRegistry.instance().addMapLayer(layer)
 
-        if layer.provider.warningsEncountered():
-            w = layer.provider.getLastWarning() 
-            if w == 1:
+        import crayfish
+        warn = crayfish.last_load_status()[1]
+        if warn == crayfish.Warn_UnsupportedElement:
                 # Unsupported element seen
                 qgis_message_bar.pushMessage("Crayfish", "The mesh contains elements that are unsupported at this time. The following types of elements will be ignored for the time being: E2L, E3L, E6T, E8Q, E9Q", level=QgsMessageBar.WARNING)
-            elif w == 2:
+        elif warn == crayfish.Warn_InvalidElements:
                 qgis_message_bar.pushMessage("Crayfish", "The mesh contains some invalid elements, they will not be rendered.", level=QgsMessageBar.WARNING)
         
         return layer
@@ -581,8 +452,6 @@ class CrayfishPlugin:
             QMessageBox.warning(None, "Crayfish", "Please select a Crayfish layer for export")
             return
 
-        dsIndex = layer.provider.currentDataSetIndex()
-        tsIndex = layer.provider.currentDataSet().currentOutputTime()
         crsWkt = layer.crs().toWkt()  # TODO: custom destination CRS(?)
 
         dlgConfig = crayfish_export_config_dialog.CrayfishExportConfigDialog()
@@ -590,14 +459,14 @@ class CrayfishPlugin:
             return
         dlgConfig.saveSettings()
 
-        filenameTIF = os.path.join(self.lastFolder(), layer.provider.currentDataSet().name() + ".tif")
+        filenameTIF = os.path.join(self.lastFolder(), layer.currentDataSet().name() + ".tif")
         filenameTIF = QFileDialog.getSaveFileName(None, "Export as Raster Grid", filenameTIF, "TIFF raster (*.tif)")
         if not filenameTIF:
             return
 
         self.setLastFolder(os.path.dirname(filenameTIF))
 
-        res = layer.provider.exportRawDataToTIF(dsIndex, tsIndex, dlgConfig.resolution(), filenameTIF, crsWkt)
+        res = layer.currentOutput().export_grid(dlgConfig.resolution(), filenameTIF, crsWkt)
         if not res:
             QMessageBox.critical(None, "Crayfish", "Failed to export to raster grid")
             return

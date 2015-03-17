@@ -35,6 +35,8 @@ CF_EXPORT void CF_CloseMesh(MeshH mesh);
 CF_EXPORT int CF_LastLoadError();
 CF_EXPORT int CF_LastLoadWarning();
 
+CF_EXPORT int CF_ExportGrid(OutputH output, double mupp, const char* outputFilename, const char* projWkt);
+
 // Mesh functions
 
 CF_EXPORT int CF_Mesh_nodeCount(MeshH mesh);
@@ -51,10 +53,15 @@ CF_EXPORT bool CF_Mesh_loadDataSet(MeshH mesh, const char* path);
 
 CF_EXPORT void CF_Mesh_extent(MeshH mesh, double* xmin, double* ymin, double* xmax, double* ymax);
 
+CF_EXPORT double CF_Mesh_valueAt(MeshH mesh, OutputH output, double x, double y);
+
+CF_EXPORT int CF_Mesh_setProjection(MeshH mesh, const char* srcProj4, const char* destProj4);
+
 // DataSet functions
 
 CF_EXPORT int CF_DS_type(DataSetH ds);
 CF_EXPORT const char* CF_DS_name(DataSetH ds);
+CF_EXPORT const char* CF_DS_fileName(DataSetH ds);
 
 CF_EXPORT int CF_DS_outputCount(DataSetH ds);
 CF_EXPORT OutputH CF_DS_outputAt(DataSetH ds, int index);
@@ -74,6 +81,7 @@ CF_EXPORT void CF_RC_destroy(RendererConfigH cfg);
 CF_EXPORT void CF_RC_setView(RendererConfigH cfg, int width, int height, double llx, double lly, double pixelSize);
 CF_EXPORT void CF_RC_setOutput(RendererConfigH cfg, OutputH output);
 CF_EXPORT void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value);
+CF_EXPORT void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value);
 
 // Renderer functions
 CF_EXPORT RendererH CF_R_create(RendererConfigH cfg, ImageH img);
@@ -83,10 +91,12 @@ CF_EXPORT void CF_R_draw(RendererH rend);
 // Variant value
 CF_EXPORT VariantH CF_V_create();
 CF_EXPORT void CF_V_destroy(VariantH v);
+CF_EXPORT int CF_V_type(VariantH v);
 CF_EXPORT void CF_V_fromInt(VariantH v, int i);
 CF_EXPORT int CF_V_toInt(VariantH v);
 CF_EXPORT void CF_V_fromDouble(VariantH v, double d);
 CF_EXPORT double CF_V_toDouble(VariantH v);
+CF_EXPORT void CF_V_toColor(VariantH v, int* r, int* g, int* b, int* a);
 CF_EXPORT void CF_V_fromColor(VariantH v, int r, int g, int b, int a);
 CF_EXPORT void CF_V_toColorMap(VariantH v, ColorMapH cm);
 CF_EXPORT void CF_V_fromColorMap(VariantH v, ColorMapH cm);
@@ -95,6 +105,7 @@ CF_EXPORT void CF_V_fromColorMap(VariantH v, ColorMapH cm);
 CF_EXPORT ColorMapH CF_CM_create();
 CF_EXPORT void CF_CM_destroy(ColorMapH cm);
 CF_EXPORT ColorMapH CF_CM_createDefault(double vmin, double vmax);
+CF_EXPORT int CF_CM_value(ColorMapH cm, double v);
 CF_EXPORT int CF_CM_itemCount(ColorMapH cm);
 CF_EXPORT double CF_CM_itemValue(ColorMapH cm, int index);
 CF_EXPORT int CF_CM_itemColor(ColorMapH cm, int index);

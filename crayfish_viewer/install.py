@@ -34,8 +34,7 @@ debug = False
 qgis1 = False
 pkg = False
 win = platform.system() == 'Windows'
-file_cpp = "crayfishViewer.dll" if win else "libcrayfishViewer.so.1"
-file_python = "crayfishviewer.pyd" if win else "crayfishviewer.so"
+file_cpp = "crayfish.dll" if win else "libcrayfish.so.1"
 
 if len(sys.argv) > 1:
   for arg in sys.argv[1:]:
@@ -48,7 +47,7 @@ if len(sys.argv) > 1:
     else:
       print "install.py [-debug] [-1] [-pkg]"
       print ""
-      print "  Install Crayfish C++ library and Python module"
+      print "  Install Crayfish C++ library"
       print ""
       print "  Arguments:"
       print "  -debug    Use debug version of Crayfish C++ library"
@@ -58,13 +57,11 @@ if len(sys.argv) > 1:
 
 build_mode = "debug" if debug else "release"
 build_file_cpp = os.path.join("build", build_mode, file_cpp)
-build_file_python = os.path.join("build-python", build_mode, file_python)
 
 if pkg:
   import zipfile
   with zipfile.ZipFile("crayfish_viewer_library.zip", "w", zipfile.ZIP_DEFLATED) as z:
     z.write(build_file_cpp, file_cpp)
-    z.write(build_file_python, file_python)
   print "Written crayfish_viewer_library.zip"
 
 else:
@@ -75,7 +72,5 @@ else:
     os.makedirs(plugin_dir)
 
   shutil.copy(build_file_cpp, plugin_dir)
-  shutil.copy(build_file_python, plugin_dir)
-  print "Written " + ("[debug] " if debug else "") + file_cpp + " and " + file_python + " to " + plugin_dir
-
+  print "Written " + ("[debug] " if debug else "") + file_cpp + " to " + plugin_dir
 

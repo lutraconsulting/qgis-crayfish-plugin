@@ -33,16 +33,16 @@ class CrayfishViewerRenderSettings():
 
         self.ds = ds
 
-        self.shaftLength = ds.vectorShaftLengthMethod()
-        self.shaftLengthMin = ds.vectorShaftLengthMin()
-        self.shaftLengthMax = ds.vectorShaftLengthMax()
-        self.shaftLengthFixedLength = ds.vectorShaftLengthFixed()
-        self.shaftLengthScale = ds.vectorShaftLengthScaleFactor()
+        self.shaftLength = ds.config["v_shaft_length_method"]
+        self.shaftLengthMin = ds.config["v_shaft_length_min"]
+        self.shaftLengthMax = ds.config["v_shaft_length_max"]
+        self.shaftLengthFixedLength = ds.config["v_shaft_length_fixed"]
+        self.shaftLengthScale = ds.config["v_shaft_length_scale"]
 
-        self.lineWidth = ds.vectorPenWidth()
+        self.lineWidth = ds.config["v_pen_width"]
 
-        self.headWidth = ds.vectorHeadWidth()
-        self.headLength = ds.vectorHeadLength()
+        self.headWidth = ds.config["v_head_width"]
+        self.headLength = ds.config["v_head_length"]
 
         # unused stuff
 
@@ -57,10 +57,12 @@ class CrayfishViewerRenderSettings():
 
     def applyToDataSet(self):
 
-        self.ds.setVectorShaftLengthMethod(self.shaftLength)  # Method used to scale the shaft (sounds rude doesn't it)
-        self.ds.setVectorShaftLengthMinMax(self.shaftLengthMin, self.shaftLengthMax)
-        self.ds.setVectorShaftLengthScaleFactor(self.shaftLengthScale)
-        self.ds.setVectorShaftLengthFixed(self.shaftLengthFixedLength)
-        self.ds.setVectorPenWidth(self.lineWidth)
-        self.ds.setVectorHeadSize(self.headWidth, self.headLength)
+        self.ds.config["v_shaft_length_method"] = self.shaftLength  # Method used to scale the shaft (sounds rude doesn't it)
+        self.ds.config["v_shaft_length_min"] = self.shaftLengthMin
+        self.ds.config["v_shaft_length_max"] = self.shaftLengthMax
+        self.ds.config["v_shaft_length_scale"] = self.shaftLengthScale
+        self.ds.config["v_shaft_length_fixed"] = self.shaftLengthFixedLength
+        self.ds.config["v_pen_width"] = self.lineWidth
+        self.ds.config["v_head_width"] = self.headWidth
+        self.ds.config["v_head_length"] = self.headLength
 

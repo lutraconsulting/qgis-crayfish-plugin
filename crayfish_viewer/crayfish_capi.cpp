@@ -41,6 +41,12 @@ void CF_CloseMesh(MeshH mesh)
 }
 
 
+int CF_ExportGrid(OutputH output, double mupp, const char* outputFilename, const char* projWkt)
+{
+  return Crayfish::exportRawDataToTIF(output, mupp, QString::fromUtf8(outputFilename), QString::fromUtf8(projWkt));
+}
+
+
 int CF_Mesh_nodeCount(MeshH mesh)
 {
   return mesh->nodes().count();
@@ -108,6 +114,12 @@ const char* _return_str(const QString& str)
 const char* CF_DS_name(DataSetH ds)
 {
   return _return_str(ds->name());
+}
+
+
+const char* CF_DS_fileName(DataSetH ds)
+{
+  return _return_str(ds->fileName());
 }
 
 
@@ -180,7 +192,8 @@ int CF_LastLoadWarning()
 
 RendererH CF_R_create(RendererConfigH cfg, ImageH img)
 {
-  return new Renderer(*cfg, *img);
+  RendererH rend = new Renderer(*cfg, *img);
+  return rend;
 }
 
 
@@ -198,7 +211,8 @@ void CF_R_draw(RendererH rend)
 
 RendererConfigH CF_RC_create()
 {
-  return new Renderer::Config();
+  RendererConfigH cfg = new Renderer::Config();
+  return cfg;
 }
 
 
@@ -233,6 +247,27 @@ void CF_Mesh_extent(MeshH mesh, double* xmin, double* ymin, double* xmax, double
 }
 
 
+double CF_Mesh_valueAt(MeshH mesh, OutputH output, double x, double y)
+{
+  return mesh->valueAt(output, x, y);
+}
+
+int CF_Mesh_setProjection(MeshH mesh, const char* srcProj4, const char* destProj4)
+{
+  if (srcProj4 && destProj4)
+  {
+    QString src = QString::fromAscii(srcProj4);
+    QString dest = QString::fromAscii(destProj4);
+    return mesh->setProjection(src, dest);
+  }
+  else
+  {
+    mesh->setNoProjection();
+    return 1;
+  }
+}
+
+
 void CF_DS_valueRange(DataSetH ds, float* vMin, float* vMax)
 {
   *vMin = ds->minZValue();
@@ -245,16 +280,67 @@ void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
   QString k = QString::fromAscii(key);
   if (k == "mesh")
     cfg->mesh.mRenderMesh = value->toBool();
-  else if (k == "meshcolor")
+  else if (k == "m_color")
     cfg->mesh.mMeshColor = value->value<QColor>();
   else if (k == "contours")
     cfg->ds.mRenderContours = value->toBool();
-  else if (k == "colormap")
+  else if (k == "c_colormap")
     cfg->ds.mColorMap = value->value<ColorMap>();
   else if (k == "vectors")
     cfg->ds.mRenderVectors = value->toBool();
+  else if (k == "v_shaft_length_method")
+    cfg->ds.mShaftLengthMethod = (Renderer::Config::DataSet::VectorLengthMethod) value->toInt();
+  else if (k == "v_shaft_length_min")
+    cfg->ds.mMinShaftLength = value->toFloat();
+  else if (k == "v_shaft_length_max")
+    cfg->ds.mMaxShaftLength = value->toFloat();
+  else if (k == "v_shaft_length_scale")
+    cfg->ds.mScaleFactor = value->toFloat();
+  else if (k == "v_shaft_length_fixed")
+    cfg->ds.mFixedShaftLength = value->toFloat();
+  else if (k == "v_pen_width")
+    cfg->ds.mLineWidth = value->toInt();
+  else if (k == "v_head_width")
+    cfg->ds.mVectorHeadWidthPerc = value->toFloat();
+  else if (k == "v_head_length")
+    cfg->ds.mVectorHeadLengthPerc = value->toFloat();
   else
     qDebug("[setParam] unknown key: %s", key);
+}
+
+
+
+void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value)
+{
+  QString k = QString::fromAscii(key);
+  if (k == "mesh")
+    *value = QVariant(cfg->mesh.mRenderMesh);
+  else if (k == "m_color")
+    *value = QVariant::fromValue(cfg->mesh.mMeshColor);
+  else if (k == "contours")
+    *value = QVariant(cfg->ds.mRenderContours);
+  else if (k == "c_colormap")
+    *value = QVariant::fromValue(cfg->ds.mColorMap);
+  else if (k == "vectors")
+    *value = QVariant(cfg->ds.mRenderVectors);
+  else if (k == "v_shaft_length_method")
+    *value = QVariant(cfg->ds.mShaftLengthMethod);
+  else if (k == "v_shaft_length_min")
+    *value = QVariant(cfg->ds.mMinShaftLength);
+  else if (k == "v_shaft_length_max")
+    *value = QVariant(cfg->ds.mMaxShaftLength);
+  else if (k == "v_shaft_length_scale")
+    *value = QVariant(cfg->ds.mScaleFactor);
+  else if (k == "v_shaft_length_fixed")
+    *value = QVariant(cfg->ds.mFixedShaftLength);
+  else if (k == "v_pen_width")
+    *value = QVariant(cfg->ds.mLineWidth);
+  else if (k == "v_head_width")
+    *value = QVariant(cfg->ds.mVectorHeadWidthPerc);
+  else if (k == "v_head_length")
+    *value = QVariant(cfg->ds.mVectorHeadLengthPerc);
+  else
+    qDebug("[getParam] unknown key: %s", key);
 }
 
 
@@ -270,6 +356,26 @@ void CF_V_destroy(VariantH v)
 }
 
 
+int CF_V_type(VariantH v)
+{
+ if (v->type() == QVariant::Invalid)
+   return 0;
+ if (v->type() == QVariant::Bool || v->type() == QVariant::Int)
+   return 1;
+ else if (v->type() == QVariant::Double || (int)v->type() == (int)QMetaType::Float)
+   return 2;
+ else if (v->type() == QVariant::Color)
+   return 3;
+ else if (v->canConvert<ColorMap>())
+   return 4;
+ else
+ {
+   qDebug("unknown type: %d",v->type());
+   return -1;
+ }
+}
+
+
 void CF_V_fromInt(VariantH v, int i)
 {
   *v = QVariant(i);
@@ -282,11 +388,31 @@ int CF_V_toInt(VariantH v)
 }
 
 
+void CF_V_fromDouble(VariantH v, double d)
+{
+  *v = QVariant(d);
+}
+
+
+double CF_V_toDouble(VariantH v)
+{
+  return v->toDouble();
+}
+
+
 void CF_V_fromColor(VariantH v, int r, int g, int b, int a)
 {
   *v = QVariant::fromValue(QColor(r,g,b,a));
 }
 
+void CF_V_toColor(VariantH v, int* r, int* g, int* b, int* a)
+{
+  QColor c = v->value<QColor>();
+  *r = c.red();
+  *g = c.green();
+  *b = c.blue();
+  *a = c.alpha();
+}
 
 ColorMapH CF_CM_create()
 {
@@ -297,6 +423,12 @@ ColorMapH CF_CM_create()
 void CF_CM_destroy(ColorMapH cm)
 {
   delete cm;
+}
+
+
+int CF_CM_value(ColorMapH cm, double v)
+{
+  return cm->value(v);
 }
 
 

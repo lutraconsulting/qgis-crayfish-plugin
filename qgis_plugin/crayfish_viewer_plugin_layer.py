@@ -27,10 +27,10 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
-from crayfish_gui_utils import QgsMessageBar, qgis_message_bar, qv2pyObj, qv2float, qv2int, qv2bool, qv2string, defaultColorRamp
+from crayfish_gui_utils import QgsMessageBar, qgis_message_bar, defaultColorRamp
 from qgis.utils import iface
 
-from crayfishviewer import CrayfishViewer, DataSet, ColorMap
+import crayfish
 
 import os
 import glob
@@ -66,8 +66,11 @@ def qstring2float(s):
 
 def qstring2rgb(s):
     r,g,b = s.split(",")
-    return qRgb(int(r),int(g),int(b))
+    return (int(r),int(g),int(b),255)
+    #return qRgb(int(r),int(g),int(b))
 
+def rgb2string(clr):
+    return "%d,%d,%d" % (clr[0], clr[1], clr[2])
 
 def gradientColorRampStop(ramp, i):
     stops = ramp.stops()
@@ -86,26 +89,31 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     def __init__(self, meshFileName=None):
         QgsPluginLayer.__init__(self, CrayfishViewerPluginLayer.LAYER_TYPE, "Crayfish Viewer plugin layer")
-        self.meshLoaded = False
+
+        #self.rconfig = crayfish.RendererConfig()
+        self.config = {
+          'mesh'  : False,
+          'm_color' : (0,0,0,255)
+        }
+
         if meshFileName is not None:
             self.loadMesh(meshFileName)
 
 
     def loadMesh(self, meshFileName):
         meshFileName = unicode(meshFileName)
-        self.provider = CrayfishViewer(meshFileName)
-        if self.provider.loadedOk():
+        try:
+            self.mesh = crayfish.Mesh(meshFileName)
             self.setValid(True)
-        else:
+        except ValueError:
             self.setValid(False)
             return
         self.twoDMFileName = ''
-        self.meshLoaded = True
-        
+
         # Properly set the extents
-        e = self.provider.meshExtent()
-        r = QgsRectangle(   QgsPoint( e.left(), e.top() ),
-                            QgsPoint( e.right(), e.bottom() ) )
+        e = self.mesh.extent()
+        r = QgsRectangle( QgsPoint( e[0], e[1] ),
+                          QgsPoint( e[2], e[3] ) )
         self.setExtent(r)
 
         # try to load .prj file from the same directory
@@ -125,29 +133,56 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         layerName, ext = os.path.splitext(tail)
         self.setLayerName(layerName)
 
-        self.initCustomValues(self.provider.dataSet(0)) # bed
+        self.initCustomValues(self.mesh.dataset(0)) # bed
+
+        self.current_ds_index = 0
 
 
     def showMeshLoadError(self, twoDMFileName):
-        e = self.provider.getLastError()
-        if e == CrayfishViewer.Err_NotEnoughMemory:
+        e = crayfish.last_load_status()[0]
+        if e == crayfish.Err_NotEnoughMemory:
           qgis_message_bar.pushMessage("Crayfish", "Not enough memory to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
-        elif e == CrayfishViewer.Err_FileNotFound:
+        elif e == crayfish.Err_FileNotFound:
           qgis_message_bar.pushMessage("Crayfish", "Failed to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
-        elif e == CrayfishViewer.Err_UnknownFormat:
+        elif e == crayfish.Err_UnknownFormat:
           qgis_message_bar.pushMessage("Crayfish", "Mesh file format not recognized (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
+
+    def currentDataSet(self):
+        return self.mesh.dataset(self.current_ds_index)
+
+    def currentOutput(self):
+        ds = self.currentDataSet()
+        return ds.output(ds.current_output_index)
 
 
     def initCustomValues(self, ds):
         """ set defaults for data source """
-        ds.setCustomValue("c_basic", True)
-        ds.setCustomValue("c_basicCustomRange", False)
-        ds.setCustomValue("c_basicCustomRangeMin", ds.minZValue())
-        ds.setCustomValue("c_basicCustomRangeMax", ds.maxZValue())
-        ds.setCustomValue("c_basicName", "[default]")
-        ds.setCustomValue("c_basicRamp", defaultColorRamp())
-        ds.setCustomValue("c_alpha", 255)
-        ds.setCustomValue("c_advancedColorMap", ColorMap.defaultColorMap(ds.minZValue(), ds.maxZValue()))
+        print "INIT CUSTOM ", ds
+        minZ, maxZ = ds.value_range()
+        ds.current_output_index = 0
+        ds.config = {
+          "contours"  : True,
+          "vectors"   : True,
+          "c_colormap" : None,  # will be assigned in updateColorMap() call
+          "v_shaft_length_method" : 0, # MinMax
+          "v_shaft_length_min" : 3,
+          "v_shaft_length_max" : 40,
+          "v_shaft_length_scale" : 10,
+          "v_shaft_length_fixed" : 10,
+          "v_pen_width" : 1,
+          "v_head_width" : 15,
+          "v_head_length" : 40
+        }
+        ds.custom = {
+          "c_basic" : True,
+          "c_basicCustomRange" : False,
+          "c_basicCustomRangeMin" : minZ,
+          "c_basicCustomRangeMax" : maxZ,
+          "c_basicName" : "[default]",
+          "c_basicRamp" : defaultColorRamp(),
+          "c_alpha" : 255,
+          "c_advancedColorMap" : crayfish.ColorMap(minZ, maxZ)
+        }
         self.updateColorMap(ds)  # make sure to apply the settings to form a color map
 
         
@@ -166,7 +201,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         # load bed settings
         bedElem = element.firstChildElement("bed")
         if not bedElem.isNull():
-          ds = self.provider.dataSet(0)
+          ds = self.mesh.dataset(0)
           self.readDataSetXml(ds, bedElem)
 
         # load data files
@@ -174,31 +209,33 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         for i in xrange(datNodes.length()):
             datElem = datNodes.item(i).toElement()
             datFilePath = prj.readPath( datElem.attribute('path') )
-            if not self.provider.loadDataSet(datFilePath):
+            try:
+                self.mesh.load_data(datFilePath)
+            except ValueError:
                 qgis_message_bar.pushMessage("Crayfish", "Unable to load dataset " + datFilePath, level=QgsMessageBar.WARNING)
                 continue
-            ds = self.provider.dataSet(self.provider.dataSetCount()-1)
+            ds = self.mesh.dataset(self.mesh.dataset_count()-1)
             self.readDataSetXml(ds, datElem)
 
             currentOutput = qstring2int(datElem.attribute("current-output"))
             if currentOutput is not None:
-                ds.setCurrentOutputTime(currentOutput)
+                ds.current_output_index = currentOutput
 
 
         # load settings
         currentDataSetIndex = qstring2int(element.attribute("current-dataset"))
         if currentDataSetIndex is not None:
-            self.provider.setCurrentDataSetIndex(currentDataSetIndex)
+            self.current_ds_index = currentDataSetIndex
 
         # mesh rendering
         meshElem = element.firstChildElement("render-mesh")
         if not meshElem.isNull():
             meshRendering = qstring2bool(meshElem.attribute("enabled"))
             if meshRendering is not None:
-                self.provider.setMeshRenderingEnabled(meshRendering)
+                self.config["mesh"] = meshRendering
             meshColor = qstring2rgb(meshElem.attribute("color"))
             if meshColor is not None:
-                self.provider.setMeshColor(QColor(meshColor))
+                self.config["m_color"] = meshColor
 
         return True
 
@@ -210,21 +247,20 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         element.setAttribute("type", "plugin")
         element.setAttribute("name", CrayfishViewerPluginLayer.LAYER_TYPE)
         element.setAttribute("meshfile", prj.writePath(self.twoDMFileName))
-        element.setAttribute("current-dataset", self.provider.currentDataSetIndex())
+        element.setAttribute("current-dataset", self.current_ds_index)
         meshElem = doc.createElement("render-mesh")
-        meshElem.setAttribute("enabled", "1" if self.provider.isMeshRenderingEnabled() else "0")
-        clr = self.provider.meshColor()
-        meshElem.setAttribute("color", "%d,%d,%d" % (clr.red(), clr.green(), clr.blue()))
+        meshElem.setAttribute("enabled", "1" if self.config["mesh"] else "0")
+        meshElem.setAttribute("color", rgb2string(self.config["m_color"]))
         element.appendChild(meshElem)
 
-        for i in range(self.provider.dataSetCount()):
-            ds = self.provider.dataSet(i)
-            if ds.type() == DataSet.Bed:
+        for i in range(self.mesh.dataset_count()):
+            ds = self.mesh.dataset(i)
+            if ds.type() == crayfish.DataSet.Bed:
                 dsElem = doc.createElement("bed")
             else:
                 dsElem = doc.createElement("dat")
-                dsElem.setAttribute("path", prj.writePath(ds.fileName()))
-                dsElem.setAttribute("current-output", ds.currentOutputTime())
+                dsElem.setAttribute("path", prj.writePath(ds.filename()))
+                dsElem.setAttribute("current-output", ds.current_output_index)
             self.writeDataSetXml(ds, dsElem, doc)
             element.appendChild(dsElem)
 
@@ -239,100 +275,102 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         if not contElem.isNull():
             enabled = qstring2bool(contElem.attribute("enabled"))
             if enabled is not None:
-                ds.setContourRenderingEnabled(enabled)
+                ds.config["contours"] = enabled
             alpha = qstring2int(contElem.attribute("alpha"))
             if alpha is not None:
-                ds.setCustomValue("c_alpha", alpha)
+                ds.custom["c_alpha"] = alpha
             isBasic = qstring2bool(contElem.attribute("basic"))
             if isBasic is not None:
-                ds.setCustomValue("c_basic", isBasic)
+                ds.custom["c_basic"] = isBasic
             autoRange = qstring2bool(contElem.attribute("auto-range"))
             if autoRange is not None:
-                ds.setCustomValue("c_basicCustomRange", not autoRange)
+                ds.custom["c_basicCustomRange"] = not autoRange
             rangeMin = qstring2float(contElem.attribute("range-min"))
             rangeMax = qstring2float(contElem.attribute("range-max"))
             if rangeMin is not None and rangeMax is not None:
-                ds.setCustomValue("c_basicCustomRangeMin", rangeMin)
-                ds.setCustomValue("c_basicCustomRangeMax", rangeMax)
+                ds.custom["c_basicCustomRangeMin"] = rangeMin
+                ds.custom["c_basicCustomRangeMax"] = rangeMax
 
             # read color ramp (basic)
             rampElem = contElem.firstChildElement("colorramp")
             if not rampElem.isNull():
                 ramp = QgsSymbolLayerV2Utils.loadColorRamp(rampElem)
-                ds.setCustomValue("c_basicRamp", ramp)
+                ds.custom["c_basicRamp"] = ramp
                 rampName = rampElem.attribute("name")
-                ds.setCustomValue("c_basicName", rampName)
+                ds.custom["c_basicName"] = rampName
 
             # read color map (advanced)
             advElem = contElem.firstChildElement("advanced")
             if not advElem.isNull():
                 cm = self.readColorMapXml(advElem)
                 if cm:
-                    ds.setCustomValue("c_advancedColorMap", cm)
+                    ds.custom["c_advancedColorMap"] = cm
 
             self.updateColorMap(ds)
 
         # vector options (if applicable)
-        if ds.type() == DataSet.Vector:
+        if ds.type() == crayfish.DataSet.Vector:
             vectElem = elem.firstChildElement("render-vector")
             enabled = qstring2bool(vectElem.attribute("enabled"))
             if enabled is not None:
-                ds.setVectorRenderingEnabled(enabled)
+                ds.config["vectors"] = enabled
             method = qstring2int(vectElem.attribute("method"))
             if method is not None:
-                ds.setVectorShaftLengthMethod(method)
+                ds.config["v_shaft_length_method"] = method
             shaftLengthMin = qstring2float(vectElem.attribute("shaft-length-min"))
             shaftLengthMax = qstring2float(vectElem.attribute("shaft-length-max"))
             if shaftLengthMin is not None and shaftLengthMax is not None:
-                ds.setVectorShaftLengthMinMax(shaftLengthMin, shaftLengthMax)
+                ds.config["v_shaft_length_min"] = shaftLengthMin
+                ds.config["v_shaft_length_max"] = shaftLengthMax
             shaftLengthScale = qstring2float(vectElem.attribute("shaft-length-scale"))
             if shaftLengthScale is not None:
-                ds.setVectorShaftLengthScaleFactor(shaftLengthScale)
+                ds.config["v_shaft_length_scale"] = shaftLengthScale
             shaftLengthFixed = qstring2float(vectElem.attribute("shaft-length-fixed"))
             if shaftLengthFixed is not None:
-                ds.setVectorShaftLengthFixed(shaftLengthFixed)
+                ds.config["v_shaft_length_fixed"] = shaftLengthFixed
             penWidth = qstring2float(vectElem.attribute("pen-width"))
             if penWidth is not None:
-                ds.setVectorPenWidth(penWidth)
+                ds.config["v_pen_width"] = penWidth
             headWidth = qstring2float(vectElem.attribute("head-width"))
             headLength = qstring2float(vectElem.attribute("head-length"))
             if headWidth is not None and headLength is not None:
-                ds.setVectorHeadSize(headWidth, headLength)
+                ds.config["v_head_width"] = headWidth
+                ds.config["v_head_length"] = headLength
 
     def writeDataSetXml(self, ds, elem, doc):
 
         # contour options
         contElem = doc.createElement("render-contour")
-        contElem.setAttribute("enabled", "1" if ds.isContourRenderingEnabled() else "0")
-        contElem.setAttribute("alpha", qv2int(ds.customValue("c_alpha")))
-        contElem.setAttribute("basic", "1" if qv2bool(ds.customValue("c_basic")) else "0")
-        contElem.setAttribute("auto-range", "1" if not qv2bool(ds.customValue("c_basicCustomRange")) else "0")
-        contElem.setAttribute("range-min", str(qv2float(ds.customValue("c_basicCustomRangeMin"))))
-        contElem.setAttribute("range-max", str(qv2float(ds.customValue("c_basicCustomRangeMax"))))
+        contElem.setAttribute("enabled", "1" if ds.config["contours"] else "0")
+        contElem.setAttribute("alpha", ds.custom["c_alpha"])
+        contElem.setAttribute("basic", "1" if ds.custom["c_basic"] else "0")
+        contElem.setAttribute("auto-range", "1" if not ds.custom["c_basicCustomRange"] else "0")
+        contElem.setAttribute("range-min", str(ds.custom["c_basicCustomRangeMin"]))
+        contElem.setAttribute("range-max", str(ds.custom["c_basicCustomRangeMax"]))
 
-        rampName = qv2string(ds.customValue("c_basicName"))
-        ramp = qv2pyObj(ds.customValue("c_basicRamp"))
+        rampName = ds.custom["c_basicName"]
+        ramp = ds.custom["c_basicRamp"]
         if ramp:
             rampElem = QgsSymbolLayerV2Utils.saveColorRamp(rampName, ramp, doc)
             contElem.appendChild(rampElem)
         elem.appendChild(contElem)
 
         advElem = doc.createElement("advanced")
-        self.writeColorMapXml(qv2pyObj(ds.customValue("c_advancedColorMap")), advElem, doc)
+        self.writeColorMapXml(ds.custom["c_advancedColorMap"], advElem, doc)
         contElem.appendChild(advElem)
 
         # vector options (if applicable)
-        if ds.type() == DataSet.Vector:
+        if ds.type() == crayfish.DataSet.Vector:
           vectElem = doc.createElement("render-vector")
-          vectElem.setAttribute("enabled", "1" if ds.isVectorRenderingEnabled() else "0")
-          vectElem.setAttribute("method", ds.vectorShaftLengthMethod())
-          vectElem.setAttribute("shaft-length-min", str(ds.vectorShaftLengthMin()))
-          vectElem.setAttribute("shaft-length-max", str(ds.vectorShaftLengthMax()))
-          vectElem.setAttribute("shaft-length-scale", str(ds.vectorShaftLengthScaleFactor()))
-          vectElem.setAttribute("shaft-length-fixed", str(ds.vectorShaftLengthFixed()))
-          vectElem.setAttribute("pen-width", str(ds.vectorPenWidth()))
-          vectElem.setAttribute("head-width", str(ds.vectorHeadWidth()))
-          vectElem.setAttribute("head-length", str(ds.vectorHeadLength()))
+          vectElem.setAttribute("enabled", "1" if ds.config["vectors"] else "0")
+          vectElem.setAttribute("method", ds.config["v_shaft_length_method"])
+          vectElem.setAttribute("shaft-length-min", str(ds.config["v_shaft_length_min"]))
+          vectElem.setAttribute("shaft-length-max", str(ds.config["v_shaft_length_max"]))
+          vectElem.setAttribute("shaft-length-scale", str(ds.config["v_shaft_length_scale"]))
+          vectElem.setAttribute("shaft-length-fixed", str(ds.config["v_shaft_length_fixed"]))
+          vectElem.setAttribute("pen-width", str(ds.config["v_pen_width"]))
+          vectElem.setAttribute("head-width", str(ds.config["v_head_width"]))
+          vectElem.setAttribute("head-length", str(ds.config["v_head_length"]))
           elem.appendChild(vectElem)
 
 
@@ -341,30 +379,30 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         cmElem = elem.firstChildElement("colormap")
         if cmElem.isNull():
             return
-        cm = ColorMap()
-        cm.method = ColorMap.Discrete if cmElem.attribute("method") == "discrete" else ColorMap.Linear
-        cm.clipLow  = cmElem.attribute("clip-low")  == "1"
-        cm.clipHigh = cmElem.attribute("clip-high") == "1"
+        cm = crayfish.ColorMap()
+        cm.method = crayfish.ColorMap.Discrete if cmElem.attribute("method") == "discrete" else crayfish.ColorMap.Linear
+        cm.clip = (cmElem.attribute("clip-low")  == "1", cmElem.attribute("clip-high") == "1")
         itemElems = cmElem.elementsByTagName("item")
+        items = []
         for i in range(itemElems.length()):
             itemElem = itemElems.item(i).toElement()
             value = qstring2float(itemElem.attribute("value"))
             color = qstring2rgb(itemElem.attribute("color"))
-            cm.addItem(ColorMap.Item(value, color))
+            items.append( (value, color, '') )
+        cm.set_items(items)
         return cm
 
 
     def writeColorMapXml(self, cm, parentElem, doc):
 
         elem = doc.createElement("colormap")
-        elem.setAttribute("method", "discrete" if cm.method == ColorMap.Discrete else "linear")
-        elem.setAttribute("clip-low",  "1" if cm.clipLow  else "0")
-        elem.setAttribute("clip-high", "1" if cm.clipHigh else "0")
-        for item in cm.items:
+        elem.setAttribute("method", "discrete" if cm.method == crayfish.ColorMap.Discrete else "linear")
+        elem.setAttribute("clip-low",  "1" if cm.clip[0] else "0")
+        elem.setAttribute("clip-high", "1" if cm.clip[1] else "0")
+        for item in cm.items():
             itemElem = doc.createElement("item")
             itemElem.setAttribute("value", str(item.value))
-            c = QColor(item.color)
-            itemElem.setAttribute("color", "%d,%d,%d" % (c.red(), c.green(), c.blue()))
+            itemElem.setAttribute("color", rgb2string(item.color))
             elem.appendChild(itemElem)
         parentElem.appendChild(elem)
 
@@ -376,16 +414,16 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
     def updateColorMap(self, ds):
         """ update color map of the current data set given the settings """
 
-        if not qv2bool(ds.customValue("c_basic")):
-            cm = qv2pyObj(ds.customValue("c_advancedColorMap"))
+        if not ds.custom["c_basic"]:
+            cm = ds.custom["c_advancedColorMap"]
         else:
             cm = self._colorMapBasic(ds)
 
         if not cm:
             return
 
-        cm.alpha = qv2int(ds.customValue("c_alpha"))
-        ds.setContourColorMap(cm)
+        cm.alpha = ds.custom["c_alpha"]
+        ds.config["c_colormap"] = cm
 
         iface.legendInterface().refreshLayerSymbology(self)
 
@@ -393,14 +431,13 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
     def _colorMapBasic(self, ds):
 
         # contour colormap
-        if qv2bool(ds.customValue("c_basicCustomRange")):
-            zMin = qv2float(ds.customValue("c_basicCustomRangeMin"))
-            zMax = qv2float(ds.customValue("c_basicCustomRangeMax"))
+        if ds.custom["c_basicCustomRange"]:
+            zMin = ds.custom["c_basicCustomRangeMin"]
+            zMax = ds.custom["c_basicCustomRangeMax"]
         else:
-            zMin = ds.minZValue()
-            zMax = ds.maxZValue()
+            zMin,zMax = ds.value_range()
 
-        qcm = qv2pyObj(ds.customValue("c_basicRamp"))
+        qcm = ds.custom["c_basicRamp"]
         if not qcm:
             return   # something went wrong (e.g. user selected "new color ramp...")
 
@@ -409,7 +446,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         isGradient = isinstance(qcm, QgsVectorGradientColorRampV2)
 
-        cm = ColorMap()
+        items = []
         count = qcm.count() if isGradient else 5
         for i in range(count):
           if isGradient:
@@ -420,24 +457,15 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             v = i/float(count-1)
             c = qcm.color(v)
           vv = zMin + v*(zMax-zMin)
-          cm.addItem(ColorMap.Item(vv,c.rgb()))
+          items.append( (vv,[c.red(),c.green(),c.blue()],'') )
+
+        cm = crayfish.ColorMap()
+        cm.set_items(items)
 
         return cm
 
     
     def draw(self, rendererContext):
-        
-        """
-            The provider (CrayfishViewer) provides the following draw function:
-            
-            QImage* draw(   int canvasWidth, 
-                            int canvasHeight, 
-                            double llX, 
-                            double llY, 
-                            double pixelSize)
-        """
-        
-        debug = False
         
         mapToPixel = rendererContext.mapToPixel()
         pixelSize = mapToPixel.mapUnitsPerPixel()
@@ -453,8 +481,16 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         bottomright = mapToPixel.transform(extent.xMaximum(), extent.yMinimum())
         width = (bottomright.x() - topleft.x())
         height = (bottomright.y() - topleft.y())
-        
-        if debug:
+
+        # TODO: this code should be outside of rendering loop
+        if ct:
+          res = self.mesh.set_projection(self.crs().toProj4(), ct.destCRS().toProj4())
+          #if not res:
+          #  qgis_message_bar.pushMessage("Crayfish", "Failed to reproject the mesh!", level=QgsMessageBar.WARNING)
+        else:
+          self.mesh.set_no_projection()
+
+        if False:
             print '\n'
             print 'About to render with the following parameters:'
             print '\tExtent:\t%f,%f - %f,%f\n' % (extent.xMinimum(),extent.yMinimum(),extent.xMaximum(),extent.yMaximum())
@@ -463,24 +499,19 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             print '\tXMin:\t' + str(extent.xMinimum()) + '\n'
             print '\tYMin:\t' + str(extent.yMinimum()) + '\n'
             print '\tPixSz:\t' + str(pixelSize) + '\n'
-            
-        self.provider.setCanvasSize(QSize(int(width), int(height)))
-        self.provider.setExtent(extent.xMinimum(), extent.yMinimum(), pixelSize)
 
-        if ct:
-          res = self.provider.setProjection(self.crs().toProj4(), ct.destCRS().toProj4())
-          if not res:
-            qgis_message_bar.pushMessage("Crayfish", "Failed to reproject the mesh!", level=QgsMessageBar.WARNING)
-        else:
-          self.provider.setNoProjection()
+        rconfig = crayfish.RendererConfig()
+        rconfig.set_output(self.currentOutput())
+        rconfig.set_view((int(width),int(height)), (extent.xMinimum(),extent.yMinimum()), pixelSize)
+        for k,v in self.currentDataSet().config.iteritems():
+          rconfig[k] = v
+        for k,v in self.config.iteritems():
+          rconfig[k] = v
+        img = QImage(width,height, QImage.Format_ARGB32)
+        img.fill(0)
 
-        ds = self.provider.currentDataSet()
-        if not ds:
-            return False
-
-        img = self.provider.draw()
-        if not img:
-            return False
+        r = crayfish.Renderer(rconfig, img)
+        r.draw()
 
         # img now contains the render of the crayfish layer, merge it
         
@@ -497,19 +528,12 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         """
             Returns a QString representing the value of the layer at 
             the given QgsPoint, pt
-            
-            This function calls valueAtCoord in the C++ provider
-            
-            double valueAtCoord(const Output* output,
-                                double xCoord, 
-                                double yCoord);
         """
         
         x = pt.x()
         y = pt.y()
         
-        outputOfInterest = self.provider.currentDataSet().currentOutput()
-        value = self.provider.valueAtCoord( outputOfInterest, x, y)
+        value = self.mesh.value(self.currentOutput(), x, y)
         
         v = None
         if value == -9999.0:
@@ -551,14 +575,23 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     def legendSymbologyItems(self, iconSize):
         """ implementation of method from QgsPluginLayer to show legend entries (in QGIS >= 2.1) """
-        ds = self.provider.currentDataSet()
+        print "LEGEND SYMBOLOGY"
+        self.print_handles()
+
+        ds = self.currentDataSet()
         lst = [ (ds.name(), QPixmap()) ]
-        if not ds.isContourRenderingEnabled():
+        if not ds.config["contours"]:
             return lst
 
-        cm = ds.contourColorMap()
-        for item in cm.items:
+        cm = ds.config["c_colormap"]
+        for item in cm.items():
             pix = QPixmap(iconSize)
-            pix.fill(QColor(item.color))
+            r,g,b,a = item.color
+            pix.fill(QColor(r,g,b))
             lst.append( ("%.3f" % item.value, pix) )
         return lst
+
+    def print_handles(self):
+        print "------" #, self.mesh, self.currentDataSet()
+        print crayfish.Mesh.handles
+        print crayfish.DataSet.handles

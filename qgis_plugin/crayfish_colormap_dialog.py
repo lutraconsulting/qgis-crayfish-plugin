@@ -31,9 +31,9 @@ from qgis.core import QgsApplication, QgsStyleV2
 
 from crayfish_colormap_dialog_ui import Ui_CrayfishColorMapDialog
 
-from crayfishviewer import ColorMap
+from crayfish import ColorMap, qcolor2rgb, rgb2qcolor
 
-from crayfish_gui_utils import qv2string, qv2float, qv2int, initColorRampComboBox, name2ramp
+from crayfish_gui_utils import initColorRampComboBox, name2ramp
 
 
 
@@ -43,21 +43,22 @@ class ColorMapModel(QAbstractTableModel):
         self.cm = cm
 
     def rowCount(self, parent):
-        return len(self.cm.items) if not parent.isValid() else 0
+        return self.cm.item_count() if not parent.isValid() else 0
 
     def columnCount(self, parent):
         return 2
 
     def data(self, index, role):
-        if index.row() < 0 or index.row() >= len(self.cm.items):
+        if index.row() < 0 or index.row() >= self.cm.item_count():
             return
 
-        item = self.cm.items[index.row()]
+        item = self.cm[index.row()]
         if role == Qt.DisplayRole or role == Qt.EditRole:
             if index.column() == 0: return item.value
 
         elif role == Qt.BackgroundRole:
-            if index.column() == 1: return QBrush(QColor(item.color))
+            c = item.color
+            if index.column() == 1: return QBrush(QColor(c[0],c[1],c[2],c[3]))
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -71,12 +72,12 @@ class ColorMapModel(QAbstractTableModel):
 
     def setData(self, index, value, role):
         if role == Qt.EditRole and index.column() == 0:
-            self.cm.item(index.row()).value = qv2float(value)
+            self.cm[index.row()].value = value
             self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), index,index)
             self.ensureSorted()
             return True
         elif role == Qt.BackgroundRole and index.column() == 1:
-            self.cm.item(index.row()).color = qv2int(value)
+            self.cm[index.row()].color = value
             self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), index,index)
             return True
         return False
@@ -84,35 +85,35 @@ class ColorMapModel(QAbstractTableModel):
     def addItem(self):
         row = self.rowCount(QModelIndex())
         self.beginInsertRows(QModelIndex(), row, row)
-        self.cm.addItem(ColorMap.Item(0, 0xff00ff00))
+        self.cm.add_item(0, (0,255,0,255),'')
         self.endInsertRows()
 
         self.ensureSorted()
 
     def removeItem(self, row):
         self.beginRemoveRows(QModelIndex(), row, row)
-        self.cm.removeItem(row)
+        self.cm.remove_item(row)
         self.endRemoveRows()
 
     def ensureSorted(self):
         moved = False
-        prev = self.cm.items[0].value
-        for i in range(1,len(self.cm.items)):
-            val = self.cm.items[i].value
+        prev = self.cm[0].value
+        for i in range(1,self.cm.item_count()):
+            val = self.cm[i].value
             if val < prev:
               # find correct position
               for j in range(i):
-                  if self.cm.items[j].value > val:
+                  if self.cm[j].value > val:
                       break
               # move the item
               self.beginMoveRows(QModelIndex(), i, i, QModelIndex(), j)
               self.cm.moveItem(i,j)
               self.endMoveRows()
               moved = True
-            prev = self.cm.items[i].value
+            prev = self.cm[i].value
 
         if moved:
-          self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), self.index(0,0),self.index(len(self.cm.items),1))
+          self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), self.index(0,0),self.index(self.cm.item_count(),1))
 
 
 
@@ -172,8 +173,8 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         else:
             self.radIntLinear.setChecked(True)
 
-        self.chkFillValuesBelow.setChecked(not self.colormap.clipLow)
-        self.chkFillValuesAbove.setChecked(not self.colormap.clipHigh)
+        self.chkFillValuesBelow.setChecked(not self.colormap.clip[0])
+        self.chkFillValuesAbove.setChecked(not self.colormap.clip[1])
 
         self.updatePreview()
 
@@ -191,12 +192,13 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         vmax = float(self.editMax.text())
 
         self.model.beginResetModel()
-        self.colormap.clearItems()
+        items = []
         for i in range(count):
             x = float(i)/(count-1)
             v = vmin + (vmax-vmin)*x
             color = ramp.color(1-x if inv else x)
-            self.colormap.addItem(ColorMap.Item(v, color.rgb()))
+            items.append((v, qcolor2rgb(color), ''))
+        self.colormap.set_items(items)
         self.model.endResetModel()
 
         self.updatePreview()
@@ -212,11 +214,11 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
     def viewDoubleClicked(self, index):
         if index.column() != 1:
             return
-        item = self.colormap.item(index.row())
-        color = QColorDialog.getColor(QColor(item.color))
+        item = self.colormap[index.row()]
+        color = QColorDialog.getColor(rgb2qcolor(item.color))
         if not color.isValid():
             return
-        self.model.setData(index, color.rgb(), Qt.BackgroundRole)
+        self.model.setData(index, qcolor2rgb(color), Qt.BackgroundRole)
 
     def addItem(self):
         self.model.addItem()
@@ -231,11 +233,11 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         self.updatePreview()
 
     def setClipLow(self):
-        self.colormap.clipLow  = not self.chkFillValuesBelow.isChecked()
+        self.colormap.clip = (not self.chkFillValuesBelow.isChecked(), self.colormap.clip[1])
         self.updatePreview()
 
     def setClipHigh(self):
-        self.colormap.clipHigh = not self.chkFillValuesAbove.isChecked()
+        self.colormap.clip = (self.colormap.clip[0], not self.chkFillValuesAbove.isChecked())
         self.updatePreview()
 
 
@@ -252,7 +254,7 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
     def loadColorMap(self):
 
         settings = QSettings()
-        lastUsedDir = qv2string(settings.value("crayfishViewer/lastFolder"))
+        lastUsedDir = settings.value("crayfishViewer/lastFolder")
         fileName = QFileDialog.getOpenFileName(self, "Load color map", lastUsedDir, "Textfile (*.txt)")
         if not fileName:
             return
@@ -269,7 +271,7 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
                 self.colormap.method = ColorMap.Discrete if method == "DISCRETE" else ColorMap.Linear
             else:
                 value, r,g,b,a, label = line.split(",")
-                self.colormap.addItem(ColorMap.Item(float(value), qRgba(int(r),int(g),int(b),int(a))))
+                self.colormap.add_item(float(value), qRgba(int(r),int(g),int(b),int(a)))
 
         self.model.endResetModel()
 
@@ -279,7 +281,7 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
     def saveColorMap(self):
 
         settings = QSettings()
-        lastUsedDir = qv2string(settings.value("crayfishViewer/lastFolder"))
+        lastUsedDir = settings.value("crayfishViewer/lastFolder")
         fileName = QFileDialog.getSaveFileName(self, "Save color map", lastUsedDir, "Textfile (*.txt)")
         if not fileName:
             return

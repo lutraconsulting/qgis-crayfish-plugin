@@ -42,7 +42,7 @@ unix {
   LIBS += -lproj -lgdal -lhdf5
 }
 
-TARGET = crayfishViewer
+TARGET = crayfish
 TEMPLATE = lib
 
 DEFINES += CRAYFISH_LIBRARY

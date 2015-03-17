@@ -23,11 +23,11 @@ Renderer::Renderer(const Config& cfg, QImage& img)
   mUrY = mLlY + (mOutputSize.height()*mPixelSize);
 
   mOutput = cfg.output;
-  mDataSet = mOutput->dataSet;
-  mMesh = mDataSet->mesh();
+  mDataSet = mOutput ? mOutput->dataSet : 0;
+  mMesh = mDataSet ? mDataSet->mesh() : 0;
 
   // use a default color map if none specified
-  if (mCfg.ds.mRenderContours && mCfg.ds.mColorMap.items.count() == 0)
+  if (mCfg.ds.mRenderContours && mCfg.ds.mColorMap.items.count() == 0 && mDataSet)
   {
     double vMin = mDataSet->minZValue(), vMax = mDataSet->maxZValue();
     mCfg.ds.mColorMap = ColorMap::defaultColorMap(vMin, vMax);
@@ -38,6 +38,9 @@ Renderer::Renderer(const Config& cfg, QImage& img)
 
 void Renderer::draw()
 {
+  if (!mOutput || !mDataSet || !mMesh)
+    return; // nothing to do
+
   //mImage = QImage(mOutputSize, QImage::Format_ARGB32);
   //mImage.fill( qRgba(255,255,255,0) );
 

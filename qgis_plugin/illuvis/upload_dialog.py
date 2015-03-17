@@ -153,10 +153,10 @@ class UploadDialog(QDialog, Ui_Dialog):
             self.resultTypeComboBox.addItem(sR)
 
         if self.layer:
-            ds = self.layer.provider.currentDataSet()
+            ds = self.layer.currentDataSet()
             name = self.layer.name() + " / " + ds.name()
-            if ds.isTimeVarying():
-              output = ds.currentOutput()
+            if ds.time_varying():
+              output = ds.output(ds.current_output_index)
               name += " @ " + timeToString(output.time)
             self.fromCurrentRadioButton.setText("From current layer: " + name)
         else:
@@ -582,11 +582,9 @@ class UploadDialog(QDialog, Ui_Dialog):
               d = MessageDialog("warnResample", msg, "Results will be downscaled", self)
               d.exec_()
 
-            dsIndex = self.layer.provider.currentDataSetIndex()
-            tsIndex = self.layer.provider.currentDataSet().currentOutputTime()
             crsWkt = self.layer.crs().toWkt()
             resultFilePath = os.path.join(tempfile.gettempdir(), 'crayfish-illuvis-export.tif')
-            res = self.layer.provider.exportRawDataToTIF(dsIndex, tsIndex, res, resultFilePath, crsWkt)
+            res = self.layer.currentOutput().export_grid(res, resultFilePath, crsWkt)
             if not res:
                 QMessageBox.critical(None, "Crayfish", "Failed to export to raster grid")
                 return
