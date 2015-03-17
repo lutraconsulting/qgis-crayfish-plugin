@@ -30,7 +30,6 @@ import os
 import shutil
 import platform
 
-debug = False
 qgis1 = False
 pkg = False
 win = platform.system() == 'Windows'
@@ -38,25 +37,21 @@ file_cpp = "crayfish.dll" if win else "libcrayfish.so.1"
 
 if len(sys.argv) > 1:
   for arg in sys.argv[1:]:
-    if arg == '-debug':
-      debug = True
-    elif arg == '-1':
+    if arg == '-1':
       qgis1 = True
     elif arg == '-pkg':
       pkg = True
     else:
-      print "install.py [-debug] [-1] [-pkg]"
+      print "install.py [-1] [-pkg]"
       print ""
       print "  Install Crayfish C++ library"
       print ""
       print "  Arguments:"
-      print "  -debug    Use debug version of Crayfish C++ library"
       print "  -1        Install to QGIS 1.x directory (instead of QGIS 2.x)"
       print "  -pkg      Create .zip package for distribution instead of installation"
       sys.exit(0)
 
-build_mode = "debug" if debug else "release"
-build_file_cpp = os.path.join("build", build_mode, file_cpp)
+build_file_cpp = os.path.join("..", "plugin", file_cpp)
 
 if pkg:
   import zipfile
@@ -72,5 +67,5 @@ else:
     os.makedirs(plugin_dir)
 
   shutil.copy(build_file_cpp, plugin_dir)
-  print "Written " + ("[debug] " if debug else "") + file_cpp + " to " + plugin_dir
+  print "Written " + file_cpp + " to " + plugin_dir
 
