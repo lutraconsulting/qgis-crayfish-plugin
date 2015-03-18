@@ -222,7 +222,7 @@ class CrayfishPlugin:
         
         # Get the file name
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Crayfish Dat File', self.lastFolder(),
-                                                 "Results Files (DAT, SOL, XMDF) (*.dat *.sol *.xmdf);;2DM Mesh Files (*.2dm)")
+                                                 "Results Files DAT, SOL, XMDF (*.dat *.sol *.xmdf);;2DM Mesh Files (*.2dm)")
         inFileName = unicode(inFileName)
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel 
             return
