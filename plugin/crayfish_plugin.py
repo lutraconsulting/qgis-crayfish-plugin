@@ -132,6 +132,14 @@ class CrayfishPlugin:
         self.dock.hide()   # do not show the dock by default
         QObject.connect(self.dock, SIGNAL("visibilityChanged(bool)"), self.dockVisibilityChanged)
 
+        # Register data items provider (if possible - since 2.10)
+        self.dataItemsProvider = None
+        if 'QgsDataItemProvider' in globals():
+          from crayfish_data_items import CrayfishDataItemProvider
+          self.dataItemsProvider = CrayfishDataItemProvider()
+          QgsDataItemProviderRegistry.instance().addProvider(self.dataItemsProvider)
+
+
 
             
     def layersRemoved(self, layers):
@@ -175,7 +183,12 @@ class CrayfishPlugin:
         # Unregister plugin layer type
         from crayfish_viewer_plugin_layer import CrayfishViewerPluginLayer
         QgsPluginLayerRegistry.instance().removePluginLayerType(CrayfishViewerPluginLayer.LAYER_TYPE)
-        
+
+        # Unregister data item provider
+        if self.dataItemsProvider is not None:
+          QgsDataItemProviderRegistry.instance().removeProvider(self.dataItemsProvider)
+          self.dataItemsProvider = None
+
         # Make connections
         QObject.disconnect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)
         QObject.disconnect(self.lr, SIGNAL("layerWillBeRemoved(QString)"), self.layerRemoved)

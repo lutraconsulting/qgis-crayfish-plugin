@@ -24,25 +24,23 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+import os
+
 from qgis.core import *
 
-from crayfish_viewer_plugin_layer import CrayfishViewerPluginLayer
-from crayfish_viewer_plugin_layer_props_dialog import CrayfishViewerPluginPropsDialog
+class CrayfishDataItemProvider(QgsDataItemProvider):
 
-class CrayfishViewerPluginLayerType(QgsPluginLayerType):
+  def name(self):
+    return "Crayfish"
 
-    def __init__(self):
-        QgsPluginLayerType.__init__(self, CrayfishViewerPluginLayer.LAYER_TYPE)
+  def capabilities(self):
+    return 1 # QgsDataProvider.File
 
-    def createLayer(self, uri=None):
-        if uri:
-            return CrayfishViewerPluginLayer(uri)
-        else:
-            return CrayfishViewerPluginLayer()
+  def createDataItem(self, path, parentItem):
+    if not path.endswith(".2dm"):
+      return None
 
-    def showLayerProperties(self, layer):
-        dlg = CrayfishViewerPluginPropsDialog(layer)
-        dlg.exec_()
-        return True
+    base = os.path.basename(path)
+    item = QgsLayerItem(parentItem, base, path, path, QgsLayerItem.Plugin, "crayfish_viewer")
+    item.setState(QgsDataItem.Populated) # make it non-expandable
+    return item
