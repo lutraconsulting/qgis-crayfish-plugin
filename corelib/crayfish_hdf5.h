@@ -3,6 +3,9 @@
 
 /** A simple C++/Qt wrapper around HDF5 library API */
 
+// for compatibility (older hdf5 version in Travis)
+#define H5Gopen_vers 1
+
 #include "hdf5.h"
 
 #include <QSharedData>
@@ -55,7 +58,7 @@ class HdfGroup
 public:
   typedef HdfH<H5I_GROUP> Handle;
 
-  HdfGroup(hid_t file, const QString& path) { d = new Handle( H5Gopen(file, path.toUtf8().data(), H5P_DEFAULT) ); }
+  HdfGroup(hid_t file, const QString& path) { d = new Handle( H5Gopen(file, path.toUtf8().data()) ); }
 
   bool isValid() const { return d->id >= 0; }
   hid_t id() const { return d->id; }
