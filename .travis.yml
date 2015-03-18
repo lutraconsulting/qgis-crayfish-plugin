@@ -14,4 +14,4 @@ install:
   - qmake
   - make
 
-script: cd test && python testload.py
+script: cd ../test && python testload.py
