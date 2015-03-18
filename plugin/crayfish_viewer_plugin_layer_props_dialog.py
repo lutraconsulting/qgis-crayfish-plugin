@@ -43,9 +43,16 @@ class CrayfishViewerPluginPropsDialog(QDialog, Ui_CrayfishViewerPluginLayerProps
 
         self.crs = self.layer.crs()
 
-        p = self.layer.provider
-        ec, ec4, ec3 = p.elementCount(), p.elementCount_E4Q(), p.elementCount_E3T()
-        ecx = ec - ec4 - ec3  # unknown elements
+        m = self.layer.mesh
+        ec4, ec3, ecx = 0, 0, 0
+        for e in m.elements():
+          if e.type == 1:
+            ec4 += 1
+          elif e.type == 2:
+            ec3 += 1
+          else:
+            ecx += 1
+
         html = '''<table>
           <tr><td width="50%%">Nodes</td><td align="right"><b>%d</b></td>
           </tr><tr><td>&nbsp;</td></tr>
@@ -53,7 +60,7 @@ class CrayfishViewerPluginPropsDialog(QDialog, Ui_CrayfishViewerPluginLayerProps
           <tr><td>&nbsp;&nbsp;&nbsp;&nbsp;E4Q</td><td align="right">%d</td></tr>
           <tr><td>&nbsp;&nbsp;&nbsp;&nbsp;E3T</td><td align="right">%d</td></tr>
           <tr><td>&nbsp;&nbsp;&nbsp;&nbsp;Unknown</td><td align="right">%d</td></tr>
-          </table>''' % (p.nodeCount(), ec, ec4, ec3, ecx)
+          </table>''' % (m.node_count(), m.element_count(), ec4, ec3, ecx)
         self.editMetadata.setReadOnly(True)
         self.editMetadata.setHtml(html)
 
