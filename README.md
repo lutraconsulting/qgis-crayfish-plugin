@@ -5,6 +5,8 @@ Crayfish (QGIS plugin)
 
 The Crayfish Plugin for QGIS aspires to be a complete set of pre and post-processing tools for hydraulic modellers using TUFLOW and other packages.
 
+<img src="https://travis-ci.org/lutraconsulting/qgis-crayfish-plugin.svg?branch=master">
+
 ### Using Crayfish
 
 For instructions of how to install and use Crayfish, please refer to the [Crayfish resources page][crp] on our website.
