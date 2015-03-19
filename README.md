@@ -23,7 +23,7 @@ For installing Crayfish on Linux you need:
 On Debian/Ubuntu you need to install the following packages:
 
 ```bash
-sudo apt-get install build-essential libqt4-dev qt4-qmake libgdal-dev libhdf5-dev
+sudo apt-get install build-essential libqt4-dev qt4-qmake libgdal-dev libhdf5-dev libproj-dev git
 ```
 
 
