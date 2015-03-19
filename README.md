@@ -34,16 +34,15 @@ If all this packages are installed you can clone the crayfish plugin using the c
 git clone https://github.com/lutraconsulting/qgis-crayfish-plugin.git
 ```
 
-After cloning the source you should enter the directory crayfish_viewer:
+After cloning the source you should enter the directory corelib:
 ```bash
-cd crayfish_viewer
+cd qgis-crayfish-plugin/corelib
 ```
 
 now use the commands:
 ```bash
 qmake
 make
-./build-python.py
 ./install.py 
 ```
 
@@ -51,6 +50,12 @@ This copies the compiled cpp library to its place in the users homedirectory
 
 ~/.qgis2/python/plugins/crayfish/
 
+Now you only need to change from corelib into the plugin directory and install the python code with this commands:
+
+```bash
+cd ../plugin
+./install.py 
+```
 Now restart QGIS and you are able to use crayfish plugin on your Linux Computer.
 
 
