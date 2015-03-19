@@ -355,7 +355,7 @@ class CrayfishPlugin:
         # update GUI
         self.dock.currentLayerChanged()
         # allow user to go through the time steps with arrow keys
-        self.dock.listWidget_2.setFocus()
+        self.dock.cboTime.setFocus()
 
 
 

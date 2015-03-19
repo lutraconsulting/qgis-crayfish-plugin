@@ -64,7 +64,12 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         
         # Ensure refresh() is called when the layer changes
         QObject.connect(self.listWidget, SIGNAL("currentRowChanged(int)"), self.dataSetChanged)
-        QObject.connect(self.listWidget_2, SIGNAL("currentRowChanged(int)"), self.outputTimeChanged)
+        QObject.connect(self.cboTime, SIGNAL("currentIndexChanged(int)"), self.outputTimeChanged)
+        QObject.connect(self.sliderTime, SIGNAL("valueChanged(int)"), self.cboTime.setCurrentIndex)
+        QObject.connect(self.btnFirst, SIGNAL("clicked()"), self.timeFirst)
+        QObject.connect(self.btnPrev, SIGNAL("clicked()"), self.timePrev)
+        QObject.connect(self.btnNext, SIGNAL("clicked()"), self.timeNext)
+        QObject.connect(self.btnLast, SIGNAL("clicked()"), self.timeLast)
         QObject.connect(self.iface, SIGNAL("currentLayerChanged(QgsMapLayer *)"), self.currentLayerChanged)
         QObject.connect(self.contourCustomRangeCheckBox, SIGNAL("toggled(bool)"), self.contourCustomRangeToggled)
         QObject.connect(self.contourMinLineEdit, SIGNAL('textEdited(QString)'), self.contourRangeChanged)
@@ -194,21 +199,23 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         dataSetIdx = self.listWidget.currentRow()
         l.current_ds_index = dataSetIdx
 
-        self.listWidget_2.blockSignals(True) # make sure that currentRowChanged(int) will not be emitted
-        self.listWidget_2.clear()
-        self.listWidget_2.blockSignals(False)
+        self.cboTime.blockSignals(True) # make sure that currentRowChanged(int) will not be emitted
+        self.cboTime.clear()
+        self.cboTime.blockSignals(False)
 
         if dataSet.time_varying():
-            self.listWidget_2.setEnabled(True)
+            self.cboTime.setEnabled(True)
             for output in dataSet.outputs():
                 t = output.time()
-                self.listWidget_2.addItem(timeToString(t))
+                self.cboTime.addItem(timeToString(t))
             # Restore the selection of the last time step that we viewed
             # for this dataset
             timeIdx = dataSet.current_output_index
-            self.listWidget_2.setCurrentRow(timeIdx)
+            self.cboTime.setCurrentIndex(timeIdx)
         else:
-            self.listWidget_2.setEnabled(False)
+            self.cboTime.setEnabled(False)
+
+        self.sliderTime.setMaximum(dataSet.output_count()-1)
             
         # Get the contour settings from the provider
 
@@ -253,6 +260,10 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         if not ds:
             return
 
+        self.sliderTime.blockSignals(True)
+        self.sliderTime.setValue(timeIdx)
+        self.sliderTime.blockSignals(False)
+
         ds.current_output_index = timeIdx
 
         self.redrawCurrentLayer()
@@ -263,7 +274,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             return
         QObject.disconnect(self.iface.mapCanvas(), SIGNAL("xyCoordinates(QgsPoint)"), self.reportValues)
         self.listWidget.clear()
-        self.listWidget_2.clear()
+        self.cboTime.clear()
         self.valueLabel.setText( "" )
         self.setEnabled(False)
         
@@ -290,7 +301,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         l = self.iface.mapCanvas().currentLayer()
         
         currentDs = self.listWidget.currentRow()
-        currentTs = self.listWidget_2.currentRow()
+        currentTs = self.cboTime.currentIndex()
         
         bed = l.mesh.dataset(0).output(0)
         bedValue = l.mesh.value(bed, xCoord, yCoord) # Note that the bed will always be 0, 0
@@ -443,3 +454,20 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
           QSettings().setValue("/crayfishViewer/hideIlluvisPromo", 1)
         elif link.startswith('http'):
           QDesktopServices.openUrl(QUrl(link))
+
+
+    def timeFirst(self):
+        self.cboTime.setCurrentIndex(0)
+
+    def timePrev(self):
+        idx = self.cboTime.currentIndex()-1
+        if idx >= 0:
+            self.cboTime.setCurrentIndex(idx)
+
+    def timeNext(self):
+        idx = self.cboTime.currentIndex()+1
+        if idx < self.cboTime.count():
+          self.cboTime.setCurrentIndex(idx)
+
+    def timeLast(self):
+        self.cboTime.setCurrentIndex(self.cboTime.count()-1)

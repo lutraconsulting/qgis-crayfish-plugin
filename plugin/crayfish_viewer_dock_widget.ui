@@ -30,12 +30,6 @@
         <height>55</height>
        </size>
       </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>107</height>
-       </size>
-      </property>
      </widget>
     </item>
     <item>
@@ -46,14 +40,68 @@
      </widget>
     </item>
     <item>
-     <widget class="QListWidget" name="listWidget_2">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>55</height>
-       </size>
-      </property>
-     </widget>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0" colspan="5">
+       <widget class="QSlider" name="sliderTime">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="tickPosition">
+         <enum>QSlider::TicksBelow</enum>
+        </property>
+        <property name="tickInterval">
+         <number>1</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QComboBox" name="cboTime">
+        <property name="editable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QToolButton" name="btnFirst">
+        <property name="text">
+         <string>|&lt;</string>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QToolButton" name="btnPrev">
+        <property name="text">
+         <string>&lt;</string>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QToolButton" name="btnNext">
+        <property name="text">
+         <string>&gt;</string>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="4">
+       <widget class="QToolButton" name="btnLast">
+        <property name="text">
+         <string>&gt;|</string>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
     <item>
      <widget class="QgsCollapsibleGroupBox" name="contoursGroupBox">
@@ -309,7 +357,12 @@
  </customwidgets>
  <tabstops>
   <tabstop>listWidget</tabstop>
-  <tabstop>listWidget_2</tabstop>
+  <tabstop>sliderTime</tabstop>
+  <tabstop>cboTime</tabstop>
+  <tabstop>btnFirst</tabstop>
+  <tabstop>btnPrev</tabstop>
+  <tabstop>btnNext</tabstop>
+  <tabstop>btnLast</tabstop>
   <tabstop>contoursGroupBox</tabstop>
   <tabstop>contourTransparencySlider</tabstop>
   <tabstop>radContourBasic</tabstop>
@@ -322,6 +375,7 @@
   <tabstop>displayVectorsCheckBox</tabstop>
   <tabstop>btnVectorOptions</tabstop>
   <tabstop>displayMeshCheckBox</tabstop>
+  <tabstop>btnMeshColor</tabstop>
  </tabstops>
  <resources/>
  <connections>
