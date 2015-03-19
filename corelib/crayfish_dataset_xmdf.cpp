@@ -61,7 +61,7 @@ Mesh::DataSets Crayfish::loadXmdfDataSet(const QString& datFileName, const Mesh*
     QVector<hsize_t> dimValues = dsValues.dims();
     QVector<hsize_t> dimActive = dsActive.dims();
 
-    if (dimTimes.count() != 1 || dimValues.count() != 2 || dimActive.count() != 2)
+    if (dimTimes.count() != 1 || (dimValues.count() != 2 && dimValues.count() != 3) || dimActive.count() != 2)
     {
       qDebug("ignoring dataset %s - arrays not having correct dimension counts", name.toAscii().data());
       continue;
@@ -79,6 +79,8 @@ Mesh::DataSets Crayfish::loadXmdfDataSet(const QString& datFileName, const Mesh*
       continue;
     }
 
+    bool isVector = dimValues.count() == 3;
+
     QVector<float> times = dsTimes.readArray();
     QVector<float> values = dsValues.readArray();
     QVector<uchar> active = dsActive.readArrayUint8();
@@ -86,14 +88,29 @@ Mesh::DataSets Crayfish::loadXmdfDataSet(const QString& datFileName, const Mesh*
     DataSet* ds = new DataSet(datFileName);
     ds->setIsTimeVarying(true);
     ds->setName(name);
-    ds->setType(DataSet::Scalar);
+    ds->setType(isVector ? DataSet::Vector : DataSet::Scalar);
 
     for (int i = 0; i < nTimeSteps; ++i)
     {
       Output* o = new Output;
-      o->init(nNodes, nElems, false);
+      o->init(nNodes, nElems, isVector);
       o->time = times[i];
-      memcpy(o->values.data(), values.constData()+(i*nNodes), sizeof(float)*nNodes);
+      if (isVector)
+      {
+        const float* input = values.constData() + 2*i*nNodes;
+        Output::float2D* data = o->valuesV.data();
+        float* scalar = o->values.data();
+        for (int j = 0; j < nNodes; ++j)
+        {
+          data[j].x = input[2*j];
+          data[j].y = input[2*j+1];
+          scalar[j] = data[j].length();
+        }
+      }
+      else
+      {
+        memcpy(o->values.data(), values.constData()+(i*nNodes), sizeof(float)*nNodes);
+      }
       memcpy(o->active.data(), active.constData()+(i*nElems), sizeof(uchar)*nElems);
       ds->addOutput(o);
     }
