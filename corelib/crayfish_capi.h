@@ -72,6 +72,7 @@ CF_EXPORT void CF_DS_valueRange(DataSetH ds, float* vMin, float* vMax);
 // Output functions
 CF_EXPORT float CF_O_time(OutputH o);
 CF_EXPORT float CF_O_valueAt(OutputH o, int index);
+CF_EXPORT void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y);
 CF_EXPORT char CF_O_statusAt(OutputH o, int index);
 CF_EXPORT DataSetH CF_O_dataSet(OutputH o);
 

@@ -259,10 +259,20 @@ class Output(object):
   def value(self, index):
     return self.lib.CF_O_valueAt(self.handle, index)
 
+  def value_vector(self, index):
+    x,y = ctypes.c_float(), ctypes.c_float()
+    self.lib.CF_O_valueVectorAt(self.handle, index, ctypes.byref(x), ctypes.byref(y))
+    return x.value,y.value
+
   def values(self):
     node_count = self.dataset().mesh().node_count()
     for index in xrange(node_count):
       yield self.value(index)
+
+  def values_vector(self):
+    node_count = self.dataset().mesh().node_count()
+    for index in xrange(node_count):
+      yield self.value_vector(index)
 
   def status(self, index):
     return self.lib.CF_O_statusAt(self.handle, index)

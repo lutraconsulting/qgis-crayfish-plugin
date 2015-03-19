@@ -155,6 +155,12 @@ float CF_O_valueAt(OutputH o, int index)
   return o->values[index];
 }
 
+void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y)
+{
+  *x = o->valuesV[index].x;
+  *y = o->valuesV[index].y;
+}
+
 char CF_O_statusAt(OutputH o, int index)
 {
   return o->active[index];
