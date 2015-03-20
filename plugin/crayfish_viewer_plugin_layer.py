@@ -136,6 +136,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         self.initCustomValues(self.mesh.dataset(0)) # bed
 
         self.current_ds_index = 0
+        self.current_output_time = 0
 
 
     def showMeshLoadError(self, twoDMFileName):
@@ -152,14 +153,19 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     def currentOutput(self):
         ds = self.currentDataSet()
-        return ds.output(ds.current_output_index)
+        if ds.time_varying():
+            index = ds.output_time_index(self.current_output_time)
+            if index is None:   # TODO: some warning?
+                index = 0
+        else:
+            index = 0
+        return ds.output(index)
 
 
     def initCustomValues(self, ds):
         """ set defaults for data source """
         print "INIT CUSTOM ", ds
         minZ, maxZ = ds.value_range()
-        ds.current_output_index = 0
         ds.config = {
           "contours"  : True,
           "vectors"   : True,
@@ -217,15 +223,15 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             ds = self.mesh.dataset(self.mesh.dataset_count()-1)
             self.readDataSetXml(ds, datElem)
 
-            currentOutput = qstring2int(datElem.attribute("current-output"))
-            if currentOutput is not None:
-                ds.current_output_index = currentOutput
-
 
         # load settings
         currentDataSetIndex = qstring2int(element.attribute("current-dataset"))
         if currentDataSetIndex is not None:
             self.current_ds_index = currentDataSetIndex
+
+        currentOutputTime = qstring2float(element.attribute("current-output-time"))
+        if currentOutputTime is not None:
+            self.current_output_time = currentOutputTime
 
         # mesh rendering
         meshElem = element.firstChildElement("render-mesh")
@@ -248,6 +254,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         element.setAttribute("name", CrayfishViewerPluginLayer.LAYER_TYPE)
         element.setAttribute("meshfile", prj.writePath(self.twoDMFileName))
         element.setAttribute("current-dataset", self.current_ds_index)
+        element.setAttribute("current-output-time", str(self.current_output_time))
         meshElem = doc.createElement("render-mesh")
         meshElem.setAttribute("enabled", "1" if self.config["mesh"] else "0")
         meshElem.setAttribute("color", rgb2string(self.config["m_color"]))
@@ -260,7 +267,6 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             else:
                 dsElem = doc.createElement("dat")
                 dsElem.setAttribute("path", prj.writePath(ds.filename()))
-                dsElem.setAttribute("current-output", ds.current_output_index)
             self.writeDataSetXml(ds, dsElem, doc)
             element.appendChild(dsElem)
 

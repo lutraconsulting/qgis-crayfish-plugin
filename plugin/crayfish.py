@@ -215,6 +215,14 @@ class DataSet(object):
     for index in xrange(self.output_count()):
       yield self.output(index)
 
+  def output_time_index(self, t):
+    """ return output index for given time value (None if not found) """
+    for index,o in enumerate(self.outputs()):
+      # leave a bit of room for errors from string-float conversions (1e-6 is less than 10ms)
+      if t == o.time() or abs(t-o.time()) < 1e-6:
+        return index
+    return None
+
   def mesh(self):
     return Mesh.from_handle(self.lib.CF_DS_mesh(self.handle))
 

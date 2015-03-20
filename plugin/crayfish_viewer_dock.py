@@ -199,24 +199,27 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         dataSetIdx = self.listWidget.currentRow()
         l.current_ds_index = dataSetIdx
 
-        self.cboTime.blockSignals(True) # make sure that currentRowChanged(int) will not be emitted
+        # repopulate the time control combo
+        self.cboTime.blockSignals(True) # make sure that currentIndexChanged(int) will not be emitted
         self.cboTime.clear()
+        if dataSet.time_varying():
+            for output in dataSet.outputs():
+                self.cboTime.addItem(timeToString(output.time()))
         self.cboTime.blockSignals(False)
 
-        if dataSet.time_varying():
-            self.cboTime.setEnabled(True)
-            for output in dataSet.outputs():
-                t = output.time()
-                self.cboTime.addItem(timeToString(t))
-            # Restore the selection of the last time step that we viewed
-            # for this dataset
-            timeIdx = dataSet.current_output_index
-            self.cboTime.setCurrentIndex(timeIdx)
-        else:
-            self.cboTime.setEnabled(False)
-
         self.sliderTime.setMaximum(dataSet.output_count()-1)
-            
+
+        # enable/disable time control depending on whether the data set is time varying
+        for w in [self.cboTime, self.sliderTime, self.btnFirst, self.btnPrev, self.btnNext, self.btnLast]:
+            w.setEnabled(dataSet.time_varying())
+
+        # Restore the selection of the last time step that we viewed for this dataset
+        if dataSet.time_varying():
+            index = dataSet.output_time_index(l.current_output_time)
+            if index is None:
+                index = 0    # TODO: display some warning?
+            self.cboTime.setCurrentIndex(index)
+
         # Get the contour settings from the provider
 
         rad = self.radContourBasic if dataSet.custom["c_basic"] else self.radContourAdvanced
@@ -256,15 +259,17 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
     def outputTimeChanged(self, timeIdx):
 
-        ds = self.currentDataSet()
-        if not ds:
+        l = self.currentCrayfishLayer()
+        if not l:
             return
 
         self.sliderTime.blockSignals(True)
         self.sliderTime.setValue(timeIdx)
         self.sliderTime.blockSignals(False)
 
-        ds.current_output_index = timeIdx
+        ds = l.currentDataSet()
+        if ds.time_varying():
+            l.current_output_time = ds.output(timeIdx).time()
 
         self.redrawCurrentLayer()
 

@@ -329,8 +329,11 @@ class CrayfishPlugin:
 
         # try to load it as binary file, if not successful, try as ASCII format
         try:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
             parentLayer.mesh.load_data( inFileName )
+            QApplication.restoreOverrideCursor()
         except ValueError:
+            QApplication.restoreOverrideCursor()
             import crayfish
             err = crayfish.last_load_status()[0]
             err_msgs = {

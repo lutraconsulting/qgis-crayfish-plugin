@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'crayfish_viewer_dock_widget.ui'
 #
-# Created: Thu Mar 19 16:30:45 2015
+# Created: Fri Mar 20 14:40:59 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -51,6 +51,7 @@ class Ui_DockWidget(object):
         self.gridLayout_2.addWidget(self.sliderTime, 0, 0, 1, 5)
         self.cboTime = QtGui.QComboBox(self.dockWidgetContents)
         self.cboTime.setEditable(True)
+        self.cboTime.setInsertPolicy(QtGui.QComboBox.NoInsert)
         self.cboTime.setObjectName(_fromUtf8("cboTime"))
         self.gridLayout_2.addWidget(self.cboTime, 1, 0, 1, 1)
         self.btnFirst = QtGui.QToolButton(self.dockWidgetContents)
