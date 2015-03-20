@@ -1,14 +1,14 @@
 
 body {
-    font-family: FreeSans, Geneva, Arial, sans-serif;
+    font-family: IstokWeb, FreeSans, Geneva, Arial, sans-serif;
     font-size: 12pt;
-    color: #412824;
+    color: #505050;
     /*background-color: #efe1bb*/
-    background-color: #DCD9D7
+    background-color: #fff;
 }
 
 a {
-    color: #412824;
+     color: #13aa49;
 }
 
 h1 {
