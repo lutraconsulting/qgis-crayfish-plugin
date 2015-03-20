@@ -68,6 +68,11 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
   QScopedPointer<DataSet> ds(new DataSet(datFileName));
   ds->setIsTimeVarying(true);
 
+  // in TUFLOW results there could be also a special timestep (99999) with maximums
+  // we will put it into a separate dataset
+  QScopedPointer<DataSet> dsMax(new DataSet(datFileName));
+  dsMax->setIsTimeVarying(false);
+
   while (card != CT_ENDDS)
   {
     if( in.readRawData( (char*)&card, 4) != 4 )
@@ -99,10 +104,12 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
 
     case CT_BEGSCL:
       ds->setType(DataSet::Scalar);
+      dsMax->setType(DataSet::Scalar);
       break;
 
     case CT_BEGVEC:
       ds->setType(DataSet::Vector);
+      dsMax->setType(DataSet::Vector);
       break;
 
     case CT_VECTYPE:
@@ -140,6 +147,7 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
       if(name[39] != 0)
           name[39] = 0;
       ds->setName(QString(name).trimmed());
+      dsMax->setName(ds->name() + " / Maximums");
       break;
 
     case CT_TS:
@@ -193,7 +201,10 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
         }
       }
 
-      ds->addOutput(o.take());
+      if (o->time == 99999)
+        dsMax->addOutput(o.take()); // special timestep (in TUFLOW) with maximums
+      else
+        ds->addOutput(o.take());  // ordinary timestep
       break;
     }
   }
@@ -205,6 +216,13 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
 
   Mesh::DataSets datasets;
   datasets << ds.take();
+
+  if (dsMax->outputCount() != 0)
+  {
+    dsMax->updateZRange(nodeCount);
+    datasets << dsMax.take();
+  }
+
   return datasets;
 }
 
