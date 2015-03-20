@@ -30,6 +30,13 @@ from qgis.core import *
 
 from crayfish_viewer_vector_options_dialog_widget import Ui_Dialog
 
+def float_safe(txt):
+    """ convert to float, return 0 if conversion is not possible """
+    try:
+        return float(txt)
+    except ValueError:
+        return 0.
+
 class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
     
     def __init__(self, iface, renderSettings, redrawFunction, parent=None):
@@ -91,22 +98,22 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
     def saveRenderSettings(self):
         self.rs.shaftLength = self.shaftLengthComboBox.currentIndex()
         
-        self.rs.shaftLengthMin = float( self.minimumShaftLineEdit.text() )
-        self.rs.shaftLengthMax = float( self.maximumShaftLineEdit.text() )
-        self.rs.shaftLengthScale = float( self.scaleByFactorOfLineEdit.text() )
-        self.rs.shaftLengthFixedLength = float( self.lengthLineEdit.text() )
+        self.rs.shaftLengthMin = float_safe( self.minimumShaftLineEdit.text() )
+        self.rs.shaftLengthMax = float_safe( self.maximumShaftLineEdit.text() )
+        self.rs.shaftLengthScale = float_safe( self.scaleByFactorOfLineEdit.text() )
+        self.rs.shaftLengthFixedLength = float_safe( self.lengthLineEdit.text() )
         self.rs.lineWidth = self.lineWidthSpinBox.value()
         
         self.rs.displayVectorsOnGrid = self.displayVectorsOnGridGroupBox.isChecked()
-        self.rs.xSpacing = float( self.xSpacingLineEdit.text() )
-        self.rs.ySpacing = float( self.ySpacingLineEdit.text() )
+        self.rs.xSpacing = float_safe( self.xSpacingLineEdit.text() )
+        self.rs.ySpacing = float_safe( self.ySpacingLineEdit.text() )
         
-        self.rs.headWidth = float( self.headWidthLineEdit.text() )
-        self.rs.headLength = float( self.headLengthLineEdit.text() )
+        self.rs.headWidth = float_safe( self.headWidthLineEdit.text() )
+        self.rs.headLength = float_safe( self.headLengthLineEdit.text() )
         
         self.rs.filterByMag = self.filterByMagGroupBox.isChecked()
-        self.rs.minMag = float( self.minimumMagLineEdit.text() )
-        self.rs.maxMag = float( self.maximumMagLineEdit.text() )
+        self.rs.minMag = float_safe( self.minimumMagLineEdit.text() )
+        self.rs.maxMag = float_safe( self.maximumMagLineEdit.text() )
 
         self.rs.applyToDataSet()
     
@@ -123,12 +130,12 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         shaftLengthMin = str( self.minimumShaftLineEdit.text() )
         if not shaftLengthMin.isdigit():
             return False
-        shaftLengthMin = float(shaftLengthMin)
+        shaftLengthMin = float_safe(shaftLengthMin)
         
         shaftLengthMax = str( self.maximumShaftLineEdit.text() )
         if not shaftLengthMax.isdigit():
             return False
-        shaftLengthMax = float(shaftLengthMax)
+        shaftLengthMax = float_safe(shaftLengthMax)
         
         if shaftLengthMin < 0:
             return False
