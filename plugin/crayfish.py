@@ -83,7 +83,9 @@ lib.CF_R_draw.argtypes = [ ctypes.c_void_p ]
 lib.CF_RC_create.restype = ctypes.c_void_p
 lib.CF_RC_destroy.argtypes = [ ctypes.c_void_p ]
 lib.CF_RC_setView.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double]
-lib.CF_RC_setOutput.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+lib.CF_RC_setOutputMesh.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+lib.CF_RC_setOutputContour.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+lib.CF_RC_setOutputVector.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
 lib.CF_RC_setParam.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p]
 lib.CF_RC_getParam.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p]
 lib.CF_V_create.restype = ctypes.c_void_p
@@ -339,19 +341,25 @@ class Value(object):
 
 class RendererConfig(object):
 
-  def __init__(self, output=None, size=None, ll=None, mupp=None):
+  def __init__(self, mesh=None, size=None, ll=None, mupp=None):
     self.lib = lib
     self.handle = ctypes.c_void_p(self.lib.CF_RC_create())
-    if output:
-      self.set_output(output)
+    if mesh:
+      self.set_output_mesh(mesh)
     if size and ll and mupp:
       self.set_view(size, ll, mupp)
 
   def set_view(self, size, ll, mupp):
     self.lib.CF_RC_setView(self.handle, size[0], size[1], ll[0], ll[1], mupp)
 
-  def set_output(self, output):
-    self.lib.CF_RC_setOutput(self.handle, output.handle)
+  def set_output_mesh(self, mesh):
+    self.lib.CF_RC_setOutputMesh(self.handle, mesh.handle)
+
+  def set_output_contour(self, output):
+    self.lib.CF_RC_setOutputContour(self.handle, output.handle)
+
+  def set_output_vector(self, output):
+    self.lib.CF_RC_setOutputVector(self.handle, output.handle)
 
   def __del__(self):
     self.lib.CF_RC_destroy(self.handle)

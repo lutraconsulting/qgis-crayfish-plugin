@@ -43,12 +43,64 @@ struct E4Qtmp;
 class Renderer
 {
 public:
+
+  struct ConfigMesh
+  {
+    ConfigMesh() : mRenderMesh(false), mMeshColor(Qt::black) {}
+
+    bool mRenderMesh;   //!< whether to render the mesh as a wireframe
+    QColor mMeshColor;  //!< color used for rendering of the wireframe
+  };
+
+  struct ConfigDataSet
+  {
+    ConfigDataSet()
+      : mShaftLengthMethod(MinMax)
+      , mMinShaftLength(3)
+      , mMaxShaftLength(40)
+      , mScaleFactor(10)
+      , mFixedShaftLength(10)
+      , mLineWidth(1)
+      , mVectorHeadWidthPerc(15)
+      , mVectorHeadLengthPerc(40)
+    {}
+
+    enum VectorLengthMethod
+    {
+      MinMax,  //!< minimal and maximal length
+      Scaled,  //!< length is scaled proportionally to the magnitude
+      Fixed    //!< length is fixed to a certain value
+    };
+
+    // contour rendering settings
+    ColorMap mColorMap; //!< actual color map used for rendering
+
+    // vector rendering settings
+    VectorLengthMethod mShaftLengthMethod;
+    float mMinShaftLength;    //!< valid if using "min/max" method
+    float mMaxShaftLength;    //!< valid if using "min/max" method
+    float mScaleFactor;       //!< valid if using "scaled" method
+    float mFixedShaftLength;  //!< valid if using "fixed" method
+    int mLineWidth;           //!< pen width for drawing of the vectors
+    float mVectorHeadWidthPerc;   //!< arrow head's width  (in percent to shaft's length)
+    float mVectorHeadLengthPerc;  //!< arrow head's length (in percent to shaft's length)
+  };
+
+  //! Master configuration for rendering
   struct Config
   {
-    Config() : output(0), llX(0), llY(0), pixelSize(0) {}
+    Config()
+      : outputMesh(0)
+      , outputContour(0)
+      , outputVector(0)
+      , llX(0)
+      , llY(0)
+      , pixelSize(0) {}
 
     // data
-    const Output* output;
+    const Mesh* outputMesh;
+    const Output* outputContour;
+    const Output* outputVector;
 
     // view
     QSize outputSize;
@@ -57,57 +109,8 @@ public:
     double pixelSize;
 
     // appearance
-
-    struct Mesh
-    {
-      Mesh() : mRenderMesh(false), mMeshColor(Qt::black) {}
-
-      bool mRenderMesh;   //!< whether to render the mesh as a wireframe
-      QColor mMeshColor;  //!< color used for rendering of the wireframe
-    };
-
-
-    struct DataSet
-    {
-      DataSet()
-        : mRenderContours(true)
-        , mRenderVectors(true)
-        , mShaftLengthMethod(MinMax)
-        , mMinShaftLength(3)
-        , mMaxShaftLength(40)
-        , mScaleFactor(10)
-        , mFixedShaftLength(10)
-        , mLineWidth(1)
-        , mVectorHeadWidthPerc(15)
-        , mVectorHeadLengthPerc(40)
-      {}
-
-      enum VectorLengthMethod
-      {
-        MinMax,  //!< minimal and maximal length
-        Scaled,  //!< length is scaled proportionally to the magnitude
-        Fixed    //!< length is fixed to a certain value
-      };
-
-      // contour rendering settings
-      bool mRenderContours; //!< whether to render contours
-      ColorMap mColorMap; //!< actual color map used for rendering
-
-      // vector rendering settings
-      bool mRenderVectors;  //!< whether to render vectors (only valid for vector data)
-      VectorLengthMethod mShaftLengthMethod;
-      float mMinShaftLength;    //!< valid if using "min/max" method
-      float mMaxShaftLength;    //!< valid if using "min/max" method
-      float mScaleFactor;       //!< valid if using "scaled" method
-      float mFixedShaftLength;  //!< valid if using "fixed" method
-      int mLineWidth;           //!< pen width for drawing of the vectors
-      float mVectorHeadWidthPerc;   //!< arrow head's width  (in percent to shaft's length)
-      float mVectorHeadLengthPerc;  //!< arrow head's length (in percent to shaft's length)
-    };
-
-
-    Mesh mesh;
-    DataSet ds;
+    ConfigMesh mesh;
+    ConfigDataSet ds;
   };
 
 
@@ -141,8 +144,8 @@ protected:
 
   QImage& mImage;
 
-  const Output* mOutput; //!< data to be rendered
-  const DataSet* mDataSet;
+  const Output* mOutputContour; //!< data to be rendered
+  const Output* mOutputVector;  //!< data to be rendered
   const Mesh* mMesh;
 
 };

@@ -107,7 +107,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         """
             displayContoursCheckBox has been toggled
         """
-        self.currentDataSet().setContourRenderingEnabled(newState)
+        self.currentDataSet().custom["contours"] = newState
         self.iface.legendInterface().refreshLayerSymbology(self.currentCrayfishLayer())
         self.redrawCurrentLayer()
             
@@ -116,7 +116,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         """
             displayVectorsCheckBox has been toggled
         """
-        self.currentDataSet().config["vectors"] = newState
+        self.currentDataSet().custom["vectors"] = newState
         #self.currentDataSet().setVectorRenderingEnabled(newState)
         self.btnVectorOptions.setEnabled(newState)
         self.redrawCurrentLayer()
@@ -244,9 +244,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.updateAdvancedPreview()
             
         # Get contour / vector render preferences
-        self.contoursGroupBox.setChecked(dataSet.config["contours"])
-        self.displayVectorsCheckBox.setChecked(dataSet.config["vectors"])
-        self.btnVectorOptions.setEnabled(dataSet.config["vectors"])
+        self.contoursGroupBox.setChecked(dataSet.custom["contours"])
+        self.displayVectorsCheckBox.setChecked(dataSet.custom["vectors"])
+        self.btnVectorOptions.setEnabled(dataSet.custom["vectors"])
 
         # Disable the vector options if we are looking at a scalar dataset
         from crayfish import DS_Vector

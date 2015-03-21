@@ -80,7 +80,9 @@ CF_EXPORT DataSetH CF_O_dataSet(OutputH o);
 CF_EXPORT RendererConfigH CF_RC_create();
 CF_EXPORT void CF_RC_destroy(RendererConfigH cfg);
 CF_EXPORT void CF_RC_setView(RendererConfigH cfg, int width, int height, double llx, double lly, double pixelSize);
-CF_EXPORT void CF_RC_setOutput(RendererConfigH cfg, OutputH output);
+CF_EXPORT void CF_RC_setOutputMesh(RendererConfigH cfg, MeshH mesh);
+CF_EXPORT void CF_RC_setOutputContour(RendererConfigH cfg, OutputH output);
+CF_EXPORT void CF_RC_setOutputVector(RendererConfigH cfg, OutputH output);
 CF_EXPORT void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value);
 CF_EXPORT void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value);
 

@@ -167,8 +167,6 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         print "INIT CUSTOM ", ds
         minZ, maxZ = ds.value_range()
         ds.config = {
-          "contours"  : True,
-          "vectors"   : True,
           "c_colormap" : None,  # will be assigned in updateColorMap() call
           "v_shaft_length_method" : 0, # MinMax
           "v_shaft_length_min" : 3,
@@ -180,6 +178,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           "v_head_length" : 40
         }
         ds.custom = {
+          "contours"  : True,
+          "vectors"   : ds.type() == crayfish.DataSet.Vector,
           "c_basic" : True,
           "c_basicCustomRange" : False,
           "c_basicCustomRangeMin" : minZ,
@@ -281,7 +281,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         if not contElem.isNull():
             enabled = qstring2bool(contElem.attribute("enabled"))
             if enabled is not None:
-                ds.config["contours"] = enabled
+                ds.custom["contours"] = enabled
             alpha = qstring2int(contElem.attribute("alpha"))
             if alpha is not None:
                 ds.custom["c_alpha"] = alpha
@@ -319,7 +319,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             vectElem = elem.firstChildElement("render-vector")
             enabled = qstring2bool(vectElem.attribute("enabled"))
             if enabled is not None:
-                ds.config["vectors"] = enabled
+                ds.custom["vectors"] = enabled
             method = qstring2int(vectElem.attribute("method"))
             if method is not None:
                 ds.config["v_shaft_length_method"] = method
@@ -347,7 +347,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         # contour options
         contElem = doc.createElement("render-contour")
-        contElem.setAttribute("enabled", "1" if ds.config["contours"] else "0")
+        contElem.setAttribute("enabled", "1" if ds.custom["contours"] else "0")
         contElem.setAttribute("alpha", ds.custom["c_alpha"])
         contElem.setAttribute("basic", "1" if ds.custom["c_basic"] else "0")
         contElem.setAttribute("auto-range", "1" if not ds.custom["c_basicCustomRange"] else "0")
@@ -368,7 +368,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         # vector options (if applicable)
         if ds.type() == crayfish.DataSet.Vector:
           vectElem = doc.createElement("render-vector")
-          vectElem.setAttribute("enabled", "1" if ds.config["vectors"] else "0")
+          vectElem.setAttribute("enabled", "1" if ds.custom["vectors"] else "0")
           vectElem.setAttribute("method", ds.config["v_shaft_length_method"])
           vectElem.setAttribute("shaft-length-min", str(ds.config["v_shaft_length_min"]))
           vectElem.setAttribute("shaft-length-max", str(ds.config["v_shaft_length_max"]))
@@ -507,7 +507,11 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             print '\tPixSz:\t' + str(pixelSize) + '\n'
 
         rconfig = crayfish.RendererConfig()
-        rconfig.set_output(self.currentOutput())
+        rconfig.set_output_mesh(self.mesh)
+        if self.currentDataSet().custom["contours"]:
+          rconfig.set_output_contour(self.currentOutput())
+        if self.currentDataSet().custom["vectors"]:
+          rconfig.set_output_vector(self.currentOutput())
         rconfig.set_view((int(width),int(height)), (extent.xMinimum(),extent.yMinimum()), pixelSize)
         for k,v in self.currentDataSet().config.iteritems():
           rconfig[k] = v
@@ -586,7 +590,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         ds = self.currentDataSet()
         lst = [ (ds.name(), QPixmap()) ]
-        if not ds.config["contours"]:
+        if not ds.custom["contours"]:
             return lst
 
         cm = ds.config["c_colormap"]

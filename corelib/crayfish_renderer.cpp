@@ -22,14 +22,43 @@ Renderer::Renderer(const Config& cfg, QImage& img)
   mUrX = mLlX + (mOutputSize.width()*mPixelSize);
   mUrY = mLlY + (mOutputSize.height()*mPixelSize);
 
-  mOutput = cfg.output;
-  mDataSet = mOutput ? mOutput->dataSet : 0;
-  mMesh = mDataSet ? mDataSet->mesh() : 0;
+  mOutputContour = cfg.outputContour;
+  mOutputVector  = cfg.outputVector;
+  mMesh = cfg.outputMesh;
+
+  if (mOutputContour)
+  {
+    if (!mOutputContour->dataSet)
+    {
+      qDebug("Ignoring contour data: no dataset");
+      mOutputContour = 0;
+    }
+    else if (mOutputContour->dataSet->mesh() != mMesh)
+    {
+      qDebug("Ignoring contour data: different mesh");
+      mOutputContour = 0;
+    }
+  }
+
+  if (mOutputVector)
+  {
+    if (!mOutputVector->dataSet)
+    {
+      qDebug("Ignoring vector data: no dataset");
+      mOutputVector = 0;
+    }
+    else if (mOutputVector->dataSet->mesh() != mMesh)
+    {
+      qDebug("Ignoring vector data: different mesh");
+      mOutputVector = 0;
+    }
+  }
 
   // use a default color map if none specified
-  if (mCfg.ds.mRenderContours && mCfg.ds.mColorMap.items.count() == 0 && mDataSet)
+  if (mOutputContour && mCfg.ds.mColorMap.items.count() == 0 && mOutputContour->dataSet)
   {
-    double vMin = mDataSet->minZValue(), vMax = mDataSet->maxZValue();
+    double vMin = mOutputContour->dataSet->minZValue();
+    double vMax = mOutputContour->dataSet->maxZValue();
     mCfg.ds.mColorMap = ColorMap::defaultColorMap(vMin, vMax);
   }
 }
@@ -38,20 +67,17 @@ Renderer::Renderer(const Config& cfg, QImage& img)
 
 void Renderer::draw()
 {
-  if (!mOutput || !mDataSet || !mMesh)
+  if (!mMesh)
     return; // nothing to do
 
-  //mImage = QImage(mOutputSize, QImage::Format_ARGB32);
-  //mImage.fill( qRgba(255,255,255,0) );
-
-  if (mCfg.ds.mRenderContours)
-    drawContourData(mOutput);
+  if (mOutputContour)
+    drawContourData(mOutputContour);
 
   if (mCfg.mesh.mRenderMesh)
     drawMesh();
 
-  if (mCfg.ds.mRenderVectors && mDataSet->type() == DataSet::Vector)
-    drawVectorData(mOutput);
+  if (mOutputVector && mOutputVector->dataSet->type() == DataSet::Vector)
+    drawVectorData(mOutputVector);
 }
 
 
@@ -157,7 +183,7 @@ inline float mag(float input)
 
 void Renderer::drawVectorData(const Output* output)
 {
-  Config::DataSet::VectorLengthMethod shaftLengthCalculationMethod = mCfg.ds.mShaftLengthMethod;
+  ConfigDataSet::VectorLengthMethod shaftLengthCalculationMethod = mCfg.ds.mShaftLengthMethod;
   float minShaftLength   = mCfg.ds.mMinShaftLength;
   float maxShaftLength   = mCfg.ds.mMaxShaftLength;
   float scaleFactor      = mCfg.ds.mScaleFactor;
@@ -248,12 +274,12 @@ void Renderer::drawVectorData(const Output* output)
     double cosAlpha = cos( vectorAngle ) * mag(xVal);
     double sinAlpha = sin( vectorAngle ) * mag(xVal);
 
-    if(shaftLengthCalculationMethod == Config::DataSet::MinMax){
+    if(shaftLengthCalculationMethod == ConfigDataSet::MinMax){
       double k = (V - minVal) / (maxVal - minVal);
       double L = minShaftLength + k * (maxShaftLength - minShaftLength);
       xDist = cosAlpha * L;
       yDist = sinAlpha * L;
-    }else if(shaftLengthCalculationMethod == Config::DataSet::Scaled){
+    }else if(shaftLengthCalculationMethod == ConfigDataSet::Scaled){
       xDist = scaleFactor * xVal;
       yDist = scaleFactor * yVal;
     }else{

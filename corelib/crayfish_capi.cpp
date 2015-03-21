@@ -236,10 +236,19 @@ void CF_RC_setView(RendererConfigH cfg, int width, int height, double llx, doubl
   cfg->pixelSize = pixelSize;
 }
 
-
-void CF_RC_setOutput(RendererConfigH cfg, OutputH output)
+void CF_RC_setOutputMesh(RendererConfigH cfg, MeshH mesh)
 {
-  cfg->output = output;
+  cfg->outputMesh = mesh;
+}
+
+void CF_RC_setOutputContour(RendererConfigH cfg, OutputH output)
+{
+  cfg->outputContour = output;
+}
+
+void CF_RC_setOutputVector(RendererConfigH cfg, OutputH output)
+{
+  cfg->outputVector = output;
 }
 
 
@@ -288,14 +297,10 @@ void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
     cfg->mesh.mRenderMesh = value->toBool();
   else if (k == "m_color")
     cfg->mesh.mMeshColor = value->value<QColor>();
-  else if (k == "contours")
-    cfg->ds.mRenderContours = value->toBool();
   else if (k == "c_colormap")
     cfg->ds.mColorMap = value->value<ColorMap>();
-  else if (k == "vectors")
-    cfg->ds.mRenderVectors = value->toBool();
   else if (k == "v_shaft_length_method")
-    cfg->ds.mShaftLengthMethod = (Renderer::Config::DataSet::VectorLengthMethod) value->toInt();
+    cfg->ds.mShaftLengthMethod = (Renderer::ConfigDataSet::VectorLengthMethod) value->toInt();
   else if (k == "v_shaft_length_min")
     cfg->ds.mMinShaftLength = value->toFloat();
   else if (k == "v_shaft_length_max")
@@ -323,12 +328,8 @@ void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value)
     *value = QVariant(cfg->mesh.mRenderMesh);
   else if (k == "m_color")
     *value = QVariant::fromValue(cfg->mesh.mMeshColor);
-  else if (k == "contours")
-    *value = QVariant(cfg->ds.mRenderContours);
   else if (k == "c_colormap")
     *value = QVariant::fromValue(cfg->ds.mColorMap);
-  else if (k == "vectors")
-    *value = QVariant(cfg->ds.mRenderVectors);
   else if (k == "v_shaft_length_method")
     *value = QVariant(cfg->ds.mShaftLengthMethod);
   else if (k == "v_shaft_length_min")
