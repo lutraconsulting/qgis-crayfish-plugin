@@ -63,7 +63,6 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.advancedColorMapDialog = None
         
         # Ensure refresh() is called when the layer changes
-        QObject.connect(self.listWidget, SIGNAL("currentRowChanged(int)"), self.dataSetChanged)
         QObject.connect(self.cboTime, SIGNAL("currentIndexChanged(int)"), self.outputTimeChanged)
         QObject.connect(self.sliderTime, SIGNAL("valueChanged(int)"), self.cboTime.setCurrentIndex)
         QObject.connect(self.btnFirst, SIGNAL("clicked()"), self.timeFirst)
@@ -185,19 +184,18 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.updateColorMapAndRedraw(ds)
 
         
-    def dataSetChanged(self, dataSetRow):
-        
-        if dataSetRow < 0:
+    def dataSetChanged(self, index):
+
+        dataSetItem = self.treeDataSets.model().index2item(index)
+        if dataSetItem is None:
             return
         
         l = self.currentCrayfishLayer()
         if not l:
             return
           
-        dataSet = l.mesh.dataset(dataSetRow)
-
-        dataSetIdx = self.listWidget.currentRow()
-        l.current_ds_index = dataSetIdx
+        dataSet = l.mesh.dataset(dataSetItem.ds_index)
+        l.current_ds_index = dataSetItem.ds_index
 
         # repopulate the time control combo
         self.cboTime.blockSignals(True) # make sure that currentIndexChanged(int) will not be emitted
@@ -278,7 +276,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         if not self.isEnabled():
             return
         QObject.disconnect(self.iface.mapCanvas(), SIGNAL("xyCoordinates(QgsPoint)"), self.reportValues)
-        self.listWidget.clear()
+        self.treeDataSets.setModel(None)
         self.cboTime.clear()
         self.valueLabel.setText( "" )
         self.setEnabled(False)
@@ -304,8 +302,10 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         yCoord = p.y()
         
         l = self.iface.mapCanvas().currentLayer()
-        
-        currentDs = self.listWidget.currentRow()
+
+        dataSetItem = self.treeDataSets.model().index2item(self.treeDataSets.currentIndex())
+
+        currentDs = dataSetItem.ds_index
         currentTs = self.cboTime.currentIndex()
         
         bed = l.mesh.dataset(0).output(0)
@@ -342,16 +342,19 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
                 
         self.activate()
 
-        # Clear everything
-        self.listWidget.clear()
-
-        # Add datasets
-        for i in range(l.mesh.dataset_count()):
-            ds = l.mesh.dataset(i)
-            self.listWidget.addItem(ds.name())
+        # create new model with datasets
+        datasets = []
+        for i,d in enumerate(l.mesh.datasets()):
+            datasets.append( (d.name(), d.type()) )
+        from crayfish_viewer_dataset_view import DataSetModel
+        self.treeDataSets.setModel(DataSetModel(datasets))
+        self.treeDataSets.selectionModel().currentRowChanged.connect(self.dataSetChanged)
+        self.treeDataSets.expandAll()
 
         # setup current dataset
-        self.listWidget.setCurrentRow( l.current_ds_index )
+        item = self.treeDataSets.model().datasetIndex2item(l.current_ds_index)
+        if item:
+            self.treeDataSets.setCurrentIndex( self.treeDataSets.model().item2index(item) )
 
         self.displayMeshCheckBox.blockSignals(True)
         self.displayMeshCheckBox.setChecked(l.config["mesh"])

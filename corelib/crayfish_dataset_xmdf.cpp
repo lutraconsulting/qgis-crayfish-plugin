@@ -59,7 +59,7 @@ Mesh::DataSets Crayfish::loadXmdfDataSet(const QString& datFileName, const Mesh*
   foreach (const QString& name, gMaximums.groups())
   {
     HdfGroup g = gMaximums.group(name);
-    if (DataSet* ds = readXmdfGroupAsDataSet(g, datFileName, name + " / Maximums", nNodes, nElems))
+    if (DataSet* ds = readXmdfGroupAsDataSet(g, datFileName, name + "/Maximums", nNodes, nElems))
     {
       if (ds->outputCount() != 1)
         qDebug("Maximum dataset should have just one timestep!");

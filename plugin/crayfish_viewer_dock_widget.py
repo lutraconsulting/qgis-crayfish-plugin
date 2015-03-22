@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'crayfish_viewer_dock_widget.ui'
 #
-# Created: Fri Mar 20 14:40:59 2015
+# Created: Sun Mar 22 15:17:11 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -34,10 +34,10 @@ class Ui_DockWidget(object):
         self.label = QtGui.QLabel(self.dockWidgetContents)
         self.label.setObjectName(_fromUtf8("label"))
         self.verticalLayout_2.addWidget(self.label)
-        self.listWidget = QtGui.QListWidget(self.dockWidgetContents)
-        self.listWidget.setMinimumSize(QtCore.QSize(0, 55))
-        self.listWidget.setObjectName(_fromUtf8("listWidget"))
-        self.verticalLayout_2.addWidget(self.listWidget)
+        self.treeDataSets = DataSetView(self.dockWidgetContents)
+        self.treeDataSets.setMinimumSize(QtCore.QSize(0, 55))
+        self.treeDataSets.setObjectName(_fromUtf8("treeDataSets"))
+        self.verticalLayout_2.addWidget(self.treeDataSets)
         self.label_2 = QtGui.QLabel(self.dockWidgetContents)
         self.label_2.setObjectName(_fromUtf8("label_2"))
         self.verticalLayout_2.addWidget(self.label_2)
@@ -178,7 +178,7 @@ class Ui_DockWidget(object):
         QtCore.QObject.connect(self.displayMeshCheckBox, QtCore.SIGNAL(_fromUtf8("toggled(bool)")), DockWidget.displayMeshButtonToggled)
         QtCore.QObject.connect(self.btnVectorOptions, QtCore.SIGNAL(_fromUtf8("clicked()")), DockWidget.displayVectorPropsDialog)
         QtCore.QMetaObject.connectSlotsByName(DockWidget)
-        DockWidget.setTabOrder(self.listWidget, self.sliderTime)
+        DockWidget.setTabOrder(self.treeDataSets, self.sliderTime)
         DockWidget.setTabOrder(self.sliderTime, self.cboTime)
         DockWidget.setTabOrder(self.cboTime, self.btnFirst)
         DockWidget.setTabOrder(self.btnFirst, self.btnPrev)
@@ -220,5 +220,6 @@ class Ui_DockWidget(object):
         self.displayVectorsCheckBox.setText(_translate("DockWidget", "Display Vectors", None))
         self.valueLabel.setText(_translate("DockWidget", "(0.000) 0.000", None))
 
+from crayfish_viewer_dataset_view import DataSetView
 from qgis.gui import QgsColorButton, QgsColorRampComboBox
 from crayfish_gui_utils import QgsCollapsibleGroupBox

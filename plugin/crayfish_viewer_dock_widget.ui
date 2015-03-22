@@ -23,7 +23,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QListWidget" name="listWidget">
+     <widget class="DataSetView" name="treeDataSets">
       <property name="minimumSize">
        <size>
         <width>0</width>
@@ -357,9 +357,14 @@
    <extends>QPushButton</extends>
    <header>qgis.gui</header>
   </customwidget>
+  <customwidget>
+   <class>DataSetView</class>
+   <extends>QTreeView</extends>
+   <header>crayfish_viewer_dataset_view.h</header>
+  </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>listWidget</tabstop>
+  <tabstop>treeDataSets</tabstop>
   <tabstop>sliderTime</tabstop>
   <tabstop>cboTime</tabstop>
   <tabstop>btnFirst</tabstop>
