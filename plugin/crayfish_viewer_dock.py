@@ -426,6 +426,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             return
         if hasattr(l, "setCacheImage"):
             l.setCacheImage(None)
+        l.dataChanged.emit()  # profile tool may use this signal to update itself
         self.iface.mapCanvas().refresh()
 
     def contourColorMapChanged(self, idx):
