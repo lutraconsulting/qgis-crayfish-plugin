@@ -147,7 +147,7 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
       if(name[39] != 0)
           name[39] = 0;
       ds->setName(QString(name).trimmed());
-      dsMax->setName(ds->name() + " / Maximums");
+      dsMax->setName(ds->name() + "/Maximums");
       break;
 
     case CT_TS:
