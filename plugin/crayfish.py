@@ -108,7 +108,6 @@ class Mesh:
     assert handle not in Mesh.handles
     Mesh.handles[handle] = weakref.ref(self)
     self.handle = ctypes.c_void_p(handle)
-    self.cached_ds = {}  # cache dataset objects that have been previously accessed
 
   def node_count(self):
     return self.lib.CF_Mesh_nodeCount(self.handle)
@@ -134,12 +133,7 @@ class Mesh:
     return self.lib.CF_Mesh_dataSetCount(self.handle)
 
   def dataset(self, index):
-    if index in self.cached_ds:
-      return self.cached_ds[index]
-    else:
-      ds = DataSet.from_handle(self.lib.CF_Mesh_dataSetAt(self.handle, index))
-      self.cached_ds[index] = ds
-      return ds
+    return DataSet.from_handle(self.lib.CF_Mesh_dataSetAt(self.handle, index))
 
   def datasets(self):
     for index in xrange(self.dataset_count()):
@@ -195,7 +189,7 @@ class DataSet(object):
       raise ValueError, handle
     assert handle not in DataSet.handles
     DataSet.handles[handle] = weakref.ref(self)
-    self.handle = handle
+    self.handle = ctypes.c_void_p(handle)
     self.m = self.mesh()  # keep ref to the mesh so the dataset does not get invalid
 
   def __del__(self):

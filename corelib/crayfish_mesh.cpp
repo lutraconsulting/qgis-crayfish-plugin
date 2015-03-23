@@ -61,7 +61,7 @@ Mesh::~Mesh()
 {
   qDeleteAll(mDataSets);
 
-  delete mBBoxes;
+  delete[] mBBoxes;
   mBBoxes = 0;
 
   delete[] mE4Qtmp;

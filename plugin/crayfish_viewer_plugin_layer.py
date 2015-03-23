@@ -90,11 +90,14 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
     def __init__(self, meshFileName=None):
         QgsPluginLayer.__init__(self, CrayfishViewerPluginLayer.LAYER_TYPE, "Crayfish Viewer plugin layer")
 
-        #self.rconfig = crayfish.RendererConfig()
         self.config = {
           'mesh'  : False,
           'm_color' : (0,0,0,255)
         }
+
+        # cache dataset objects - we associate further properties to them
+        # so we don't want the object to be deleted while this layer is alive
+        self.cached_ds = set()
 
         if meshFileName is not None:
             self.loadMesh(meshFileName)
@@ -165,6 +168,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
     def initCustomValues(self, ds):
         """ set defaults for data source """
         print "INIT CUSTOM ", ds
+        self.cached_ds.add(ds)
         minZ, maxZ = ds.value_range()
         ds.config = {
           "c_colormap" : None,  # will be assigned in updateColorMap() call
