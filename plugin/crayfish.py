@@ -145,6 +145,12 @@ class Mesh:
     for index in xrange(self.dataset_count()):
       yield self.dataset(index)
 
+  def dataset_from_name(self, name):
+      for d in self.datasets():
+          if d.name() == name:
+              return d
+      return None
+
   def __repr__(self):
     return "<Mesh nodes:%d elements:%d datasets:%d>" % (self.node_count(), self.element_count(), self.dataset_count())
 

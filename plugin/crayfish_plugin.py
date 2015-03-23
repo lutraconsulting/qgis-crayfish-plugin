@@ -270,7 +270,13 @@ class CrayfishPlugin:
           return currCrayfishLayer
 
         # if no crayfish layer is selected, try to guess the mesh file name
-        first, sep, last = inFileName.rpartition('_')
+        if inFileName.lower().endswith(".xmdf"):
+          # for XMDF assume the same filename, just different extension for mesh
+          first = inFileName[:-5]
+        else:
+          # for DAT assume for abc_def.dat the mesh is abc.2dm
+          # maybe we need more rules for guessing 2dm for different solvers
+          first, sep, last = inFileName.rpartition('_')
         meshFileName = first + '.2dm'
         
         parentLayer = self.getLayerWith2DM(meshFileName)
@@ -320,10 +326,9 @@ class CrayfishPlugin:
             if not parentLayer:
                 return   # error message has been shown already
 
-        # TODO: re-enable
-        #if parentLayer.provider.isDataSetLoaded(inFileName):
-        #    qgis_message_bar.pushMessage("Crayfish", "The .dat file is already loaded in layer " + parentLayer.name(), level=QgsMessageBar.INFO)
-        #    return
+        if parentLayer.isDataSetLoaded(inFileName):
+            qgis_message_bar.pushMessage("Crayfish", "The data file is already loaded in layer " + parentLayer.name(), level=QgsMessageBar.INFO)
+            return
 
         dsCountBefore = parentLayer.mesh.dataset_count()
 

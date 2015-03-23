@@ -216,11 +216,18 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             datElem = datNodes.item(i).toElement()
             datFilePath = prj.readPath( datElem.attribute('path') )
             try:
-                self.mesh.load_data(datFilePath)
+                if not self.isDataSetLoaded(datFilePath):
+                    self.mesh.load_data(datFilePath)
             except ValueError:
                 qgis_message_bar.pushMessage("Crayfish", "Unable to load dataset " + datFilePath, level=QgsMessageBar.WARNING)
                 continue
-            ds = self.mesh.dataset(self.mesh.dataset_count()-1)
+            dsName = datElem.attribute("name")
+            if len(dsName) != 0:
+                # dat files can contain multiple datasets - name identifies which one
+                ds = self.mesh.dataset_from_name(dsName)
+            else:
+                # project file before names started to be used - assuming just one dataset per file
+                ds = self.mesh.dataset(self.mesh.dataset_count()-1)
             self.readDataSetXml(ds, datElem)
 
 
@@ -267,6 +274,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             else:
                 dsElem = doc.createElement("dat")
                 dsElem.setAttribute("path", prj.writePath(ds.filename()))
+                dsElem.setAttribute("name", ds.name())
             self.writeDataSetXml(ds, dsElem, doc)
             element.appendChild(dsElem)
 
@@ -605,3 +613,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         print "------" #, self.mesh, self.currentDataSet()
         print crayfish.Mesh.handles
         print crayfish.DataSet.handles
+
+    def isDataSetLoaded(self, filename):
+        for d in self.mesh.datasets():
+            if d.filename() == filename:
+                return True
+        return False
