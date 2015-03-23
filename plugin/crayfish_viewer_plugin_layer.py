@@ -95,6 +95,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           'm_color' : (0,0,0,255)
         }
 
+        self.lockCurrent = True
+
         # cache dataset objects - we associate further properties to them
         # so we don't want the object to be deleted while this layer is alive
         self.cached_ds = set()
@@ -140,6 +142,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         self.current_ds_index = 0
         self.current_output_time = 0
+        self.contour_ds_index = 0
+        self.vector_ds_index = -1
 
 
     def showMeshLoadError(self, twoDMFileName):
@@ -156,6 +160,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     def currentOutput(self):
         ds = self.currentDataSet()
+        return self.currentOutputForDataset(ds)
+
+    def currentOutputForDataset(self, ds):
         if ds.time_varying():
             index = ds.output_time_index(self.current_output_time)
             if index is None:   # TODO: some warning?
@@ -163,6 +170,29 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         else:
             index = 0
         return ds.output(index)
+
+
+    def currentContourDataSet(self):
+      if self.contour_ds_index < 0:
+          return None
+      return self.mesh.dataset(self.contour_ds_index)
+
+    def currentContourOutput(self):
+      ds = self.currentContourDataSet()
+      if not ds:
+          return None
+      return self.currentOutputForDataset(ds)
+
+    def currentVectorDataSet(self):
+      if self.vector_ds_index < 0:
+          return None
+      return self.mesh.dataset(self.vector_ds_index)
+
+    def currentVectorOutput(self):
+      ds = self.currentVectorDataSet()
+      if not ds:
+          return None
+      return self.currentOutputForDataset(ds)
 
 
     def initCustomValues(self, ds):
@@ -182,8 +212,6 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           "v_head_length" : 40
         }
         ds.custom = {
-          "contours"  : True,
-          "vectors"   : ds.type() == crayfish.DataSet.Vector,
           "c_basic" : True,
           "c_basicCustomRange" : False,
           "c_basicCustomRangeMin" : minZ,
@@ -244,6 +272,18 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         if currentOutputTime is not None:
             self.current_output_time = currentOutputTime
 
+        lockCurrent = qstring2bool(element.attribute("lock-current"))
+        if lockCurrent is not None:
+            self.lockCurrent = lockCurrent
+
+        contour_ds_index = qstring2int(element.attribute("display-contour"))
+        if contour_ds_index is not None:
+            self.contour_ds_index = contour_ds_index
+
+        vector_ds_index = qstring2int(element.attribute("display-vector"))
+        if vector_ds_index is not None:
+            self.vector_ds_index = vector_ds_index
+
         # mesh rendering
         meshElem = element.firstChildElement("render-mesh")
         if not meshElem.isNull():
@@ -266,6 +306,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         element.setAttribute("meshfile", prj.writePath(self.twoDMFileName))
         element.setAttribute("current-dataset", self.current_ds_index)
         element.setAttribute("current-output-time", str(self.current_output_time))
+        element.setAttribute("lock-current", "1" if self.lockCurrent else "0")
+        element.setAttribute("display-contour", str(self.contour_ds_index))
+        element.setAttribute("display-vector", str(self.vector_ds_index))
         meshElem = doc.createElement("render-mesh")
         meshElem.setAttribute("enabled", "1" if self.config["mesh"] else "0")
         meshElem.setAttribute("color", rgb2string(self.config["m_color"]))
@@ -291,9 +334,6 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         # contour options
         contElem = elem.firstChildElement("render-contour")
         if not contElem.isNull():
-            enabled = qstring2bool(contElem.attribute("enabled"))
-            if enabled is not None:
-                ds.custom["contours"] = enabled
             alpha = qstring2int(contElem.attribute("alpha"))
             if alpha is not None:
                 ds.custom["c_alpha"] = alpha
@@ -329,9 +369,6 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         # vector options (if applicable)
         if ds.type() == crayfish.DataSet.Vector:
             vectElem = elem.firstChildElement("render-vector")
-            enabled = qstring2bool(vectElem.attribute("enabled"))
-            if enabled is not None:
-                ds.custom["vectors"] = enabled
             method = qstring2int(vectElem.attribute("method"))
             if method is not None:
                 ds.config["v_shaft_length_method"] = method
@@ -359,7 +396,6 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         # contour options
         contElem = doc.createElement("render-contour")
-        contElem.setAttribute("enabled", "1" if ds.custom["contours"] else "0")
         contElem.setAttribute("alpha", ds.custom["c_alpha"])
         contElem.setAttribute("basic", "1" if ds.custom["c_basic"] else "0")
         contElem.setAttribute("auto-range", "1" if not ds.custom["c_basicCustomRange"] else "0")
@@ -380,7 +416,6 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         # vector options (if applicable)
         if ds.type() == crayfish.DataSet.Vector:
           vectElem = doc.createElement("render-vector")
-          vectElem.setAttribute("enabled", "1" if ds.custom["vectors"] else "0")
           vectElem.setAttribute("method", ds.config["v_shaft_length_method"])
           vectElem.setAttribute("shaft-length-min", str(ds.config["v_shaft_length_min"]))
           vectElem.setAttribute("shaft-length-max", str(ds.config["v_shaft_length_max"]))
@@ -520,13 +555,22 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         rconfig = crayfish.RendererConfig()
         rconfig.set_output_mesh(self.mesh)
-        if self.currentDataSet().custom["contours"]:
-          rconfig.set_output_contour(self.currentOutput())
-        if self.currentDataSet().custom["vectors"]:
-          rconfig.set_output_vector(self.currentOutput())
+
+        dsC = self.currentContourDataSet()
+        if dsC:
+          rconfig.set_output_contour(self.currentContourOutput())
+          for k,v in dsC.config.iteritems():
+            if k.startswith("c_"):
+              rconfig[k] = v
+
+        dsV = self.currentVectorDataSet()
+        if dsV:
+          rconfig.set_output_vector(self.currentVectorOutput())
+          for k,v in dsV.config.iteritems():
+            if k.startswith("v_"):
+              rconfig[k] = v
+
         rconfig.set_view((int(width),int(height)), (extent.xMinimum(),extent.yMinimum()), pixelSize)
-        for k,v in self.currentDataSet().config.iteritems():
-          rconfig[k] = v
         for k,v in self.config.iteritems():
           rconfig[k] = v
         img = QImage(width,height, QImage.Format_ARGB32)
@@ -597,15 +641,23 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     def legendSymbologyItems(self, iconSize):
         """ implementation of method from QgsPluginLayer to show legend entries (in QGIS >= 2.1) """
-        print "LEGEND SYMBOLOGY"
-        self.print_handles()
 
-        ds = self.currentDataSet()
-        lst = [ (ds.name(), QPixmap()) ]
-        if not ds.custom["contours"]:
+        dsC = self.currentContourDataSet()
+        dsV = self.currentVectorDataSet()
+        if dsC is None and dsV is None:
+          return []
+
+        if dsC is not None and dsV is not None and dsC != dsV:
+          name = "%s / %s" % (dsC.name(), dsV.name())
+        elif dsC is not None:
+          name = dsC.name()
+        else:
+          name = dsV.name()
+        lst = [ (name, QPixmap()) ]
+        if not dsC:
             return lst
 
-        cm = ds.config["c_colormap"]
+        cm = dsC.config["c_colormap"]
         for item in cm.items():
             pix = QPixmap(iconSize)
             r,g,b,a = item.color

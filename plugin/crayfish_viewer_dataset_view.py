@@ -54,17 +54,20 @@ class DataSetModel(QAbstractItemModel):
             else:
               print "ignoring too deep child dataset"
 
-    def toggleActive(self, name, item):
-        if name == "vector":
-            self.setActive("vector", item if self.v_active != item else None)
-        elif name == "contour":
-            self.setActive("contour", item if self.c_active != item else None)
+    def activeContourIndex(self):
+        return self.c_active.ds_index if self.c_active is not None else -1
 
-    def setActiveAll(self, item):
-        self.setActive("vector", item)
-        self.setActive("contour", item)
+    def setActiveContourIndex(self, index):
+        self.setActive("contour", index)
 
-    def setActive(self, name, item):
+    def activeVectorIndex(self):
+        return self.v_active.ds_index if self.v_active is not None else -1
+
+    def setActiveVectorIndex(self, index):
+        self.setActive("vector", index)
+
+    def setActive(self, name, index):
+        item = self.dsindex2item[index] if index in self.dsindex2item else None
         if name == "vector":
             old_idx = self.item2index(self.v_active)
             self.v_active = item
@@ -149,6 +152,7 @@ class DataSetModel(QAbstractItemModel):
         return self.createIndex(parentItem.row(), 0, parentItem)
 
 
+POS_V, POS_C = 1, 2   # identifiers of positions of icons in the delegate
 
 class DataSetItemDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
@@ -162,13 +166,14 @@ class DataSetItemDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         QStyledItemDelegate.paint(self, painter, option, index)
 
-        if index.data(Qt.UserRole) == 2:  # Vector only
+        if index.data(Qt.UserRole) == 2:  # also Vector
             av = index.data(Qt.UserRole+2)
-            painter.drawPixmap(self.iconRect(option.rect, 1), self.pix_v if av else self.pix_v0)
+            painter.drawPixmap(self.iconRect(option.rect, POS_V), self.pix_v if av else self.pix_v0)
         ac = index.data(Qt.UserRole+1)
-        painter.drawPixmap(self.iconRect(option.rect, 2), self.pix_c if ac else self.pix_c0)
+        painter.drawPixmap(self.iconRect(option.rect, POS_C), self.pix_c if ac else self.pix_c0)
 
     def iconRect(self, rect, i):
+        """ icon rect for given item rect. i is either POS_C or POS_V """
         iw, ih =  self.pix_c.width(), self.pix_c.height()
         margin = (rect.height()-ih)/2
         return QRect(rect.right() - i*(iw + margin), rect.top() + margin, iw, ih)
@@ -176,35 +181,33 @@ class DataSetItemDelegate(QStyledItemDelegate):
 
 
 class DataSetView(QTreeView):
+
+    contourClicked = pyqtSignal(int)
+    vectorClicked = pyqtSignal(int)
+
     def __init__(self, parent=None):
         QTreeView.__init__(self, parent)
-        self.locked = True
 
         self.setItemDelegate(DataSetItemDelegate())
         #self.setRootIsDecorated(False)
         self.setHeaderHidden(True)
 
-    def setModel(self, model):
-        QTreeView.setModel(self, model)
-        self.selectionModel().currentChanged.connect(self.onCurrentChanged)
-
     def mousePressEvent(self, event):
-        QTreeView.mousePressEvent(self, event)
-        pass # temporary disable extra stuff
+        processed = False
         idx = self.indexAt(event.pos())
         if idx.isValid():
           vr = self.visualRect(idx)
-          if self.itemDelegate().iconRect(vr, 1).contains(event.pos()):
-            self.model().toggleActive("vector", self.model().index2item(idx))
-          elif self.itemDelegate().iconRect(vr, 2).contains(event.pos()):
-            self.model().toggleActive("contour", self.model().index2item(idx))
+          if self.itemDelegate().iconRect(vr, POS_V).contains(event.pos()):
+            if idx.data(Qt.UserRole) == 2: # has vector data?
+              self.vectorClicked.emit(self.model().index2item(idx).ds_index)
+              processed = True
+          elif self.itemDelegate().iconRect(vr, POS_C).contains(event.pos()):
+            self.contourClicked.emit(self.model().index2item(idx).ds_index)
+            processed = True
 
-    def onCurrentChanged(self, newIndex):
-        if self.locked:
-            self.model().setActiveAll(self.model().index2item(newIndex))
-
-    def toggleLock(self):
-        self.locked = self.sender().isChecked()
+        # only if the user did not click one of the icons do usual handling
+        if not processed:
+            QTreeView.mousePressEvent(self, event)
 
 
 def test_main():
@@ -213,8 +216,7 @@ def test_main():
     v.setModel(DataSetModel(datasets))
     btn = QToolButton()
     btn.setCheckable(True)
-    btn.setChecked(v.locked)
-    btn.clicked.connect(v.toggleLock)
+    btn.setChecked(True)
     w = QWidget()
     l = QVBoxLayout()
     l.addWidget(btn)

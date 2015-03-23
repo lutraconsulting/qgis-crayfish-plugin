@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'crayfish_viewer_dock_widget.ui'
 #
-# Created: Sun Mar 22 15:17:11 2015
+# Created: Mon Mar 23 15:33:18 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -31,9 +31,16 @@ class Ui_DockWidget(object):
         self.dockWidgetContents.setObjectName(_fromUtf8("dockWidgetContents"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.dockWidgetContents)
         self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
+        self.horizontalLayout_6 = QtGui.QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(_fromUtf8("horizontalLayout_6"))
         self.label = QtGui.QLabel(self.dockWidgetContents)
         self.label.setObjectName(_fromUtf8("label"))
-        self.verticalLayout_2.addWidget(self.label)
+        self.horizontalLayout_6.addWidget(self.label)
+        self.btnLockCurrent = QtGui.QToolButton(self.dockWidgetContents)
+        self.btnLockCurrent.setAutoRaise(True)
+        self.btnLockCurrent.setObjectName(_fromUtf8("btnLockCurrent"))
+        self.horizontalLayout_6.addWidget(self.btnLockCurrent)
+        self.verticalLayout_2.addLayout(self.horizontalLayout_6)
         self.treeDataSets = DataSetView(self.dockWidgetContents)
         self.treeDataSets.setMinimumSize(QtCore.QSize(0, 55))
         self.treeDataSets.setObjectName(_fromUtf8("treeDataSets"))
@@ -201,6 +208,14 @@ class Ui_DockWidget(object):
     def retranslateUi(self, DockWidget):
         DockWidget.setWindowTitle(_translate("DockWidget", "Crayfish Viewer", None))
         self.label.setText(_translate("DockWidget", "Quantity", None))
+        self.btnLockCurrent.setToolTip(_translate("DockWidget", "Lock rendering to the current dataset\n"
+"\n"
+"When locked, Crayfish will render contours (and vectors)\n"
+"from the selected dataset.\n"
+"\n"
+"When unlocked, it is possible to combine rendering\n"
+"of contours and vectors from different datasets\n"
+"by clicking the icons next to dataset names.", None))
         self.label_2.setText(_translate("DockWidget", "Output Time", None))
         self.btnFirst.setText(_translate("DockWidget", "|<", None))
         self.btnPrev.setText(_translate("DockWidget", "<", None))

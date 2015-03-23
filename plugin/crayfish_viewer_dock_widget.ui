@@ -16,11 +16,32 @@
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Quantity</string>
-      </property>
-     </widget>
+     <layout class="QHBoxLayout" name="horizontalLayout_6">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Quantity</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnLockCurrent">
+        <property name="toolTip">
+         <string>Lock rendering to the current dataset
+
+When locked, Crayfish will render contours (and vectors)
+from the selected dataset.
+
+When unlocked, it is possible to combine rendering
+of contours and vectors from different datasets
+by clicking the icons next to dataset names.</string>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
     <item>
      <widget class="DataSetView" name="treeDataSets">

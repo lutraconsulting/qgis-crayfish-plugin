@@ -56,6 +56,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.btnAdvanced.setIcon(iconOptions)
         self.btnVectorOptions.setIcon(iconOptions)
 
+        self.btnLockCurrent.setIcon(QgsApplication.getThemeIcon("/locked.svg"))
+
         initColorButton(self.btnMeshColor)
 
         self.setEnabled(False)
@@ -80,6 +82,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         QObject.connect(self.radContourBasic, SIGNAL("clicked()"), self.setContourType)
         QObject.connect(self.radContourAdvanced, SIGNAL("clicked()"), self.setContourType)
         QObject.connect(self.btnMeshColor, SIGNAL("colorChanged(QColor)"), self.setMeshColor)
+        QObject.connect(self.btnLockCurrent, SIGNAL("clicked()"), self.toggleLockCurrent)
+        self.treeDataSets.contourClicked.connect(self.datasetContourClicked)
+        self.treeDataSets.vectorClicked.connect(self.datasetVectorClicked)
 
         
     def currentCrayfishLayer(self):
@@ -106,19 +111,15 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         """
             displayContoursCheckBox has been toggled
         """
-        self.currentDataSet().custom["contours"] = newState
-        self.iface.legendInterface().refreshLayerSymbology(self.currentCrayfishLayer())
-        self.redrawCurrentLayer()
+        self.datasetContourClicked(self.currentCrayfishLayer().current_ds_index)
             
             
     def displayVectorsButtonToggled(self, newState):
         """
             displayVectorsCheckBox has been toggled
         """
-        self.currentDataSet().custom["vectors"] = newState
-        #self.currentDataSet().setVectorRenderingEnabled(newState)
-        self.btnVectorOptions.setEnabled(newState)
-        self.redrawCurrentLayer()
+        self.datasetVectorClicked(self.currentCrayfishLayer().current_ds_index)
+
         
     def displayMeshButtonToggled(self, newState):
         """
@@ -197,6 +198,11 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         dataSet = l.mesh.dataset(dataSetItem.ds_index)
         l.current_ds_index = dataSetItem.ds_index
 
+        if l.lockCurrent:
+            import crayfish
+            l.contour_ds_index = l.current_ds_index
+            l.vector_ds_index = l.current_ds_index if dataSet.type() == crayfish.DataSet.Vector else -1
+
         # repopulate the time control combo
         self.cboTime.blockSignals(True) # make sure that currentIndexChanged(int) will not be emitted
         self.cboTime.clear()
@@ -240,11 +246,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
         self.updateContourGUI(dataSet)
         self.updateAdvancedPreview()
-            
-        # Get contour / vector render preferences
-        self.contoursGroupBox.setChecked(dataSet.custom["contours"])
-        self.displayVectorsCheckBox.setChecked(dataSet.custom["vectors"])
-        self.btnVectorOptions.setEnabled(dataSet.custom["vectors"])
+        self.updateDisplayContour()
+        self.updateDisplayVector()
 
         # Disable the vector options if we are looking at a scalar dataset
         from crayfish import DS_Vector
@@ -270,6 +273,50 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             l.current_output_time = ds.output(timeIdx).time()
 
         self.redrawCurrentLayer()
+
+    def datasetContourClicked(self, ds_index):
+        l = self.currentCrayfishLayer()
+        if l.lockCurrent and ds_index != l.current_ds_index:
+            return # operates on current dataset when locked
+
+        if l.contour_ds_index == ds_index:
+            l.contour_ds_index = -1   # toggle off
+        else:
+            l.contour_ds_index = ds_index
+
+        self.updateDisplayContour()
+        self.iface.legendInterface().refreshLayerSymbology(l)
+        self.redrawCurrentLayer()
+
+    def datasetVectorClicked(self, ds_index):
+        l = self.currentCrayfishLayer()
+        if l.lockCurrent and ds_index != l.current_ds_index:
+            return # operates on current dataset when locked
+
+        if l.vector_ds_index == ds_index:
+            l.vector_ds_index = -1   # toggle off
+        else:
+            l.vector_ds_index = ds_index
+
+        self.updateDisplayVector()
+        self.iface.legendInterface().refreshLayerSymbology(l)
+        self.redrawCurrentLayer()
+
+
+    def updateDisplayContour(self):
+        l = self.currentCrayfishLayer()
+        self.treeDataSets.model().setActiveContourIndex(l.contour_ds_index)
+        self.contoursGroupBox.blockSignals(True)
+        self.contoursGroupBox.setChecked(l.contour_ds_index == l.current_ds_index)
+        self.contoursGroupBox.blockSignals(False)
+
+    def updateDisplayVector(self):
+        l = self.currentCrayfishLayer()
+        self.treeDataSets.model().setActiveVectorIndex(l.vector_ds_index)
+        self.displayVectorsCheckBox.blockSignals(True)
+        self.displayVectorsCheckBox.setChecked(l.vector_ds_index == l.current_ds_index)
+        self.displayVectorsCheckBox.blockSignals(False)
+        self.btnVectorOptions.setEnabled(l.vector_ds_index == l.current_ds_index)
 
         
     def deactivate(self):
@@ -342,6 +389,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
                 
         self.activate()
 
+        self.updateLockCurrentIcon()
+
         # create new model with datasets
         datasets = []
         for i,d in enumerate(l.mesh.datasets()):
@@ -349,6 +398,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         from crayfish_viewer_dataset_view import DataSetModel
         self.treeDataSets.setModel(DataSetModel(datasets))
         self.treeDataSets.selectionModel().currentRowChanged.connect(self.dataSetChanged)
+        self.treeDataSets.model().setActiveContourIndex(l.contour_ds_index)
+        self.treeDataSets.model().setActiveVectorIndex(l.vector_ds_index)
         self.treeDataSets.expandAll()
 
         # setup current dataset
@@ -479,3 +530,13 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
     def timeLast(self):
         self.cboTime.setCurrentIndex(self.cboTime.count()-1)
+
+    def toggleLockCurrent(self):
+        l = self.iface.mapCanvas().currentLayer()
+        l.lockCurrent = not l.lockCurrent
+        self.updateLockCurrentIcon()
+
+    def updateLockCurrentIcon(self):
+        l = self.iface.mapCanvas().currentLayer()
+        iconName = "/locked.svg" if l.lockCurrent else "/unlocked.svg"
+        self.btnLockCurrent.setIcon(QgsApplication.getThemeIcon(iconName))
