@@ -12,7 +12,15 @@ email=info@lutraconsulting.co.uk
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=1.3 - New features:
+changelog=2.0 - New features:
+ - Support for XMDF format
+ - Support for special time (e.g. maxima)
+ - Rendering of vectors over contours from different datasets
+ - Improved time control
+ - Better support for DAT result files
+ - Loading of .2dm files from browser
+ - Code refactoring, new Python API
+ <p>1.3 - New features:
  - Export to raster grid
  - Upload to illuvis
  - New contour options: Fill above/below

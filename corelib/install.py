@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 # Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
-# Copyright (C) 2012 Peter Wells for Lutra Consulting
+# Copyright (C) 2014 Lutra Consulting
 
-# peter dot wells at lutraconsulting dot co dot uk
+# info at lutraconsulting dot co dot uk
 # Lutra Consulting
 # 23 Chestnut Close
 # Burgess Hill
