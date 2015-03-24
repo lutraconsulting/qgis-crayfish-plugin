@@ -192,6 +192,11 @@ class DataSetView(QTreeView):
         #self.setRootIsDecorated(False)
         self.setHeaderHidden(True)
 
+        self.customActions = []
+
+    def setCustomActions(self, actions):
+        self.customActions = actions
+
     def mousePressEvent(self, event):
         processed = False
         idx = self.indexAt(event.pos())
@@ -209,6 +214,14 @@ class DataSetView(QTreeView):
         if not processed:
             QTreeView.mousePressEvent(self, event)
 
+    def contextMenuEvent(self, event):
+        if len(self.customActions) == 0:
+            return
+        event.accept()
+        m = QMenu()
+        for a in self.customActions:
+            m.addAction(a)
+        m.exec_(self.mapToGlobal(event.pos()))
 
 def test_main():
     datasets = [("Bed Elevation", 0), ("Depth", 1), ("Depth/Max", 1), ("Velocity", 2), ("Unit Flow", 2)]
