@@ -24,23 +24,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-def name():
-    return "Crayfish"
-def description():
-    return "A collection of tools for TUFLOW and other hydraulic modelling packages"
-def version():
-    from version import crayfishPythonPluginVersion
-    return "Version " + crayfishPythonPluginVersion()
-def qgisMinimumVersion():
-    return "1.7"
-def authorName():
-    return "Lutra Consulting"
-def author():
-    return "Lutra Consulting"
-def email():
-    return "info@lutraconsulting.co.uk"
-def homepage():
-    return "http://www.lutraconsulting.co.uk/resources/crayfish"
 def classFactory(iface):
     from crayfish_plugin import CrayfishPlugin
     return CrayfishPlugin(iface)

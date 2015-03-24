@@ -24,44 +24,62 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import ConfigParser
+import os
+import platform
+import time
+import urllib2
+import zipfile
+
+from PyQt4.QtCore import QSettings
+from PyQt4.QtGui import QMessageBox, qApp
 
 # Base URL for downloading of prepared binaries
 downloadBaseUrl = 'http://www.lutraconsulting.co.uk/'
 #downloadBaseUrl = 'http://localhost:8000/'  # for testing
 
-def ensure_library_installed():
-    try:
-        import crayfish
-        # TODO: check version
-        return True
-    except OSError:
-        # TODO: try to download + install
-        return False
+
+def plugin_version_str():
+    cfg = ConfigParser.ConfigParser()
+    cfg.read(os.path.join(os.path.dirname(__file__),'metadata.txt'))
+    return cfg.get('general', 'version')
+
+def plugin_version():
+    ver_lst = plugin_version_str().split('.')
+    ver = 0
+    if len(ver_lst) >= 1:
+        ver_major = int(ver_lst[0])
+        ver |= ver_major << 16
+    if len(ver_lst) >= 2:
+        ver_minor = int(ver_lst[1])
+        ver |= ver_minor << 8
+    if len(ver_lst) == 3:
+        ver_bugfix = int(ver_lst[2])
+        ver |= ver_bugfix
+    return ver
 
 
-def ensure_library_installed_old():
+crayfish_zipfile = 'crayfish-lib-%s.zip' % plugin_version_str()
 
-    # currently does nothing
-    # TODO: re-enable
-    return True
+
+def ensure_library_installed(parent_widget=None):
 
     # Try to import the binary library:
     restartRequired = False
 
     platformVersion = platform.system()
     if platformVersion == 'Windows':
-        self.extractBinPackageAfterRestart()
+        extractBinPackageAfterRestart()
 
     try:
-        from crayfishviewer import CrayfishViewer
-        from crayfishviewer import version as crayfishVersion
-        assert self.version == str( crayfishVersion() )
+        import crayfish
+        assert crayfish.version() == plugin_version()
         return True   # everything's good - we are done here!
     except (ImportError, AttributeError, AssertionError):
         pass  # ok we have a problem (no library or an old one)
 
     # The crayfishviewer binary cannot be found
-    reply = QMessageBox.question(self.iface.mainWindow(),
+    reply = QMessageBox.question(parent_widget,
           'Crayfish Viewer Library Not Found',
           "Crayfish Viewer depends on a platform specific compiled library "
           "which was not found. Would you like to attempt to automatically "
@@ -69,7 +87,7 @@ def ensure_library_installed_old():
           QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
     if reply != QMessageBox.Yes:
         # User did not want to download
-        QMessageBox.critical(self.iface.mainWindow(),
+        QMessageBox.critical(parent_widget,
           'No Crayfish Viewer Library',
           "Crayfish Viewer relies on the Crayfish Viewer library.  Either "
           "download a library for your platform or download the source code "
@@ -77,21 +95,18 @@ def ensure_library_installed_old():
           "now be disabled.")
         return False
 
-    libVersion = 'sip ' + sip.SIP_VERSION_STR + ' pyqt ' + PYQT_VERSION_STR
-    crayfishVersion = self.version
-
     # Determine where to extract the files
     if platform.architecture()[0] == '64bit':
         platformVersion += '64'
-    packageUrl = 'resources/crayfish/viewer/binaries/' + platformVersion + '/' + libVersion + '/' + crayfishVersion + '/crayfish_viewer_library.zip'
+    packageUrl = 'resources/crayfish/viewer/binaries/%s/%s' % (platformVersion, crayfish_zipfile)
     packageUrl = downloadBaseUrl + urllib2.quote(packageUrl)
 
     # Download it
     try:
-        filename = os.path.join(os.path.dirname(__file__), 'crayfish_viewer_library.zip')
-        self.downloadBinPackage(packageUrl, filename)
+        filename = os.path.join(os.path.dirname(__file__), crayfish_zipfile)
+        downloadBinPackage(packageUrl, filename)
     except IOError, err:
-        QMessageBox.critical(self.iface.mainWindow(),
+        QMessageBox.critical(parent_widget,
           'Could Not Download Library',
           "The library for your platform could not be found on the developer's "
           "website.  Please see the About section for details of how to compile "
@@ -102,37 +117,34 @@ def ensure_library_installed_old():
     # check whether we need to download GDAL library extra (on older QGIS installs
     # there is older version than the one required by the compiled binary)
     if platformVersion == 'Windows':
-        downloadExtraLibs()
+        downloadExtraLibs(parent_widget)
 
     # try to extract the downloaded file - may require a restart if the files exist already
-    if not self.extractBinPackage(filename):
-        QMessageBox.information(self.iface.mainWindow(),
+    if not extractBinPackage(filename):
+        QMessageBox.information(parent_widget,
           'Restart Required',
           "QGIS needs to be restarted in order to complete an update to the Crayfish "
           "Viewer Library.  Please restart QGIS.")
         return False
 
     # now try again
-    from crayfishviewer import CrayfishViewer
-    QMessageBox.information(self.iface.mainWindow(), 'Succeeded', "Download and installation successful." )
+    import crayfish
+    QMessageBox.information(parent_widget, 'Succeeded', "Download and installation successful." )
     return True
 
 
-def downloadBinPackage(self, packageUrl, destinationFileName):
+def downloadBinPackage(packageUrl, destinationFileName):
     s = QSettings()
     # FIXME - does this work from behind a proxy?
-    try:
-        useProxy = s.value("proxy/proxyEnabled", False).toBool()
-    except:
-        useProxy = s.value("proxy/proxyEnabled", False, type=bool)
+    useProxy = s.value("proxy/proxyEnabled", False, type=bool)
     if useProxy:
-        proxyHost = qv2unicode(s.value("proxy/proxyHost", unicode()))
-        proxyPassword = qv2unicode(s.value("proxy/proxyPassword", unicode()))
-        proxyPort = qv2unicode(s.value("proxy/proxyPort", unicode()))
-        proxyType = qv2unicode(s.value("proxy/proxyType", unicode()))
+        proxyHost = s.value("proxy/proxyHost", unicode())
+        proxyPassword = s.value("proxy/proxyPassword", unicode())
+        proxyPort = s.value("proxy/proxyPort", unicode())
+        proxyType = s.value("proxy/proxyType", unicode())
         proxyTypes = { 'DefaultProxy' : 'http', 'HttpProxy' : 'http', 'Socks5Proxy' : 'socks', 'HttpCachingProxy' : 'http', 'FtpCachingProxy' : 'ftp' }
         if proxyType in proxyTypes: proxyType = proxyTypes[proxyType]
-        proxyUser = qv2unicode(s.value("proxy/proxyUser", unicode()))
+        proxyUser = s.value("proxy/proxyUser", unicode())
         proxyString = 'http://' + proxyUser + ':' + proxyPassword + '@' + proxyHost + ':' + proxyPort
         proxy = urllib2.ProxyHandler({proxyType : proxyString})
         auth = urllib2.HTTPBasicAuthHandler()
@@ -146,7 +158,7 @@ def downloadBinPackage(self, packageUrl, destinationFileName):
     destinationFile.close()
 
 
-def extractBinPackage(self, destinationFileName):
+def extractBinPackage(destinationFileName):
     """ extract the downloaded package with .dll and .pyd files.
         If they already exist, the operation will fail because they are already loaded into Python.
         In such case we just keep a marker file 'EXTRACT_DLL' and extract it on the next run
@@ -164,7 +176,7 @@ def extractBinPackage(self, destinationFileName):
         return False
 
 
-def extractBinPackageAfterRestart(self):
+def extractBinPackageAfterRestart():
     # Windows users may have opted to download a pre-compiled lib
     # In this case, if they already had the DLL loaded (they have
     # just uypdated) - they will need to restart QGIS to be able to
@@ -174,8 +186,7 @@ def extractBinPackageAfterRestart(self):
     if not os.path.isfile(updateLibraryIndicator):
         return
 
-    dllFileName = os.path.join(destFolder, 'crayfishViewer.dll')
-    pydFileName = os.path.join(destFolder, 'crayfishviewer.pyd')
+    dllFileName = os.path.join(destFolder, 'crayfish.dll')
     for retryCount in range(5):
         try:
             os.unlink( dllFileName )
@@ -183,15 +194,14 @@ def extractBinPackageAfterRestart(self):
         except:
             time.sleep(3)
 
-    os.unlink( pydFileName )
-    destinationFileName = os.path.join(destFolder, 'crayfish_viewer_library.zip')
+    destinationFileName = os.path.join(destFolder, crayfish_zipfile)
     z = zipfile.ZipFile(destinationFileName)
     z.extractall(destFolder)
     z.close()
     os.unlink(updateLibraryIndicator)
 
 
-def downloadExtraLibs():
+def downloadExtraLibs(parent_widget=None):
     try:
         from ctypes import windll
         x = windll.gdal111
@@ -200,19 +210,19 @@ def downloadExtraLibs():
         pass # ok we need to download the libs
 
     try:
-        QMessageBox.information(self.iface.mainWindow(),
+        QMessageBox.information(parent_widget,
           'Download Extra Libraries',
           "It is necessary to download newer GDAL library - this may take some "
           "time (~10MB), please wait.")
         qApp.setOverrideCursor(QCursor(Qt.WaitCursor))
         gdalFilename = os.path.join(os.path.dirname(__file__), 'gdal111.dll')
         gdalUrl = downloadBaseUrl+'resources/crayfish/viewer/binaries/'+platformVersion+'/extra/gdal111.dll'
-        self.downloadBinPackage(gdalUrl, gdalFilename)
+        downloadBinPackage(gdalUrl, gdalFilename)
         qApp.restoreOverrideCursor()
         return True
     except IOError, err:
         qApp.restoreOverrideCursor()
-        QMessageBox.critical(self.iface.mainWindow(),
+        QMessageBox.critical(parent_widget,
           'Could Not Download Extra Libraries',
           "Download of the library failed. Please try again or contact us for "
           "further assistance.\n\n(Error: %s)" % str(err))

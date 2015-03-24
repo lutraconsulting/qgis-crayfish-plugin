@@ -6,7 +6,7 @@ qgisMaximumVersion=2.99
 description=A collection of tools for TUFLOW and other hydraulic 
     modelling packages
 ; category=Raster ; Did not know what my available choices where
-version=version 1.3
+version=2.0
 author=Lutra Consulting
 email=info@lutraconsulting.co.uk
 ; end of mandatory metadata

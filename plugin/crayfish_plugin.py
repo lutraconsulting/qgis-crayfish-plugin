@@ -29,11 +29,7 @@ from PyQt4.QtGui import *
 from qgis.core import *
 from crayfish_gui_utils import QgsMessageBar, qgis_message_bar
 
-from version import crayfishPythonPluginVersion
-
 import resources
-
-import os
 
 from crayfish_viewer_dock import CrayfishViewerDock
 
@@ -45,26 +41,8 @@ import crayfish_install_helper
 
 from illuvis import upload_dialog
 
-import platform
-import urllib2
 import os
-import zipfile
-import sip
 import sys
-import time
-
-def qv2bool(v):
-    try:
-        return v.toBool()  # QGIS 1.x
-    except Exception:
-        return v   # QGIS 2.x
-
-def qv2unicode(v):
-    try:
-        return unicode(v.toString())  # QGIS 1.x
-    except Exception:
-        return v    # QGIS 2.x
-
 
 
 class CrayfishPlugin:
@@ -72,7 +50,6 @@ class CrayfishPlugin:
     def __init__(self, iface):
         # Save reference to the QGIS interface
         self.iface = iface
-        self.version = crayfishPythonPluginVersion()
         self.dock = None
         self.lr = QgsMapLayerRegistry.instance()
         self.crayfishViewerLibFound = False

@@ -30,7 +30,7 @@ from PyQt4.QtWebKit import *
 from qgis.core import *
 
 from crayfish_about_dialog_widget import Ui_Dialog
-from version import crayfishPythonPluginVersion
+from crayfish_install_helper import plugin_version_str
 
 import os
 
@@ -62,7 +62,7 @@ class CrayfishAboutDialog(QDialog, Ui_Dialog):
 
     def sourceAbout(self):
         src = open(self.about_page).read()
-        src = src.replace("%CRAYFISH_VERSION%", crayfishPythonPluginVersion())
+        src = src.replace("%CRAYFISH_VERSION%", plugin_version_str())
         return src
 
     def sourceNews(self):

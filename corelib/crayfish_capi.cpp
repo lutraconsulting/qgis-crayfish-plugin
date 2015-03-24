@@ -24,8 +24,7 @@ static LoadStatus sLastLoadStatus;
 
 int CF_Version()
 {
-  // TODO: generate automatically
-  return 0x010300; // 1.3
+  return 0x020000; // 2.0.0
 }
 
 
