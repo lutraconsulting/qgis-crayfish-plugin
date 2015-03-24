@@ -26,10 +26,12 @@
 
 import ctypes
 import os
+import platform
 import weakref
 
 this_dir = os.path.dirname(__file__)
-lib=ctypes.cdll.LoadLibrary(os.path.join(this_dir, "libcrayfish.so.1"))
+libname = "crayfish.dll" if platform.system() == "Windows" else "libcrayfish.so.1"
+lib=ctypes.cdll.LoadLibrary(os.path.join(this_dir, libname))
 
 Err_None, Err_NotEnoughMemory, \
   Err_FileNotFound, Err_UnknownFormat, \

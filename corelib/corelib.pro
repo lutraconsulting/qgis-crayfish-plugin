@@ -34,7 +34,7 @@ win32 {
   }
 
   INCLUDEPATH += $${OSGEO_PATH}/include
-  LIBS += -L$${OSGEO_PATH}/lib -lproj_i -lgdal_i
+  LIBS += -L$${OSGEO_PATH}/lib -lproj_i -lgdal_i -lhdf5
 }
 
 unix {

@@ -26,6 +26,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import platform
 import sys
 
 extra_install_args = ""
@@ -34,10 +35,14 @@ if len(sys.argv) == 2 and sys.argv[1].startswith("-pkg="):
 
 print "Installing C++ library..."
 os.chdir('corelib')
-os.system('qmake')
-os.system('make')
-os.system('./install.py' + extra_install_args)
+if platform.system() == "Windows":
+    os.system('qmake -spec win32-msvc2010 "CONFIG+=release"')
+    os.system('nmake')
+else:
+    os.system('qmake')
+    os.system('make')
+os.system('python install.py' + extra_install_args)
 
 print "Installing plugin..."
 os.chdir('../plugin')
-os.system('./install.py' + extra_install_args)
+os.system('python install.py' + extra_install_args)

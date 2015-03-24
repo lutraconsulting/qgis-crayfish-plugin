@@ -203,6 +203,11 @@ class DataSetItemDelegate(QStyledItemDelegate):
         margin = (rect.height()-ih)/2
         return QRect(rect.right() - i*(iw + margin), rect.top() + margin, iw, ih)
 
+    def sizeHint(self, option, index):
+        hint = QStyledItemDelegate.sizeHint(self, option, index)
+        if hint.height() < 16:
+            hint.setHeight(16)
+        return hint
 
 
 class DataSetView(QTreeView):
