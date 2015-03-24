@@ -31,22 +31,19 @@ import shutil
 import platform
 import glob
 
-qgis1 = False
 pkg = False
 
 if len(sys.argv) > 1:
   for arg in sys.argv[1:]:
-    if arg == '-1':
-      qgis1 = True
-    elif arg == '-pkg':
+    if arg.startswith('-pkg='):
       pkg = True
+      version = arg[5:]
     else:
-      print "install.py [-1] [-pkg]"
+      print "install.py [-pkg=version]"
       print ""
       print "  Install Crayfish Python plugin"
       print ""
       print "  Arguments:"
-      print "  -1        Install to QGIS 1.x directory (instead of QGIS 2.x)"
       print "  -pkg      Create a package for upload instead of installing"
       sys.exit(0)
 
@@ -55,13 +52,12 @@ install_files.remove("install.py")  # exclude this file!
 
 if pkg:
   import zipfile
-  with zipfile.ZipFile("crayfish.zip", "w", zipfile.ZIP_DEFLATED) as z:
+  with zipfile.ZipFile(os.path.join("..","crayfish-%s.zip" % version), "w", zipfile.ZIP_DEFLATED) as z:
     for filename in install_files:
       z.write(filename, "crayfish/"+filename)
 
 else:
-  qgis_folder = ".qgis" if qgis1 else ".qgis2"
-  plugin_dir = os.path.expanduser(os.path.join("~", qgis_folder, "python", "plugins", "crayfish"))
+  plugin_dir = os.path.expanduser(os.path.join("~", ".qgis2", "python", "plugins", "crayfish"))
   if not os.path.exists(plugin_dir):
     os.makedirs(plugin_dir)
   for subdir in ['illuvis', 'doc']:

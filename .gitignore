@@ -4,3 +4,6 @@ build-*
 *.so
 *.so.*
 *.pyc
+*.o
+Makefile
+
