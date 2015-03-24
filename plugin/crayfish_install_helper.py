@@ -75,7 +75,7 @@ def ensure_library_installed(parent_widget=None):
         import crayfish
         assert crayfish.version() == plugin_version()
         return True   # everything's good - we are done here!
-    except (ImportError, AttributeError, AssertionError):
+    except (OSError, AssertionError):
         pass  # ok we have a problem (no library or an old one)
 
     # The crayfishviewer binary cannot be found
