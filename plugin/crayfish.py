@@ -491,6 +491,11 @@ class ColorMap(object):
       self.set_item(i-1, it.value, it.color, it.label)
     self.set_item_count(self.item_count()-1)
 
+  def sort_items(self):
+    items = [ (i.value, i.color, i.label) for i in self.items() ]
+    items = sorted(items, key=lambda x: x[0])
+    self.set_items(items)
+
   alpha = property(lambda self:   self.lib.CF_CM_alpha(self.handle),
                    lambda self,v: self.lib.CF_CM_setAlpha(self.handle, v))
 

@@ -74,7 +74,7 @@ class ColorMapModel(QAbstractTableModel):
         if role == Qt.EditRole and index.column() == 0:
             self.cm[index.row()].value = value
             self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), index,index)
-            self.ensureSorted()
+            self.ensureSorted(index.row())
             return True
         elif role == Qt.BackgroundRole and index.column() == 1:
             self.cm[index.row()].color = value
@@ -88,32 +88,28 @@ class ColorMapModel(QAbstractTableModel):
         self.cm.add_item(0, (0,255,0,255),'')
         self.endInsertRows()
 
-        self.ensureSorted()
+        self.ensureSorted(self.cm.item_count()-1)
 
     def removeItem(self, row):
         self.beginRemoveRows(QModelIndex(), row, row)
         self.cm.remove_item(row)
         self.endRemoveRows()
 
-    def ensureSorted(self):
-        moved = False
-        prev = self.cm[0].value
-        for i in range(1,self.cm.item_count()):
-            val = self.cm[i].value
-            if val < prev:
-              # find correct position
-              for j in range(i):
-                  if self.cm[j].value > val:
-                      break
-              # move the item
-              self.beginMoveRows(QModelIndex(), i, i, QModelIndex(), j)
-              self.cm.moveItem(i,j)
-              self.endMoveRows()
-              moved = True
-            prev = self.cm[i].value
+    def ensureSorted(self, i=None):
+        if i is not None:
+            value_before = self.cm[i].value
 
-        if moved:
-          self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), self.index(0,0),self.index(self.cm.item_count(),1))
+        self.cm.sort_items()
+
+        if i is not None:
+            value_after = self.cm[i].value
+            j = [ item.value for item in self.cm.items() ].index(value_before)
+            if value_before != value_after:
+                if i < j: j += 1
+                self.beginMoveRows(QModelIndex(), i,i, QModelIndex(), j)
+                self.endMoveRows()
+
+        self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), self.index(0,0),self.index(self.cm.item_count(),1))
 
 
 
@@ -259,8 +255,8 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         if not fileName:
             return
 
-        self.model.beginResetModel
-        self.colormap.clearItems()
+        self.model.beginResetModel()
+        items = []
 
         f = open(fileName, "r")
         for line in f.read().splitlines():
@@ -271,7 +267,9 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
                 self.colormap.method = ColorMap.Discrete if method == "DISCRETE" else ColorMap.Linear
             else:
                 value, r,g,b,a, label = line.split(",")
-                self.colormap.add_item(float(value), qRgba(int(r),int(g),int(b),int(a)))
+                items.append( (float(value), (int(r),int(g),int(b),int(a)), '') )
+
+        self.colormap.set_items(items)
 
         self.model.endResetModel()
 
@@ -289,8 +287,8 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         f = open(fileName, "w")
         f.write("# QGIS Generated Color Map Export File\n")
         f.write("INTERPOLATION:%s\n" % ("INTERPOLATED" if self.colormap.method == ColorMap.Linear else "DISCRETE"))
-        for i in range(len(self.colormap.items)):
-            item = self.colormap.items[i]
-            c = QColor(item.color)
-            f.write("%.3f,%d,%d,%d,%d,%.3f\n" % (item.value, c.red(), c.green(), c.blue(), c.alpha(), item.value))
+        for i in range(self.colormap.item_count()):
+            item = self.colormap[i]
+            c = item.color
+            f.write("%.3f,%d,%d,%d,%d,%.3f\n" % (item.value, c[0], c[1], c[2], c[3], item.value))
         f.close()
