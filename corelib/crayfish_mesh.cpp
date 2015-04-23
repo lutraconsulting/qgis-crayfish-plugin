@@ -164,11 +164,45 @@ double Mesh::valueAt(const Output* output, double xCoord, double yCoord) const
   return -9999.0;
 }
 
+
+//! abstract class that provides values for interpolation
+struct ValueAccessor
+{
+  virtual float value(int nodeIndex) const = 0;
+};
+
+struct ScalarValueAccessor : public ValueAccessor
+{
+  ScalarValueAccessor(const float* values) : mValues(values) {}
+  float value(int nodeIndex) const { return mValues[nodeIndex]; }
+  const float* mValues;
+};
+
+struct VectorValueAccessorX : public ValueAccessor
+{
+  VectorValueAccessorX(const Output::float2D* values) : mValues(values) {}
+  float value(int nodeIndex) const { return mValues[nodeIndex].x; }
+  const Output::float2D* mValues;
+};
+
+struct VectorValueAccessorY : public ValueAccessor
+{
+  VectorValueAccessorY(const Output::float2D* values) : mValues(values) {}
+  float value(int nodeIndex) const { return mValues[nodeIndex].y; }
+  const Output::float2D* mValues;
+};
+
+
 bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const
+{
+  ScalarValueAccessor accessor(output->values.constData());
+  return interpolate(elementIndex, x, y, value, output, &accessor);
+}
+
+bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, const Output* output, const ValueAccessor* accessor) const
 {
   const Mesh* mesh = output->dataSet->mesh();
   const Element& elem = mesh->elements()[elementIndex];
-  const float* values = output->values.constData();
 
   if (elem.eType == Element::E4Q)
   {
@@ -182,10 +216,10 @@ bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const O
     if (Lx < 0 || Ly < 0 || Lx > 1 || Ly > 1)
       return false;
 
-    double q11 = values[ elem.p[2] ];
-    double q12 = values[ elem.p[1] ];
-    double q21 = values[ elem.p[3] ];
-    double q22 = values[ elem.p[0] ];
+    double q11 = accessor->value( elem.p[2] );
+    double q12 = accessor->value( elem.p[1] );
+    double q21 = accessor->value( elem.p[3] );
+    double q22 = accessor->value( elem.p[0] );
 
     *value = q11*Lx*Ly + q21*(1-Lx)*Ly + q12*Lx*(1-Ly) + q22*(1-Lx)*(1-Ly);
 
@@ -241,9 +275,9 @@ bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const O
 
     // Now interpolate
 
-    double z1 = values[ elem.p[0] ];
-    double z2 = values[ elem.p[1] ];
-    double z3 = values[ elem.p[2] ];
+    double z1 = accessor->value( elem.p[0] );
+    double z2 = accessor->value( elem.p[1] );
+    double z3 = accessor->value( elem.p[2] );
     *value = lam1 * z3 + lam2 * z2 + lam3 * z1;
     return true;
 
@@ -253,6 +287,15 @@ bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const O
     Q_ASSERT(0 && "unknown element type");
     return false;
   }
+}
+
+bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const
+{
+  VectorValueAccessorX accessorX(output->valuesV.constData());
+  VectorValueAccessorY accessorY(output->valuesV.constData());
+  bool resX = interpolate(elementIndex, x, y, valueX, output, &accessorX);
+  bool resY = interpolate(elementIndex, x, y, valueY, output, &accessorY);
+  return resX && resY;
 }
 
 

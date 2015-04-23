@@ -46,9 +46,9 @@ class CrayfishViewerRenderSettings():
 
         # unused stuff
 
-        self.displayVectorsOnGrid = False
-        self.xSpacing = 50.0
-        self.ySpacing = 50.0
+        self.displayVectorsOnGrid = ds.config["v_grid"]
+        self.xSpacing = ds.config["v_grid_x"]
+        self.ySpacing = ds.config["v_grid_y"]
         
         self.filterByMag = False
         self.minMag = 0.0
@@ -65,4 +65,6 @@ class CrayfishViewerRenderSettings():
         self.ds.config["v_pen_width"] = self.lineWidth
         self.ds.config["v_head_width"] = self.headWidth
         self.ds.config["v_head_length"] = self.headLength
-
+        self.ds.config["v_grid"] = self.displayVectorsOnGrid
+        self.ds.config["v_grid_x"] = self.xSpacing
+        self.ds.config["v_grid_y"] = self.ySpacing

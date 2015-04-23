@@ -339,6 +339,12 @@ void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
     cfg->ds.mVectorHeadWidthPerc = value->toFloat();
   else if (k == "v_head_length")
     cfg->ds.mVectorHeadLengthPerc = value->toFloat();
+  else if (k == "v_grid")
+    cfg->ds.mVectorUserGrid = value->toBool();
+  else if (k == "v_grid_x")
+    cfg->ds.mVectorUserGridCellSize.setWidth(value->toInt());
+  else if (k == "v_grid_y")
+    cfg->ds.mVectorUserGridCellSize.setHeight(value->toInt());
   else
     qDebug("[setParam] unknown key: %s", key);
 }
@@ -370,6 +376,12 @@ void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value)
     *value = QVariant(cfg->ds.mVectorHeadWidthPerc);
   else if (k == "v_head_length")
     *value = QVariant(cfg->ds.mVectorHeadLengthPerc);
+  else if (k == "v_grid")
+    *value = QVariant(cfg->ds.mVectorUserGrid);
+  else if (k == "v_grid_x")
+    *value = QVariant(cfg->ds.mVectorUserGridCellSize.width());
+  else if (k == "v_grid_y")
+    *value = QVariant(cfg->ds.mVectorUserGridCellSize.height());
   else
     qDebug("[getParam] unknown key: %s", key);
 }

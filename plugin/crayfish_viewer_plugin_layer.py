@@ -209,7 +209,10 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           "v_shaft_length_fixed" : 10,
           "v_pen_width" : 1,
           "v_head_width" : 15,
-          "v_head_length" : 40
+          "v_head_length" : 40,
+          "v_grid" : False,
+          "v_grid_x" : 10,
+          "v_grid_y" : 10
         }
         ds.custom = {
           "c_basic" : True,
@@ -391,6 +394,15 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             if headWidth is not None and headLength is not None:
                 ds.config["v_head_width"] = headWidth
                 ds.config["v_head_length"] = headLength
+            grid = qstring2bool(vectElem.attribute("user-grid"))
+            if grid is not None:
+                ds.config["v_grid"] = grid
+            gridX = qstring2int(vectElem.attribute("user-grid-x"))
+            gridY = qstring2int(vectElem.attribute("user-grid-y"))
+            if gridX is not None and gridY is not None:
+                ds.config["v_grid_x"] = gridX
+                ds.config["v_grid_y"] = gridY
+
 
     def writeDataSetXml(self, ds, elem, doc):
 
@@ -424,6 +436,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           vectElem.setAttribute("pen-width", str(ds.config["v_pen_width"]))
           vectElem.setAttribute("head-width", str(ds.config["v_head_width"]))
           vectElem.setAttribute("head-length", str(ds.config["v_head_length"]))
+          vectElem.setAttribute("user-grid", "1" if ds.config["v_grid"] else "0")
+          vectElem.setAttribute("user-grid-x", str(ds.config["v_grid_x"]))
+          vectElem.setAttribute("user-grid-y", str(ds.config["v_grid_y"]))
           elem.appendChild(vectElem)
 
 

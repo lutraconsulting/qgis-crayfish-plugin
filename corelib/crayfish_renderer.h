@@ -89,6 +89,8 @@ public:
       , mLineWidth(1)
       , mVectorHeadWidthPerc(15)
       , mVectorHeadLengthPerc(40)
+      , mVectorUserGrid(false)
+      , mVectorUserGridCellSize(10, 10)
     {}
 
     enum VectorLengthMethod
@@ -110,6 +112,8 @@ public:
     int mLineWidth;           //!< pen width for drawing of the vectors
     float mVectorHeadWidthPerc;   //!< arrow head's width  (in percent to shaft's length)
     float mVectorHeadLengthPerc;  //!< arrow head's length (in percent to shaft's length)
+    bool mVectorUserGrid;         //!< whether to display vectors on a grid instead of nodes
+    QSize mVectorUserGridCellSize;//!< size of user grid (in pixels) for vector arrows
   };
 
   //! Master configuration for rendering
@@ -149,11 +153,14 @@ protected:
   void drawMesh();
   void drawContourData(const Output* output);
   void drawVectorData(const Output* output);
+  void drawVectorDataOnGrid(QPainter& p, const Output* output);
+  void drawVectorDataOnNodes(QPainter& p, const Output* output);
   void drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float V);
 
   bool nodeInsideView(uint nodeIndex);
   bool elemOutsideView(uint);
   void paintRow(uint, int, int, int, const Output* output);
+  void bbox2rect(const BBox& bbox, int& leftLim, int& rightLim, int& topLim, int& bottomLim);
 
   //! rendering configuration
   Config mCfg;

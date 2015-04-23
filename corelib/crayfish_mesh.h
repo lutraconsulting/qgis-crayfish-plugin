@@ -100,7 +100,7 @@ protected:
 
 };
 
-
+class ValueAccessor;
 
 /** Adds data + functionality for reprojection, identification, support for rendering */
 class Mesh : public BasicMesh
@@ -118,6 +118,8 @@ public:
   double valueAt(const Output* output, double xCoord, double yCoord) const;
   bool valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const;
 
+  bool vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const;
+
   void setNoProjection();
   bool setProjection(const QString& srcProj4, const QString& destProj4);
   bool hasProjection() const;
@@ -133,6 +135,9 @@ protected:
 
   BBox computeMeshExtent(bool projected);
   void computeTempRendererData();
+
+  //! low-level interpolation routine
+  bool interpolate(uint elementIndex, double x, double y, double* value, const Output* output, const ValueAccessor* accessor) const;
 
   BBox mExtent; //!< unprojected mesh extent
 

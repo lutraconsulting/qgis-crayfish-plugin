@@ -182,12 +182,8 @@ void Renderer::drawContourData(const Output* output)
       const BBox& bbox = mMesh->projectedBBox(i);
 
       // Get the BBox of the element in pixels
-      QPoint ll = mtp.realToPixel(bbox.minX, bbox.minY).toPoint();
-      QPoint ur = mtp.realToPixel(bbox.maxX, bbox.maxY).toPoint();
-      int topLim = std::max( ur.y(), 0 );
-      int bottomLim = std::min( ll.y(), mOutputSize.height()-1 );
-      int leftLim = std::max( ll.x(), 0 );
-      int rightLim = std::min( ur.x(), mOutputSize.width()-1 );
+      int topLim, bottomLim, leftLim, rightLim;
+      bbox2rect(bbox, leftLim, rightLim, topLim, bottomLim);
 
       for(int j=topLim; j<=bottomLim; j++)
       {
@@ -234,6 +230,73 @@ void Renderer::drawVectorData(const Output* output)
   pen.setWidth(mCfg.ds.mLineWidth);
   p.setPen(pen);
 
+  if (mCfg.ds.mVectorUserGrid)
+    drawVectorDataOnGrid(p, output);
+  else
+    drawVectorDataOnNodes(p, output);
+
+  p.end();
+}
+
+
+void Renderer::drawVectorDataOnGrid(QPainter& p, const Output* output)
+{
+  int cellx = mCfg.ds.mVectorUserGridCellSize.width();
+  int celly = mCfg.ds.mVectorUserGridCellSize.height();
+
+  const Mesh::Elements& elems = mMesh->elements();
+  for(int i = 0; i < elems.count(); i++)
+  {
+    const Element& elem = elems[i];
+
+    if (elem.isDummy())
+      continue;
+
+    // If the element's activity flag is off, ignore it
+    if (!output->active[i])
+      continue;
+
+    // If the element is outside the view of the canvas, skip it
+    if (elemOutsideView(i))
+      continue;
+
+    const BBox& bbox = mMesh->projectedBBox(i);
+
+    // Get the BBox of the element in pixels
+    int left, right, top, bottom;
+    bbox2rect(bbox, left, right, top, bottom);
+
+    // Align rect to the grid (e.g. interval <13, 36> with grid cell 10 will be trimmed to <20,30>
+    if (left % cellx != 0)
+      left += cellx - (left % cellx);
+    if (right % cellx != 0)
+      right -= (right % cellx);
+    if (top % celly != 0)
+      top += celly - (top % celly);
+    if (bottom % celly != 0)
+      bottom -= (bottom % celly);
+
+    for (int y = top; y <= bottom; y += celly)
+    {
+      for (int x = left; x <= right; x += cellx)
+      {
+        QPointF pt = mtp.pixelToReal(x, y);
+
+        double vx, vy;
+        if (mMesh->vectorValueAt(i, pt.x(), pt.y(), &vx, &vy, output))
+        {
+          // The supplied point was inside the element
+          drawVectorArrow(p, output, QPointF(x,y), vx, vy, sqrt(vx*vx + vy*vy));
+        }
+
+      }
+    }
+  } // for all elements
+}
+
+
+void Renderer::drawVectorDataOnNodes(QPainter& p, const Output* output)
+{
   const Mesh::Nodes& nodes = mMesh->nodes();
   for(int nodeIndex = 0; nodeIndex < nodes.count(); nodeIndex++)
   {
@@ -247,8 +310,8 @@ void Renderer::drawVectorData(const Output* output)
 
     drawVectorArrow(p, output, lineStart, xVal, yVal, V);
   }
-  p.end();
 }
+
 
 void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float V)
 {
@@ -408,4 +471,14 @@ QPointF Renderer::realToPixelF(int nodeIndex)
 {
   const Node& n = mMesh->projectedNode(nodeIndex);
   return mtp.realToPixel(n.x, n.y);
+}
+
+void Renderer::bbox2rect(const BBox& bbox, int& leftLim, int& rightLim, int& topLim, int& bottomLim)
+{
+  QPoint ll = mtp.realToPixel(bbox.minX, bbox.minY).toPoint();
+  QPoint ur = mtp.realToPixel(bbox.maxX, bbox.maxY).toPoint();
+  topLim = std::max( ur.y(), 0 );
+  bottomLim = std::min( ll.y(), mOutputSize.height()-1 );
+  leftLim = std::max( ll.x(), 0 );
+  rightLim = std::min( ur.x(), mOutputSize.width()-1 );
 }

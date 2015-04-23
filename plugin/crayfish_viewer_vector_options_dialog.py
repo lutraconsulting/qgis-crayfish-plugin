@@ -37,6 +37,7 @@ def float_safe(txt):
     except ValueError:
         return 0.
 
+
 class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
     
     def __init__(self, iface, renderSettings, redrawFunction, parent=None):
@@ -86,6 +87,7 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         QObject.connect( self.scaleByFactorOfLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.lengthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.lineWidthSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged )
+        QObject.connect( self.displayVectorsOnGridGroupBox, SIGNAL('toggled(bool)'), self.inputFocusChanged )
         QObject.connect( self.xSpacingLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.ySpacingLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.headWidthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
@@ -96,6 +98,10 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         self.redraw()
     
     def saveRenderSettings(self):
+
+        if not self.valuesOK():
+            return
+
         self.rs.shaftLength = self.shaftLengthComboBox.currentIndex()
         
         self.rs.shaftLengthMin = float_safe( self.minimumShaftLineEdit.text() )
@@ -105,8 +111,11 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         self.rs.lineWidth = self.lineWidthSpinBox.value()
         
         self.rs.displayVectorsOnGrid = self.displayVectorsOnGridGroupBox.isChecked()
-        self.rs.xSpacing = float_safe( self.xSpacingLineEdit.text() )
-        self.rs.ySpacing = float_safe( self.ySpacingLineEdit.text() )
+        try:
+            self.rs.xSpacing = int( self.xSpacingLineEdit.text() )
+            self.rs.ySpacing = int( self.ySpacingLineEdit.text() )
+        except ValueError:
+            pass
         
         self.rs.headWidth = float_safe( self.headWidthLineEdit.text() )
         self.rs.headLength = float_safe( self.headLengthLineEdit.text() )
@@ -127,19 +136,23 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         
         # minimumShaftLineEdit should be less and maximumShaftLineEdit and greater than 0
         
-        shaftLengthMin = str( self.minimumShaftLineEdit.text() )
-        if not shaftLengthMin.isdigit():
+        try:
+            shaftLengthMin = float(self.minimumShaftLineEdit.text())
+            shaftLengthMax = float(self.maximumShaftLineEdit.text())
+        except ValueError:
             return False
-        shaftLengthMin = float_safe(shaftLengthMin)
-        
-        shaftLengthMax = str( self.maximumShaftLineEdit.text() )
-        if not shaftLengthMax.isdigit():
-            return False
-        shaftLengthMax = float_safe(shaftLengthMax)
-        
+
         if shaftLengthMin < 0:
             return False
         if shaftLengthMin >= shaftLengthMax:
+            return False
+
+        try:
+            gridX = int(self.xSpacingLineEdit.text())
+            gridY = int(self.ySpacingLineEdit.text())
+            if gridX < 1 or gridY < 1:
+                return False
+        except ValueError:
             return False
             
         """

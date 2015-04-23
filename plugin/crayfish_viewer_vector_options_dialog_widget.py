@@ -2,8 +2,8 @@
 
 # Form implementation generated from reading ui file 'crayfish_viewer_vector_options_dialog_widget.ui'
 #
-# Created: Wed Oct 30 10:52:28 2013
-#      by: PyQt4 UI code generator 4.10.3
+# Created: Thu Apr 23 16:27:14 2015
+#      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -116,7 +116,6 @@ class Ui_Dialog(object):
         self.horizontalLayout.addWidget(self.pxLabel)
         self.verticalLayout.addLayout(self.horizontalLayout)
         self.displayVectorsOnGridGroupBox = QtGui.QGroupBox(self.generalOptionsGroupBox)
-        self.displayVectorsOnGridGroupBox.setEnabled(False)
         self.displayVectorsOnGridGroupBox.setCheckable(True)
         self.displayVectorsOnGridGroupBox.setChecked(False)
         self.displayVectorsOnGridGroupBox.setObjectName(_fromUtf8("displayVectorsOnGridGroupBox"))
