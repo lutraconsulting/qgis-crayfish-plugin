@@ -209,15 +209,6 @@ inline float mag(float input)
 
 void Renderer::drawVectorData(const Output* output)
 {
-  ConfigDataSet::VectorLengthMethod shaftLengthCalculationMethod = mCfg.ds.mShaftLengthMethod;
-  float minShaftLength   = mCfg.ds.mMinShaftLength;
-  float maxShaftLength   = mCfg.ds.mMaxShaftLength;
-  float scaleFactor      = mCfg.ds.mScaleFactor;
-  float fixedShaftLength = mCfg.ds.mFixedShaftLength;
-  int lineWidth          = mCfg.ds.mLineWidth;
-  float vectorHeadWidthPerc  = mCfg.ds.mVectorHeadWidthPerc;
-  float vectorHeadLengthPerc = mCfg.ds.mVectorHeadLengthPerc;
-
   /*
     Here is where we render vector data
 
@@ -234,35 +225,102 @@ void Renderer::drawVectorData(const Output* output)
   */
 
   // Set up the render configuration options
-
-  // Determine the min and max magnitudes in this layer
-  float minVal = output->dataSet->minZValue();
-  float maxVal = output->dataSet->maxZValue();
-
-  // Get a list of nodes that are within the current render extent
-  std::vector<int> candidateNodes;
-
-  const Mesh::Nodes& nodes = mMesh->nodes();
-  for(int i = 0; i < nodes.count(); i++)
-  {
-    if (nodeInsideView(i))
-      candidateNodes.push_back( i );
-  }
-
-
   QPainter p(&mImage);
   p.setRenderHint(QPainter::Antialiasing);
   p.setBrush( Qt::SolidPattern );
   QPen pen = p.pen();
   pen.setCapStyle(Qt::FlatCap);
   pen.setJoinStyle(Qt::MiterJoin);
-  pen.setWidth( lineWidth );
+  pen.setWidth(mCfg.ds.mLineWidth);
   p.setPen(pen);
+
+  const Mesh::Nodes& nodes = mMesh->nodes();
+  for(int nodeIndex = 0; nodeIndex < nodes.count(); nodeIndex++)
+  {
+    if (!nodeInsideView(nodeIndex))
+      continue;
+
+    float xVal = output->valuesV[nodeIndex].x;
+    float yVal = output->valuesV[nodeIndex].y;
+    float V = output->values[nodeIndex];  // pre-calculated magnitude
+    QPointF lineStart = realToPixelF( nodeIndex );
+
+    drawVectorArrow(p, output, lineStart, xVal, yVal, V);
+  }
+  p.end();
+}
+
+void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float V)
+{
+  if (xVal == 0.0 && yVal == 0.0)
+    return;
+
+  // Determine the angle of the vector, counter-clockwise, from east
+  // (and associated trigs)
+  double vectorAngle = -1.0 * atan( (-1.0 * yVal) / xVal );
+  double cosAlpha = cos( vectorAngle ) * mag(xVal);
+  double sinAlpha = sin( vectorAngle ) * mag(xVal);
+
+  // Now determine the X and Y distances of the end of the line from the start
+  float xDist = 0.0;
+  float yDist = 0.0;
+  switch (mCfg.ds.mShaftLengthMethod)
+  {
+    case ConfigDataSet::MinMax:
+    {
+      float minShaftLength = mCfg.ds.mMinShaftLength;
+      float maxShaftLength = mCfg.ds.mMaxShaftLength;
+      float minVal = output->dataSet->minZValue();
+      float maxVal = output->dataSet->maxZValue();
+      double k = (V - minVal) / (maxVal - minVal);
+      double L = minShaftLength + k * (maxShaftLength - minShaftLength);
+      xDist = cosAlpha * L;
+      yDist = sinAlpha * L;
+      break;
+    }
+    case ConfigDataSet::Scaled:
+    {
+      float scaleFactor = mCfg.ds.mScaleFactor;
+      xDist = scaleFactor * xVal;
+      yDist = scaleFactor * yVal;
+      break;
+    }
+    case ConfigDataSet::Fixed:
+    {
+      // We must be using a fixed length
+      float fixedShaftLength = mCfg.ds.mFixedShaftLength;
+      xDist = cosAlpha * fixedShaftLength;
+      yDist = sinAlpha * fixedShaftLength;
+      break;
+    }
+  }
+
+  // Flip the Y axis (pixel vs real-world axis)
+  yDist *= -1.0;
+
+  if (qAbs(xDist) < 1 && qAbs(yDist) < 1)
+    return;
+
+  // Determine the line coords
+  QPointF lineEnd = QPointF( lineStart.x() + xDist,
+                             lineStart.y() + yDist);
+
+  float vectorLength = sqrt(xDist*xDist + yDist*yDist);
+
+  // Check to see if any of the coords are outside the QImage area, if so, skip the whole vector
+  if( lineStart.x() < 0 || lineStart.x() > mOutputSize.width() ||
+      lineStart.y() < 0 || lineStart.y() > mOutputSize.height() ||
+      lineEnd.x() < 0   || lineEnd.x() > mOutputSize.width() ||
+      lineEnd.y() < 0   || lineEnd.y() > mOutputSize.height() )
+    return;
 
   // Make a set of vector head coordinates that we will place at the end of each vector,
   // scale, translate and rotate.
   QPointF vectorHeadPoints[3];
   QPointF finalVectorHeadPoints[3];
+
+  float vectorHeadWidthPerc  = mCfg.ds.mVectorHeadWidthPerc;
+  float vectorHeadLengthPerc = mCfg.ds.mVectorHeadLengthPerc;
 
   // First head point:  top of ->
   vectorHeadPoints[0].setX( -1.0 * vectorHeadLengthPerc * 0.01 );
@@ -276,101 +334,30 @@ void Renderer::drawVectorData(const Output* output)
   vectorHeadPoints[2].setX( -1.0 * vectorHeadLengthPerc * 0.01 );
   vectorHeadPoints[2].setY( -1.0 * vectorHeadWidthPerc * 0.5 * 0.01 );
 
-  for(uint i=0; i<candidateNodes.size(); i++)
+  // Determine the arrow head coords
+  for (int j=0; j<3; j++)
   {
-    // Get the value
-    uint nodeIndex = candidateNodes.at(i);
+    finalVectorHeadPoints[j].setX(   lineEnd.x()
+                                   + ( vectorHeadPoints[j].x() * cosAlpha * vectorLength )
+                                   - ( vectorHeadPoints[j].y() * sinAlpha * vectorLength )
+                                 );
 
-    float xVal = output->valuesV[nodeIndex].x;
-    float yVal = output->valuesV[nodeIndex].y;
-    float V = output->values[nodeIndex];  // pre-calculated magnitude
-
-    if(xVal == 0.0 && yVal == 0.0){
-      continue;
-    }
-
-    // Now determine the X and Y distances of the end of the line from the start
-
-    float xDist = 0.0;
-    float yDist = 0.0;
-
-    // Determine the angle of the vector, counter-clockwise, from east
-    // (and associated trigs)
-    double vectorAngle = -1.0 * atan( (-1.0 * yVal) / xVal );
-    double cosAlpha = cos( vectorAngle ) * mag(xVal);
-    double sinAlpha = sin( vectorAngle ) * mag(xVal);
-
-    if(shaftLengthCalculationMethod == ConfigDataSet::MinMax){
-      double k = (V - minVal) / (maxVal - minVal);
-      double L = minShaftLength + k * (maxShaftLength - minShaftLength);
-      xDist = cosAlpha * L;
-      yDist = sinAlpha * L;
-    }else if(shaftLengthCalculationMethod == ConfigDataSet::Scaled){
-      xDist = scaleFactor * xVal;
-      yDist = scaleFactor * yVal;
-    }else{
-      // We must be using a fixed length
-      xDist = cosAlpha * fixedShaftLength;
-      yDist = sinAlpha * fixedShaftLength;
-    }
-
-    // Flip the Y axis (pixel vs real-world axis)
-    yDist *= -1.0;
-
-    if(qAbs(xDist) < 1 && qAbs(yDist) < 1){
-      continue;
-    }
-
-    // Determine the line coords
-    QPointF lineStart = realToPixelF( nodeIndex );
-    QPointF lineEnd = QPointF( lineStart.x() + xDist,
-                               lineStart.y() + yDist);
-
-    float vectorLength = sqrt( pow(lineEnd.x() - lineStart.x(), 2) + pow(lineEnd.y() - lineStart.y(), 2) );
-
-    // Check to see if any of the coords are outside the QImage area, if so, skip the whole vector
-    if( lineStart.x() < 0 ||
-      lineStart.x() > mOutputSize.width() ||
-      lineStart.y() < 0 ||
-      lineStart.y() > mOutputSize.height() ||
-      lineEnd.x() < 0 ||
-      lineEnd.x() > mOutputSize.width() ||
-      lineEnd.y() < 0 ||
-      lineEnd.y() > mOutputSize.height() ){
-
-      continue;
-    }
-
-    // Determine the arrow head coords
-    for(int j=0; j<3; j++){
-
-      finalVectorHeadPoints[j].setX(   lineEnd.x()
-                                     + ( vectorHeadPoints[j].x() * cosAlpha * vectorLength )
-                                     - ( vectorHeadPoints[j].y() * sinAlpha * vectorLength )
-                                   );
-
-      finalVectorHeadPoints[j].setY(   lineEnd.y()
-                                     - ( vectorHeadPoints[j].x() * sinAlpha * vectorLength )
-                                     - ( vectorHeadPoints[j].y() * cosAlpha * vectorLength )
-                                   );
-    }
-
-    // Now actually draw the vector
-    p.drawLine(lineStart, lineEnd);
-    p.drawPolygon( (const QPointF*)&finalVectorHeadPoints, 3);
-    bool debug = false;
-    if(debug){
-      // Write the ID of the node next to the vector...
-      QPointF tp;
-      tp.setX( lineEnd.x() + 10.0 );
-      tp.setY( lineEnd.y() - 10.0 );
-      QString nodeText;
-      nodeText.setNum(nodeIndex);
-      p.drawText( tp, nodeText );
-    }
-
+    finalVectorHeadPoints[j].setY(   lineEnd.y()
+                                   - ( vectorHeadPoints[j].x() * sinAlpha * vectorLength )
+                                   - ( vectorHeadPoints[j].y() * cosAlpha * vectorLength )
+                                 );
   }
-  p.end();
+
+  // Now actually draw the vector
+  p.drawLine(lineStart, lineEnd);
+  p.drawPolygon( (const QPointF*)&finalVectorHeadPoints, 3);
+
+#if 0  // debug
+  // Write the ID of the node next to the vector...
+  QString nodeText;
+  nodeText.setNum(nodeIndex);
+  p.drawText(QPointF(lineEnd.x() + 10.0, lineEnd.y() - 10.0), nodeText);
+#endif
 }
 
 

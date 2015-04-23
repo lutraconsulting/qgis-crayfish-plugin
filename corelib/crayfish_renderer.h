@@ -149,6 +149,7 @@ protected:
   void drawMesh();
   void drawContourData(const Output* output);
   void drawVectorData(const Output* output);
+  void drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float V);
 
   bool nodeInsideView(uint nodeIndex);
   bool elemOutsideView(uint);
