@@ -38,6 +38,7 @@ from crayfish_viewer_dock import CrayfishViewerDock
 import crayfish_about_dialog
 import crayfish_export_config_dialog
 import crayfish_install_helper
+import crayfish_animation_dialog
 
 from illuvis import upload_dialog
 
@@ -81,6 +82,9 @@ class CrayfishPlugin:
         self.actionExportGrid = QAction(QIcon(":/plugins/crayfish/crayfish_export_raster.png"), "Export to Raster Grid ...", self.iface.mainWindow())
         QObject.connect(self.actionExportGrid, SIGNAL("triggered()"), self.exportGrid)
 
+        self.actionExportAnimation = QAction(QIcon(), "Export Animation ...", self.iface.mainWindow())
+        QObject.connect(self.actionExportAnimation, SIGNAL("triggered()"), self.exportAnimation)
+
         # Add toolbar button and menu item
         layerTB = self.iface.layerToolBar()
         layerTB.insertAction(self.iface.actionAddPgLayer(), self.action)
@@ -88,6 +92,7 @@ class CrayfishPlugin:
         # Add menu item
         self.menu.addAction(self.action)
         self.menu.addAction(self.actionExportGrid)
+        self.menu.addAction(self.actionExportAnimation)
 
         # Register plugin layer type
         from crayfish_viewer_plugin_layer_type import CrayfishViewerPluginLayerType
@@ -97,6 +102,7 @@ class CrayfishPlugin:
         # Register actions for context menu
         self.iface.legendInterface().addLegendLayerAction(self.actionExportGrid, '', '', QgsMapLayer.PluginLayer, False)
         self.iface.legendInterface().addLegendLayerAction(self.uploadAction, '', '', QgsMapLayer.PluginLayer, False)
+        self.iface.legendInterface().addLegendLayerAction(self.actionExportAnimation, '', '', QgsMapLayer.PluginLayer, False)
 
         # Make connections
         QObject.connect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)
@@ -148,6 +154,7 @@ class CrayfishPlugin:
         
         self.iface.legendInterface().removeLegendLayerAction(self.actionExportGrid)
         self.iface.legendInterface().removeLegendLayerAction(self.uploadAction)
+        self.iface.legendInterface().removeLegendLayerAction(self.actionExportAnimation)
 
         # Remove the plugin menu item and icon
         layerTB = self.iface.layerToolBar()
@@ -155,6 +162,7 @@ class CrayfishPlugin:
         # Remove menu item
         self.menu.removeAction(self.action)
         self.menu.removeAction(self.actionExportGrid)
+        self.menu.removeAction(self.actionExportAnimation)
 
         self.iface.pluginMenu().removeAction(self.menu.menuAction())
         
@@ -433,6 +441,7 @@ class CrayfishPlugin:
         # Add custom legend actions
         self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportGrid, layer)
         self.iface.legendInterface().addLegendLayerActionForLayer(self.uploadAction, layer)
+        self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportAnimation, layer)
 
         # make sure the dock is visible and up-to-date
         self.dock.show()
@@ -480,3 +489,13 @@ class CrayfishPlugin:
         if dlgConfig.addToCanvas():
             name = os.path.splitext(os.path.basename(filenameTIF))[0]
             self.iface.addRasterLayer(filenameTIF, name, "gdal")
+
+    def exportAnimation(self):
+        """ export current layer's timesteps as an animation """
+        layer = self.dock.currentCrayfishLayer()
+        if not layer:
+            QMessageBox.warning(None, "Crayfish", "Please select a Crayfish layer for export")
+            return
+
+        dlg = crayfish_animation_dialog.CrayfishAnimationDialog(self.iface)
+        dlg.exec_()
