@@ -52,6 +52,21 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         self.cboStart.setCurrentIndex(0)
         self.cboEnd.setCurrentIndex(self.cboEnd.count()-1)
 
+        defprops = { 'text_color' : QColor(0,0,0), 'text_font' : QFont(), 'bg' : False, 'bg_color' : QColor(255,255,255) }
+        titleprops = defprops.copy()
+        titleprops['type'] = 'title'
+        titleprops['label'] = self.l.name()
+        timeprops = defprops.copy()
+        timeprops['type'] = 'time'
+        timeprops['format'] = 0
+        timeprops['position'] = 3
+        legendprops = defprops.copy()
+        legendprops['type'] = 'legend'
+        legendprops['position'] = 2
+        self.widgetTitleProps.setProps(titleprops)
+        self.widgetTimeProps.setProps(timeprops)
+        self.widgetLegendProps.setProps(legendprops)
+
         self.buttonBox.accepted.connect(self.onOK)
         self.btnBrowseOutput.clicked.connect(self.browseOutput)
 
@@ -103,17 +118,47 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
 
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        animation(self.l, (t_start, t_end), w, h, img_output_tpl, self.r.layerSet(), self.r.extent(), self.r.destinationCrs(), tmpl, prog)
+        d = { 'layer'      : self.l,
+              'time'       : (t_start, t_end),
+              'img_size'   : (w, h),
+              'tmp_imgfile': img_output_tpl,
+              'layers'     : self.r.layerSet(),
+              'extent'     : self.r.extent(),
+              'crs'        : self.r.destinationCrs(),
+              'layout'     : { 'type' : 'default' },
+            }
 
-        images_to_video(img_output_men, output_file, fps)
+        if self.groupTitle.isChecked():
+            d['layout']['title'] = self.widgetTitleProps.props()
+        if self.groupTime.isChecked():
+            d['layout']['time'] = self.widgetTimeProps.props()
+        if self.groupLegend.isChecked():
+            d['layout']['legend'] = self.widgetLegendProps.props()
 
-        shutil.rmtree(tmpdir)
+        if self.radQualBest.isChecked():
+            qual = 0
+        elif self.radQualLow.isChecked():
+            qual = 2
+        else:         # high
+            qual = 1
+
+        animation(d, prog)
+
+        mencoder_res = images_to_video(img_output_men, output_file, fps, qual)
+
+        if mencoder_res:
+            shutil.rmtree(tmpdir)
 
         QApplication.restoreOverrideCursor()
 
         self.updateProgress(0,1)
 
         self.buttonBox.setEnabled(True)
+
+        if mencoder_res:
+            QMessageBox.information(self, "Export", "The export of animation was successful!")
+        else:
+            QMessageBox.warning(self, "Export", "An error occurred when converting images to video. The images are still available in " + tmpdir)
 
         self.accept()
 

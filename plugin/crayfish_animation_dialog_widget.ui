@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>399</width>
-    <height>343</height>
+    <width>444</width>
+    <height>376</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Export Animation</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3">
+  <layout class="QVBoxLayout" name="verticalLayout_6">
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
@@ -43,7 +43,7 @@
           <number>9999</number>
          </property>
          <property name="value">
-          <number>800</number>
+          <number>1920</number>
          </property>
         </widget>
        </item>
@@ -66,7 +66,7 @@
           <number>9999</number>
          </property>
          <property name="value">
-          <number>600</number>
+          <number>1080</number>
          </property>
         </widget>
        </item>
@@ -140,7 +140,7 @@
       <attribute name="title">
        <string>Layout</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
+      <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
         <widget class="QRadioButton" name="radLayoutDefault">
          <property name="text">
@@ -170,41 +170,85 @@
           </spacer>
          </item>
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout">
-           <item>
-            <widget class="QCheckBox" name="chkDefTitle">
-             <property name="text">
-              <string>Title</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="chkDefTime">
-             <property name="text">
-              <string>Time</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="chkDefLegend">
-             <property name="text">
-              <string>Legend</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="chkDefOverview">
-             <property name="text">
-              <string>Overview</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QScrollArea" name="scrollArea">
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="scrollAreaWidgetContents">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>386</width>
+              <height>200</height>
+             </rect>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <item>
+              <widget class="QgsCollapsibleGroupBox" name="groupTitle">
+               <property name="title">
+                <string>Title</string>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+               <property name="checked">
+                <bool>false</bool>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout">
+                <item>
+                 <widget class="AnimationLayoutItemProps" name="widgetTitleProps" native="true"/>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QgsCollapsibleGroupBox" name="groupTime">
+               <property name="title">
+                <string>Time</string>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_2">
+                <item>
+                 <widget class="AnimationLayoutItemProps" name="widgetTimeProps" native="true"/>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QgsCollapsibleGroupBox" name="groupLegend">
+               <property name="title">
+                <string>Legend</string>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+               <property name="checked">
+                <bool>false</bool>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_3">
+                <item>
+                 <widget class="AnimationLayoutItemProps" name="widgetLegendProps" native="true"/>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </widget>
          </item>
         </layout>
        </item>
        <item>
         <widget class="QRadioButton" name="radLayoutProject">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="text">
           <string>Project's composition</string>
          </property>
@@ -229,22 +273,13 @@
           </spacer>
          </item>
          <item>
-          <widget class="QComboBox" name="cboProjectComposition"/>
+          <widget class="QComboBox" name="cboProjectComposition">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
         </layout>
-       </item>
-       <item>
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
        </item>
       </layout>
      </widget>
@@ -266,7 +301,7 @@
           <string>Best (lossless)</string>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -274,6 +309,9 @@
         <widget class="QRadioButton" name="radQualHigh">
          <property name="text">
           <string>High</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -311,6 +349,20 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>AnimationLayoutItemProps</class>
+   <extends>QWidget</extends>
+   <header>crayfish_animation_layout_item_props</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QgsCollapsibleGroupBox</class>
+   <extends>QGroupBox</extends>
+   <header>qgis.gui</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>
