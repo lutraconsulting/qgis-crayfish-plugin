@@ -69,6 +69,7 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
 
         self.buttonBox.accepted.connect(self.onOK)
         self.btnBrowseOutput.clicked.connect(self.browseOutput)
+        self.btnBrowseTemplate.clicked.connect(self.browseTemplate)
 
 
     def populateTimes(self, cbo):
@@ -87,6 +88,17 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
             return
 
         self.editOutput.setText(filename)
+        settings.setValue("crayfishViewer/lastFolder", filename)
+
+
+    def browseTemplate(self):
+        settings = QSettings()
+        lastUsedDir = settings.value("crayfishViewer/lastFolder")
+        filename = QFileDialog.getOpenFileName(self, "Template file (.qpt)", lastUsedDir, "QGIS templates (*.qpt)")
+        if len(filename) == 0:
+            return
+
+        self.editTemplate.setText(filename)
         settings.setValue("crayfishViewer/lastFolder", filename)
 
 
@@ -125,15 +137,20 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
               'layers'     : self.r.layerSet(),
               'extent'     : self.r.extent(),
               'crs'        : self.r.destinationCrs(),
-              'layout'     : { 'type' : 'default' },
+              'layout'     : {},
             }
 
-        if self.groupTitle.isChecked():
-            d['layout']['title'] = self.widgetTitleProps.props()
-        if self.groupTime.isChecked():
-            d['layout']['time'] = self.widgetTimeProps.props()
-        if self.groupLegend.isChecked():
-            d['layout']['legend'] = self.widgetLegendProps.props()
+        if self.radLayoutDefault.isChecked():
+            d['layout']['type'] = 'default'
+            if self.groupTitle.isChecked():
+                d['layout']['title'] = self.widgetTitleProps.props()
+            if self.groupTime.isChecked():
+                d['layout']['time'] = self.widgetTimeProps.props()
+            if self.groupLegend.isChecked():
+                d['layout']['legend'] = self.widgetLegendProps.props()
+        else:
+            d['layout']['type'] = 'file'
+            d['layout']['file'] = self.editTemplate.text()
 
         if self.radQualBest.isChecked():
             qual = 0

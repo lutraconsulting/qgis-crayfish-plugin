@@ -75,6 +75,7 @@ def animation(cfg, progress_fn=None):
     c = prep_comp(cfg, mr, o.time())
 
     image = QImage(QSize(w, h), QImage.Format_RGB32)
+    image.fill(0)
     imagePainter = QPainter(image)
     sourceArea = QRectF(0, 0, c.paperWidth(), c.paperHeight())
     targetArea = QRectF(0, 0, w, h)
