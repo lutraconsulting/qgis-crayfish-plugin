@@ -172,6 +172,7 @@ def prepare_composition(c, w,h, dpi, time, layoutcfg):
     if 'legend' in layoutcfg:
         cLegend = QgsComposerLegend(c)
         cLegend.setId('legend')
+        cLegend.setComposerMap(composerMap)
         c.addItem(cLegend)
 
         itemcfg = layoutcfg['legend']
