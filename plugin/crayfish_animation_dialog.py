@@ -55,7 +55,7 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         defprops = { 'text_color' : QColor(0,0,0), 'text_font' : QFont(), 'bg' : False, 'bg_color' : QColor(255,255,255) }
         titleprops = defprops.copy()
         titleprops['type'] = 'title'
-        titleprops['label'] = self.l.name()
+        titleprops['label'] = ''
         timeprops = defprops.copy()
         timeprops['type'] = 'time'
         timeprops['format'] = 0
@@ -66,6 +66,8 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         self.widgetTitleProps.setProps(titleprops)
         self.widgetTimeProps.setProps(timeprops)
         self.widgetLegendProps.setProps(legendprops)
+
+        self.restoreDefaults()
 
         self.buttonBox.accepted.connect(self.onOK)
         self.btnBrowseOutput.clicked.connect(self.browseOutput)
@@ -152,16 +154,9 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
             d['layout']['type'] = 'file'
             d['layout']['file'] = self.editTemplate.text()
 
-        if self.radQualBest.isChecked():
-            qual = 0
-        elif self.radQualLow.isChecked():
-            qual = 2
-        else:         # high
-            qual = 1
-
         animation(d, prog)
 
-        mencoder_res = images_to_video(img_output_men, output_file, fps, qual)
+        mencoder_res = images_to_video(img_output_men, output_file, fps, self.quality())
 
         if mencoder_res:
             shutil.rmtree(tmpdir)
@@ -177,10 +172,99 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         else:
             QMessageBox.warning(self, "Export", "An error occurred when converting images to video. The images are still available in " + tmpdir)
 
+        self.storeDefaults()
+
         self.accept()
+
+
+    def quality(self):
+        if self.radQualBest.isChecked():
+            return 0
+        elif self.radQualLow.isChecked():
+            return 2
+        else:         # high
+            return 1
+
+
+    def setQuality(self, qual):
+        if qual == 0:
+            self.radQualBest.setChecked(True)
+        elif qual == 2:
+            self.radQualLow.setChecked(True)
+        else:
+            self.radQualHigh.setChecked(True)
 
 
     def updateProgress(self, i, cnt):
         """ callback from animation routine """
         self.progress.setMaximum(cnt)
         self.progress.setValue(i)
+
+
+    def storeDefaults(self):
+        s = QSettings()
+        s.beginGroup("crayfishViewer/animation")
+        # general tab
+        s.setValue("width", self.spinWidth.value())
+        s.setValue("height", self.spinHeight.value())
+        s.setValue("time_start", self.cboStart.itemData(self.cboStart.currentIndex()))
+        s.setValue("time_end", self.cboEnd.itemData(self.cboEnd.currentIndex()))
+        s.setValue("fps", self.spinSpeed.value())
+        # layout tab
+        s.setValue("layout_type", "default" if self.radLayoutDefault.isChecked() else "file")
+        s.setValue("layout_default_title", self.groupTitle.isChecked())
+        s.setValue("layout_default_time", self.groupTime.isChecked())
+        s.setValue("layout_default_legend", self.groupLegend.isChecked())
+        self.widgetTitleProps.storeDefaults(s)
+        self.widgetTimeProps.storeDefaults(s)
+        self.widgetLegendProps.storeDefaults(s)
+        s.setValue("layout_file", self.editTemplate.text())
+        # video tab
+        s.setValue("quality", self.quality())
+
+
+    def restoreDefaults(self):
+        s = QSettings()
+        s.beginGroup("crayfishViewer/animation")
+        for k in s.childKeys():
+            if k == 'width':
+                self.spinWidth.setValue(s.value(k,type=int))
+            elif k == 'height':
+                self.spinHeight.setValue(s.value(k,type=int))
+            elif k == 'time_start':
+                self.setTimeInCombo(self.cboStart, s.value(k,type=float))
+            elif k == 'time_end':
+                self.setTimeInCombo(self.cboEnd, s.value(k,type=float))
+            elif k == 'fps':
+                self.spinSpeed.setValue(s.value(k,type=int))
+            elif k == 'layout_type':
+                if s.value(k) == "file":
+                    self.radLayoutCustom.setChecked(True)
+                else:
+                    self.radLayoutDefault.setChecked(True)
+            elif k == 'layout_default_title':
+                self.groupTitle.setChecked(s.value(k,type=bool))
+            elif k == 'layout_default_time':
+                self.groupTime.setChecked(s.value(k,type=bool))
+            elif k == 'layout_default_legend':
+                self.groupLegend.setChecked(s.value(k,type=bool))
+            elif k == 'layout_file':
+                self.editTemplate.setText(s.value(k))
+            elif k == 'quality':
+                self.setQuality(s.value(k,type=int))
+
+        self.widgetTitleProps.restoreDefaults(s)
+        self.widgetTimeProps.restoreDefaults(s)
+        self.widgetLegendProps.restoreDefaults(s)
+
+
+    def setTimeInCombo(self, cbo, time):
+        best_i = -1
+        best_diff = 999999.
+        for i in xrange(cbo.count()):
+            diff = abs(time - cbo.itemData(i))
+            if diff < best_diff:
+                best_diff = diff
+                best_i = i
+
+        cbo.setCurrentIndex(best_i)

@@ -44,7 +44,7 @@ class AnimationLayoutItemProps(QWidget, Ui_AnimationLayoutItemProps):
 
         self.prop_type = props['type']
         self.btnTextColor.setColor(props['text_color'])
-        self.fnt = props['text_font']
+        self.fnt = QFont(props['text_font'])  # need to make explicit copy
         self.chkBackground.setChecked(props['bg'])
         self.btnBackgroundColor.setColor(props['bg_color'])
 
@@ -88,3 +88,34 @@ class AnimationLayoutItemProps(QWidget, Ui_AnimationLayoutItemProps):
         if self.prop_type != 'title':
             p['position'] = self.cboPosition.currentIndex()
         return p
+
+
+    def storeDefaults(self, s):
+        s.beginGroup("layout/"+self.prop_type)
+        for k,v in self.props().iteritems():
+            if k == 'type': continue
+            if k == 'text_font':
+                s.setValue(k, v.toString())
+            else:
+                s.setValue(k, v)
+        s.endGroup()
+
+
+    def restoreDefaults(self, s):
+        s.beginGroup("layout/"+ self.prop_type)
+        for k in s.childKeys():
+            if k == 'text_color':
+                self.btnTextColor.setColor(s.value(k, type=QColor))
+            elif k == 'text_font':
+                self.fnt.fromString(s.value(k))
+            elif k == 'bg':
+                self.chkBackground.setChecked(s.value(k, type=bool))
+            elif k == 'bg_color':
+                self.btnBackgroundColor.setColor(s.value(k, type=QColor))
+            elif k == 'label':
+                self.editLabel.setText(s.value(k))
+            elif k == 'time':
+                self.cboTimeFormat.setCurrentIndex(s.value(k, type=int))
+            elif k == 'position':
+                self.cboPosition.setCurrentIndex(s.value(k, type=int))
+        s.endGroup()
