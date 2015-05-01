@@ -28,10 +28,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_mesh_2dm.h"
 
+Mesh* loadSWW(const QString& fileName, LoadStatus* status = 0);
 
 
 Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
 {
+  if (meshFile.endsWith(".sww"))
+    return loadSWW(meshFile, status);
+
   return loadMesh2DM(meshFile, status);
 }
 

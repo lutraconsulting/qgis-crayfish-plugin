@@ -138,7 +138,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         layerName, ext = os.path.splitext(tail)
         self.setLayerName(layerName)
 
-        self.initCustomValues(self.mesh.dataset(0)) # bed
+        for i in xrange(self.mesh.dataset_count()):
+            self.initCustomValues(self.mesh.dataset(i))
 
         self.current_ds_index = 0
         self.current_output_time = 0

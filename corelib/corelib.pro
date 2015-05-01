@@ -34,12 +34,12 @@ win32 {
   }
 
   INCLUDEPATH += $${OSGEO_PATH}/include
-  LIBS += -L$${OSGEO_PATH}/lib -lproj_i -lgdal_i -lhdf5
+  LIBS += -L$${OSGEO_PATH}/lib -lproj_i -lgdal_i -lhdf5 -lnetcdf
 }
 
 unix {
   INCLUDEPATH += /usr/include/gdal
-  LIBS += -lproj -lgdal -lhdf5
+  LIBS += -lproj -lgdal -lhdf5 -lnetcdf
 }
 
 TARGET = crayfish
@@ -58,7 +58,8 @@ SOURCES += crayfish.cpp \
     crayfish_dataset_dat.cpp \
     crayfish_dataset_xmdf.cpp \
     crayfish_renderer.cpp \
-    crayfish_export_grid.cpp
+    crayfish_export_grid.cpp \
+    crayfish_sww.cpp
 
 HEADERS += crayfish.h \
     crayfish_e4q.h \
