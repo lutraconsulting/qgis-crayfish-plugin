@@ -74,6 +74,12 @@ def animation(cfg, progress_fn=None):
 
     c = prep_comp(cfg, mr, o.time())
 
+    # when using composition from template, match video's aspect ratio to paper size
+    # by updating video's width (keeping the height)
+    if cfg['layout']['type'] == 'file':
+        aspect = c.paperWidth() / c.paperHeight()
+        w = int(round(aspect * h))
+
     image = QImage(QSize(w, h), QImage.Format_RGB32)
     image.fill(0)
     imagePainter = QPainter(image)
