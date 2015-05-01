@@ -4,7 +4,7 @@ Crayfish (QGIS plugin)
 <img align="right" src="https://raw.githubusercontent.com/lutraconsulting/qgis-crayfish-plugin/master/plugin/crayfish_128px.png">
 
 The Crayfish Plugin for QGIS aspires to be a complete set of pre and post-processing tools for hydraulic modellers
-using TUFLOW, BASEMENT, ISIS 2D and other packages.
+using TUFLOW, BASEMENT, AnuGA, ISIS 2D and other packages.
 
 <img src="https://travis-ci.org/lutraconsulting/qgis-crayfish-plugin.svg?branch=master">
 
@@ -18,13 +18,14 @@ For installing Crayfish on Linux you need:
 
 * development environment and a compiler installed
 * Qt4 and development tools
-* HDF5 library
+* HDF5 library (for XMDF format)
+* NetCDF library (for AnuGA SWW format)
 * GDAL library
 
 On Debian/Ubuntu you need to install the following packages:
 
 ```bash
-sudo apt-get install build-essential libqt4-dev qt4-qmake libgdal-dev libhdf5-dev libproj-dev git
+sudo apt-get install build-essential libqt4-dev qt4-qmake libgdal-dev libhdf5-dev libnetcdf-dev libproj-dev git
 ```
 
 If all this packages are installed you can clone the crayfish plugin using the command:
