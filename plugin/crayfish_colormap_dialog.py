@@ -35,6 +35,16 @@ from crayfish import ColorMap, qcolor2rgb, rgb2qcolor
 
 from crayfish_gui_utils import initColorRampComboBox, name2ramp
 
+class ValueDelegate(QStyledItemDelegate):
+    def __init__(self, parent=None):
+        QStyledItemDelegate.__init__(self, parent)
+
+    def createEditor(self, parent, option, index):
+        w = QStyledItemDelegate.createEditor(self, parent, option, index)
+        if isinstance(w, QDoubleSpinBox):
+            w.setDecimals(5)
+        return w
+
 
 
 class ColorMapModel(QAbstractTableModel):
@@ -129,6 +139,7 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
 
         self.model = ColorMapModel(self.colormap)
         self.viewColorMap.setModel(self.model)
+        self.viewColorMap.setItemDelegate(ValueDelegate(self.viewColorMap))
 
         initColorRampComboBox(self.cboColorRamp)
 
