@@ -101,6 +101,10 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         # so we don't want the object to be deleted while this layer is alive
         self.cached_ds = set()
 
+        # map of renamed dataset names
+        # key = dataset index, value = user's dataset name
+        self.ds_user_names = {}
+
         if meshFileName is not None:
             self.loadMesh(meshFileName)
 
@@ -266,6 +270,11 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
                 ds = self.mesh.dataset(self.mesh.dataset_count()-1)
             self.readDataSetXml(ds, datElem)
 
+            dsUserName = datElem.attribute("user-name")
+            if len(dsUserName) != 0:
+                ds_index = list(self.mesh.datasets()).index(ds)
+                self.ds_user_names[ds_index] = dsUserName
+
 
         # load settings
         currentDataSetIndex = qstring2int(element.attribute("current-dataset"))
@@ -326,6 +335,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
                 dsElem = doc.createElement("dat")
                 dsElem.setAttribute("path", prj.writePath(ds.filename()))
                 dsElem.setAttribute("name", ds.name())
+            if i in self.ds_user_names:
+                dsElem.setAttribute("user-name", self.ds_user_names[i])
             self.writeDataSetXml(ds, dsElem, doc)
             element.appendChild(dsElem)
 
@@ -655,6 +666,13 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         return self.rasterUnitsPerPixel()
 
 
+    def dataSetName(self, ds_index):
+        if ds_index in self.ds_user_names:
+            return self.ds_user_names[ds_index]
+        else:
+            return self.mesh.dataset(ds_index).name()
+
+
     def legendSymbologyItems(self, iconSize):
         """ implementation of method from QgsPluginLayer to show legend entries (in QGIS >= 2.1) """
 
@@ -664,11 +682,11 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           return []
 
         if dsC is not None and dsV is not None and dsC != dsV:
-          name = "%s / %s" % (dsC.name(), dsV.name())
+          name = "%s / %s" % (self.dataSetName(self.contour_ds_index), self.dataSetName(self.vector_ds_index))
         elif dsC is not None:
-          name = dsC.name()
+          name = self.dataSetName(self.contour_ds_index)
         else:
-          name = dsV.name()
+          name = self.dataSetName(self.vector_ds_index)
         lst = [ (name, QPixmap()) ]
         if not dsC:
             return lst

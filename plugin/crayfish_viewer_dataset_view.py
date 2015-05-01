@@ -48,10 +48,11 @@ class DataSetTreeNode(object):
 
 
 class DataSetModel(QAbstractItemModel):
-    def __init__(self, datasets, parent=None) :
+    def __init__(self, datasets, ds_user_names=None, parent=None) :
         QAbstractItemModel.__init__(self, parent)
         self.rootItem = DataSetTreeNode(None, None, None, None)
         self.setMesh(datasets)
+        self.ds_user_names = ds_user_names if ds_user_names is not None else {} # key = ds_index,  value = user_name
 
     def setMesh(self, datasets):
         self.c_active = None
@@ -136,7 +137,10 @@ class DataSetModel(QAbstractItemModel):
             return
 
         item = index.internalPointer()
-        if role == Qt.DisplayRole:
+        if role == Qt.DisplayRole or role == Qt.EditRole:
+            # user may have renamed the dataset
+            if item.ds_index in self.ds_user_names:
+                return self.ds_user_names[item.ds_index]
             return item.ds_name
         if role == Qt.UserRole:
             return item.ds_type
@@ -175,6 +179,20 @@ class DataSetModel(QAbstractItemModel):
             return QModelIndex()
 
         return self.createIndex(parentItem.row(), 0, parentItem)
+
+    def flags(self, index):
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+
+    def setData(self, index, value, role):
+        """ allows renaming of datasets """
+
+        if not index.isValid():
+            return False
+
+        item = index.internalPointer()
+        self.ds_user_names[item.ds_index] = value
+        self.dataChanged.emit(index, index)
+        return True
 
 
 POS_V, POS_C = 1, 2   # identifiers of positions of icons in the delegate

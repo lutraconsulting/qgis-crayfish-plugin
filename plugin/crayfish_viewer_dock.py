@@ -396,7 +396,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         for i,d in enumerate(l.mesh.datasets()):
             datasets.append( (d.name(), d.type()) )
         from crayfish_viewer_dataset_view import DataSetModel
-        self.treeDataSets.setModel(DataSetModel(datasets))
+        self.treeDataSets.setModel(DataSetModel(datasets, l.ds_user_names))
         self.treeDataSets.selectionModel().currentRowChanged.connect(self.dataSetChanged)
         self.treeDataSets.model().setActiveContourIndex(l.contour_ds_index)
         self.treeDataSets.model().setActiveVectorIndex(l.vector_ds_index)
