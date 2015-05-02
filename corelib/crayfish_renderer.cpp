@@ -112,7 +112,8 @@ void Renderer::drawMesh()
   // render mesh as a wireframe
 
   QPainter p(&mImage);
-  p.setPen(mCfg.mesh.mMeshColor);
+  p.setRenderHint(QPainter::Antialiasing);
+  p.setPen(QPen(QBrush(mCfg.mesh.mMeshColor),0.5));
   QPoint pts[5];
   const Mesh::Elements& elems = mMesh->elements();
   for (int i=0; i < elems.count(); ++i)
