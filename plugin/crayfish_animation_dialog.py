@@ -38,6 +38,27 @@ from crayfish_gui_utils import timeToString
 from crayfish_animation_dialog_widget import Ui_CrayfishAnimationDialog
 
 
+
+# http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
+def which(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
+
+
 class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
 
     def __init__(self, iface, parent=None):
@@ -72,6 +93,7 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         self.buttonBox.accepted.connect(self.onOK)
         self.btnBrowseOutput.clicked.connect(self.browseOutput)
         self.btnBrowseTemplate.clicked.connect(self.browseTemplate)
+        self.btnBrowseMencoderPath.clicked.connect(self.browseMencoderPath)
 
 
     def populateTimes(self, cbo):
@@ -103,8 +125,29 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         self.editTemplate.setText(filename)
         settings.setValue("crayfishViewer/lastFolder", filename)
 
+    def browseMencoderPath(self):
+        filename = QFileDialog.getOpenFileName(self, "Path to MEncoder tool", '', "MEncoder (mencoder mencoder.exe)")
+        if len(filename) == 0:
+            return
+        self.editMencoderPath.setText(filename)
+
 
     def onOK(self):
+
+        if self.radMencoderSystem.isChecked():
+            mencoder_bin = "mencoder"
+        else:
+            mencoder_bin = self.editMencoderPath.text()  # custom path
+
+        if which(mencoder_bin) is None:
+            QMessageBox.warning(self, "MEncoder missing",
+                "The tool for video creation (<a href=\"http://en.wikipedia.org/wiki/MEncoder\">MEncoder</a>) "
+                "is missing. Please check your mencoder configuration in <i>Video</i> tab.<p>"
+                "<b>Windows users:</b> <a href=\"http://sourceforge.net/projects/mplayerwin/\">Download</a> MEncoder "
+                "and configure path to mencoder.exe from the downloaded package.<p>"
+                "<b>Linux users:</b> Make sure Mencoder is installed in your system - on Debian/Ubuntu systems "
+                "use <tt>sudo apt-get install mencoder</tt>")
+            return
 
         t_start = self.cboStart.itemData(self.cboStart.currentIndex())
         t_end = self.cboEnd.itemData(self.cboEnd.currentIndex())
@@ -156,7 +199,7 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
 
         animation(d, prog)
 
-        mencoder_res = images_to_video(img_output_men, output_file, fps, self.quality())
+        mencoder_res = images_to_video(img_output_men, output_file, fps, self.quality(), mencoder_bin)
 
         if mencoder_res:
             shutil.rmtree(tmpdir)
@@ -221,6 +264,8 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         s.setValue("layout_file", self.editTemplate.text())
         # video tab
         s.setValue("quality", self.quality())
+        s.setValue("mencoder", "system" if self.radMencoderSystem.isChecked() else "custom")
+        s.setValue("mencoder_path", self.editMencoderPath.text())
 
 
     def restoreDefaults(self):
@@ -252,6 +297,13 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
                 self.editTemplate.setText(s.value(k))
             elif k == 'quality':
                 self.setQuality(s.value(k,type=int))
+            elif k == 'mencoder':
+                if s.value(k) == 'custom':
+                    self.radMencoderCustom.setChecked(True)
+                else:
+                    self.radMencoderSystem.setChecked(True)
+            elif k == 'mencoder_path':
+                self.editMencoderPath.setText(s.value(k))
 
         self.widgetTitleProps.restoreDefaults(s)
         self.widgetTimeProps.restoreDefaults(s)

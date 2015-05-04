@@ -199,13 +199,13 @@ def prepare_composition(c, w,h, dpi, time, layoutcfg):
     return composerMap
 
 
-def images_to_video(tmp_img_dir="/tmp/vid/p*.png", output_file="/tmp/vid/test.avi", fps=10, qual=1):
+def images_to_video(tmp_img_dir="/tmp/vid/p*.png", output_file="/tmp/vid/test.avi", fps=10, qual=1, mencoder_bin="mencoder"):
     if qual == 0: # lossless
         opts = "vcodec=ffvhuff"
     else:
         # bitrates (kbit/s) estimated for 1080p video / 5fps
         bitrate = 1000 if qual == 1 else 500
         opts = "vcodec=mpeg4:vbitrate=%d" % bitrate
-    cmd = 'mencoder "mf://%s" -mf fps=%d -o %s -ovc lavc -lavcopts %s' % (tmp_img_dir, fps, output_file, opts)
+    cmd = '%s "mf://%s" -mf fps=%d -o %s -ovc lavc -lavcopts %s' % (mencoder_bin, tmp_img_dir, fps, output_file, opts)
     res = os.system(cmd)
     return res == 0
