@@ -160,10 +160,15 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
 
   // load results
 
-  DataSet* ds = new DataSet(fileName);
-  ds->setType(DataSet::Scalar);
-  ds->setName("Depth");
-  ds->setIsTimeVarying(true);
+  DataSet* dss = new DataSet(fileName);
+  dss->setType(DataSet::Scalar);
+  dss->setName("Stage");
+  dss->setIsTimeVarying(true);
+
+  DataSet* dsd = new DataSet(fileName);
+  dsd->setType(DataSet::Scalar);
+  dsd->setName("Depth");
+  dsd->setIsTimeVarying(true);
 
   QVector<float> times(nTimesteps);
   nc_get_var_float(ncid, timeid, times.data());
@@ -171,10 +176,10 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
   const float* elev = o->values.constData();
   for (int t = 0; t < nTimesteps; ++t)
   {
-    Output* to = new Output;
-    to->init(nPoints, nVolumes, false);
-    to->time = times[t] / 3600.;
-    float* values = to->values.data();
+    Output* tos = new Output;
+    tos->init(nPoints, nVolumes, false);
+    tos->time = times[t] / 3600.;
+    float* values = tos->values.data();
 
     // fetching "stage" data for one timestep
     size_t start[2], count[2];
@@ -185,24 +190,33 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
     count[1] = nPoints;
     nc_get_vars_float(ncid, stageid, start, count, stride, values);
 
+    // derived data: depth = stage - elevation
+    Output* tod = new Output;
+    tod->init(nPoints, nVolumes, false);
+    tod->time = tos->time;
+    float* depths = tod->values.data();
     for (int j = 0; j < nPoints; ++j)
-      values[j] -= elev[j];
+      depths[j] = values[j] - elev[j];
 
     // determine which elements are active (wet)
     for (int elemidx = 0; elemidx < nVolumes; ++elemidx)
     {
       const Element& elem = mesh->elements()[elemidx];
-      float v0 = values[elem.p[0]];
-      float v1 = values[elem.p[1]];
-      float v2 = values[elem.p[2]];
-      to->active[elemidx] = v0 > DEPTH_THRESHOLD || v1 > DEPTH_THRESHOLD || v2 > DEPTH_THRESHOLD;
+      float v0 = depths[elem.p[0]];
+      float v1 = depths[elem.p[1]];
+      float v2 = depths[elem.p[2]];
+      tos->active[elemidx] = v0 > DEPTH_THRESHOLD || v1 > DEPTH_THRESHOLD || v2 > DEPTH_THRESHOLD;
     }
+    tod->active = tos->active;
 
-    ds->addOutput(to);
+    dss->addOutput(tos);
+    dsd->addOutput(tod);
   }
 
-  ds->updateZRange(nPoints);
-  mesh->addDataSet(ds);
+  dss->updateZRange(nPoints);
+  mesh->addDataSet(dss);
+  dsd->updateZRange(nPoints);
+  mesh->addDataSet(dsd);
 
   int momentumxid, momentumyid;
   if (nc_inq_varid(ncid, "xmomentum", &momentumxid) == NC_NOERR &&
@@ -219,7 +233,7 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
       Output* mto = new Output;
       mto->init(nPoints, nVolumes, true);
       mto->time = times[t] / 3600.;
-      mto->active = ds->output(t)->active;
+      mto->active = dsd->output(t)->active;
 
       // fetching "stage" data for one timestep
       size_t start[2], count[2];
