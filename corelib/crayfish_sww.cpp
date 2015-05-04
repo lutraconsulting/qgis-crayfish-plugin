@@ -31,6 +31,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
 
+// threshold for determining whether an element is active (wet)
+// the format does not explicitly store that information so we
+// determine that when loading data
+#define DEPTH_THRESHOLD   0.0001   // in meters
+
+
 Mesh* loadSWW(const QString& fileName, LoadStatus* status)
 {
   if (status) status->clear();
@@ -168,7 +174,6 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
     Output* to = new Output;
     to->init(nPoints, nVolumes, false);
     to->time = times[t] / 3600.;
-    memset(to->active.data(), 1, nVolumes); // All cells active
     float* values = to->values.data();
 
     // fetching "stage" data for one timestep
@@ -182,6 +187,16 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
 
     for (int j = 0; j < nPoints; ++j)
       values[j] -= elev[j];
+
+    // determine which elements are active (wet)
+    for (int elemidx = 0; elemidx < nVolumes; ++elemidx)
+    {
+      const Element& elem = mesh->elements()[elemidx];
+      float v0 = values[elem.p[0]];
+      float v1 = values[elem.p[1]];
+      float v2 = values[elem.p[2]];
+      to->active[elemidx] = v0 > DEPTH_THRESHOLD || v1 > DEPTH_THRESHOLD || v2 > DEPTH_THRESHOLD;
+    }
 
     ds->addOutput(to);
   }
@@ -204,7 +219,7 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
       Output* mto = new Output;
       mto->init(nPoints, nVolumes, true);
       mto->time = times[t] / 3600.;
-      memset(mto->active.data(), 1, nVolumes); // All cells active
+      mto->active = ds->output(t)->active;
 
       // fetching "stage" data for one timestep
       size_t start[2], count[2];
