@@ -6,13 +6,17 @@ qgisMaximumVersion=2.99
 description=A collection of tools for TUFLOW and other hydraulic 
     modelling packages
 ; category=Raster ; Did not know what my available choices where
-version=2.0
+version=2.1
 author=Lutra Consulting
 email=info@lutraconsulting.co.uk
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=2.0 - New features:
+changelog=2.1 - New features:
+ - Export animations
+ - Support for AnuGA result files (SWW)
+ - Display vectors on grid
+ <p>2.0 - New features:
  - Support for XMDF format
  - Support for special time (e.g. maxima)
  - Rendering of vectors over contours from different datasets
