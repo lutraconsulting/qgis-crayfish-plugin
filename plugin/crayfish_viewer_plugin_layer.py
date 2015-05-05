@@ -199,11 +199,27 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           return None
       return self.currentOutputForDataset(ds)
 
+    def parentDataSet(self, ds):
+        ds_name_parts = ds.name().split("/")
+        if len(ds_name_parts) == 2:
+            for d in self.mesh.datasets():
+                if ds_name_parts[0] == d.name():
+                    return d
+
 
     def initCustomValues(self, ds):
         """ set defaults for data source """
         print "INIT CUSTOM ", ds
         self.cached_ds.add(ds)
+
+        # make child datasets (maximums) share the configuration with parent
+        parent_ds = self.parentDataSet(ds)
+        if parent_ds:
+            ds.config = parent_ds.config
+            ds.custom = parent_ds.custom
+            # maybe also increase range?
+            return
+
         minZ, maxZ = ds.value_range()
         ds.config = {
           "c_colormap" : None,  # will be assigned in updateColorMap() call
