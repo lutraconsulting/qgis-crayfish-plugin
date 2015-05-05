@@ -122,6 +122,8 @@ def prepare_composition_from_template(c, template_path, time):
     document.setContent(open(template_path).read())
     c.loadFromTemplate(document)
 
+    c.setPlotStyle(QgsComposition.Print)
+
     composition_set_time(c, time)
 
 
