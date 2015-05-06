@@ -82,7 +82,7 @@ class CrayfishPlugin:
         self.actionExportGrid = QAction(QIcon(":/plugins/crayfish/crayfish_export_raster.png"), "Export to Raster Grid ...", self.iface.mainWindow())
         QObject.connect(self.actionExportGrid, SIGNAL("triggered()"), self.exportGrid)
 
-        self.actionExportAnimation = QAction(QIcon(), "Export Animation ...", self.iface.mainWindow())
+        self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
         QObject.connect(self.actionExportAnimation, SIGNAL("triggered()"), self.exportAnimation)
 
         # Add toolbar button and menu item
