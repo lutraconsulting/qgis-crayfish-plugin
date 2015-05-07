@@ -93,7 +93,7 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         self.buttonBox.accepted.connect(self.onOK)
         self.btnBrowseOutput.clicked.connect(self.browseOutput)
         self.btnBrowseTemplate.clicked.connect(self.browseTemplate)
-        self.btnBrowseMencoderPath.clicked.connect(self.browseMencoderPath)
+        self.btnBrowseFfmpegPath.clicked.connect(self.browseFfmpegPath)
 
 
     def populateTimes(self, cbo):
@@ -125,28 +125,32 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         self.editTemplate.setText(filename)
         settings.setValue("crayfishViewer/lastFolder", filename)
 
-    def browseMencoderPath(self):
-        filename = QFileDialog.getOpenFileName(self, "Path to MEncoder tool", '', "MEncoder (mencoder mencoder.exe)")
+    def browseFfmpegPath(self):
+        filename = QFileDialog.getOpenFileName(self, "Path to FFmpeg tool", '', "FFmpeg (ffmpeg ffmpeg.exe avconv avconv.exe)")
         if len(filename) == 0:
             return
-        self.editMencoderPath.setText(filename)
+        self.editFfmpegPath.setText(filename)
 
 
     def onOK(self):
 
-        if self.radMencoderSystem.isChecked():
-            mencoder_bin = "mencoder"
+        if self.radFfmpegSystem.isChecked():
+            ffmpeg_bin = "ffmpeg"
+            # debian systems use avconv (fork of ffmpeg)
+            if which(ffmpeg_bin) is None:
+                ffmpeg_bin = "avconv"
         else:
-            mencoder_bin = self.editMencoderPath.text()  # custom path
+            ffmpeg_bin = self.editFfmpegPath.text()  # custom path
 
-        if which(mencoder_bin) is None:
-            QMessageBox.warning(self, "MEncoder missing",
-                "The tool for video creation (<a href=\"http://en.wikipedia.org/wiki/MEncoder\">MEncoder</a>) "
-                "is missing. Please check your mencoder configuration in <i>Video</i> tab.<p>"
-                "<b>Windows users:</b> <a href=\"http://sourceforge.net/projects/mplayerwin/\">Download</a> MEncoder "
-                "and configure path to mencoder.exe from the downloaded package.<p>"
-                "<b>Linux users:</b> Make sure Mencoder is installed in your system - on Debian/Ubuntu systems "
-                "use <tt>sudo apt-get install mencoder</tt>")
+        if which(ffmpeg_bin) is None:
+            QMessageBox.warning(self, "FFmpeg missing",
+                "The tool for video creation (<a href=\"http://en.wikipedia.org/wiki/FFmpeg\">FFmpeg</a>) "
+                "is missing. Please check your FFmpeg configuration in <i>Video</i> tab.<p>"
+                "<b>Windows users:</b> <a href=\"https://www.ffmpeg.org/download.html\">Download</a> FFmpeg "
+                "and configure path in <i>Video</i> tab to point to ffmpeg.exe.<p>"
+                "<b>Linux users:</b> Make sure FFmpeg is installed in your system - usually a package named "
+                "<tt>ffmpeg</tt>. On Debian/Ubuntu systems FFmpeg was replaced by Libav (fork of FFmpeg) "
+                "- use <tt>libav-tools</tt> package.")
             return
 
         t_start = self.cboStart.itemData(self.cboStart.currentIndex())
@@ -168,7 +172,6 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         h = self.spinHeight.value()
         fps = self.spinSpeed.value()
         img_output_tpl = os.path.join(tmpdir, "%03d.png")
-        img_output_men = os.path.join(tmpdir, "*.png")
         tmpl = None # path to template file to be used
 
         prog = lambda i,cnt: self.updateProgress(i, cnt)
@@ -199,9 +202,9 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
 
         animation(d, prog)
 
-        mencoder_res = images_to_video(img_output_men, output_file, fps, self.quality(), mencoder_bin)
+        ffmpeg_res, cmdline = images_to_video(img_output_tpl, output_file, fps, self.quality(), ffmpeg_bin)
 
-        if mencoder_res:
+        if ffmpeg_res:
             shutil.rmtree(tmpdir)
 
         QApplication.restoreOverrideCursor()
@@ -210,10 +213,13 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
 
         self.buttonBox.setEnabled(True)
 
-        if mencoder_res:
+        if ffmpeg_res:
             QMessageBox.information(self, "Export", "The export of animation was successful!")
         else:
-            QMessageBox.warning(self, "Export", "An error occurred when converting images to video. The images are still available in " + tmpdir)
+            QMessageBox.warning(self, "Export",
+                "An error occurred when converting images to video. "
+                "The images are still available in " + tmpdir + "\n\n"
+                "The command line was:\n" + cmdline)
 
         self.storeDefaults()
 
@@ -264,8 +270,8 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         s.setValue("layout_file", self.editTemplate.text())
         # video tab
         s.setValue("quality", self.quality())
-        s.setValue("mencoder", "system" if self.radMencoderSystem.isChecked() else "custom")
-        s.setValue("mencoder_path", self.editMencoderPath.text())
+        s.setValue("fmpeg", "system" if self.radFfmpegSystem.isChecked() else "custom")
+        s.setValue("ffmpeg_path", self.editFfmpegPath.text())
 
 
     def restoreDefaults(self):
@@ -297,13 +303,13 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
                 self.editTemplate.setText(s.value(k))
             elif k == 'quality':
                 self.setQuality(s.value(k,type=int))
-            elif k == 'mencoder':
+            elif k == 'ffmpeg':
                 if s.value(k) == 'custom':
-                    self.radMencoderCustom.setChecked(True)
+                    self.radFfmpegCustom.setChecked(True)
                 else:
-                    self.radMencoderSystem.setChecked(True)
-            elif k == 'mencoder_path':
-                self.editMencoderPath.setText(s.value(k))
+                    self.radFfmpegSystem.setChecked(True)
+            elif k == 'ffmpeg_path':
+                self.editFfmpegPath.setText(s.value(k))
 
         self.widgetTitleProps.restoreDefaults(s)
         self.widgetTimeProps.restoreDefaults(s)

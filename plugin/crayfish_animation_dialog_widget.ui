@@ -343,24 +343,24 @@
          </property>
          <layout class="QGridLayout" name="gridLayout">
           <item row="3" column="2">
-           <widget class="QToolButton" name="btnBrowseMencoderPath">
+           <widget class="QToolButton" name="btnBrowseFfmpegPath">
             <property name="text">
              <string>...</string>
             </property>
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QLineEdit" name="editMencoderPath"/>
+           <widget class="QLineEdit" name="editFfmpegPath"/>
           </item>
           <item row="3" column="0">
-           <widget class="QRadioButton" name="radMencoderCustom">
+           <widget class="QRadioButton" name="radFfmpegCustom">
             <property name="text">
              <string>custom</string>
             </property>
            </widget>
           </item>
           <item row="2" column="0" colspan="4">
-           <widget class="QRadioButton" name="radMencoderSystem">
+           <widget class="QRadioButton" name="radFfmpegSystem">
             <property name="text">
              <string>default from system path</string>
             </property>
@@ -372,7 +372,7 @@
           <item row="1" column="0" colspan="3">
            <widget class="QLabel" name="label_9">
             <property name="text">
-             <string>Video encoding utility (mencoder) to use:</string>
+             <string>Video encoding utility (FFmpeg) to use:</string>
             </property>
            </widget>
           </item>

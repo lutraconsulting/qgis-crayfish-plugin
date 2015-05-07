@@ -53,6 +53,7 @@ def animation(cfg, progress_fn=None):
   else:
     time_from, time_to = dataset.output(0).time(), dataset.output(dataset.output_count()-1).time()
 
+  imgnum = 0
   for i,o in enumerate(dataset.outputs()):
 
     if progress_fn:
@@ -88,7 +89,8 @@ def animation(cfg, progress_fn=None):
     c.render(imagePainter, targetArea, sourceArea)
     imagePainter.end()
 
-    image.save(imgfile % (i+1))
+    imgnum += 1
+    image.save(imgfile % imgnum)
 
   if progress_fn:
     progress_fn(count, count)
@@ -201,13 +203,14 @@ def prepare_composition(c, w,h, dpi, time, layoutcfg):
     return composerMap
 
 
-def images_to_video(tmp_img_dir="/tmp/vid/p*.png", output_file="/tmp/vid/test.avi", fps=10, qual=1, mencoder_bin="mencoder"):
+
+def images_to_video(tmp_img_dir= "/tmp/vid/%03d.png", output_file="/tmp/vid/test.avi", fps=10, qual=1, ffmpeg_bin="ffmpeg"):
     if qual == 0: # lossless
-        opts = "vcodec=ffvhuff"
+        opts = "-vcodec ffv1"
     else:
-        # bitrates (kbit/s) estimated for 1080p video / 5fps
-        bitrate = 1000 if qual == 1 else 500
-        opts = "vcodec=mpeg4:vbitrate=%d" % bitrate
-    cmd = '%s "mf://%s" -mf fps=%d -o %s -ovc lavc -lavcopts %s' % (mencoder_bin, tmp_img_dir, fps, output_file, opts)
+        bitrate = 10000 if qual == 1 else 2000
+        opts = "-vcodec mpeg4 -b %dK" % bitrate
+    # if images do not start with 1: -start_number 14
+    cmd = "%s -f image2 -framerate %d -i %s %s -r %d -y %s" % (ffmpeg_bin, fps, tmp_img_dir, opts, fps, output_file)
     res = os.system(cmd)
-    return res == 0
+    return res == 0, cmd

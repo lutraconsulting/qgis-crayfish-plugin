@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'crayfish_animation_dialog_widget.ui'
 #
-# Created: Mon May  4 15:42:51 2015
+# Created: Thu May  7 15:06:54 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -184,19 +184,19 @@ class Ui_CrayfishAnimationDialog(object):
         self.groupBox.setObjectName(_fromUtf8("groupBox"))
         self.gridLayout = QtGui.QGridLayout(self.groupBox)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
-        self.btnBrowseMencoderPath = QtGui.QToolButton(self.groupBox)
-        self.btnBrowseMencoderPath.setObjectName(_fromUtf8("btnBrowseMencoderPath"))
-        self.gridLayout.addWidget(self.btnBrowseMencoderPath, 3, 2, 1, 1)
-        self.editMencoderPath = QtGui.QLineEdit(self.groupBox)
-        self.editMencoderPath.setObjectName(_fromUtf8("editMencoderPath"))
-        self.gridLayout.addWidget(self.editMencoderPath, 3, 1, 1, 1)
-        self.radMencoderCustom = QtGui.QRadioButton(self.groupBox)
-        self.radMencoderCustom.setObjectName(_fromUtf8("radMencoderCustom"))
-        self.gridLayout.addWidget(self.radMencoderCustom, 3, 0, 1, 1)
-        self.radMencoderSystem = QtGui.QRadioButton(self.groupBox)
-        self.radMencoderSystem.setChecked(True)
-        self.radMencoderSystem.setObjectName(_fromUtf8("radMencoderSystem"))
-        self.gridLayout.addWidget(self.radMencoderSystem, 2, 0, 1, 4)
+        self.btnBrowseFfmpegPath = QtGui.QToolButton(self.groupBox)
+        self.btnBrowseFfmpegPath.setObjectName(_fromUtf8("btnBrowseFfmpegPath"))
+        self.gridLayout.addWidget(self.btnBrowseFfmpegPath, 3, 2, 1, 1)
+        self.editFfmpegPath = QtGui.QLineEdit(self.groupBox)
+        self.editFfmpegPath.setObjectName(_fromUtf8("editFfmpegPath"))
+        self.gridLayout.addWidget(self.editFfmpegPath, 3, 1, 1, 1)
+        self.radFfmpegCustom = QtGui.QRadioButton(self.groupBox)
+        self.radFfmpegCustom.setObjectName(_fromUtf8("radFfmpegCustom"))
+        self.gridLayout.addWidget(self.radFfmpegCustom, 3, 0, 1, 1)
+        self.radFfmpegSystem = QtGui.QRadioButton(self.groupBox)
+        self.radFfmpegSystem.setChecked(True)
+        self.radFfmpegSystem.setObjectName(_fromUtf8("radFfmpegSystem"))
+        self.gridLayout.addWidget(self.radFfmpegSystem, 2, 0, 1, 4)
         self.label_9 = QtGui.QLabel(self.groupBox)
         self.label_9.setObjectName(_fromUtf8("label_9"))
         self.gridLayout.addWidget(self.label_9, 1, 0, 1, 3)
@@ -249,10 +249,10 @@ class Ui_CrayfishAnimationDialog(object):
         self.radQualBest.setText(_translate("CrayfishAnimationDialog", "Best (lossless)", None))
         self.radQualHigh.setText(_translate("CrayfishAnimationDialog", "High", None))
         self.radQualLow.setText(_translate("CrayfishAnimationDialog", "Low", None))
-        self.btnBrowseMencoderPath.setText(_translate("CrayfishAnimationDialog", "...", None))
-        self.radMencoderCustom.setText(_translate("CrayfishAnimationDialog", "custom", None))
-        self.radMencoderSystem.setText(_translate("CrayfishAnimationDialog", "default from system path", None))
-        self.label_9.setText(_translate("CrayfishAnimationDialog", "Video encoding utility (mencoder) to use:", None))
+        self.btnBrowseFfmpegPath.setText(_translate("CrayfishAnimationDialog", "...", None))
+        self.radFfmpegCustom.setText(_translate("CrayfishAnimationDialog", "custom", None))
+        self.radFfmpegSystem.setText(_translate("CrayfishAnimationDialog", "default from system path", None))
+        self.label_9.setText(_translate("CrayfishAnimationDialog", "Video encoding utility (FFmpeg) to use:", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("CrayfishAnimationDialog", "Video", None))
 
 from qgis.gui import QgsCollapsibleGroupBox
