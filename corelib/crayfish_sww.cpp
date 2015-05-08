@@ -24,12 +24,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include <netcdf.h>
 
 #include "crayfish.h"
 #include "crayfish_mesh.h"
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
+
+#include <netcdf.h>
 
 // threshold for determining whether an element is active (wet)
 // the format does not explicitly store that information so we
