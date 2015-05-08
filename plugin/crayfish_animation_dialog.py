@@ -248,6 +248,7 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         """ callback from animation routine """
         self.progress.setMaximum(cnt)
         self.progress.setValue(i)
+        qApp.processEvents()
 
 
     def storeDefaults(self):
