@@ -271,7 +271,7 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
         s.setValue("layout_file", self.editTemplate.text())
         # video tab
         s.setValue("quality", self.quality())
-        s.setValue("fmpeg", "system" if self.radFfmpegSystem.isChecked() else "custom")
+        s.setValue("ffmpeg", "system" if self.radFfmpegSystem.isChecked() else "custom")
         s.setValue("ffmpeg_path", self.editFfmpegPath.text())
 
 
