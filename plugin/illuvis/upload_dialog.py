@@ -156,8 +156,8 @@ class UploadDialog(QDialog, Ui_Dialog):
             ds = self.layer.currentDataSet()
             name = self.layer.name() + " / " + ds.name()
             if ds.time_varying():
-              output = ds.output(ds.current_output_index)
-              name += " @ " + timeToString(output.time)
+              output = self.layer.currentOutputForDataset(ds)
+              name += " @ " + timeToString(output.time())
             self.fromCurrentRadioButton.setText("From current layer: " + name)
         else:
             self.fromFileRadioButton.setChecked(True)
