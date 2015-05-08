@@ -503,6 +503,15 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         parentElem.appendChild(elem)
 
 
+    # the support for styles is not implemented yet
+    # we keep the methods here just so that they are not abstract and thus python error
+    # is not thrown if they are called for some reason
+    def readSymbology(self, node, err):
+        return False
+    def writeSymbology(self, node, doc, err):
+        return False
+
+
     def set2DMFileName(self, fName):
         self.twoDMFileName = fName
 
