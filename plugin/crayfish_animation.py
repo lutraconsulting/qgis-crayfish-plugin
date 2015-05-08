@@ -26,8 +26,6 @@
 
 import os
 
-import crayfish
-
 from PyQt4.QtCore import QSize, QRectF, Qt
 from PyQt4.QtGui import QImage, QPainter
 from PyQt4.QtXml import QDomDocument
