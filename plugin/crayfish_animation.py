@@ -25,6 +25,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import subprocess
+import tempfile
 
 from PyQt4.QtCore import QSize, QRectF, Qt
 from PyQt4.QtGui import QImage, QPainter
@@ -204,11 +206,19 @@ def prepare_composition(c, w,h, dpi, time, layoutcfg):
 
 def images_to_video(tmp_img_dir= "/tmp/vid/%03d.png", output_file="/tmp/vid/test.avi", fps=10, qual=1, ffmpeg_bin="ffmpeg"):
     if qual == 0: # lossless
-        opts = "-vcodec ffv1"
+        opts = ["-vcodec", "ffv1"]
     else:
         bitrate = 10000 if qual == 1 else 2000
-        opts = "-vcodec mpeg4 -b %dK" % bitrate
+        opts = ["-vcodec", "mpeg4", "-b", str(bitrate) + "K"]
+
     # if images do not start with 1: -start_number 14
-    cmd = "%s -f image2 -framerate %d -i %s %s -r %d -y %s" % (ffmpeg_bin, fps, tmp_img_dir, opts, fps, output_file)
-    res = os.system(cmd)
-    return res == 0, cmd
+    cmd = [ffmpeg_bin, "-f", "image2", "-framerate", str(fps), "-i", tmp_img_dir] + opts + ["-r", str(fps), "-y", output_file]
+
+    f = tempfile.NamedTemporaryFile(prefix="crayfish",suffix=".txt")
+    f.write(unicode(cmd).encode('utf8') + "\n\n")
+
+    res = subprocess.call(cmd, stdout=f, stderr=f)
+    if res != 0:
+        f.delete = False  # keep the file on error
+
+    return res == 0, f.name

@@ -202,7 +202,7 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
 
         animation(d, prog)
 
-        ffmpeg_res, cmdline = images_to_video(img_output_tpl, output_file, fps, self.quality(), ffmpeg_bin)
+        ffmpeg_res, logfile = images_to_video(img_output_tpl, output_file, fps, self.quality(), ffmpeg_bin)
 
         if ffmpeg_res:
             shutil.rmtree(tmpdir)
@@ -219,7 +219,8 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
             QMessageBox.warning(self, "Export",
                 "An error occurred when converting images to video. "
                 "The images are still available in " + tmpdir + "\n\n"
-                "The command line was:\n" + cmdline)
+                "This should not happen. Please file a ticket in "
+                "Crayfish issue tracker with the contents from the log file:\n" + logfile)
 
         self.storeDefaults()
 
