@@ -69,7 +69,15 @@ def ensure_library_installed(parent_widget=None):
 
     platformVersion = platform.system()
     if platformVersion == 'Windows':
-        extractBinPackageAfterRestart()
+        while not extractBinPackageAfterRestart():
+            reply = QMessageBox.critical(parent_widget,
+              'Crayfish Installation Issue',
+              "Crayfish plugin is unable to replace previous version of library. "
+              "This is most likely caused by other QGIS instance running "
+              "in the background. Please close other instances and try again.",
+              QMessageBox.Retry | QMessageBox.Abort, QMessageBox.Retry)
+            if reply != QMessageBox.Retry:
+                return False
 
     try:
         import crayfish
@@ -184,21 +192,27 @@ def extractBinPackageAfterRestart():
     destFolder = os.path.dirname(__file__)
     updateLibraryIndicator = os.path.join(destFolder, 'EXTRACT_DLL')
     if not os.path.isfile(updateLibraryIndicator):
-        return
+        return True
 
+    stillExists = True
     dllFileName = os.path.join(destFolder, 'crayfish.dll')
-    for retryCount in range(5):
+    for retryCount in range(3):
         try:
             os.unlink( dllFileName )
+            stillExists = False
             break
-        except:
+        except WindowsError:
             time.sleep(3)
+
+    if stillExists:
+        return False
 
     destinationFileName = os.path.join(destFolder, crayfish_zipfile)
     z = zipfile.ZipFile(destinationFileName)
     z.extractall(destFolder)
     z.close()
     os.unlink(updateLibraryIndicator)
+    return True
 
 
 def downloadExtraLibs(parent_widget=None):
