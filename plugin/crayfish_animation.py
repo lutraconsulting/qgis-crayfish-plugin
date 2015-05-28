@@ -212,7 +212,9 @@ def images_to_video(tmp_img_dir= "/tmp/vid/%03d.png", output_file="/tmp/vid/test
         opts = ["-vcodec", "mpeg4", "-b", str(bitrate) + "K"]
 
     # if images do not start with 1: -start_number 14
-    cmd = [ffmpeg_bin, "-f", "image2", "-framerate", str(fps), "-i", tmp_img_dir] + opts + ["-r", str(fps), "-y", output_file]
+    cmd = [ffmpeg_bin, "-f", "image2", "-framerate", str(fps), "-i", tmp_img_dir]
+    cmd += opts
+    cmd += ["-r", str(fps), "-f", "avi", "-y", output_file]
 
     f = tempfile.NamedTemporaryFile(prefix="crayfish",suffix=".txt")
     f.write(unicode(cmd).encode('utf8') + "\n\n")
