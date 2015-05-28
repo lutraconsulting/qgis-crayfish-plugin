@@ -28,6 +28,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 
+import platform
 import os
 import shutil
 import tempfile
@@ -146,12 +147,44 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
             QMessageBox.warning(self, "FFmpeg missing",
                 "The tool for video creation (<a href=\"http://en.wikipedia.org/wiki/FFmpeg\">FFmpeg</a>) "
                 "is missing. Please check your FFmpeg configuration in <i>Video</i> tab.<p>"
-                "<b>Windows users:</b> <a href=\"https://www.ffmpeg.org/download.html\">Download</a> FFmpeg "
+                "<b>Windows users:</b> Let Crayfish plugin download FFmpeg automatically or "
+                "<a href=\"https://www.ffmpeg.org/download.html\">download</a> FFmpeg manually "
                 "and configure path in <i>Video</i> tab to point to ffmpeg.exe.<p>"
                 "<b>Linux users:</b> Make sure FFmpeg is installed in your system - usually a package named "
                 "<tt>ffmpeg</tt>. On Debian/Ubuntu systems FFmpeg was replaced by Libav (fork of FFmpeg) "
                 "- use <tt>libav-tools</tt> package.")
-            return
+
+            if platform.system() != 'Windows':
+                return
+
+            # special treatment for Windows users!
+            # offer automatic download and installation from Lutra web.
+            # Official distribution is not used because:
+            # 1. packages use 7zip compression (need extra software)
+            # 2. packages contain extra binaries we do not need
+
+            reply = QMessageBox.question(self,
+              'Download FFmpeg',
+              "Would you like to download and auto-configure FFmpeg?\n\n"
+              "The download may take some time (~13 MB).\n"
+              "FFmpeg will be downloaded to Crayfish plugin's directory.",
+              QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            if reply != QMessageBox.Yes:
+                return
+
+            from crayfish_install_helper import downloadFfmpeg
+            ffmpeg_bin = downloadFfmpeg(self)
+            if not ffmpeg_bin:
+                return
+
+            # configure the path automatically
+            self.radFfmpegCustom.setChecked(True)
+            self.editFfmpegPath.setText(ffmpeg_bin)
+            s = QSettings()
+            s.beginGroup("crayfishViewer/animation")
+            s.setValue("ffmpeg", "custom")
+            s.setValue("ffmpeg_path", ffmpeg_bin)
+
 
         t_start = self.cboStart.itemData(self.cboStart.currentIndex())
         t_end = self.cboEnd.itemData(self.cboEnd.currentIndex())

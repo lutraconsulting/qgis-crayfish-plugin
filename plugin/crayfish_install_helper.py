@@ -31,8 +31,8 @@ import time
 import urllib2
 import zipfile
 
-from PyQt4.QtCore import QSettings
-from PyQt4.QtGui import QMessageBox, qApp
+from PyQt4.QtCore import QSettings, Qt
+from PyQt4.QtGui import QCursor, QMessageBox, qApp
 
 # Base URL for downloading of prepared binaries
 downloadBaseUrl = 'http://www.lutraconsulting.co.uk/'
@@ -230,7 +230,7 @@ def downloadExtraLibs(parent_widget=None):
           "time (~10MB), please wait.")
         qApp.setOverrideCursor(QCursor(Qt.WaitCursor))
         gdalFilename = os.path.join(os.path.dirname(__file__), 'gdal111.dll')
-        gdalUrl = downloadBaseUrl+'resources/crayfish/viewer/binaries/'+platformVersion+'/extra/gdal111.dll'
+        gdalUrl = downloadBaseUrl+'resources/crayfish/viewer/binaries/Windows/extra/gdal111.dll'
         downloadBinPackage(gdalUrl, gdalFilename)
         qApp.restoreOverrideCursor()
         return True
@@ -241,3 +241,27 @@ def downloadExtraLibs(parent_widget=None):
           "Download of the library failed. Please try again or contact us for "
           "further assistance.\n\n(Error: %s)" % str(err))
         return False
+
+
+def downloadFfmpeg(parent_widget=None):
+
+    destFolder = os.path.dirname(__file__)
+    ffmpegZip = 'ffmpeg-20150505-git-6ef3426-win32-static.zip'
+    ffmpegZipPath = os.path.join(destFolder, ffmpegZip)
+    ffmpegUrl = downloadBaseUrl+'resources/crayfish/viewer/binaries/Windows/extra/'+ffmpegZip
+
+    qApp.setOverrideCursor(QCursor(Qt.WaitCursor))
+    try:
+        downloadBinPackage(ffmpegUrl, ffmpegZipPath)
+        z = zipfile.ZipFile(ffmpegZipPath)
+        z.extractall(destFolder)
+        z.close()
+        os.unlink(ffmpegZipPath)
+        qApp.restoreOverrideCursor()
+        return os.path.join(destFolder, 'ffmpeg.exe')
+    except IOError, err:
+        qApp.restoreOverrideCursor()
+        QMessageBox.critical(parent_widget,
+          'Could Not Download FFmpeg',
+          "Download of FFmpeg failed. Please try again or contact us for "
+          "further assistance.\n\n(Error: %s)" % str(err))
