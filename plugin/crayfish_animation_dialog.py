@@ -148,7 +148,7 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
                 "The tool for video creation (<a href=\"http://en.wikipedia.org/wiki/FFmpeg\">FFmpeg</a>) "
                 "is missing. Please check your FFmpeg configuration in <i>Video</i> tab.<p>"
                 "<b>Windows users:</b> Let Crayfish plugin download FFmpeg automatically or "
-                "<a href=\"https://www.ffmpeg.org/download.html\">download</a> FFmpeg manually "
+                "<a href=\"http://ffmpeg.zeranoe.com/builds/\">download</a> FFmpeg manually "
                 "and configure path in <i>Video</i> tab to point to ffmpeg.exe.<p>"
                 "<b>Linux users:</b> Make sure FFmpeg is installed in your system - usually a package named "
                 "<tt>ffmpeg</tt>. On Debian/Ubuntu systems FFmpeg was replaced by Libav (fork of FFmpeg) "

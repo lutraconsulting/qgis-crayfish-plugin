@@ -481,7 +481,12 @@ class CrayfishPlugin:
 
         self.setLastFolder(os.path.dirname(filenameTIF))
 
-        res = layer.currentOutput().export_grid(dlgConfig.resolution(), filenameTIF, crsWkt)
+        try:
+            res = layer.currentOutput().export_grid(dlgConfig.resolution(), filenameTIF, crsWkt)
+        except OSError: # delayed loading of GDAL failed (windows only)
+            QMessageBox.critical(None, "Crayfish", "Export failed due to incompatible "
+              "GDAL library - try to upgrade your QGIS installation to a newer version.")
+            return
         if not res:
             QMessageBox.critical(None, "Crayfish", "Failed to export to raster grid")
             return

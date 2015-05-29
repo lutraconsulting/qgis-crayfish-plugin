@@ -584,7 +584,12 @@ class UploadDialog(QDialog, Ui_Dialog):
 
             crsWkt = self.layer.crs().toWkt()
             resultFilePath = os.path.join(tempfile.gettempdir(), 'crayfish-illuvis-export.tif')
-            res = self.layer.currentOutput().export_grid(res, resultFilePath, crsWkt)
+            try:
+                res = self.layer.currentOutput().export_grid(res, resultFilePath, crsWkt)
+            except OSError: # delayed loading of GDAL failed (windows only)
+                QMessageBox.critical(None, "Crayfish", "Export failed due to incompatible "
+                  "GDAL library - try to upgrade your QGIS installation to a newer version.")
+                return
             if not res:
                 QMessageBox.critical(None, "Crayfish", "Failed to export to raster grid")
                 return

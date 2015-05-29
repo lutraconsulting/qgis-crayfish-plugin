@@ -35,6 +35,12 @@ win32 {
 
   INCLUDEPATH += $${OSGEO_PATH}/include
   LIBS += -L$${OSGEO_PATH}/lib -lproj_i -lgdal_i -lhdf5 -lnetcdf
+
+  # use delayed loading of GDAL. If the requested library version is not available
+  # (e.g. due to older QGIS installation), the loading of Crayfish library will not fail,
+  # only export to grid will not be available
+  LIBS += DelayImp.lib
+  QMAKE_LFLAGS += /DELAYLOAD:gdal111.dll
 }
 
 unix {
