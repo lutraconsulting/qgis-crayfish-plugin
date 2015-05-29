@@ -219,7 +219,8 @@ def images_to_video(tmp_img_dir= "/tmp/vid/%03d.png", output_file="/tmp/vid/test
     f = tempfile.NamedTemporaryFile(prefix="crayfish",suffix=".txt")
     f.write(unicode(cmd).encode('utf8') + "\n\n")
 
-    res = subprocess.call(cmd, stdout=f, stderr=f)
+    # stdin redirection is necessary in some cases on Windows
+    res = subprocess.call(cmd, stdin=subprocess.PIPE, stdout=f, stderr=f)
     if res != 0:
         f.delete = False  # keep the file on error
 
