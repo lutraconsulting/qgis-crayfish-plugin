@@ -87,7 +87,6 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
   int xid, yid, zid, volumesid, timeid, stageid;
   if (nc_inq_varid(ncid, "x", &xid) != NC_NOERR ||
       nc_inq_varid(ncid, "y", &yid) != NC_NOERR ||
-      nc_inq_varid(ncid, "z", &zid) != NC_NOERR ||
       nc_inq_varid(ncid, "volumes", &volumesid) != NC_NOERR ||
       nc_inq_varid(ncid, "time", &timeid) != NC_NOERR ||
       nc_inq_varid(ncid, "stage", &stageid) != NC_NOERR)
@@ -102,7 +101,6 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
   unsigned int* pvolumes = new unsigned int[nVertices * nVolumes];
   if (nc_get_var_float (ncid, xid, px.data()) != NC_NOERR ||
       nc_get_var_float (ncid, yid, py.data()) != NC_NOERR ||
-      nc_get_var_float (ncid, zid, pz.data()) != NC_NOERR ||
       nc_get_var_int (ncid, volumesid, (int *) pvolumes) != NC_NOERR)
   {
     delete [] pvolumes;
@@ -117,13 +115,6 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
   nc_get_att_float(ncid, NC_GLOBAL, "xllcorner", &xLLcorner);
   nc_get_att_float(ncid, NC_GLOBAL, "yllcorner", &yLLcorner);
 
-  // create output for bed elevation
-  Output* o = new Output;
-  o->init(nPoints, nVolumes, false);
-  o->time = 0.0;
-  memset(o->active.data(), 1, nVolumes); // All cells active
-
-
   Mesh::Nodes nodes(nPoints);
   Node* nodesPtr = nodes.data();
   for (int i = 0; i < nPoints; ++i, ++nodesPtr)
@@ -131,7 +122,57 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
     nodesPtr->id = i;
     nodesPtr->x = px[i] + xLLcorner;
     nodesPtr->y = py[i] + yLLcorner;
-    o->values[i] = pz[i];
+  }
+
+  QVector<float> times(nTimesteps);
+  nc_get_var_float(ncid, timeid, times.data());
+
+  QList<Output*> elevationOutputs;
+  if ( nc_inq_varid(ncid, "z", &zid) == NC_NOERR &&
+       nc_get_var_float (ncid, zid, pz.data()) == NC_NOERR )
+  {
+    // older SWW format: elevation is constant over time
+
+    Output* o = new Output;
+    o->init(nPoints, nVolumes, false);
+    o->time = 0.0;
+    memset(o->active.data(), 1, nVolumes); // All cells active
+    for (int i = 0; i < nPoints; ++i)
+      o->values[i] = pz[i];
+    elevationOutputs << o;
+  }
+  else if ( nc_inq_varid(ncid, "elevation", &zid) == NC_NOERR )
+  {
+    // newer SWW format: elevation may change over time
+    for (int t = 0; t < nTimesteps; ++t)
+    {
+      Output* toe = new Output;
+      toe->init(nPoints, nVolumes, false);
+      toe->time = times[t] / 3600.;
+      memset(toe->active.data(), 1, nVolumes); // All cells active
+      float* elev = toe->values.data();
+
+      // fetching "elevation" data for one timestep
+      size_t start[2], count[2];
+      const ptrdiff_t stride[2] = {1,1};
+      start[0] = t;
+      start[1] = 0;
+      count[0] = 1;
+      count[1] = nPoints;
+      nc_get_vars_float(ncid, zid, start, count, stride, elev);
+
+      elevationOutputs << toe;
+    }
+  }
+  else
+  {
+    // neither "z" nor "elevation" are present -> something is going wrong
+
+    delete [] pvolumes;
+
+    nc_close(ncid);
+    if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
+    return 0;
   }
 
   Mesh::Elements elements(nVolumes);
@@ -154,8 +195,17 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
   DataSet* bedDs = new DataSet(fileName);
   bedDs->setType(DataSet::Bed);
   bedDs->setName("Bed Elevation");
-  bedDs->setIsTimeVarying(false);
-  bedDs->addOutput(o);  // takes ownership of the Output
+  if (elevationOutputs.count() == 1)
+  {
+    bedDs->setIsTimeVarying(false);
+    bedDs->addOutput(elevationOutputs.at(0));  // takes ownership of the Output
+  }
+  else
+  {
+    bedDs->setIsTimeVarying(true);
+    foreach (Output* o, elevationOutputs)
+      bedDs->addOutput(o);
+  }
   bedDs->updateZRange(nPoints);
   mesh->addDataSet(bedDs);
 
@@ -171,12 +221,11 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
   dsd->setName("Depth");
   dsd->setIsTimeVarying(true);
 
-  QVector<float> times(nTimesteps);
-  nc_get_var_float(ncid, timeid, times.data());
-
-  const float* elev = o->values.constData();
   for (int t = 0; t < nTimesteps; ++t)
   {
+    const Output* elevO = bedDs->isTimeVarying() ? bedDs->output(t) : bedDs->output(0);
+    const float* elev = elevO->values.constData();
+
     Output* tos = new Output;
     tos->init(nPoints, nVolumes, false);
     tos->time = times[t] / 3600.;
