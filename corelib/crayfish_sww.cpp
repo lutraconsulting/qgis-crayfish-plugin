@@ -127,12 +127,36 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
   QVector<float> times(nTimesteps);
   nc_get_var_float(ncid, timeid, times.data());
 
-  QList<Output*> elevationOutputs;
+  int zDims = 0;
   if ( nc_inq_varid(ncid, "z", &zid) == NC_NOERR &&
        nc_get_var_float (ncid, zid, pz.data()) == NC_NOERR )
   {
     // older SWW format: elevation is constant over time
 
+    zDims = 1;
+  }
+  else if ( nc_inq_varid(ncid, "elevation", &zid) == NC_NOERR &&
+            nc_inq_varndims(ncid, zid, &zDims) == NC_NOERR &&
+            (zDims == 1 || zDims == 2) )
+  {
+    // we're good
+  }
+  else
+  {
+    // neither "z" nor "elevation" are present -> something is going wrong
+
+    delete [] pvolumes;
+
+    nc_close(ncid);
+    if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
+    return 0;
+  }
+
+  // read bed elevations
+  QList<Output*> elevationOutputs;
+  if (zDims == 1)
+  {
+    // either "z" or "elevation" with 1 dimension
     Output* o = new Output;
     o->init(nPoints, nVolumes, false);
     o->time = 0.0;
@@ -141,7 +165,7 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
       o->values[i] = pz[i];
     elevationOutputs << o;
   }
-  else if ( nc_inq_varid(ncid, "elevation", &zid) == NC_NOERR )
+  else if (zDims == 2)
   {
     // newer SWW format: elevation may change over time
     for (int t = 0; t < nTimesteps; ++t)
@@ -163,16 +187,6 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
 
       elevationOutputs << toe;
     }
-  }
-  else
-  {
-    // neither "z" nor "elevation" are present -> something is going wrong
-
-    delete [] pvolumes;
-
-    nc_close(ncid);
-    if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
-    return 0;
   }
 
   Mesh::Elements elements(nVolumes);
