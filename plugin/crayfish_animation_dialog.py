@@ -217,7 +217,7 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
               'tmp_imgfile': img_output_tpl,
               'layers'     : self.r.layerSet(),
               'extent'     : self.r.extent(),
-              'crs'        : self.r.destinationCrs(),
+              'crs'        : self.r.destinationCrs() if self.r.hasCrsTransformEnabled() else None,
               'layout'     : {},
             }
 
