@@ -47,12 +47,18 @@ unix {
   INCLUDEPATH += /usr/include/gdal
   LIBS += -lproj -lgdal -lnetcdf
 
+  contains(QMAKE_HOST.arch, x86_64) {
+    ARCH = x86_64
+  } else {
+    ARCH = i386
+  }
+
   # HDF5 1.8.11 (ubuntu trusty)
-  exists( /usr/lib/x86_64-linux-gnu/libhdf5.so ) {
+  exists( /usr/lib/$${ARCH}-linux-gnu/libhdf5.so ) {
     LIBS += -lhdf5
   }
   # HDF5 1.8.13 (debian jessie / ubuntu vivid)
-  exists( /usr/lib/x86_64-linux-gnu/libhdf5_serial.so ) {
+  exists( /usr/lib/$${ARCH}-linux-gnu/libhdf5_serial.so ) {
     LIBS += -lhdf5_serial
     INCLUDEPATH += /usr/include/hdf5/serial
   }
