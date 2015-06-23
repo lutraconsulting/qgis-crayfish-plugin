@@ -137,7 +137,7 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
   }
   else if ( nc_inq_varid(ncid, "elevation", &zid) == NC_NOERR &&
             nc_inq_varndims(ncid, zid, &zDims) == NC_NOERR &&
-            (zDims == 1 || zDims == 2) )
+            ((zDims == 1 && nc_get_var_float (ncid, zid, pz.data()) == NC_NOERR) || zDims == 2) )
   {
     // we're good
   }
