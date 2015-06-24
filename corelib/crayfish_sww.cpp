@@ -269,7 +269,7 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
       float v0 = depths[elem.p[0]];
       float v1 = depths[elem.p[1]];
       float v2 = depths[elem.p[2]];
-      tos->active[elemidx] = v0 > DEPTH_THRESHOLD || v1 > DEPTH_THRESHOLD || v2 > DEPTH_THRESHOLD;
+      tos->active[elemidx] = v0 > DEPTH_THRESHOLD && v1 > DEPTH_THRESHOLD && v2 > DEPTH_THRESHOLD;
     }
     tod->active = tos->active;
 
