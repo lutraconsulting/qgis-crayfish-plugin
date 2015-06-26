@@ -37,7 +37,7 @@ class CrayfishDataItemProvider(QgsDataItemProvider):
     return 1 # QgsDataProvider.File
 
   def createDataItem(self, path, parentItem):
-    if not path.endswith(".2dm"):
+    if not (path.endswith(".2dm") or path.endswith(".sww")):
       return None
 
     base = os.path.basename(path)
