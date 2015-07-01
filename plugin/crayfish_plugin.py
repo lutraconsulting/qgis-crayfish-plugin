@@ -502,5 +502,9 @@ class CrayfishPlugin:
             QMessageBox.warning(None, "Crayfish", "Please select a Crayfish layer for export")
             return
 
+        if self.dock.currentDataSet().output_count() < 2:
+            QMessageBox.warning(None, "Crayfish", "Please use time-varying dataset for animation export")
+            return
+
         dlg = crayfish_animation_dialog.CrayfishAnimationDialog(self.iface)
         dlg.exec_()
