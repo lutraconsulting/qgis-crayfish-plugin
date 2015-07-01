@@ -197,6 +197,13 @@ class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
             QMessageBox.information(self, "Export", "Please set output animation file")
             return
 
+        if self.radLayoutCustom.isChecked():
+            try:
+                open(self.editTemplate.text()).read()
+            except IOError:
+                QMessageBox.information(self, "Export", "The custom layout template file (.qpt) does not exist or it is not accessible")
+                return
+
         self.buttonBox.setEnabled(False)
 
         tmpdir = tempfile.mkdtemp(prefix='crayfish')
