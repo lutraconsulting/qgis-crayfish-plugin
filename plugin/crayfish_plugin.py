@@ -114,7 +114,7 @@ class CrayfishPlugin:
         self.iface.addDockWidget( Qt.LeftDockWidgetArea, self.dock )
         self.dock.hide()   # do not show the dock by default
         QObject.connect(self.dock, SIGNAL("visibilityChanged(bool)"), self.dockVisibilityChanged)
-        self.dock.treeDataSets.setCustomActions([self.actionExportGrid, self.uploadAction])
+        self.dock.treeDataSets.setCustomActions([self.actionExportGrid, self.uploadAction, self.actionExportAnimation])
 
         # Register data items provider (if possible - since 2.10)
         self.dataItemsProvider = None
