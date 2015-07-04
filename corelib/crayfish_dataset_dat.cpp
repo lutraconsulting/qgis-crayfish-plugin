@@ -290,7 +290,7 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
   bool isVector = false;
   QScopedPointer<DataSet> ds;
 
-  if (firstLine == "DATASET")
+  if (firstLine.trimmed() == "DATASET")
     oldFormat = false;
   else if (firstLine == "SCALAR" || firstLine == "VECTOR")
   {
