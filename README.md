@@ -45,4 +45,19 @@ cd qgis-crayfish-plugin
 Now restart QGIS and you are able to use crayfish plugin on your Linux Computer.
 
 
+### Installing Crayfish on Windows
+
+For 32-bit version:
+
+* Install Microsoft Visual Studio 2008
+* Install OSGeo4W (32bit) to C:\OSGeo4W
+* Run scripts\crayfish32.bat to build the crayfish DLL
+
+For 64-bit version:
+
+* Install Microsoft Visual Studio 2010
+* Install OSGeo4W (64bit) to C:\OSGeo4W64
+* Run scripts\crayfish64.bat to build the crayfish DLL
+
+
 [crp]: http://www.lutraconsulting.co.uk/resources/crayfish
