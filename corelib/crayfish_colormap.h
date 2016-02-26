@@ -39,7 +39,11 @@ struct ColorMap
 {
   struct Item
   {
-    Item(double v = 0, QRgb c = 0): value(v), color(c) {}
+    Item(double v = 0, QRgb c = 0, QString l = QString()): value(v), color(c), label(l)
+    {
+      if (label.isNull())
+        label = QString::number(v, 'f', 3);
+    }
 
     double value;
     QRgb color;

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'crayfish_colormap_dialog.ui'
 #
-# Created: Thu Nov  6 17:07:56 2014
+# Created: Fri Feb 26 12:24:44 2016
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -26,7 +26,7 @@ except AttributeError:
 class Ui_CrayfishColorMapDialog(object):
     def setupUi(self, CrayfishColorMapDialog):
         CrayfishColorMapDialog.setObjectName(_fromUtf8("CrayfishColorMapDialog"))
-        CrayfishColorMapDialog.resize(570, 420)
+        CrayfishColorMapDialog.resize(700, 420)
         self.gridLayout = QtGui.QGridLayout(CrayfishColorMapDialog)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
         self.verticalLayout_2 = QtGui.QVBoxLayout()

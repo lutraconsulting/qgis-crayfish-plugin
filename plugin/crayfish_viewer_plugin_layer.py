@@ -484,7 +484,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             itemElem = itemElems.item(i).toElement()
             value = qstring2float(itemElem.attribute("value"))
             color = qstring2rgb(itemElem.attribute("color"))
-            items.append( (value, color, '') )
+            label = itemElem.attribute("label") if itemElem.hasAttribute("label") else "%.3f" % value
+            items.append( (value, color, label) )
         cm.set_items(items)
         return cm
 
@@ -499,6 +500,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             itemElem = doc.createElement("item")
             itemElem.setAttribute("value", str(item.value))
             itemElem.setAttribute("color", rgb2string(item.color))
+            itemElem.setAttribute("label", item.label)
             elem.appendChild(itemElem)
         parentElem.appendChild(elem)
 
@@ -562,7 +564,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             v = i/float(count-1)
             c = qcm.color(v)
           vv = zMin + v*(zMax-zMin)
-          items.append( (vv,[c.red(),c.green(),c.blue()],'') )
+          items.append( (vv,[c.red(),c.green(),c.blue()], '%.3f' % vv) )
 
         cm = crayfish.ColorMap()
         cm.set_items(items)
@@ -721,7 +723,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             pix = QPixmap(iconSize)
             r,g,b,a = item.color
             pix.fill(QColor(r,g,b))
-            lst.append( ("%.3f" % item.value, pix) )
+            lst.append( (item.label, pix) )  # "%.3f" % item.value
         return lst
 
     def print_handles(self):

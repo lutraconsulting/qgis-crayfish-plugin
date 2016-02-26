@@ -56,7 +56,7 @@ class ColorMapModel(QAbstractTableModel):
         return self.cm.item_count() if not parent.isValid() else 0
 
     def columnCount(self, parent):
-        return 2
+        return 3
 
     def data(self, index, role):
         if index.row() < 0 or index.row() >= self.cm.item_count():
@@ -65,6 +65,7 @@ class ColorMapModel(QAbstractTableModel):
         item = self.cm[index.row()]
         if role == Qt.DisplayRole or role == Qt.EditRole:
             if index.column() == 0: return item.value
+            if index.column() == 2: return item.label
 
         elif role == Qt.BackgroundRole:
             c = item.color
@@ -73,16 +74,21 @@ class ColorMapModel(QAbstractTableModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0: return "Value"
-            else: return "Color"
+            elif section == 1: return "Color"
+            else: return "Label"
 
     def flags(self, index):
         f = Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        if index.column() == 0: f |= Qt.ItemIsEditable
+        if index.column() == 0 or index.column() == 2: f |= Qt.ItemIsEditable
         return f
 
     def setData(self, index, value, role):
         if role == Qt.EditRole and index.column() == 0:
+            old_value = self.cm[index.row()].value
             self.cm[index.row()].value = value
+            # update the label if still using default one
+            if ("%.3f" % old_value) == self.cm[index.row()].label:
+                self.cm[index.row()].label = "%.3f" % value
             self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), index,index)
             self.ensureSorted(index.row())
             return True
@@ -90,12 +96,16 @@ class ColorMapModel(QAbstractTableModel):
             self.cm[index.row()].color = value
             self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), index,index)
             return True
+        elif role == Qt.EditRole and index.column() == 2:
+            self.cm[index.row()].label = value
+            self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"), index,index)
+            return True
         return False
 
     def addItem(self):
         row = self.rowCount(QModelIndex())
         self.beginInsertRows(QModelIndex(), row, row)
-        self.cm.add_item(0, (0,255,0,255),'')
+        self.cm.add_item(0, (0,255,0,255), '0.000')
         self.endInsertRows()
 
         self.ensureSorted(self.cm.item_count()-1)
@@ -204,7 +214,7 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
             x = float(i)/(count-1)
             v = vmin + (vmax-vmin)*x
             color = ramp.color(1-x if inv else x)
-            items.append((v, qcolor2rgb(color), ''))
+            items.append((v, qcolor2rgb(color), '%.3f' % v))
         self.colormap.set_items(items)
         self.model.endResetModel()
 
@@ -278,7 +288,7 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
                 self.colormap.method = ColorMap.Discrete if method == "DISCRETE" else ColorMap.Linear
             else:
                 value, r,g,b,a, label = line.split(",")
-                items.append( (float(value), (int(r),int(g),int(b),int(a)), '') )
+                items.append( (float(value), (int(r),int(g),int(b),int(a)), label) )
 
         self.colormap.set_items(items)
 
@@ -301,5 +311,5 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         for i in range(self.colormap.item_count()):
             item = self.colormap[i]
             c = item.color
-            f.write("%.3f,%d,%d,%d,%d,%.3f\n" % (item.value, c[0], c[1], c[2], c[3], item.value))
+            f.write("%.3f,%d,%d,%d,%d,%.3f\n" % (item.value, c[0], c[1], c[2], c[3], item.label))
         f.close()
