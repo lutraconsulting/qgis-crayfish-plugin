@@ -33,7 +33,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QVariant>
 
 class Mesh;
-struct Output;
+class Output;
+class NodeOutput;
 
 /**
  * DataSet represents one sub-layer of the plugin layer.
@@ -69,7 +70,9 @@ struct DataSet
 
     const Output* output(int outputTime) const;
 
-    void updateZRange(int nodeCount);
+    const NodeOutput* nodeOutput(int outputTime) const;
+
+    void updateZRange();
 
     float minZValue() const { return mZMin; }
     float maxZValue() const { return mZMax; }

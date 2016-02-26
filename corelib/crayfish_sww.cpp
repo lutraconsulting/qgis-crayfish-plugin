@@ -153,11 +153,11 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
   }
 
   // read bed elevations
-  QList<Output*> elevationOutputs;
+  QList<NodeOutput*> elevationOutputs;
   if (zDims == 1)
   {
     // either "z" or "elevation" with 1 dimension
-    Output* o = new Output;
+    NodeOutput* o = new NodeOutput;
     o->init(nPoints, nVolumes, false);
     o->time = 0.0;
     memset(o->active.data(), 1, nVolumes); // All cells active
@@ -170,7 +170,7 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
     // newer SWW format: elevation may change over time
     for (int t = 0; t < nTimesteps; ++t)
     {
-      Output* toe = new Output;
+      NodeOutput* toe = new NodeOutput;
       toe->init(nPoints, nVolumes, false);
       toe->time = times[t] / 3600.;
       memset(toe->active.data(), 1, nVolumes); // All cells active
@@ -217,10 +217,10 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
   else
   {
     bedDs->setIsTimeVarying(true);
-    foreach (Output* o, elevationOutputs)
+    foreach (NodeOutput* o, elevationOutputs)
       bedDs->addOutput(o);
   }
-  bedDs->updateZRange(nPoints);
+  bedDs->updateZRange();
   mesh->addDataSet(bedDs);
 
   // load results
@@ -237,10 +237,10 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
 
   for (int t = 0; t < nTimesteps; ++t)
   {
-    const Output* elevO = bedDs->isTimeVarying() ? bedDs->output(t) : bedDs->output(0);
+    const NodeOutput* elevO = bedDs->isTimeVarying() ? bedDs->nodeOutput(t) : bedDs->nodeOutput(0);
     const float* elev = elevO->values.constData();
 
-    Output* tos = new Output;
+    NodeOutput* tos = new NodeOutput;
     tos->init(nPoints, nVolumes, false);
     tos->time = times[t] / 3600.;
     float* values = tos->values.data();
@@ -255,7 +255,7 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
     nc_get_vars_float(ncid, stageid, start, count, stride, values);
 
     // derived data: depth = stage - elevation
-    Output* tod = new Output;
+    NodeOutput* tod = new NodeOutput;
     tod->init(nPoints, nVolumes, false);
     tod->time = tos->time;
     float* depths = tod->values.data();
@@ -277,9 +277,9 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
     dsd->addOutput(tod);
   }
 
-  dss->updateZRange(nPoints);
+  dss->updateZRange();
   mesh->addDataSet(dss);
-  dsd->updateZRange(nPoints);
+  dsd->updateZRange();
   mesh->addDataSet(dsd);
 
   int momentumxid, momentumyid;
@@ -294,10 +294,10 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
     QVector<float> valuesX(nPoints), valuesY(nPoints);
     for (int t = 0; t < nTimesteps; ++t)
     {
-      Output* mto = new Output;
+      NodeOutput* mto = new NodeOutput;
       mto->init(nPoints, nVolumes, true);
       mto->time = times[t] / 3600.;
-      mto->active = dsd->output(t)->active;
+      mto->active = dsd->nodeOutput(t)->active;
 
       // fetching "stage" data for one timestep
       size_t start[2], count[2];
@@ -309,7 +309,7 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
       nc_get_vars_float(ncid, momentumxid, start, count, stride, valuesX.data());
       nc_get_vars_float(ncid, momentumyid, start, count, stride, valuesY.data());
 
-      Output::float2D* mtoValuesV = mto->valuesV.data();
+      NodeOutput::float2D* mtoValuesV = mto->valuesV.data();
       float* mtoValues = mto->values.data();
       for (int i = 0; i < nPoints; ++i)
       {
@@ -322,7 +322,7 @@ Mesh* loadSWW(const QString& fileName, LoadStatus* status)
     }
 
 
-    mds->updateZRange(nPoints);
+    mds->updateZRange();
     mesh->addDataSet(mds);
   }
 

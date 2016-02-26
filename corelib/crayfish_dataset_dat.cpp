@@ -182,7 +182,7 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
       if( in.readRawData( (char*)&time, 4) != 4 )
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
 
-      QScopedPointer<Output> o(new Output);
+      QScopedPointer<NodeOutput> o(new NodeOutput);
       o->time = time;
       try
       {
@@ -205,13 +205,13 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
       }
 
       float* values = o->values.data();
-      Output::float2D* valuesV = o->valuesV.data();
+      NodeOutput::float2D* valuesV = o->valuesV.data();
       for (int i=0; i<nodeCount; i++)
       {
         // Read values flags
         if (ds->type() == DataSet::Vector)
         {
-          Output::float2D v;
+          NodeOutput::float2D v;
           if( in.readRawData( (char*)&v.x, 4) != 4 )
             EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
           if( in.readRawData( (char*)&v.y, 4) != 4 )
@@ -237,14 +237,14 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
   if (ds->outputCount() == 0)
     EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
 
-  ds->updateZRange(nodeCount);
+  ds->updateZRange();
 
   Mesh::DataSets datasets;
   datasets << ds.take();
 
   if (dsMax->outputCount() != 0)
   {
-    dsMax->updateZRange(nodeCount);
+    dsMax->updateZRange();
     datasets << dsMax.take();
   }
 
@@ -359,7 +359,7 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
         qDebug("Crayfish: ENDDS card for no active dataset!");
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
       }
-      ds->updateZRange(nodeCount);
+      ds->updateZRange();
       datasets << ds.take();
     }
     else if (!oldFormat && cardType == "NAME" && items.count() >= 2)
@@ -384,7 +384,7 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
       bool hasStatus = (oldFormat ? false : items[1].toInt());
       float t = items[oldFormat ? 1 : 2].toFloat();
 
-      Output* o = new Output;
+      NodeOutput* o = new NodeOutput;
       o->init(nodeCount, elemCount, isVector);
       o->time = t / 3600.;
 
@@ -401,7 +401,7 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
         memset(o->active.data(), 1, elemCount); // there is no status flag -> everything is active
 
       float* values = o->values.data();
-      Output::float2D* valuesV = o->valuesV.data();
+      NodeOutput::float2D* valuesV = o->valuesV.data();
       for (int i = 0; i < nodeIDToIndex.count(); ++i)
       {
         QStringList tsItems = stream.readLine().split(reSpaces, QString::SkipEmptyParts);
@@ -411,7 +411,7 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
 
         if (isVector)
         {
-          Output::float2D v;
+          NodeOutput::float2D v;
           if (tsItems.count() >= 2) // BASEMENT files with vectors have 3 columns
           {
             v.x = tsItems[0].toFloat();
@@ -450,7 +450,7 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
     if (ds->outputCount() == 0)
       EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
 
-    ds->updateZRange(nodeCount);
+    ds->updateZRange();
     datasets << ds.take();
   }
 

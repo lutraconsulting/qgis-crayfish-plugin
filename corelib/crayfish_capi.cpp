@@ -35,7 +35,7 @@ typedef Mesh* MeshH;
 typedef const Node* NodeH;
 typedef const Element* ElementH;
 typedef DataSet* DataSetH;
-typedef const Output* OutputH;
+typedef const NodeOutput* OutputH;
 typedef Renderer::Config* RendererConfigH;
 typedef Renderer* RendererH;
 typedef QVariant* VariantH;
@@ -158,7 +158,7 @@ OutputH CF_DS_outputAt(DataSetH ds, int index)
   if (index < 0 || index >= ds->outputCount())
     return 0;
 
-  return ds->output(index);
+  return ds->nodeOutput(index);
 }
 
 

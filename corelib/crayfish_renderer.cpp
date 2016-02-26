@@ -147,7 +147,7 @@ void Renderer::drawMesh()
 
 
 
-void Renderer::drawContourData(const Output* output)
+void Renderer::drawContourData(const NodeOutput* output)
 {
   // Render E4Q before E3T
   QVector<Element::Type> typesToRender;
@@ -204,7 +204,7 @@ inline float mag(float input)
     return 1.0;
 }
 
-void Renderer::drawVectorData(const Output* output)
+void Renderer::drawVectorData(const NodeOutput* output)
 {
   /*
     Here is where we render vector data
@@ -240,7 +240,7 @@ void Renderer::drawVectorData(const Output* output)
 }
 
 
-void Renderer::drawVectorDataOnGrid(QPainter& p, const Output* output)
+void Renderer::drawVectorDataOnGrid(QPainter& p, const NodeOutput* output)
 {
   int cellx = mCfg.ds.mVectorUserGridCellSize.width();
   int celly = mCfg.ds.mVectorUserGridCellSize.height();
@@ -296,7 +296,7 @@ void Renderer::drawVectorDataOnGrid(QPainter& p, const Output* output)
 }
 
 
-void Renderer::drawVectorDataOnNodes(QPainter& p, const Output* output)
+void Renderer::drawVectorDataOnNodes(QPainter& p, const NodeOutput* output)
 {
   const Mesh::Nodes& nodes = mMesh->nodes();
   for(int nodeIndex = 0; nodeIndex < nodes.count(); nodeIndex++)
@@ -314,7 +314,7 @@ void Renderer::drawVectorDataOnNodes(QPainter& p, const Output* output)
 }
 
 
-void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float V)
+void Renderer::drawVectorArrow(QPainter& p, const NodeOutput* output, const QPointF& lineStart, float xVal, float yVal, float V)
 {
   if (xVal == 0.0 && yVal == 0.0)
     return;
@@ -425,7 +425,7 @@ void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF&
 }
 
 
-void Renderer::paintRow(uint elementIdx, int rowIdx, int leftLim, int rightLim, const Output* output)
+void Renderer::paintRow(uint elementIdx, int rowIdx, int leftLim, int rightLim, const NodeOutput* output)
 {
   /*
     Grab the pointer to the row if we do not have it already

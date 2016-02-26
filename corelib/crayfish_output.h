@@ -30,43 +30,109 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QVector>
 
 #include <math.h>
+#include <limits>
 
 class DataSet;
 
-struct Output{
+//! Base class for results for one particular quantity in one timestep
+class Output
+{
+public:
+  Output()
+    : dataSet(0)
+    , time(-1)
+  {
+  }
 
-    Output()
-      : dataSet(0)
-      , time(-1)
-    {
-    }
+  virtual ~Output()
+  {
+  }
 
-    ~Output()
-    {
-    }
+  enum Type
+  {
+    TypeNode,      //!< node (mesh) centered results
+    TypeElement,   //!< element centered results
+  };
 
-    void init(int nodeCount, int elemCount, bool isVector)
+  virtual Type type() const = 0;
+
+  //! find out the minimum and maximum from all values
+  virtual void getRange(float& zMin, float& zMax) const = 0;
+
+  typedef struct
+  {
+    float x,y;
+    float length() const { return sqrt( x*x + y*y ); }
+  } float2D;
+
+
+  const DataSet* dataSet;  //!< dataset to which this data belong
+  float time;               //!< time since beginning of simulation (in hours)
+};
+
+
+//! Results stored in nodes of the mesh
+struct NodeOutput : public Output
+{
+public:
+
+  virtual Type type() const { return TypeNode; }
+
+  virtual void getRange(float& zMin, float& zMax) const
+  {
+    zMin = std::numeric_limits<float>::max();
+    zMax = std::numeric_limits<float>::min();
+    const float* v = values.constData();
+    for (int j = 0; j < values.count(); ++j)
     {
-      active.resize(elemCount);
-      values.resize(nodeCount);
-      if (isVector)
+      if (v[j] != -9999.0)
       {
-        valuesV.resize(nodeCount);
+        // This is not a NULL value
+        if( v[j] < zMin )
+            zMin = v[j];
+        if( v[j] > zMax )
+            zMax = v[j];
       }
     }
+  }
 
-    typedef struct
+  void init(int nodeCount, int elemCount, bool isVector)
+  {
+    active.resize(elemCount);
+    values.resize(nodeCount);
+    if (isVector)
     {
-      float x,y;
-      float length() const { return sqrt( x*x + y*y ); }
-    } float2D;
+      valuesV.resize(nodeCount);
+    }
+  }
 
-    const DataSet* dataSet;  //!< dataset to which this data belong
+  QVector<char> active;     //!< array determining which elements are active and therefore if they should be rendered (size = element count)
+  QVector<float> values;    //!< array of values per node (size = node count)
+  QVector<float2D> valuesV; //!< in case of dataset with vector data - array of X,Y coords - otherwise empty
+};
 
-    float time;               //!< time since beginning of simulation (in hours)
-    QVector<char> active;     //!< array determining which elements are active and therefore if they should be rendered (size = element count)
-    QVector<float> values;    //!< array of values per node (size = node count)
-    QVector<float2D> valuesV; //!< in case of dataset with vector data - array of X,Y coords - otherwise empty
+
+//! Element-centered results
+class ElementOutput : public Output
+{
+public:
+  // TODO
+
+  virtual Type type() const { return TypeElement; }
+
+  virtual void getRange(float& zMin, float& zMax) const
+  {
+    // TODO
+    Q_UNUSED(zMin);
+    Q_UNUSED(zMax);
+  }
+
+  void init(int elemCount)
+  {
+    values.resize(elemCount);
+  }
+
+  QVector<float> values;    //!< array of values per element (size = element count)
 };
 
 #endif // CRAYFISH_OUTPUT_H

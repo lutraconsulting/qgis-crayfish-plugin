@@ -75,7 +75,7 @@ Mesh::DataSets Crayfish::loadXmdfDataSet(const QString& datFileName, const Mesh*
     HdfGroup g = gTemporal.group(name);
     if (DataSet* ds = readXmdfGroupAsDataSet(g, datFileName, name, nNodes, nElems))
     {
-      ds->updateZRange(nNodes);
+      ds->updateZRange();
       datasets.append(ds);
     }
   }
@@ -89,7 +89,7 @@ Mesh::DataSets Crayfish::loadXmdfDataSet(const QString& datFileName, const Mesh*
       if (ds->outputCount() != 1)
         qDebug("Maximum dataset should have just one timestep!");
       ds->setIsTimeVarying(false);
-      ds->updateZRange(nNodes);
+      ds->updateZRange();
       datasets.append(ds);
     }
   }
@@ -146,13 +146,13 @@ static DataSet* readXmdfGroupAsDataSet(const HdfGroup& g, const QString& datFile
 
     for (int i = 0; i < nTimeSteps; ++i)
     {
-      Output* o = new Output;
+      NodeOutput* o = new NodeOutput;
       o->init(nNodes, nElems, isVector);
       o->time = times[i];
       if (isVector)
       {
         const float* input = values.constData() + 2*i*nNodes;
-        Output::float2D* data = o->valuesV.data();
+        NodeOutput::float2D* data = o->valuesV.data();
         float* scalar = o->values.data();
         for (int j = 0; j < nNodes; ++j)
         {

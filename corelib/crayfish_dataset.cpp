@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_output.h"
 
+#include <limits>
 
 
 DataSet::DataSet(const QString& fileName)
@@ -58,35 +59,26 @@ const Output* DataSet::output(int outputTime) const
   return outputs.at(outputTime);
 }
 
-
-void DataSet::updateZRange(int nodeCount)
+const NodeOutput* DataSet::nodeOutput(int outputTime) const
 {
-  bool first = true;
-  float zMin = 0.0;
-  float zMax = 0.0;
-  for(int i=0; i<outputCount(); i++){
-      const Output* out = output(i);
-      const float* values = out->values.constData();
-      for(int j=0; j<nodeCount; j++){
-          if(values[j] != -9999.0){
-              // This is not a NULL value
-              if(first){
-                  first = false;
-                  zMin = values[j];
-                  zMax = values[j];
-              }
-              if( values[j] < zMin ){
-                  zMin = values[j];
-              }
-              if( values[j] > zMax ){
-                  zMax = values[j];
-              }
-          }
-      }
+  if (const Output* o = output(outputTime))
+  {
+    if (o->type() == Output::TypeNode)
+      return static_cast<const NodeOutput*>(o);
   }
+  return 0;
+}
 
-  mZMin = zMin;
-  mZMax = zMax;
-
+void DataSet::updateZRange()
+{
+  mZMin = std::numeric_limits<float>::max();
+  mZMax = std::numeric_limits<float>::min();
+  for(int i = 0; i < outputCount(); i++)
+  {
+    float outputZMin, outputZMax;
+    output(i)->getRange(outputZMin, outputZMax);
+    mZMin = qMin(outputZMin, mZMin);
+    mZMax = qMax(outputZMax, mZMax);
+  }
 }
 

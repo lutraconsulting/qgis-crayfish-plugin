@@ -129,7 +129,7 @@ BBox Mesh::computeMeshExtent(bool projected)
 }
 
 
-double Mesh::valueAt(const Output* output, double xCoord, double yCoord) const
+double Mesh::valueAt(const NodeOutput* output, double xCoord, double yCoord) const
 {
   if (!output)
     return -9999.0;
@@ -180,26 +180,26 @@ struct ScalarValueAccessor : public ValueAccessor
 
 struct VectorValueAccessorX : public ValueAccessor
 {
-  VectorValueAccessorX(const Output::float2D* values) : mValues(values) {}
+  VectorValueAccessorX(const NodeOutput::float2D* values) : mValues(values) {}
   float value(int nodeIndex) const { return mValues[nodeIndex].x; }
-  const Output::float2D* mValues;
+  const NodeOutput::float2D* mValues;
 };
 
 struct VectorValueAccessorY : public ValueAccessor
 {
-  VectorValueAccessorY(const Output::float2D* values) : mValues(values) {}
+  VectorValueAccessorY(const NodeOutput::float2D* values) : mValues(values) {}
   float value(int nodeIndex) const { return mValues[nodeIndex].y; }
-  const Output::float2D* mValues;
+  const NodeOutput::float2D* mValues;
 };
 
 
-bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const
+bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const NodeOutput* output) const
 {
   ScalarValueAccessor accessor(output->values.constData());
   return interpolate(elementIndex, x, y, value, output, &accessor);
 }
 
-bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, const Output* output, const ValueAccessor* accessor) const
+bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, const NodeOutput* output, const ValueAccessor* accessor) const
 {
   const Mesh* mesh = output->dataSet->mesh();
   const Element& elem = mesh->elements()[elementIndex];
@@ -289,7 +289,7 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
   }
 }
 
-bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const
+bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const NodeOutput* output) const
 {
   VectorValueAccessorX accessorX(output->valuesV.constData());
   VectorValueAccessorY accessorY(output->valuesV.constData());

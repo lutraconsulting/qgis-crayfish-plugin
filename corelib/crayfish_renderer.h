@@ -129,8 +129,8 @@ public:
 
     // data
     const Mesh* outputMesh;
-    const Output* outputContour;
-    const Output* outputVector;
+    const NodeOutput* outputContour;
+    const NodeOutput* outputVector;
 
     // view
     QSize outputSize;
@@ -151,15 +151,15 @@ public:
 protected:
 
   void drawMesh();
-  void drawContourData(const Output* output);
-  void drawVectorData(const Output* output);
-  void drawVectorDataOnGrid(QPainter& p, const Output* output);
-  void drawVectorDataOnNodes(QPainter& p, const Output* output);
-  void drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float V);
+  void drawContourData(const NodeOutput* output);
+  void drawVectorData(const NodeOutput* output);
+  void drawVectorDataOnGrid(QPainter& p, const NodeOutput* output);
+  void drawVectorDataOnNodes(QPainter& p, const NodeOutput* output);
+  void drawVectorArrow(QPainter& p, const NodeOutput* output, const QPointF& lineStart, float xVal, float yVal, float V);
 
   bool nodeInsideView(uint nodeIndex);
   bool elemOutsideView(uint);
-  void paintRow(uint, int, int, int, const Output* output);
+  void paintRow(uint, int, int, int, const NodeOutput* output);
   void bbox2rect(const BBox& bbox, int& leftLim, int& rightLim, int& topLim, int& bottomLim);
 
   //! rendering configuration
@@ -178,8 +178,8 @@ protected:
 
   QImage& mImage;
 
-  const Output* mOutputContour; //!< data to be rendered
-  const Output* mOutputVector;  //!< data to be rendered
+  const NodeOutput* mOutputContour; //!< data to be rendered
+  const NodeOutput* mOutputVector;  //!< data to be rendered
   const Mesh* mMesh;
 
 };

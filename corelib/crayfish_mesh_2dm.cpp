@@ -86,7 +86,7 @@ Mesh* loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
   Mesh::Elements elements(elemCount);
 
   // create output for bed elevation
-  Output* o = new Output;
+  NodeOutput* o = new NodeOutput;
   o->init(nodeCount, elemCount, false);
   o->time = 0.0;
   memset(o->active.data(), 1, elemCount); // All cells active
@@ -252,7 +252,7 @@ Mesh* loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
   bedDs->setName("Bed Elevation");
   bedDs->setIsTimeVarying(false);
   bedDs->addOutput(o);  // takes ownership of the Output
-  bedDs->updateZRange(nodeCount);
+  bedDs->updateZRange();
   mesh->addDataSet(bedDs);
 
   return mesh;

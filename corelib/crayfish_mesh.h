@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 struct BBox;
 struct E4Qtmp;
 class DataSet;
-class Output;
+class NodeOutput;
 
 
 struct Node
@@ -115,10 +115,10 @@ public:
 
   BBox extent() const { return mExtent; }
 
-  double valueAt(const Output* output, double xCoord, double yCoord) const;
-  bool valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const;
+  double valueAt(const NodeOutput* output, double xCoord, double yCoord) const;
+  bool valueAt(uint elementIndex, double x, double y, double* value, const NodeOutput* output) const;
 
-  bool vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const;
+  bool vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const NodeOutput* output) const;
 
   void setNoProjection();
   bool setProjection(const QString& srcProj4, const QString& destProj4);
@@ -137,7 +137,7 @@ protected:
   void computeTempRendererData();
 
   //! low-level interpolation routine
-  bool interpolate(uint elementIndex, double x, double y, double* value, const Output* output, const ValueAccessor* accessor) const;
+  bool interpolate(uint elementIndex, double x, double y, double* value, const NodeOutput* output, const ValueAccessor* accessor) const;
 
   BBox mExtent; //!< unprojected mesh extent
 
