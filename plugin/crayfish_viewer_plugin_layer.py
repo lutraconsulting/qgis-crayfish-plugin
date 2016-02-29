@@ -137,6 +137,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         self.setCrs(crs)
 
         self.set2DMFileName(meshFileName) # Set the 2dm file name
+        if hasattr(self, 'setSource'):  # supported from QGIS 2.16
+            self.setSource(meshFileName)
         
         head, tail = os.path.split(meshFileName)
         layerName, ext = os.path.splitext(tail)

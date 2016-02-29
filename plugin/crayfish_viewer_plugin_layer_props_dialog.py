@@ -53,14 +53,15 @@ class CrayfishViewerPluginPropsDialog(QDialog, Ui_CrayfishViewerPluginLayerProps
           else:
             ecx += 1
 
-        html = '''<table>
+        html = '''<b>Mesh file:</b><br>%s<p>
+          <table>
           <tr><td width="50%%">Nodes</td><td align="right"><b>%d</b></td>
           </tr><tr><td>&nbsp;</td></tr>
           <tr><td>Elements</td><td align="right"><b>%d</b></td></tr>
           <tr><td>&nbsp;&nbsp;&nbsp;&nbsp;E4Q</td><td align="right">%d</td></tr>
           <tr><td>&nbsp;&nbsp;&nbsp;&nbsp;E3T</td><td align="right">%d</td></tr>
           <tr><td>&nbsp;&nbsp;&nbsp;&nbsp;Unknown</td><td align="right">%d</td></tr>
-          </table>''' % (m.node_count(), m.element_count(), ec4, ec3, ecx)
+          </table>''' % (self.layer.twoDMFileName, m.node_count(), m.element_count(), ec4, ec3, ecx)
         self.editMetadata.setReadOnly(True)
         self.editMetadata.setHtml(html)
 
