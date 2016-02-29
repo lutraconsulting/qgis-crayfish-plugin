@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_mesh.h"
 
+#include "crayfish_e3t.h"
 #include "crayfish_e4q.h"
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
@@ -129,7 +130,7 @@ BBox Mesh::computeMeshExtent(bool projected)
 }
 
 
-double Mesh::valueAt(const NodeOutput* output, double xCoord, double yCoord) const
+double Mesh::valueAt(const Output* output, double xCoord, double yCoord) const
 {
   if (!output)
     return -9999.0;
@@ -153,7 +154,7 @@ double Mesh::valueAt(const NodeOutput* output, double xCoord, double yCoord) con
   for (uint i=0; i < candidateElementIds.size(); i++)
   {
     uint elemIndex = candidateElementIds.at(i);
-    if (!output->active[elemIndex])
+    if (!output->isActive(elemIndex))
       continue;
 
     if (valueAt(elemIndex, xCoord, yCoord, &value, output))
@@ -193,10 +194,20 @@ struct VectorValueAccessorY : public ValueAccessor
 };
 
 
-bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const NodeOutput* output) const
+bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const
 {
-  ScalarValueAccessor accessor(output->values.constData());
-  return interpolate(elementIndex, x, y, value, output, &accessor);
+  if (output->type() == Output::TypeNode)
+  {
+    const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
+    ScalarValueAccessor accessor(nodeOutput->values.constData());
+    return interpolate(elementIndex, x, y, value, nodeOutput, &accessor);
+  }
+  else
+  {
+    const ElementOutput* elemOutput = static_cast<const ElementOutput*>(output);
+    ScalarValueAccessor accessor(elemOutput->values.constData());
+    return interpolateElementCentered(elementIndex, x, y, value, elemOutput, &accessor);
+  }
 }
 
 bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, const NodeOutput* output, const ValueAccessor* accessor) const
@@ -241,37 +252,14 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
       */
 
     const Node* nodes = projectedNodes();
-    QPointF pA(nodes[elem.p[0]].toPointF());
-    QPointF pB(nodes[elem.p[1]].toPointF());
-    QPointF pC(nodes[elem.p[2]].toPointF());
 
-    if (pA == pB || pA == pC || pB == pC)
-      return false; // this is not a valid triangle!
-
-    QPointF pP(x, y);
-
-    // Compute vectors
-    QVector2D v0( pC - pA );
-    QVector2D v1( pB - pA );
-    QVector2D v2( pP - pA );
-
-    // Compute dot products
-    double dot00 = QVector2D::dotProduct(v0, v0);
-    double dot01 = QVector2D::dotProduct(v0, v1);
-    double dot02 = QVector2D::dotProduct(v0, v2);
-    double dot11 = QVector2D::dotProduct(v1, v1);
-    double dot12 = QVector2D::dotProduct(v1, v2);
-
-    // Compute barycentric coordinates
-    double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
-    double lam1 = (dot11 * dot02 - dot01 * dot12) * invDenom;
-    double lam2 = (dot00 * dot12 - dot01 * dot02) * invDenom;
-    double lam3 = 1.0 - lam1 - lam2;
-
-    // Return if POI is outside triangle
-    if( (lam1 < 0) || (lam2 < 0) || (lam3 < 0) ){
-        return false;
-    }
+    double lam1, lam2, lam3;
+    if (!E3T_physicalToBarycentric(nodes[elem.p[0]].toPointF(),
+                                   nodes[elem.p[1]].toPointF(),
+                                   nodes[elem.p[2]].toPointF(),
+                                   QPointF(x, y),
+                                   lam1, lam2, lam3))
+      return false;
 
     // Now interpolate
 
@@ -289,13 +277,74 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
   }
 }
 
-bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const NodeOutput* output) const
+
+bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, double* value, const ElementOutput* output, const ValueAccessor* accessor) const
 {
-  VectorValueAccessorX accessorX(output->valuesV.constData());
-  VectorValueAccessorY accessorY(output->valuesV.constData());
-  bool resX = interpolate(elementIndex, x, y, valueX, output, &accessorX);
-  bool resY = interpolate(elementIndex, x, y, valueY, output, &accessorY);
-  return resX && resY;
+  const Mesh* mesh = output->dataSet->mesh();
+  const Element& elem = mesh->elements()[elementIndex];
+
+  if (elem.eType == Element::E4Q)
+  {
+    int e4qIndex = mE4QtmpIndex[elementIndex];
+    E4Qtmp& e4q = mE4Qtmp[e4qIndex];
+
+    double Lx, Ly;
+    if (!E4Q_mapPhysicalToLogical(e4q, x, y, Lx, Ly))
+      return false;
+
+    if (Lx < 0 || Ly < 0 || Lx > 1 || Ly > 1)
+      return false;
+
+    *value = accessor->value(elementIndex);
+    return true;
+  }
+  else if (elem.eType == Element::E3T)
+  {
+    const Node* nodes = projectedNodes();
+
+    double lam1, lam2, lam3;
+    if (!E3T_physicalToBarycentric(nodes[elem.p[0]].toPointF(),
+                                   nodes[elem.p[1]].toPointF(),
+                                   nodes[elem.p[2]].toPointF(),
+                                   QPointF(x, y),
+                                   lam1, lam2, lam3))
+      return false;
+
+    // Now interpolate
+
+    *value = accessor->value(elementIndex);
+    return true;
+
+  }
+  else
+  {
+    Q_ASSERT(0 && "unknown element type");
+    return false;
+  }
+
+}
+
+
+bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const
+{
+  if (output->type() == Output::TypeNode)
+  {
+    const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
+    VectorValueAccessorX accessorX(nodeOutput->valuesV.constData());
+    VectorValueAccessorY accessorY(nodeOutput->valuesV.constData());
+    bool resX = interpolate(elementIndex, x, y, valueX, nodeOutput, &accessorX);
+    bool resY = interpolate(elementIndex, x, y, valueY, nodeOutput, &accessorY);
+    return resX && resY;
+  }
+  else
+  {
+    const ElementOutput* elemOutput = static_cast<const ElementOutput*>(output);
+    VectorValueAccessorX accessorX(elemOutput->valuesV.constData());
+    VectorValueAccessorY accessorY(elemOutput->valuesV.constData());
+    bool resX = interpolateElementCentered(elementIndex, x, y, valueX, elemOutput, &accessorX);
+    bool resY = interpolateElementCentered(elementIndex, x, y, valueY, elemOutput, &accessorY);
+    return resX && resY;
+  }
 }
 
 
@@ -476,4 +525,23 @@ bool Mesh::setProjection(const QString& srcProj4, const QString& destProj4)
 bool Mesh::hasProjection() const
 {
   return mProjection;
+}
+
+
+void Mesh::elementCentroid(int elemIndex, double& cx, double& cy) const
+{
+  const Element& e = mElems[elemIndex];
+  if (e.eType == Element::E3T)
+  {
+    const Node* nodes = projectedNodes();
+    E3T_centroid(nodes[e.p[0]].toPointF(), nodes[e.p[1]].toPointF(), nodes[e.p[2]].toPointF(), cx, cy);
+  }
+  else if (e.eType == Element::E4Q)
+  {
+    int e4qIndex = mE4QtmpIndex[elemIndex];
+    E4Qtmp& e4q = mE4Qtmp[e4qIndex];
+    E4Q_centroid(e4q, cx, cy);
+  }
+  else
+    Q_ASSERT(0 && "element not supported");
 }

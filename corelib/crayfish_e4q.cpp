@@ -143,3 +143,8 @@ bool E4Q_isComplex(const Element& elem, Node* nodes)
 
   return false;
 }
+
+void E4Q_centroid(const E4Qtmp& e4q, double& cx, double& cy)
+{
+  E4Q_mapLogicalToPhysical(e4q, 0.5, 0.5, cx, cy);
+}

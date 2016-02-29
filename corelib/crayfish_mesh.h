@@ -35,6 +35,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 struct BBox;
 struct E4Qtmp;
 class DataSet;
+class ElementOutput;
+class Output;
 class NodeOutput;
 
 
@@ -115,10 +117,10 @@ public:
 
   BBox extent() const { return mExtent; }
 
-  double valueAt(const NodeOutput* output, double xCoord, double yCoord) const;
-  bool valueAt(uint elementIndex, double x, double y, double* value, const NodeOutput* output) const;
+  double valueAt(const Output* output, double xCoord, double yCoord) const;
+  bool valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const;
 
-  bool vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const NodeOutput* output) const;
+  bool vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const;
 
   void setNoProjection();
   bool setProjection(const QString& srcProj4, const QString& destProj4);
@@ -131,6 +133,9 @@ public:
   const Node& projectedNode(int nodeIndex) const { return mProjection ? mProjNodes[nodeIndex] : mNodes[nodeIndex]; }
   const BBox& projectedBBox(int elemIndex) const { return mProjection ? mProjBBoxes[elemIndex] : mBBoxes[elemIndex]; }
 
+  //! calculate centroid of given element (takes reprojection into account)
+  void elementCentroid(int elemIndex, double& cx, double& cy) const;
+
 protected:
 
   BBox computeMeshExtent(bool projected);
@@ -138,6 +143,9 @@ protected:
 
   //! low-level interpolation routine
   bool interpolate(uint elementIndex, double x, double y, double* value, const NodeOutput* output, const ValueAccessor* accessor) const;
+
+  //! low-level interpolation routine for element-centered results
+  bool interpolateElementCentered(uint elementIndex, double x, double y, double* value, const ElementOutput* output, const ValueAccessor* accessor) const;
 
   BBox mExtent; //!< unprojected mesh extent
 

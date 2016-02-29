@@ -56,6 +56,9 @@ static const int CT_TIMEUNITS = 250;
 
 #define EXIT_WITH_ERROR(error)       {  if (status) status->mLastError = (error); return Mesh::DataSets(); }
 
+static NodeOutput* _readTimestep(float t, bool isVector, bool hasStatus, QTextStream& stream, int nodeCount, int elemCount, QVector<int>& nodeIDToIndex);
+static ElementOutput* _readTimestampElementCentered(float t, bool isVector, bool hasStatus, QTextStream& stream, int elemCount);
+
 
 Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status)
 {
@@ -305,6 +308,11 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
   else
     EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
 
+  // see if it contains element-centered results - supported by BASEMENT
+  bool elementCentered = false;
+  if (!oldFormat && QFileInfo(fileName).baseName().contains("_els_"))
+    elementCentered = true;
+
   int nodeCount = mesh->nodes().count();
   int elemCount = mesh->elements().count();
 
@@ -384,60 +392,17 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
       bool hasStatus = (oldFormat ? false : items[1].toInt());
       float t = items[oldFormat ? 1 : 2].toFloat();
 
-      NodeOutput* o = new NodeOutput;
-      o->init(nodeCount, elemCount, isVector);
-      o->time = t / 3600.;
-
-      if (hasStatus)
+      if (elementCentered)
       {
-        // only for new format
-        char* active = o->active.data();
-        for (int i = 0; i < elemCount; ++i)
-        {
-          active[i] = stream.readLine().toInt();
-        }
+        ElementOutput* o = _readTimestampElementCentered(t, isVector, hasStatus, stream, elemCount);
+        ds->addOutput(o);
       }
       else
-        memset(o->active.data(), 1, elemCount); // there is no status flag -> everything is active
-
-      float* values = o->values.data();
-      NodeOutput::float2D* valuesV = o->valuesV.data();
-      for (int i = 0; i < nodeIDToIndex.count(); ++i)
       {
-        QStringList tsItems = stream.readLine().split(reSpaces, QString::SkipEmptyParts);
-        int index = nodeIDToIndex[i];
-        if (index < 0)
-          continue; // node ID that does not exist in the mesh
-
-        if (isVector)
-        {
-          NodeOutput::float2D v;
-          if (tsItems.count() >= 2) // BASEMENT files with vectors have 3 columns
-          {
-            v.x = tsItems[0].toFloat();
-            v.y = tsItems[1].toFloat();
-          }
-          else
-          {
-            qDebug("Crayfish: invalid timestep line");
-            v.x = v.y = 0;
-          }
-          valuesV[index] = v;
-          values[index] = v.length(); // Determine the magnitude
-        }
-        else
-        {
-          if (tsItems.count() >= 1)
-            values[index] = tsItems[0].toFloat();
-          else
-          {
-            qDebug("Crayfish: invalid timestep line");
-            values[index] = 0;
-          }
-        }
+        NodeOutput* o = _readTimestep(t, isVector, hasStatus, stream, nodeCount, elemCount, nodeIDToIndex);
+        ds->addOutput(o);
       }
 
-      ds->addOutput(o);
     }
     else
     {
@@ -455,4 +420,113 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
   }
 
   return datasets;
+}
+
+
+static NodeOutput* _readTimestep(float t, bool isVector, bool hasStatus, QTextStream& stream, int nodeCount, int elemCount, QVector<int>& nodeIDToIndex)
+{
+  NodeOutput* o = new NodeOutput;
+  o->init(nodeCount, elemCount, isVector);
+  o->time = t / 3600.;
+
+  QRegExp reSpaces("\\s+");
+
+  if (hasStatus)
+  {
+    // only for new format
+    char* active = o->active.data();
+    for (int i = 0; i < elemCount; ++i)
+    {
+      active[i] = stream.readLine().toInt();
+    }
+  }
+  else
+    memset(o->active.data(), 1, elemCount); // there is no status flag -> everything is active
+
+  float* values = o->values.data();
+  NodeOutput::float2D* valuesV = o->valuesV.data();
+  for (int i = 0; i < nodeIDToIndex.count(); ++i)
+  {
+    QStringList tsItems = stream.readLine().split(reSpaces, QString::SkipEmptyParts);
+    int index = nodeIDToIndex[i];
+    if (index < 0)
+      continue; // node ID that does not exist in the mesh
+
+    if (isVector)
+    {
+      NodeOutput::float2D v;
+      if (tsItems.count() >= 2) // BASEMENT files with vectors have 3 columns
+      {
+        v.x = tsItems[0].toFloat();
+        v.y = tsItems[1].toFloat();
+      }
+      else
+      {
+        qDebug("Crayfish: invalid timestep line");
+        v.x = v.y = 0;
+      }
+      valuesV[index] = v;
+      values[index] = v.length(); // Determine the magnitude
+    }
+    else
+    {
+      if (tsItems.count() >= 1)
+        values[index] = tsItems[0].toFloat();
+      else
+      {
+        qDebug("Crayfish: invalid timestep line");
+        values[index] = 0;
+      }
+    }
+  }
+
+  return o;
+}
+
+
+static ElementOutput* _readTimestampElementCentered(float t, bool isVector, bool hasStatus, QTextStream& stream, int elemCount)
+{
+  ElementOutput* o = new ElementOutput;
+  o->init(elemCount, isVector);
+  o->time = t / 3600.;
+
+  QRegExp reSpaces("\\s+");
+
+  // TODO: hasStatus
+
+  float* values = o->values.data();
+  Output::float2D* valuesV = o->valuesV.data();
+  for (int i = 0; i < elemCount; ++i)
+  {
+    QStringList tsItems = stream.readLine().split(reSpaces, QString::SkipEmptyParts);
+
+    if (isVector)
+    {
+      Output::float2D v;
+      if (tsItems.count() >= 2) // BASEMENT files with vectors have 3 columns
+      {
+        v.x = tsItems[0].toFloat();
+        v.y = tsItems[1].toFloat();
+      }
+      else
+      {
+        qDebug("Crayfish: invalid timestep line");
+        v.x = v.y = 0;
+      }
+      valuesV[i] = v;
+      values[i] = v.length(); // Determine the magnitude
+    }
+    else
+    {
+      if (tsItems.count() >= 1)
+        values[i] = tsItems[0].toFloat();
+      else
+      {
+        qDebug("Crayfish: invalid timestep line");
+        values[i] = 0;
+      }
+    }
+  }
+
+  return o;
 }

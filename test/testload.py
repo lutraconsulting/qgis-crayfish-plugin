@@ -84,6 +84,19 @@ class TestCrayfishLoad(unittest.TestCase):
     self.assertEqual(o.value(0), 1.)
     self.assertEqual(o.value(4), 5.)
 
+  def test_load_element_centered_data(self):
+    m = crayfish.Mesh(TEST_DIR + "/quad_and_triangle.2dm")
+    m.load_data(TEST_DIR + "/quad_and_triangle_ascii_els_depth.dat")
+    self.assertEqual(m.dataset_count(), 2)
+    ds = m.dataset(1)
+    self.assertEqual(ds.type(), crayfish.DS_Scalar)
+    self.assertEqual(ds.output_count(), 2)
+    o = ds.output(1)
+    with self.assertRaises(ValueError):
+      o2 = ds.output(2)
+    self.assertEqual(o.time(), 1.)
+    self.assertEqual(o.value(0), 3.)
+    self.assertEqual(o.value(1), 4.)
 
 if __name__ == '__main__':
   unittest.main()

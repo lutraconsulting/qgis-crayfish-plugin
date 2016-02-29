@@ -246,6 +246,8 @@ class Output(object):
 
   handles = {}
 
+  TypeNode, TypeElement = range(2)  # return values for output_type()
+
   @staticmethod
   def from_handle(handle):
     if handle not in Output.handles:
@@ -265,6 +267,9 @@ class Output(object):
     if hasattr(self, 'handle'):  # only if initialized to a valid output
       del Output.handles[self.handle.value]
 
+  def output_type(self):
+    return self.lib.CF_O_type(self.handle)
+
   def time(self):
     return self.lib.CF_O_time(self.handle)
 
@@ -277,12 +282,20 @@ class Output(object):
     return x.value,y.value
 
   def values(self):
-    node_count = self.dataset().mesh().node_count()
-    for index in xrange(node_count):
+    if self.output_type() == Output.TypeNode:
+      count = self.dataset().mesh().node_count()
+    else:
+      count = self.dataset().mesh().element_count()
+
+    for index in xrange(count):
       yield self.value(index)
 
   def values_vector(self):
-    node_count = self.dataset().mesh().node_count()
+    if self.output_type() == Output.TypeNode:
+      count = self.dataset().mesh().node_count()
+    else:
+      count = self.dataset().mesh().element_count()
+
     for index in xrange(node_count):
       yield self.value_vector(index)
 

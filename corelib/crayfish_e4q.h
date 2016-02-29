@@ -51,4 +51,7 @@ bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx,
 //! check whether the quadrilateral is complex (butterfly shape)
 bool E4Q_isComplex(const Element& elem, Node* nodes);
 
+//! calculate centroid of the quadrilateral
+void E4Q_centroid(const E4Qtmp& e4q, double& cx, double& cy);
+
 #endif // CRAYFISH_E4Q_H

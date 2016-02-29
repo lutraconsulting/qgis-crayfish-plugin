@@ -59,6 +59,9 @@ public:
   //! find out the minimum and maximum from all values
   virtual void getRange(float& zMin, float& zMax) const = 0;
 
+  //! find out whether an element is active in this output
+  virtual bool isActive(int elemIndex) const { Q_UNUSED(elemIndex); return true; }
+
   typedef struct
   {
     float x,y;
@@ -96,6 +99,8 @@ public:
     }
   }
 
+  virtual bool isActive(int elemIndex) const { return active[elemIndex]; }
+
   void init(int nodeCount, int elemCount, bool isVector)
   {
     active.resize(elemCount);
@@ -122,17 +127,31 @@ public:
 
   virtual void getRange(float& zMin, float& zMax) const
   {
-    // TODO
-    Q_UNUSED(zMin);
-    Q_UNUSED(zMax);
+    zMin = std::numeric_limits<float>::max();
+    zMax = std::numeric_limits<float>::min();
+    const float* v = values.constData();
+    for (int j = 0; j < values.count(); ++j)
+    {
+      if (!isActive(j))
+        continue;
+
+      // This is not a NULL value
+      if( v[j] < zMin )
+          zMin = v[j];
+      if( v[j] > zMax )
+          zMax = v[j];
+    }
   }
 
-  void init(int elemCount)
+  void init(int elemCount, bool isVector)
   {
     values.resize(elemCount);
+    if (isVector)
+      valuesV.resize(elemCount);
   }
 
   QVector<float> values;    //!< array of values per element (size = element count)
+  QVector<float2D> valuesV; //!< in case of dataset with vector data - array of X,Y coords - otherwise empty
 };
 
 #endif // CRAYFISH_OUTPUT_H

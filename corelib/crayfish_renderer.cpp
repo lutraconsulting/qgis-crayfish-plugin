@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_renderer.h"
 
 #include "crayfish_dataset.h"
+#include "crayfish_e3t.h"
 #include "crayfish_e4q.h"
 #include "crayfish_mesh.h"
 #include "crayfish_output.h"
@@ -147,7 +148,7 @@ void Renderer::drawMesh()
 
 
 
-void Renderer::drawContourData(const NodeOutput* output)
+void Renderer::drawContourData(const Output* output)
 {
   // Render E4Q before E3T
   QVector<Element::Type> typesToRender;
@@ -171,7 +172,7 @@ void Renderer::drawContourData(const NodeOutput* output)
       // For each element
 
       // If the element's activity flag is off, ignore it
-      if( ! output->active[i] ){
+      if( ! output->isActive(i) ){
           continue;
       }
 
@@ -204,7 +205,7 @@ inline float mag(float input)
     return 1.0;
 }
 
-void Renderer::drawVectorData(const NodeOutput* output)
+void Renderer::drawVectorData(const Output* output)
 {
   /*
     Here is where we render vector data
@@ -234,13 +235,18 @@ void Renderer::drawVectorData(const NodeOutput* output)
   if (mCfg.ds.mVectorUserGrid)
     drawVectorDataOnGrid(p, output);
   else
-    drawVectorDataOnNodes(p, output);
+  {
+    if (output->type() == Output::TypeNode)
+      drawVectorDataOnNodes(p, static_cast<const NodeOutput*>(output));
+    else
+      drawVectorDataOnElements(p, static_cast<const ElementOutput*>(output));
+  }
 
   p.end();
 }
 
 
-void Renderer::drawVectorDataOnGrid(QPainter& p, const NodeOutput* output)
+void Renderer::drawVectorDataOnGrid(QPainter& p, const Output* output)
 {
   int cellx = mCfg.ds.mVectorUserGridCellSize.width();
   int celly = mCfg.ds.mVectorUserGridCellSize.height();
@@ -254,7 +260,7 @@ void Renderer::drawVectorDataOnGrid(QPainter& p, const NodeOutput* output)
       continue;
 
     // If the element's activity flag is off, ignore it
-    if (!output->active[i])
+    if (!output->isActive(i))
       continue;
 
     // If the element is outside the view of the canvas, skip it
@@ -313,8 +319,28 @@ void Renderer::drawVectorDataOnNodes(QPainter& p, const NodeOutput* output)
   }
 }
 
+void Renderer::drawVectorDataOnElements(QPainter& p, const ElementOutput* output)
+{
+  const Mesh::Elements& elements = mMesh->elements();
+  for(int elemIndex = 0; elemIndex < elements.count(); elemIndex++)
+  {
+    if (elemOutsideView(elemIndex))
+      continue;
 
-void Renderer::drawVectorArrow(QPainter& p, const NodeOutput* output, const QPointF& lineStart, float xVal, float yVal, float V)
+    double cx, cy;
+    mMesh->elementCentroid(elemIndex, cx, cy);
+
+    float xVal = output->valuesV[elemIndex].x;
+    float yVal = output->valuesV[elemIndex].y;
+    float V = output->values[elemIndex];  // pre-calculated magnitude
+    QPointF lineStart = mtp.realToPixel(cx, cy);
+
+    drawVectorArrow(p, output, lineStart, xVal, yVal, V);
+  }
+}
+
+
+void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float V)
 {
   if (xVal == 0.0 && yVal == 0.0)
     return;
@@ -425,7 +451,7 @@ void Renderer::drawVectorArrow(QPainter& p, const NodeOutput* output, const QPoi
 }
 
 
-void Renderer::paintRow(uint elementIdx, int rowIdx, int leftLim, int rightLim, const NodeOutput* output)
+void Renderer::paintRow(uint elementIdx, int rowIdx, int leftLim, int rightLim, const Output* output)
 {
   /*
     Grab the pointer to the row if we do not have it already

@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_renderer.h" // for MapToPixel
 
 
-static void exportRawDataElements(Element::Type elemType, const NodeOutput* output, RawData* rd, const MapToPixel& xform)
+static void exportRawDataElements(Element::Type elemType, const Output* output, RawData* rd, const MapToPixel& xform)
 {
   const Mesh* mesh = output->dataSet->mesh();
   const Mesh::Elements& elems = mesh->elements();
@@ -46,7 +46,7 @@ static void exportRawDataElements(Element::Type elemType, const NodeOutput* outp
       continue;
 
     // If the element's activity flag is off, ignore it
-    if(!output->active[i])
+    if(!output->isActive(i))
       continue;
 
     const BBox& bbox = mesh->projectedBBox(i);
@@ -79,7 +79,7 @@ static void exportRawDataElements(Element::Type elemType, const NodeOutput* outp
 
 
 //! Return new raw data image for the given dataset/output time, sampled with given resolution
-static RawData* exportRawData(const NodeOutput* output, double mupp)
+static RawData* exportRawData(const Output* output, double mupp)
 {
   if (!output)
     return 0;
@@ -124,7 +124,7 @@ static RawData* exportRawData(const NodeOutput* output, double mupp)
 }
 
 
-bool Crayfish::exportRawDataToTIF(const NodeOutput* output, double mupp, const QString& outFilename, const QString& projWkt)
+bool Crayfish::exportRawDataToTIF(const Output* output, double mupp, const QString& outFilename, const QString& projWkt)
 {
   RawData* rd = exportRawData(output, mupp);
   if (!rd)

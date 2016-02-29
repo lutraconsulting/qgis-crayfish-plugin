@@ -35,7 +35,7 @@ typedef Mesh* MeshH;
 typedef const Node* NodeH;
 typedef const Element* ElementH;
 typedef DataSet* DataSetH;
-typedef const NodeOutput* OutputH;
+typedef const Output* OutputH;
 typedef Renderer::Config* RendererConfigH;
 typedef Renderer* RendererH;
 typedef QVariant* VariantH;
@@ -158,13 +158,19 @@ OutputH CF_DS_outputAt(DataSetH ds, int index)
   if (index < 0 || index >= ds->outputCount())
     return 0;
 
-  return ds->nodeOutput(index);
+  return ds->output(index);
 }
 
 
 MeshH CF_DS_mesh(DataSetH ds)
 {
   return (MeshH)ds->mesh();
+}
+
+
+int CF_O_type(OutputH o)
+{
+  return o->type();
 }
 
 
@@ -176,18 +182,33 @@ float CF_O_time(OutputH o)
 
 float CF_O_valueAt(OutputH o, int index)
 {
-  return o->values[index];
+  if (o->type() == Output::TypeNode)
+    return static_cast<const NodeOutput*>(o)->values[index];
+  else if (o->type() == Output::TypeElement)
+    return static_cast<const ElementOutput*>(o)->values[index];
+  else
+    return 0;
 }
 
 void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y)
 {
-  *x = o->valuesV[index].x;
-  *y = o->valuesV[index].y;
+  if (o->type() == Output::TypeNode)
+  {
+    const NodeOutput* nodeO = static_cast<const NodeOutput*>(o);
+    *x = nodeO->valuesV[index].x;
+    *y = nodeO->valuesV[index].y;
+  }
+  else
+  {
+    const ElementOutput* elO = static_cast<const ElementOutput*>(o);
+    *x = elO->valuesV[index].x;
+    *y = elO->valuesV[index].y;
+  }
 }
 
 char CF_O_statusAt(OutputH o, int index)
 {
-  return o->active[index];
+  return static_cast<const NodeOutput*>(o)->isActive(index);
 }
 
 DataSetH CF_O_dataSet(OutputH o)

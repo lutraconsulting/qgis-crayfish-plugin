@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 class Mesh;
 class Output;
 class NodeOutput;
+class ElementOutput;
 
 /**
  * DataSet represents one sub-layer of the plugin layer.

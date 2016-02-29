@@ -96,6 +96,7 @@ CF_EXPORT MeshH CF_DS_mesh(DataSetH ds);
 CF_EXPORT void CF_DS_valueRange(DataSetH ds, float* vMin, float* vMax);
 
 // Output functions
+CF_EXPORT int CF_O_type(OutputH o);
 CF_EXPORT float CF_O_time(OutputH o);
 CF_EXPORT float CF_O_valueAt(OutputH o, int index);
 CF_EXPORT void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y);

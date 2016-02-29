@@ -81,7 +81,8 @@ SOURCES += crayfish.cpp \
     crayfish_dataset_xmdf.cpp \
     crayfish_renderer.cpp \
     crayfish_export_grid.cpp \
-    crayfish_sww.cpp
+    crayfish_sww.cpp \
+    crayfish_e3t.cpp
 
 HEADERS += crayfish.h \
     crayfish_e4q.h \
@@ -93,7 +94,8 @@ HEADERS += crayfish.h \
     crayfish_mesh_2dm.h \
     crayfish_capi.h \
     crayfish_hdf5.h \
-    crayfish_renderer.h
+    crayfish_renderer.h \
+    crayfish_e3t.h
 
 DESTDIR = $$PWD/../plugin
 
