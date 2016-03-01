@@ -61,7 +61,7 @@ QRgb ColorMap::valueDiscrete(double v) const
     {
       if (clipLow && currentIdx == 0 && v < currentItem.value)
         return qRgba(0,0,0,0); // clipped - transparent
-      return qRgba( qRed(currentItem.color), qGreen(currentItem.color), qBlue(currentItem.color), alpha);
+      return qRgba( qRed(currentItem.color), qGreen(currentItem.color), qBlue(currentItem.color), qAlpha(currentItem.color) * alpha / 255);
     }
     else
     {
@@ -74,7 +74,7 @@ QRgb ColorMap::valueDiscrete(double v) const
     return qRgba(0,0,0,0); // clipped - transparent
 
   const Item& lastItem = items[items.count()-1];
-  return qRgba( qRed(lastItem.color), qGreen(lastItem.color), qBlue(lastItem.color), alpha);
+  return qRgba( qRed(lastItem.color), qGreen(lastItem.color), qBlue(lastItem.color), qAlpha(lastItem.color) * alpha / 255);
 }
 
 
@@ -100,13 +100,14 @@ QRgb ColorMap::valueLinear(double v) const
       int vR = (int)((double) qRed(prevItem.color)   + ((double)(qRed(currentItem.color)   - qRed(prevItem.color)  ) * scale) + 0.5);
       int vG = (int)((double) qGreen(prevItem.color) + ((double)(qGreen(currentItem.color) - qGreen(prevItem.color)) * scale) + 0.5);
       int vB = (int)((double) qBlue(prevItem.color)  + ((double)(qBlue(currentItem.color)  - qBlue(prevItem.color) ) * scale) + 0.5);
-      return qRgba(vR, vG, vB, alpha);
+      int vA = (int)((double) qAlpha(prevItem.color) + ((double)(qAlpha(currentItem.color) - qAlpha(prevItem.color)) * scale) + 0.5);
+      return qRgba(vR, vG, vB, vA * alpha / 255);
     }
     else if ((currentIdx == 0               && ( ( !clipLow  && v <= currentItem.value ) || valueVeryClose ) )
           || (currentIdx == items.count()-1 && ( ( !clipHigh && v >= currentItem.value ) || valueVeryClose ) ) )
     {
       // outside of the range
-      return qRgba( qRed(currentItem.color), qGreen(currentItem.color), qBlue(currentItem.color), alpha);
+      return qRgba( qRed(currentItem.color), qGreen(currentItem.color), qBlue(currentItem.color), qAlpha(currentItem.color) * alpha / 255);
     }
     else if (v > currentItem.value)
     {

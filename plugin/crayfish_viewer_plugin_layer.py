@@ -65,12 +65,23 @@ def qstring2float(s):
         return res[0] if res[1] else None
 
 def qstring2rgb(s):
-    r,g,b = s.split(",")
-    return (int(r),int(g),int(b),255)
-    #return qRgb(int(r),int(g),int(b))
+    lst = s.split(",")
+    if len(lst) == 3:
+        r,g,b = lst
+        a = "255"
+    elif len(lst) == 4:
+        r,g,b,a = lst
+    else:
+        raise ValueError, s
+    return (int(r),int(g),int(b),int(a))
 
 def rgb2string(clr):
-    return "%d,%d,%d" % (clr[0], clr[1], clr[2])
+    if len(clr) == 3 or (len(clr) == 4 and clr[3] == 255):
+        return "%d,%d,%d" % (clr[0], clr[1], clr[2])
+    elif len(clr) == 4:
+        return "%d,%d,%d,%d" % (clr[0], clr[1], clr[2], clr[3])
+    else:
+        raise ValueError, clr
 
 def gradientColorRampStop(ramp, i):
     stops = ramp.stops()
@@ -92,7 +103,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         self.config = {
           'mesh'  : False,
-          'm_color' : (0,0,0,255)
+          'm_color' : (0,0,0,128)  # black with 50% transparency
         }
 
         self.lockCurrent = True

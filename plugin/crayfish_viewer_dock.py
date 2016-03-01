@@ -59,6 +59,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.btnLockCurrent.setIcon(QgsApplication.getThemeIcon("/locked.svg"))
 
         initColorButton(self.btnMeshColor)
+        self.btnMeshColor.setColorDialogOptions(QColorDialog.ShowAlphaChannel)
 
         self.setEnabled(False)
         self.vectorPropsDialog = None

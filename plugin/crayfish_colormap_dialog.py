@@ -232,7 +232,7 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         if index.column() != 1:
             return
         item = self.colormap[index.row()]
-        color = QColorDialog.getColor(rgb2qcolor(item.color))
+        color = QColorDialog.getColor(rgb2qcolor(item.color), self, "Select Color", QColorDialog.ShowAlphaChannel)
         if not color.isValid():
             return
         self.model.setData(index, qcolor2rgb(color), Qt.BackgroundRole)
