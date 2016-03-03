@@ -49,6 +49,13 @@ if len(sys.argv) > 1:
 
 install_files = ['metadata.txt'] + glob.glob("*.py") + glob.glob("*.png") + glob.glob("illuvis/*.py") + glob.glob("doc/*")
 install_files.remove("install.py")  # exclude this file!
+install_dirs = ['illuvis', 'doc']
+
+# add pyqtgraph
+for entry in os.walk('pyqtgraph'):
+  install_dirs.append(entry[0])
+  for file_entry in entry[2]:
+    install_files.append(os.path.join(entry[0], file_entry))
 
 if pkg:
   import zipfile
@@ -60,7 +67,8 @@ else:
   plugin_dir = os.path.expanduser(os.path.join("~", ".qgis2", "python", "plugins", "crayfish"))
   if not os.path.exists(plugin_dir):
     os.makedirs(plugin_dir)
-  for subdir in ['illuvis', 'doc']:
+  print install_dirs
+  for subdir in install_dirs:
     subdir_path = os.path.join(plugin_dir, subdir)
     if not os.path.exists(subdir_path): os.makedirs(subdir_path)
     

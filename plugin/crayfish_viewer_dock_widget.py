@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'crayfish_viewer_dock_widget.ui'
+# Form implementation generated from reading ui file 'plugin/crayfish_viewer_dock_widget.ui'
 #
-# Created: Mon Mar 23 15:33:18 2015
+# Created: Wed Mar  2 23:16:22 2016
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -36,6 +36,11 @@ class Ui_DockWidget(object):
         self.label = QtGui.QLabel(self.dockWidgetContents)
         self.label.setObjectName(_fromUtf8("label"))
         self.horizontalLayout_6.addWidget(self.label)
+        self.btnPlot = QtGui.QToolButton(self.dockWidgetContents)
+        self.btnPlot.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        self.btnPlot.setAutoRaise(True)
+        self.btnPlot.setObjectName(_fromUtf8("btnPlot"))
+        self.horizontalLayout_6.addWidget(self.btnPlot)
         self.btnLockCurrent = QtGui.QToolButton(self.dockWidgetContents)
         self.btnLockCurrent.setAutoRaise(True)
         self.btnLockCurrent.setObjectName(_fromUtf8("btnLockCurrent"))
@@ -206,8 +211,9 @@ class Ui_DockWidget(object):
         DockWidget.setTabOrder(self.displayMeshCheckBox, self.btnMeshColor)
 
     def retranslateUi(self, DockWidget):
-        DockWidget.setWindowTitle(_translate("DockWidget", "Crayfish Viewer", None))
+        DockWidget.setWindowTitle(_translate("DockWidget", "Crayfish", None))
         self.label.setText(_translate("DockWidget", "Quantity", None))
+        self.btnPlot.setText(_translate("DockWidget", "Plot", None))
         self.btnLockCurrent.setToolTip(_translate("DockWidget", "Lock rendering to the current dataset\n"
 "\n"
 "When locked, Crayfish will render contours (and vectors)\n"

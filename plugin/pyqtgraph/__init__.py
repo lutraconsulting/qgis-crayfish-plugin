@@ -272,6 +272,11 @@ from .Qt import isQObjectAlive
 import atexit
 _cleanupCalled = False
 def cleanup():
+
+    # disabled for Crayfish: the cleanup at exit does not work as plugin modules
+    # and their dependencies are unloaded before the exit
+    return
+
     global _cleanupCalled
     if _cleanupCalled:
         return

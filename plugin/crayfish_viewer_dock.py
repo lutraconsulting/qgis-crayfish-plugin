@@ -46,6 +46,8 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
 
         self.addIlluvisPromo()
 
+        self.plot_dock_widget = None
+
         # make sure we accept only doubles for min/max values
         self.contourMinLineEdit.setValidator(QDoubleValidator(self.contourMinLineEdit))
         self.contourMaxLineEdit.setValidator(QDoubleValidator(self.contourMaxLineEdit))
@@ -56,6 +58,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.btnAdvanced.setIcon(iconOptions)
         self.btnVectorOptions.setIcon(iconOptions)
 
+        self.btnPlot.setIcon(QgsApplication.getThemeIcon("/histogram.png"))
         self.btnLockCurrent.setIcon(QgsApplication.getThemeIcon("/locked.svg"))
 
         initColorButton(self.btnMeshColor)
@@ -84,6 +87,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         QObject.connect(self.radContourAdvanced, SIGNAL("clicked()"), self.setContourType)
         QObject.connect(self.btnMeshColor, SIGNAL("colorChanged(QColor)"), self.setMeshColor)
         QObject.connect(self.btnLockCurrent, SIGNAL("clicked()"), self.toggleLockCurrent)
+        QObject.connect(self.btnPlot, SIGNAL("clicked()"), self.plot)
         self.treeDataSets.contourClicked.connect(self.datasetContourClicked)
         self.treeDataSets.vectorClicked.connect(self.datasetVectorClicked)
 
@@ -542,3 +546,13 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         l = self.iface.mapCanvas().currentLayer()
         iconName = "/locked.svg" if l.lockCurrent else "/unlocked.svg"
         self.btnLockCurrent.setIcon(QgsApplication.getThemeIcon(iconName))
+
+    def plot(self):
+        if self.plot_dock_widget is None:
+            from crayfish_plot import CrayfishPlotWidget
+            self.plot_dock_widget = QDockWidget("Crayfish Plot")
+            self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_widget)
+            w = CrayfishPlotWidget(self.currentCrayfishLayer(), self.plot_dock_widget)
+            self.plot_dock_widget.setWidget(w)
+        else:
+            self.plot_dock_widget.setVisible(not self.plot_dock_widget.isVisible())
