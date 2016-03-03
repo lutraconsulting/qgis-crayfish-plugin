@@ -103,8 +103,20 @@ class CrayfishPlotWidget(QWidget):
         QWidget.__init__(self, parent)
 
         self.layer = layer
+
+        self.btn_picker = QToolButton()
+        self.btn_picker.setText("Pick point")
+        self.btn_picker.setCheckable(True)
+        self.btn_picker.clicked.connect(self.picker_clicked)
+
         self.tool = PickGeometryTool(iface.mapCanvas())
         self.tool.picked.connect(self.on_picked)
+        self.tool.setButton(self.btn_picker)
+
+        self.marker = QgsVertexMarker(iface.mapCanvas())
+        self.marker.setColor(QColor(255,0,0))
+        self.marker.setPenWidth(2)
+        self.marker.hide()
 
         iface.mapCanvas().setMapTool(self.tool)
 
@@ -112,16 +124,32 @@ class CrayfishPlotWidget(QWidget):
         self.plot = self.gw.addPlot()
         self.plot.showGrid(x=True, y=True)
 
+        hl = QHBoxLayout()
+        hl.addWidget(self.btn_picker)
+
         l = QVBoxLayout()
+        l.addLayout(hl)
         l.addWidget(self.gw)
         self.setLayout(l)
+
+
+    def picker_clicked(self):
+        if iface.mapCanvas().mapTool() != self.tool:
+            iface.mapCanvas().setMapTool(self.tool)
+            self.clear_plot()
+        else:
+            iface.mapCanvas().unsetMapTool(self.tool)
+
+
+    def clear_plot(self):
+        self.marker.hide()
+        self.plot.clear()
 
     def on_picked(self, pt, clicked):
 
         x, y = timeseries_plot_data(self.layer, QgsGeometry.fromPoint(pt))
 
-        self.plot.clear()
-        #self.plot.setWindowTitle('Time Series')
+        self.clear_plot()
         self.plot.getAxis('bottom').setLabel('Time [h]')
         self.plot.getAxis('left').setLabel(self.layer.currentDataSet().name())
 
@@ -130,6 +158,10 @@ class CrayfishPlotWidget(QWidget):
             self.plot.plot(x=x, y=y, connect='finite', pen=pen)
 
         if clicked:  # no more updates if clicked
-            # TODO: show marker on this position
+            self.marker.setCenter(pt)
+            self.marker.show()
             iface.mapCanvas().unsetMapTool(self.tool)
 
+    def hideEvent(self, e):
+        self.clear_plot()
+        QWidget.hideEvent(self, e)
