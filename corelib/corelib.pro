@@ -78,6 +78,7 @@ SOURCES += crayfish.cpp \
     crayfish_mesh_2dm.cpp \
     crayfish_capi.cpp \
     crayfish_dataset_dat.cpp \
+    crayfish_grib.cpp \
     crayfish_dataset_xmdf.cpp \
     crayfish_renderer.cpp \
     crayfish_export_grid.cpp \
