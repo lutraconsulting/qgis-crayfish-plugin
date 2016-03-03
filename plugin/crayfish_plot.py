@@ -37,6 +37,23 @@ pyqtgraph.setConfigOption('background', 'w')
 pyqtgraph.setConfigOption('foreground', 'k')
 pyqtgraph.setConfigOption('antialias', True)
 
+# copied over from qgscolorscheme.cpp
+# we can't really use the colors directly as they are - we do not want
+# plain black and white colors and we first want to use more distinctive ones
+colors = [
+    # darker colors
+    QColor( "#1f78b4" ),
+    QColor( "#33a02c" ),
+    QColor( "#e31a1c" ),
+    QColor( "#ff7f00" ),
+    # lighter colors
+    QColor( "#a6cee3" ),
+    QColor( "#b2df8a" ),
+    QColor( "#fb9a99" ),
+    QColor( "#fdbf6f" ),
+]
+
+
 def timeseries_plot_data(layer, geometry):       # TODO: datasets
     """ return array with tuples defining X,Y points for plot """
 
@@ -79,18 +96,18 @@ def cross_section_plot_data(layer, geometry):    # TODO: outputs
 
 class PickGeometryTool(QgsMapTool):
 
-    picked = pyqtSignal(QgsPoint, bool)
+    picked = pyqtSignal(QgsPoint, bool, bool)   # point, whether clicked or just moving, whether clicked with Ctrl
 
     def __init__(self, canvas):
         QgsMapTool.__init__(self, canvas)
 
     def canvasMoveEvent(self, e):
         #if e.button() == Qt.LeftButton:
-        self.picked.emit(e.mapPoint(), False)
+        self.picked.emit(e.mapPoint(), False, False)
 
     def canvasPressEvent(self, e):
         if e.button() == Qt.LeftButton:
-            self.picked.emit(e.mapPoint(), True)
+            self.picked.emit(e.mapPoint(), True, e.modifiers() & Qt.ControlModifier)
 
     def canvasReleaseEvent(self, e):
         pass
@@ -103,6 +120,7 @@ class CrayfishPlotWidget(QWidget):
         QWidget.__init__(self, parent)
 
         self.layer = layer
+        self.temp_plot_item = None
 
         self.btn_picker = QToolButton()
         self.btn_picker.setText("Pick point")
@@ -113,10 +131,7 @@ class CrayfishPlotWidget(QWidget):
         self.tool.picked.connect(self.on_picked)
         self.tool.setButton(self.btn_picker)
 
-        self.marker = QgsVertexMarker(iface.mapCanvas())
-        self.marker.setColor(QColor(255,0,0))
-        self.marker.setPenWidth(2)
-        self.marker.hide()
+        self.markers = []
 
         iface.mapCanvas().setMapTool(self.tool)
 
@@ -142,24 +157,37 @@ class CrayfishPlotWidget(QWidget):
 
 
     def clear_plot(self):
-        self.marker.hide()
+        for m in self.markers:
+            self.tool.canvas().scene().removeItem(m)
+        self.markers = []
         self.plot.clear()
 
-    def on_picked(self, pt, clicked):
+    def on_picked(self, pt, clicked, with_ctrl):
 
         x, y = timeseries_plot_data(self.layer, QgsGeometry.fromPoint(pt))
 
-        self.clear_plot()
+        if not with_ctrl and self.temp_plot_item:
+            self.plot.removeItem(self.temp_plot_item)
+            self.temp_plot_item = None
+
         self.plot.getAxis('bottom').setLabel('Time [h]')
         self.plot.getAxis('left').setLabel(self.layer.currentDataSet().name())
+        clr = colors[ len(self.markers) % len(colors) ]
 
         if not all(map(math.isnan, y)):
-            pen = pyqtgraph.mkPen(color=(255,0,0), width=2, cosmetic=True)
-            self.plot.plot(x=x, y=y, connect='finite', pen=pen)
+            pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
+            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen)
+            if not clicked:
+                self.temp_plot_item = p
 
-        if clicked:  # no more updates if clicked
-            self.marker.setCenter(pt)
-            self.marker.show()
+        if clicked:
+            marker = QgsVertexMarker(iface.mapCanvas())
+            marker.setColor(clr)
+            marker.setPenWidth(2)
+            marker.setCenter(pt)
+            self.markers.append(marker)
+
+        if clicked and not with_ctrl:  # no more updates
             iface.mapCanvas().unsetMapTool(self.tool)
 
     def hideEvent(self, e):
