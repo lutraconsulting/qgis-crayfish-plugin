@@ -67,7 +67,6 @@ def timeseries_plot_data(layer, geometry):       # TODO: datasets
         value = layer.mesh.value(output, pt.x(), pt.y())
         if value == -9999.0:
             value = float("nan")
-        #if value != -9999.0:
         x.append(t)
         y.append(value)
 
@@ -113,19 +112,69 @@ class PickGeometryTool(QgsMapTool):
         pass
 
 
+def geom2icon(geom_type):
+    if geom_type == QGis.Point:
+        return QgsLayerItem.iconPoint()
+    elif geom_type == QGis.Polygon:
+        return QgsLayerItem.iconPolygon()
+    elif geom_type == QGis.Line:
+        return QgsLayerItem.iconLine()
+    else:
+        return QIcon()
+
+
+class MapLayerMenu(QMenu):
+
+    picked_layer = pyqtSignal(unicode)
+
+    def __init__(self, parent=None):
+        QMenu.__init__(self, parent)
+
+        QgsMapLayerRegistry.instance().layersAdded.connect(self.layers_added)
+        QgsMapLayerRegistry.instance().layersWillBeRemoved.connect(self.layers_will_be_removed)
+
+        self.layers_added( QgsMapLayerRegistry.instance().mapLayers().values() )
+
+    def layers_added(self, lst):
+        for layer in lst:
+            if not isinstance(layer, QgsVectorLayer):
+                continue
+            a = self.addAction(geom2icon(layer.geometryType()), layer.name())
+            a.layer_id = layer.id()
+            a.triggered.connect(self.triggered_action)
+
+    def layers_will_be_removed(self, lst):
+        for action in self.actions():
+            if action.layer_id in lst:
+                self.removeAction(action)
+
+    def triggered_action(self):
+        self.picked_layer.emit(self.sender().layer_id)
+
 
 class CrayfishPlotWidget(QWidget):
+
+    PICK_NO, PICK_MAP, PICK_LAYER = range(3)
 
     def __init__(self, layer, parent=None):
         QWidget.__init__(self, parent)
 
         self.layer = layer
         self.temp_plot_item = None
+        self.pick_mode = self.PICK_NO
 
         self.btn_picker = QToolButton()
-        self.btn_picker.setText("Pick point")
+        self.btn_picker.setText("From map")
         self.btn_picker.setCheckable(True)
         self.btn_picker.clicked.connect(self.picker_clicked)
+
+        self.menu_layers = MapLayerMenu()
+
+        self.btn_layer = QToolButton()
+        self.btn_layer.setText("From layer")
+        self.btn_layer.setPopupMode(QToolButton.InstantPopup)
+        self.btn_layer.setMenu(self.menu_layers)
+        self.menu_layers.picked_layer.connect(self.on_picked_layer)
 
         self.tool = PickGeometryTool(iface.mapCanvas())
         self.tool.picked.connect(self.on_picked)
@@ -141,6 +190,7 @@ class CrayfishPlotWidget(QWidget):
 
         hl = QHBoxLayout()
         hl.addWidget(self.btn_picker)
+        hl.addWidget(self.btn_layer)
 
         l = QVBoxLayout()
         l.addLayout(hl)
@@ -150,11 +200,15 @@ class CrayfishPlotWidget(QWidget):
 
     def picker_clicked(self):
         if iface.mapCanvas().mapTool() != self.tool:
+            self.pick_mode = self.PICK_MAP
             iface.mapCanvas().setMapTool(self.tool)
             self.clear_plot()
         else:
-            iface.mapCanvas().unsetMapTool(self.tool)
+            self.stop_picking()
 
+    def stop_picking(self):
+        self.pick_mode = self.PICK_NO
+        iface.mapCanvas().unsetMapTool(self.tool)
 
     def clear_plot(self):
         for m in self.markers:
@@ -162,34 +216,57 @@ class CrayfishPlotWidget(QWidget):
         self.markers = []
         self.plot.clear()
 
-    def on_picked(self, pt, clicked, with_ctrl):
+    def add_plot(self, pt, permanent):
 
         x, y = timeseries_plot_data(self.layer, QgsGeometry.fromPoint(pt))
-
-        if not with_ctrl and self.temp_plot_item:
-            self.plot.removeItem(self.temp_plot_item)
-            self.temp_plot_item = None
-
         self.plot.getAxis('bottom').setLabel('Time [h]')
         self.plot.getAxis('left').setLabel(self.layer.currentDataSet().name())
         clr = colors[ len(self.markers) % len(colors) ]
 
-        if not all(map(math.isnan, y)):
-            pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
-            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen)
-            if not clicked:
-                self.temp_plot_item = p
+        valid_plot = not all(map(math.isnan, y))
+        if not valid_plot:
+            return
 
-        if clicked:
+        if permanent:
             marker = QgsVertexMarker(iface.mapCanvas())
             marker.setColor(clr)
             marker.setPenWidth(2)
             marker.setCenter(pt)
             self.markers.append(marker)
 
+        pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
+        return self.plot.plot(x=x, y=y, connect='finite', pen=pen)
+
+    def on_picked(self, pt, clicked, with_ctrl):
+
+        if not with_ctrl and self.temp_plot_item:
+            self.plot.removeItem(self.temp_plot_item)
+            self.temp_plot_item = None
+
+        p = self.add_plot(pt, clicked)
+        if p and not clicked:
+            self.temp_plot_item = p
+
         if clicked and not with_ctrl:  # no more updates
-            iface.mapCanvas().unsetMapTool(self.tool)
+            self.stop_picking()
+
 
     def hideEvent(self, e):
         self.clear_plot()
         QWidget.hideEvent(self, e)
+
+
+    def on_picked_layer(self, layer_id):
+
+        self.stop_picking()
+        self.pick_mode = self.PICK_LAYER
+
+        l = QgsMapLayerRegistry.instance().mapLayer(layer_id)
+        if not l:
+            return
+
+        self.clear_plot()
+        for f in l.selectedFeatures():
+            self.add_plot(f.geometry().asPoint(), True)
+
+        # TODO: follow selection
