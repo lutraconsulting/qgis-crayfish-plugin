@@ -176,9 +176,13 @@ Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
 
         for (QMap<int, GDALRasterBandH>::iterator time_step = band.value().begin(); time_step != band.value().end(); time_step++)
         {
+            float nodata = (float) (GDALGetRasterNoDataValue(time_step.value(), 0)); // in double
+            float eps = std::numeric_limits<float>::epsilon();
+
             NodeOutput* tos = new NodeOutput;
             tos->init(nPoints, nVolumes, false);
             tos->time = time_step.key();
+            memset(tos->active.data(), 1, nVolumes); // All cells active
             float* values = tos->values.data();
 
             for (int y = 0; y < ySize; ++y)
@@ -209,30 +213,16 @@ Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
                 for (int x = 0; x < xSize; ++x)
                 {
                     int idx = x + xSize*y;
-                    values[idx] = pafScanline[x];
+                    float val = pafScanline[x];
+
+                    if (fabs(val - nodata) < eps) {
+                        values[idx] = -9999.0;
+                    } else {
+                        values[idx] = pafScanline[x];
+                    }
                 }
 
             }
-
-            // Enable elements that do not have any nodata-value nodes
-            char* active = tos->active.data();
-            float nodata = (float) (GDALGetRasterNoDataValue(time_step.value(), 0)); // in double
-            float eps = std::numeric_limits<float>::epsilon();
-
-            for(int i = 0; i < nVolumes; i++)
-            {
-                if ( (fabs(values[elements[i].p[0]] - nodata) < eps) ||
-                     (fabs(values[elements[i].p[1]] - nodata) < eps) ||
-                     (fabs(values[elements[i].p[2]] - nodata) < eps) ||
-                     (fabs(values[elements[i].p[3]] - nodata) < eps))
-                {
-                    active[i] = 0;
-                } else {
-                    active[i] = 1;
-                }
-            }
-
-
             dsd->addOutput(tos);
         }
         dsd->updateZRange();
