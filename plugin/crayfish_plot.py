@@ -162,6 +162,7 @@ class CrayfishPlotWidget(QWidget):
         self.layer = layer
         self.temp_plot_item = None
         self.pick_mode = self.PICK_NO
+        self.pick_layer = None
 
         self.btn_picker = QToolButton()
         self.btn_picker.setText("From map")
@@ -182,8 +183,6 @@ class CrayfishPlotWidget(QWidget):
 
         self.markers = []
 
-        iface.mapCanvas().setMapTool(self.tool)
-
         self.gw = pyqtgraph.GraphicsWindow()
         self.plot = self.gw.addPlot()
         self.plot.showGrid(x=True, y=True)
@@ -197,18 +196,29 @@ class CrayfishPlotWidget(QWidget):
         l.addWidget(self.gw)
         self.setLayout(l)
 
+        self.picker_clicked()  # make picking from map default
+
 
     def picker_clicked(self):
-        if iface.mapCanvas().mapTool() != self.tool:
-            self.pick_mode = self.PICK_MAP
-            iface.mapCanvas().setMapTool(self.tool)
-            self.clear_plot()
-        else:
-            self.stop_picking()
+
+        was_active = (self.pick_mode == self.PICK_MAP)
+        self.stop_picking()
+
+        if not was_active:
+            self.start_picking_map()
+
+    def start_picking_map(self):
+        self.pick_mode = self.PICK_MAP
+        iface.mapCanvas().setMapTool(self.tool)
+        self.clear_plot()
 
     def stop_picking(self):
+        if self.pick_mode == self.PICK_MAP:
+            iface.mapCanvas().unsetMapTool(self.tool)
+        elif self.pick_mode == self.PICK_LAYER:
+            self.pick_layer.selectionChanged.disconnect(self.on_pick_selection_changed)
+            self.pick_layer = None
         self.pick_mode = self.PICK_NO
-        iface.mapCanvas().unsetMapTool(self.tool)
 
     def clear_plot(self):
         for m in self.markers:
@@ -253,20 +263,25 @@ class CrayfishPlotWidget(QWidget):
 
     def hideEvent(self, e):
         self.clear_plot()
+        self.stop_picking()
         QWidget.hideEvent(self, e)
 
 
     def on_picked_layer(self, layer_id):
 
         self.stop_picking()
-        self.pick_mode = self.PICK_LAYER
 
-        l = QgsMapLayerRegistry.instance().mapLayer(layer_id)
-        if not l:
+        self.pick_layer = QgsMapLayerRegistry.instance().mapLayer(layer_id)
+        if not self.pick_layer:
             return
 
-        self.clear_plot()
-        for f in l.selectedFeatures():
-            self.add_plot(f.geometry().asPoint(), True)
+        self.pick_mode = self.PICK_LAYER
+        self.pick_layer.selectionChanged.connect(self.on_pick_selection_changed)
 
-        # TODO: follow selection
+        self.on_pick_selection_changed()
+
+    def on_pick_selection_changed(self):
+
+        self.clear_plot()
+        for f in self.pick_layer.selectedFeatures():
+            self.add_plot(f.geometry().asPoint(), True)
