@@ -62,7 +62,7 @@ Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
       return 0;
   }
 
-  double GT[6] = {0, 1, 1, 0, 1, 1};
+  double GT[6];
   if( GDALGetGeoTransform( hDataset, GT ) != CE_None )
   {
       GDALClose( hDataset );
@@ -77,9 +77,9 @@ Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
 
   Mesh::Nodes nodes(nPoints);
   Node* nodesPtr = nodes.data();
-  for (int x = 0; x < xSize; ++x)
+  for (int y = 0; y < ySize; ++y)
   {
-    for (int y = 0; y < ySize; ++y, ++nodesPtr)
+    for (int x = 0; x < xSize; ++x, ++nodesPtr)
     {
       nodesPtr->id = x + xSize*y;
       nodesPtr->x = GT[0] + x*GT[1] + y*GT[2];
@@ -87,35 +87,27 @@ Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
     }
   }
 
-  QList<NodeOutput*> elevationOutputs;
-  NodeOutput* o = new NodeOutput;
-  o->init(nPoints, nVolumes, false);
-  o->time = 0.0;
-  memset(o->active.data(), 1, nVolumes); // All cells active
-  for (int i = 0; i < nPoints; ++i)
-    o->values[i] = 0;
-  elevationOutputs << o;
-
   Mesh::Elements elements(nVolumes);
   Element* elementsPtr = elements.data();
 
-  for (int x = 0; x < xSize-1; ++x)
+  for (int y = 0; y < ySize-1; ++y)
   {
-    for (int y = 0; y < ySize-1; ++y, ++elementsPtr)
+    for (int x = 0; x < xSize-1; ++x, ++elementsPtr)
     {
         elementsPtr->id = x + xSize*y;
         elementsPtr->eType = Element::E4Q;
-        elementsPtr->p[0] = x + xSize*y;
-        elementsPtr->p[1] = x + 1 + xSize*y;
-        elementsPtr->p[2] = x + 1 + xSize*(y + 1);
-        elementsPtr->p[3] = x + xSize*(y + 1);
+        // !!!!!!!CLOCKWISE!!!!!!!!
+        elementsPtr->p[1] = x + 1 + xSize*(y + 1); //22
+        elementsPtr->p[2] = x + 1 + xSize*y; //12
+        elementsPtr->p[3] = x + xSize*y; //11
+        elementsPtr->p[0] = x + xSize*(y + 1); //21
     }
   }
 
   Mesh* mesh = new Mesh(nodes, elements);
 
   // Now BANDS
-  QHash<QString, QMap<int, GDALRasterBandH>> bands; //ELEMENT, TIME (sorted), RASTER
+  QHash<QString, QMap<int, GDALRasterBandH> > bands; //ELEMENT, TIME (sorted), RASTER
 
   for ( int i = 1; i <= nBands; ++i ) // starts with 1 .... ehm....
   {
@@ -132,7 +124,7 @@ Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
           QString metadata_pair = GDALmetadata[j]; //KEY = VALUE
           QStringList metadata = metadata_pair.split("=");
 
-          if (metadata[0] == "GRIB_ELEMENT") //e.g. GRIB_ELEMENT=CFRZR
+          if (metadata[0] == "GRIB_COMMENT") //e.g. GRIB_ELEMENT=CFRZR
           {
                elem = metadata[1];
           } else if (metadata[0] == "GRIB_FORECAST_SECONDS") //e.g. GRIB_FORECAST_SECONDS=64800 sec
@@ -155,7 +147,7 @@ Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
     {
         if (bands.find(elem) == bands.end())
         {
-            QMap qMap();
+            QMap<int, GDALRasterBandH> qMap;
             qMap[time] = gdalBand;
             bands[elem] = qMap;
         } else {
@@ -166,27 +158,72 @@ Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
 
   // Create datasets
 
-  for (QHash<QString, QMap<int, GDALRasterBandH>>::iterator band = bands.begin(); band != bands.end(); band++)
+  float *pafScanline = (float *) malloc(sizeof(float)*xSize);
+  if (!pafScanline)
+  {
+      GDALClose( hDataset );
+      qDebug("error: Unable to alloc memory for reading GRIB file");
+      return 0;
+  }
+
+  // SCALARS!
+  for (QHash<QString, QMap<int, GDALRasterBandH> >::iterator band = bands.begin(); band != bands.end(); band++)
   {
       DataSet* dsd = new DataSet(fileName);
       dsd->setType(DataSet::Scalar);
       dsd->setName(band.key());
       dsd->setIsTimeVarying(band->count() > 1);
 
-      for (QMap<int, GDALRasterBandH>::iterator time_step = band.value()->begin(); time_step != band.value()->end(); time_step++)
+      for (QMap<int, GDALRasterBandH>::iterator time_step = band.value().begin(); time_step != band.value().end(); time_step++)
       {
           NodeOutput* tos = new NodeOutput;
           tos->init(nPoints, nVolumes, false);
-          tos->time = time_step->key();
-
+          tos->time = time_step.key();
+          memset(tos->active.data(), 1, nVolumes); // All cells active
           float* values = tos->values.data();
-          for (int i=0; i<nPoints; ++i)
+
+          for (int y = 0; y < ySize; ++y)
           {
-            values(i) = i*10;
+              // buffering per-line
+              CPLErr err = GDALRasterIO(
+                            time_step.value(),
+                            GF_Read,
+                            0, //nXOff
+                            y, //nYOff
+                            xSize,  //nXSize
+                            1, //nYSize
+                            pafScanline, //pData
+                            xSize, //nBufXSize
+                            1, //nBufYSize
+                            GDT_Float32,
+                            0, //nPixelSpace
+                            0 //nLineSpace
+                            );
+              if (err != CE_None)
+              {
+                  GDALClose( hDataset );
+                  free(pafScanline);
+                  qDebug("error: Unable to read rasterIO");
+                  return 0;
+              }
+
+              for (int x = 0; x < xSize; ++x)
+              {
+                int idx = x + xSize*y;
+                values[idx] = pafScanline[x];
+              }
+
           }
+
+          dsd->addOutput(tos);
       }
+
+      dsd->updateZRange();
+      mesh->addDataSet(dsd);
   }
 
+  free(pafScanline);
+  pafScanline = 0;
 
   GDALClose( hDataset );
 
