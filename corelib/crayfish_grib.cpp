@@ -35,157 +35,156 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
 {
-  if (status) status->clear();
+    if (status) status->clear();
 
-  GDALAllRegister();
+    GDALAllRegister();
 
-  GDALDriverH hDriver = GDALGetDriverByName("GRIB");
-  if (!hDriver)
-  {
-    qDebug("error: Unable to load GDAL GRIB driver ");
-    return 0;
-  }
-
-  GDALDatasetH hDataset = GDALOpen( fileName.toAscii().data(), GA_ReadOnly );
-  if( hDataset == NULL )
-  {
-      if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
-      return 0;
-  }
-
-  // Get Coordinate System data
-
-  double nBands = GDALGetRasterCount( hDataset );
-  if (nBands == 0) {
-      GDALClose( hDataset );
-      qDebug("error: No raster bands present");
-      return 0;
-  }
-
-  double GT[6];
-  if( GDALGetGeoTransform( hDataset, GT ) != CE_None )
-  {
-      GDALClose( hDataset );
-      qDebug("error: Unable to load geo transform ");
-      return 0;
-  }
-
-  int xSize = GDALGetRasterXSize( hDataset ); //raster width in pixels
-  int ySize = GDALGetRasterYSize( hDataset ); //raster height in pixels
-  int nPoints = xSize * ySize;
-  int nVolumes = (xSize - 1) * (ySize -1);
-
-  Mesh::Nodes nodes(nPoints);
-  Node* nodesPtr = nodes.data();
-  for (int y = 0; y < ySize; ++y)
-  {
-    for (int x = 0; x < xSize; ++x, ++nodesPtr)
+    GDALDriverH hDriver = GDALGetDriverByName("GRIB");
+    if (!hDriver)
     {
-      nodesPtr->id = x + xSize*y;
-      nodesPtr->x = GT[0] + x*GT[1] + y*GT[2];
-      nodesPtr->y = GT[3] + x*GT[4] + y*GT[5];
+        qDebug("error: Unable to load GDAL GRIB driver ");
+        return 0;
     }
-  }
 
-  Mesh::Elements elements(nVolumes);
-  Element* elementsPtr = elements.data();
-
-  for (int y = 0; y < ySize-1; ++y)
-  {
-    for (int x = 0; x < xSize-1; ++x, ++elementsPtr)
+    GDALDatasetH hDataset = GDALOpen( fileName.toAscii().data(), GA_ReadOnly );
+    if( hDataset == NULL )
     {
-        elementsPtr->id = x + xSize*y;
-        elementsPtr->eType = Element::E4Q;
-        // !!!!!!!CLOCKWISE!!!!!!!!
-        elementsPtr->p[1] = x + 1 + xSize*(y + 1); //22
-        elementsPtr->p[2] = x + 1 + xSize*y; //12
-        elementsPtr->p[3] = x + xSize*y; //11
-        elementsPtr->p[0] = x + xSize*(y + 1); //21
+        if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
+        return 0;
     }
-  }
 
-  Mesh* mesh = new Mesh(nodes, elements);
+    // Get Coordinate System data
 
-  // Now BANDS
-  QHash<QString, QMap<int, GDALRasterBandH> > bands; //ELEMENT, TIME (sorted), RASTER
+    double nBands = GDALGetRasterCount( hDataset );
+    if (nBands == 0) {
+        GDALClose( hDataset );
+        qDebug("error: No raster bands present");
+        return 0;
+    }
 
-  for ( int i = 1; i <= nBands; ++i ) // starts with 1 .... ehm....
-  {
-    GDALRasterBandH gdalBand = GDALGetRasterBand( hDataset, i );
-    QString elem;
-    int time = -999999;
-
-    char** GDALmetadata = GDALGetMetadata( gdalBand, 0 );
-
-    if ( GDALmetadata )
+    double GT[6];
+    if( GDALGetGeoTransform( hDataset, GT ) != CE_None )
     {
-        for ( int j = 0; GDALmetadata[j]; ++j )
+        GDALClose( hDataset );
+        qDebug("error: Unable to load geo transform ");
+        return 0;
+    }
+
+    int xSize = GDALGetRasterXSize( hDataset ); //raster width in pixels
+    int ySize = GDALGetRasterYSize( hDataset ); //raster height in pixels
+    int nPoints = xSize * ySize;
+    int nVolumes = (xSize - 1) * (ySize -1);
+
+    Mesh::Nodes nodes(nPoints);
+    Node* nodesPtr = nodes.data();
+    for (int y = 0; y < ySize; ++y)
+    {
+        for (int x = 0; x < xSize; ++x, ++nodesPtr)
         {
-          QString metadata_pair = GDALmetadata[j]; //KEY = VALUE
-          QStringList metadata = metadata_pair.split("=");
-
-          if (metadata[0] == "GRIB_COMMENT") //e.g. GRIB_ELEMENT=CFRZR
-          {
-               elem = metadata[1];
-          } else if (metadata[0] == "GRIB_FORECAST_SECONDS") //e.g. GRIB_FORECAST_SECONDS=64800 sec
-          {
-              QString time_s = metadata[1];
-              time_s = time_s.trimmed();
-              QStringList times = time_s.split(" ");
-              float time_sec = times[0].toFloat();
-              time = int(time_sec/3600);
-          }
+            nodesPtr->id = x + xSize*y;
+            nodesPtr->x = GT[0] + x*GT[1] + y*GT[2];
+            nodesPtr->y = GT[3] + x*GT[4] + y*GT[5];
         }
     }
-    else
-    {
-      continue;
-    }
 
-    if (!elem.isEmpty() &&
-        time > -999999)
+    Mesh::Elements elements(nVolumes);
+    Element* elementsPtr = elements.data();
+
+    for (int y = 0; y < ySize-1; ++y)
     {
-        if (bands.find(elem) == bands.end())
+        for (int x = 0; x < xSize-1; ++x, ++elementsPtr)
         {
-            QMap<int, GDALRasterBandH> qMap;
-            qMap[time] = gdalBand;
-            bands[elem] = qMap;
-        } else {
-            bands[elem].insert(time, gdalBand);
+            elementsPtr->id = x + xSize*y;
+            elementsPtr->eType = Element::E4Q;
+            // !!!!!!!CLOCKWISE!!!!!!!!
+            elementsPtr->p[1] = x + 1 + xSize*(y + 1); //22
+            elementsPtr->p[2] = x + 1 + xSize*y; //12
+            elementsPtr->p[3] = x + xSize*y; //11
+            elementsPtr->p[0] = x + xSize*(y + 1); //21
         }
     }
-  }
 
-  // Create datasets
+    Mesh* mesh = new Mesh(nodes, elements);
 
-  float *pafScanline = (float *) malloc(sizeof(float)*xSize);
-  if (!pafScanline)
-  {
-      GDALClose( hDataset );
-      qDebug("error: Unable to alloc memory for reading GRIB file");
-      return 0;
-  }
+    // Now BANDS
+    QHash<QString, QMap<int, GDALRasterBandH> > bands; //ELEMENT, TIME (sorted), RASTER
 
-  // SCALARS!
-  for (QHash<QString, QMap<int, GDALRasterBandH> >::iterator band = bands.begin(); band != bands.end(); band++)
-  {
-      DataSet* dsd = new DataSet(fileName);
-      dsd->setType(DataSet::Scalar);
-      dsd->setName(band.key());
-      dsd->setIsTimeVarying(band->count() > 1);
+    for ( int i = 1; i <= nBands; ++i ) // starts with 1 .... ehm....
+    {
+        GDALRasterBandH gdalBand = GDALGetRasterBand( hDataset, i );
+        QString elem;
+        int time = -999999;
 
-      for (QMap<int, GDALRasterBandH>::iterator time_step = band.value().begin(); time_step != band.value().end(); time_step++)
-      {
-          NodeOutput* tos = new NodeOutput;
-          tos->init(nPoints, nVolumes, false);
-          tos->time = time_step.key();
-          memset(tos->active.data(), 1, nVolumes); // All cells active
-          float* values = tos->values.data();
+        char** GDALmetadata = GDALGetMetadata( gdalBand, 0 );
 
-          for (int y = 0; y < ySize; ++y)
-          {
-              // buffering per-line
-              CPLErr err = GDALRasterIO(
+        if ( GDALmetadata )
+        {
+            for ( int j = 0; GDALmetadata[j]; ++j )
+            {
+                QString metadata_pair = GDALmetadata[j]; //KEY = VALUE
+                QStringList metadata = metadata_pair.split("=");
+
+                if (metadata[0] == "GRIB_COMMENT") //e.g. GRIB_ELEMENT=CFRZR
+                {
+                    elem = metadata[1];
+                } else if (metadata[0] == "GRIB_FORECAST_SECONDS") //e.g. GRIB_FORECAST_SECONDS=64800 sec
+                {
+                    QString time_s = metadata[1];
+                    time_s = time_s.trimmed();
+                    QStringList times = time_s.split(" ");
+                    float time_sec = times[0].toFloat();
+                    time = int(time_sec/3600);
+                }
+            }
+        }
+        else
+        {
+            continue;
+        }
+
+        if (!elem.isEmpty() &&
+                time > -999999)
+        {
+            if (bands.find(elem) == bands.end())
+            {
+                QMap<int, GDALRasterBandH> qMap;
+                qMap[time] = gdalBand;
+                bands[elem] = qMap;
+            } else {
+                bands[elem].insert(time, gdalBand);
+            }
+        }
+    }
+
+    // Create datasets
+
+    float *pafScanline = (float *) malloc(sizeof(float)*xSize);
+    if (!pafScanline)
+    {
+        GDALClose( hDataset );
+        qDebug("error: Unable to alloc memory for reading GRIB file");
+        return 0;
+    }
+
+    // SCALARS!
+    for (QHash<QString, QMap<int, GDALRasterBandH> >::iterator band = bands.begin(); band != bands.end(); band++)
+    {
+        DataSet* dsd = new DataSet(fileName);
+        dsd->setType(DataSet::Scalar);
+        dsd->setName(band.key());
+        dsd->setIsTimeVarying(band->count() > 1);
+
+        for (QMap<int, GDALRasterBandH>::iterator time_step = band.value().begin(); time_step != band.value().end(); time_step++)
+        {
+            NodeOutput* tos = new NodeOutput;
+            tos->init(nPoints, nVolumes, false);
+            tos->time = time_step.key();
+            float* values = tos->values.data();
+
+            for (int y = 0; y < ySize; ++y)
+            {
+                // buffering per-line
+                CPLErr err = GDALRasterIO(
                             time_step.value(),
                             GF_Read,
                             0, //nXOff
@@ -199,33 +198,51 @@ Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
                             0, //nPixelSpace
                             0 //nLineSpace
                             );
-              if (err != CE_None)
-              {
-                  GDALClose( hDataset );
-                  free(pafScanline);
-                  qDebug("error: Unable to read rasterIO");
-                  return 0;
-              }
+                if (err != CE_None)
+                {
+                    GDALClose( hDataset );
+                    free(pafScanline);
+                    qDebug("error: Unable to read rasterIO");
+                    return 0;
+                }
 
-              for (int x = 0; x < xSize; ++x)
-              {
-                int idx = x + xSize*y;
-                values[idx] = pafScanline[x];
-              }
+                for (int x = 0; x < xSize; ++x)
+                {
+                    int idx = x + xSize*y;
+                    values[idx] = pafScanline[x];
+                }
 
-          }
+            }
 
-          dsd->addOutput(tos);
-      }
+            // Enable elements that do not have any nodata-value nodes
+            char* active = tos->active.data();
+            float nodata = (float) (GDALGetRasterNoDataValue(time_step.value(), 0)); // in double
+            float eps = std::numeric_limits<float>::epsilon();
 
-      dsd->updateZRange();
-      mesh->addDataSet(dsd);
-  }
+            for(int i = 0; i < nVolumes; i++)
+            {
+                if ( (fabs(values[elements[i].p[0]] - nodata) < eps) ||
+                     (fabs(values[elements[i].p[1]] - nodata) < eps) ||
+                     (fabs(values[elements[i].p[2]] - nodata) < eps) ||
+                     (fabs(values[elements[i].p[3]] - nodata) < eps))
+                {
+                    active[i] = 0;
+                } else {
+                    active[i] = 1;
+                }
+            }
 
-  free(pafScanline);
-  pafScanline = 0;
 
-  GDALClose( hDataset );
+            dsd->addOutput(tos);
+        }
+        dsd->updateZRange();
+        mesh->addDataSet(dsd);
+    }
 
-  return mesh;
+    free(pafScanline);
+    pafScanline = 0;
+
+    GDALClose( hDataset );
+
+    return mesh;
 }
