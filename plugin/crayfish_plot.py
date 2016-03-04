@@ -170,9 +170,6 @@ class DatasetsMenu(QMenu):
             a.setCheckable(True)
             a.triggered.connect(self.triggered_action)
 
-    #def list_checked_datasets(self):
-    #    for
-
     def triggered_action(self):
         for a in self.actions():
           a.setChecked(a == self.sender())
@@ -184,24 +181,19 @@ class DatasetsMenu(QMenu):
         self.datasets_changed.emit([])
 
 
-class CrayfishPlotWidget(QWidget):
+class PointGeometryPickerWidget(QWidget):
+
+    geometries_changed = pyqtSignal()
 
     PICK_NO, PICK_MAP, PICK_LAYER = range(3)
 
-    def __init__(self, layer, parent=None):
+    def __init__(self, parent=None):
         QWidget.__init__(self, parent)
 
-        self.layer = layer
-        self.temp_plot_item = None
         self.pick_mode = self.PICK_NO
         self.pick_layer = None
-
-        self.menu_datasets = DatasetsMenu(self.layer)
-
-        self.btn_dataset = QToolButton()
-        self.btn_dataset.setPopupMode(QToolButton.InstantPopup)
-        self.btn_dataset.setMenu(self.menu_datasets)
-        self.menu_datasets.datasets_changed.connect(self.on_datasets_changed)
+        self.geometries = []
+        self.temp_geometry_index = -1
 
         self.btn_picker = QToolButton()
         self.btn_picker.setText("From map")
@@ -220,35 +212,18 @@ class CrayfishPlotWidget(QWidget):
         self.tool.picked.connect(self.on_picked)
         self.tool.setButton(self.btn_picker)
 
-        self.datasets = []
-        self.geometries = []
-        self.markers = []
+        layout = QHBoxLayout()
+        layout.addWidget(self.btn_picker)
+        layout.addWidget(self.btn_layer)
 
-        self.gw = pyqtgraph.GraphicsWindow()
-        self.plot = self.gw.addPlot()
-        self.plot.showGrid(x=True, y=True)
+        self.setLayout(layout)
 
-        hl = QHBoxLayout()
-        hl.addWidget(self.btn_dataset)
-        hl.addWidget(self.btn_picker)
-        hl.addWidget(self.btn_layer)
-
-        l = QVBoxLayout()
-        l.addLayout(hl)
-        l.addWidget(self.gw)
-        self.setLayout(l)
-
-        self.on_datasets_changed([])  # make the current dataset default
         self.picker_clicked()  # make picking from map default
 
-    def on_datasets_changed(self, lst):
-        self.datasets = lst
-        if len(lst) == 0:
-            self.btn_dataset.setText("Dataset: [current]")
-        elif len(lst) == 1:
-            self.btn_dataset.setText("Dataset: " + lst[0].name())
-
-        self.refresh_plot()
+    def clear_geometries(self):
+        self.geometries = []
+        self.temp_geometry_index = -1
+        self.geometries_changed.emit()
 
     def picker_clicked(self):
 
@@ -271,71 +246,26 @@ class CrayfishPlotWidget(QWidget):
             self.pick_layer = None
         self.pick_mode = self.PICK_NO
 
-    def clear_geometries(self):
-        self.geometries = []
-        self.refresh_plot()
-
-    def refresh_plot(self):
-        # clear the plot first
-        for m in self.markers:
-            self.tool.canvas().scene().removeItem(m)
-        self.markers = []
-        self.plot.clear()
-        # re-add curves
-        for geometry in self.geometries:
-            self.add_plot(geometry, True)
-
-    def add_plot(self, geom_pt, permanent):
-
-        if len(self.datasets) == 0:
-          ds = self.layer.currentDataSet()
-        else:
-          ds = self.datasets[0]
-
-        x, y = timeseries_plot_data(ds, geom_pt)
-        self.plot.getAxis('bottom').setLabel('Time [h]')
-        self.plot.getAxis('left').setLabel(self.layer.currentDataSet().name())
-        clr = colors[ len(self.markers) % len(colors) ]
-
-        valid_plot = not all(map(math.isnan, y))
-        if not valid_plot:
-            return
-
-        if permanent:
-            marker = QgsVertexMarker(iface.mapCanvas())
-            marker.setColor(clr)
-            marker.setPenWidth(2)
-            marker.setCenter(geom_pt.asPoint())
-            self.markers.append(marker)
-
-        pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
-        return self.plot.plot(x=x, y=y, connect='finite', pen=pen)
-
     def on_picked(self, pt, clicked, with_ctrl):
-
-        if not with_ctrl and self.temp_plot_item:
-            self.plot.removeItem(self.temp_plot_item)
-            self.temp_plot_item = None
 
         geom = QgsGeometry.fromPoint(pt)
         if clicked:
-            self.geometries.append(geom)
-        else:
-            pass   # TODO: store temp geometry?
+            if self.temp_geometry_index == -1:
+                self.geometries.append(geom)
+            else:
+                self.geometries[self.temp_geometry_index] = geom
+                self.temp_geometry_index = -1
+        else:   # just doing mouse move
+            if self.temp_geometry_index == -1:
+                self.temp_geometry_index = len(self.geometries)
+                self.geometries.append(geom)
+            else:
+                self.geometries[self.temp_geometry_index] = geom
 
-        p = self.add_plot(geom, clicked)
-        if p and not clicked:
-            self.temp_plot_item = p
+        self.geometries_changed.emit()
 
         if clicked and not with_ctrl:  # no more updates
             self.stop_picking()
-
-
-    def hideEvent(self, e):
-        self.clear_geometries()
-        self.stop_picking()
-        QWidget.hideEvent(self, e)
-
 
     def on_picked_layer(self, layer_id):
 
@@ -353,4 +283,98 @@ class CrayfishPlotWidget(QWidget):
     def on_pick_selection_changed(self):
 
         self.geometries = [QgsGeometry(f.geometry()) for f in self.pick_layer.selectedFeatures()]
+        self.temp_geometry_index = -1
+        self.geometries_changed.emit()
+
+
+class CrayfishPlotWidget(QWidget):
+
+    def __init__(self, layer, parent=None):
+        QWidget.__init__(self, parent)
+
+        self.layer = layer
+
+        self.menu_datasets = DatasetsMenu(self.layer)
+
+        self.btn_dataset = QToolButton()
+        self.btn_dataset.setPopupMode(QToolButton.InstantPopup)
+        self.btn_dataset.setMenu(self.menu_datasets)
+        self.menu_datasets.datasets_changed.connect(self.on_datasets_changed)
+
+        self.point_picker = PointGeometryPickerWidget()
+        self.point_picker.geometries_changed.connect(self.on_geometries_changed)
+
+        self.datasets = []
+        self.markers = []
+
+        self.gw = pyqtgraph.GraphicsWindow()
+        self.plot = self.gw.addPlot()
+        self.plot.showGrid(x=True, y=True)
+
+        hl = QHBoxLayout()
+        hl.addWidget(self.btn_dataset)
+        hl.addWidget(self.point_picker)
+
+        l = QVBoxLayout()
+        l.addLayout(hl)
+        l.addWidget(self.gw)
+        self.setLayout(l)
+
+        self.on_datasets_changed([])  # make the current dataset default
+
+    def on_datasets_changed(self, lst):
+        self.datasets = lst
+        if len(lst) == 0:
+            self.btn_dataset.setText("Dataset: [current]")
+        elif len(lst) == 1:
+            self.btn_dataset.setText("Dataset: " + lst[0].name())
+
         self.refresh_plot()
+
+    def on_geometries_changed(self):
+        self.refresh_plot()
+
+    def refresh_plot(self):
+        # clear the plot first
+        for m in self.markers:
+            iface.mapCanvas().scene().removeItem(m)
+        self.markers = []
+        self.plot.clear()
+        self.plot.getAxis('bottom').setLabel('Time [h]')
+        # re-add curves
+        for i, geometry in enumerate(self.point_picker.geometries):
+
+            clr = colors[ i % len(colors) ]
+            self.add_plot(geometry, clr)
+
+            # add marker if the geometry is not temporary
+            if i != self.point_picker.temp_geometry_index:
+                marker = QgsVertexMarker(iface.mapCanvas())
+                marker.setColor(clr)
+                marker.setPenWidth(2)
+                marker.setCenter(geometry.asPoint())
+                self.markers.append(marker)
+
+
+    def add_plot(self, geom_pt, clr):
+
+        if len(self.datasets) == 0:
+          ds = self.layer.currentDataSet()
+        else:
+          ds = self.datasets[0]
+
+        x, y = timeseries_plot_data(ds, geom_pt)
+        self.plot.getAxis('left').setLabel(ds.name())
+
+        valid_plot = not all(map(math.isnan, y))
+        if not valid_plot:
+            return
+
+        pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
+        return self.plot.plot(x=x, y=y, connect='finite', pen=pen)
+
+
+    def hideEvent(self, e):
+        self.point_picker.clear_geometries()
+        self.point_picker.stop_picking()
+        QWidget.hideEvent(self, e)
