@@ -106,7 +106,7 @@ class Mesh:
     self.lib = lib
     handle = self.lib.CF_LoadMesh(path)
     if handle is None:
-      raise ValueError, last_load_status() #, path)
+      raise ValueError(last_load_status()) #, path)
     assert handle not in Mesh.handles
     Mesh.handles[handle] = weakref.ref(self)
     self.handle = ctypes.c_void_p(handle)
@@ -157,7 +157,7 @@ class Mesh:
 
   def load_data(self, path):
     if not self.lib.CF_Mesh_loadDataSet(self.handle, path):
-      raise ValueError, last_load_status()
+      raise ValueError(last_load_status())
 
   def extent(self):
     xmin,ymin = ctypes.c_double(), ctypes.c_double()
@@ -188,7 +188,7 @@ class DataSet(object):
   def __init__(self, handle):
     self.lib = lib
     if handle is None:
-      raise ValueError, handle
+      raise ValueError(handle)
     assert handle not in DataSet.handles
     DataSet.handles[handle] = weakref.ref(self)
     self.handle = ctypes.c_void_p(handle)
@@ -257,7 +257,7 @@ class Output(object):
   def __init__(self, handle):
     self.lib = lib
     if handle is None:
-      raise ValueError, handle
+      raise ValueError(handle)
     assert handle not in Output.handles
     Output.handles[handle] = weakref.ref(self)
     self.handle = ctypes.c_void_p(handle)
@@ -329,7 +329,7 @@ class Value(object):
     elif value is None:
       pass # do nothing
     else:
-      raise ValueError, "unknown type of value"
+      raise ValueError("unknown type of value")
 
   def value(self):
     t = self.lib.CF_V_type(self.handle)
@@ -348,7 +348,7 @@ class Value(object):
       self.lib.CF_V_toColorMap(self.handle, cm.handle)
       return cm
     else:
-      raise ValueError, "unknown type in value"
+      raise ValueError("unknown type in value")
 
   def __del__(self):
     self.lib.CF_V_destroy(self.handle)
@@ -469,7 +469,7 @@ class ColorMap(object):
 
   def item(self, index):
     if index < 0 or index >= self.item_count():
-      raise KeyError, "invalid index"
+      raise KeyError("invalid index")
     return ColorMap.Item(self.handle, index)
 
   def __getitem__(self, index):

@@ -25,6 +25,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from __future__ import print_function
 import sys
 import os
 import shutil
@@ -40,12 +41,12 @@ if len(sys.argv) > 1:
       pkg = True
       version = arg[5:]
     else:
-      print "install.py [-pkg=version]"
-      print ""
-      print "  Install Crayfish C++ library"
-      print ""
-      print "  Arguments:"
-      print "  -pkg      Create .zip package for distribution instead of installation"
+      print("install.py [-pkg=version]")
+      print("")
+      print("  Install Crayfish C++ library")
+      print("")
+      print("  Arguments:")
+      print("  -pkg      Create .zip package for distribution instead of installation")
       sys.exit(0)
 
 build_file_cpp = os.path.join("..", "plugin", file_cpp)
@@ -55,14 +56,14 @@ if pkg:
   import zipfile
   with zipfile.ZipFile(os.path.join("..", zipfilename), "w", zipfile.ZIP_DEFLATED) as z:
     z.write(build_file_cpp, file_cpp)
-  print "Written " + zipfilename
+  print("Written " + zipfilename)
 
 else:
   plugin_dir = os.path.expanduser(os.path.join("~", ".qgis2", "python", "plugins", "crayfish"))
-  
+
   if not os.path.exists(plugin_dir):
     os.makedirs(plugin_dir)
 
   shutil.copy(build_file_cpp, plugin_dir)
-  print "Written " + file_cpp + " to " + plugin_dir
+  print("Written " + file_cpp + " to " + plugin_dir)
 
