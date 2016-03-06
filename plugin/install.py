@@ -25,6 +25,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from future import print_function
 import sys
 import os
 import shutil
@@ -39,12 +40,12 @@ if len(sys.argv) > 1:
       pkg = True
       version = arg[5:]
     else:
-      print "install.py [-pkg=version]"
-      print ""
-      print "  Install Crayfish Python plugin"
-      print ""
-      print "  Arguments:"
-      print "  -pkg      Create a package for upload instead of installing"
+      print("install.py [-pkg=version]")
+      print("")
+      print("  Install Crayfish Python plugin")
+      print("")
+      print("  Arguments:")
+      print("  -pkg      Create a package for upload instead of installing")
       sys.exit(0)
 
 install_files = ['metadata.txt'] + glob.glob("*.py") + glob.glob("*.png") + glob.glob("illuvis/*.py") + glob.glob("doc/*")
@@ -67,12 +68,12 @@ else:
   plugin_dir = os.path.expanduser(os.path.join("~", ".qgis2", "python", "plugins", "crayfish"))
   if not os.path.exists(plugin_dir):
     os.makedirs(plugin_dir)
-  print install_dirs
+  print(install_dirs)
   for subdir in install_dirs:
     subdir_path = os.path.join(plugin_dir, subdir)
     if not os.path.exists(subdir_path): os.makedirs(subdir_path)
-    
+
   for filename in install_files:
-    print "-- "+filename
+    print("-- "+filename)
     destdir = os.path.join(plugin_dir, os.path.dirname(filename))
     shutil.copy(filename, destdir)

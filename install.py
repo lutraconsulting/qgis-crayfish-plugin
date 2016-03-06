@@ -25,6 +25,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from __future__ import print_function
 import os
 import platform
 import sys
@@ -33,7 +34,7 @@ extra_install_args = ""
 if len(sys.argv) == 2 and sys.argv[1].startswith("-pkg="):
   extra_install_args = " " + sys.argv[1]
 
-print "Installing C++ library..."
+print("Installing C++ library...")
 os.chdir('corelib')
 if platform.system() == "Windows":
     os.system('qmake -spec win32-msvc2010 "CONFIG+=release"')
@@ -43,6 +44,6 @@ else:
     os.system('make')
 os.system('python install.py' + extra_install_args)
 
-print "Installing plugin..."
+print("Installing plugin...")
 os.chdir('../plugin')
 os.system('python install.py' + extra_install_args)
