@@ -33,7 +33,7 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
   if (meshFile.endsWith(".sww"))
     return loadSWW(meshFile, status);
 
-  if (meshFile.endsWith(".grb"))
+  if (meshFile.endsWith(".grb") || meshFile.endsWith(".bin"))
     return loadGRIB(meshFile, status);
 
   return loadMesh2DM(meshFile, status);
