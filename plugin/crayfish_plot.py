@@ -71,18 +71,19 @@ def timeseries_plot_data(ds, geometry):
 
     return x, y
 
-def cross_section_plot_data(layer, geometry):    # TODO: outputs
+def cross_section_plot_data(output, geometry):
     """ return array with tuples defining X,Y points for plot """
 
+    mesh = output.dataset().mesh()
     offset = 0
     step = 1
     length = geometry.length()
     x,y = [], []
 
     while offset < length:
-        pt = geometry.interpolate(offest).asPoint()
+        pt = geometry.interpolate(offset).asPoint()
 
-        value = layer.mesh.value(layer.currentOutput(), pt.x(), pt.y())
+        value = mesh.value(output, pt.x(), pt.y())
         if value != -9999.0:
             x.append(offset)
             y.append(value)
@@ -126,17 +127,20 @@ class MapLayerMenu(QMenu):
 
     picked_layer = pyqtSignal(unicode)
 
-    def __init__(self, parent=None):
+    def __init__(self, geom_type, parent=None):
         QMenu.__init__(self, parent)
 
         QgsMapLayerRegistry.instance().layersAdded.connect(self.layers_added)
         QgsMapLayerRegistry.instance().layersWillBeRemoved.connect(self.layers_will_be_removed)
 
+        self.geom_type = geom_type
         self.layers_added( QgsMapLayerRegistry.instance().mapLayers().values() )
 
     def layers_added(self, lst):
         for layer in lst:
             if not isinstance(layer, QgsVectorLayer):
+                continue
+            if layer.geometryType() != self.geom_type:
                 continue
             a = self.addAction(geom2icon(layer.geometryType()), layer.name())
             a.layer_id = layer.id()
@@ -164,6 +168,8 @@ class DatasetsMenu(QMenu):
         self.action_current.triggered.connect(self.triggered_action_current)
         self.addSeparator()
 
+        layer.currentDataSetChanged.connect(self.on_current_dataset_changed)
+
         for ds in layer.mesh.datasets():
             a = self.addAction(ds.name())
             a.ds = ds
@@ -179,6 +185,10 @@ class DatasetsMenu(QMenu):
         for a in self.actions():
             a.setChecked(a == self.action_current)
         self.datasets_changed.emit([])
+
+    def on_current_dataset_changed(self):
+        if self.action_current.isChecked():
+            self.datasets_changed.emit([])  # re-emit changed signal
 
 
 class PointGeometryPickerWidget(QWidget):
@@ -200,7 +210,7 @@ class PointGeometryPickerWidget(QWidget):
         self.btn_picker.setCheckable(True)
         self.btn_picker.clicked.connect(self.picker_clicked)
 
-        self.menu_layers = MapLayerMenu()
+        self.menu_layers = MapLayerMenu(QGis.Point)
 
         self.btn_layer = QToolButton()
         self.btn_layer.setText("From layer")
@@ -287,7 +297,81 @@ class PointGeometryPickerWidget(QWidget):
         self.geometries_changed.emit()
 
 
+class LineGeometryPickerWidget(QWidget):
+
+    geometries_changed = pyqtSignal()
+
+    PICK_NO, PICK_MAP, PICK_LAYER = range(3)
+
+    def __init__(self, parent=None):
+        QWidget.__init__(self, parent)
+
+        self.pick_mode = self.PICK_NO
+        self.pick_layer = None
+        self.geometries = []
+        #self.temp_geometry_index = -1
+
+        self.menu_layers = MapLayerMenu(QGis.Line)
+
+        self.btn_layer = QToolButton()
+        self.btn_layer.setText("From layer")
+        self.btn_layer.setPopupMode(QToolButton.InstantPopup)
+        self.btn_layer.setMenu(self.menu_layers)
+        self.menu_layers.picked_layer.connect(self.on_picked_layer)
+
+        layout = QHBoxLayout()
+        #layout.addWidget(self.btn_picker)
+        layout.addWidget(self.btn_layer)
+        self.setLayout(layout)
+
+    def stop_picking(self):
+        if self.pick_mode == self.PICK_MAP:
+            pass    # TODO: iface.mapCanvas().unsetMapTool(self.tool)
+        elif self.pick_mode == self.PICK_LAYER:
+            self.pick_layer.selectionChanged.disconnect(self.on_pick_selection_changed)
+            self.pick_layer = None
+        self.pick_mode = self.PICK_NO
+
+    def on_picked_layer(self, layer_id):
+
+        self.stop_picking()
+
+        self.pick_layer = QgsMapLayerRegistry.instance().mapLayer(layer_id)
+        if not self.pick_layer:
+            return
+
+        self.pick_mode = self.PICK_LAYER
+        self.pick_layer.selectionChanged.connect(self.on_pick_selection_changed)
+
+        self.on_pick_selection_changed()
+
+    def on_pick_selection_changed(self):
+
+        self.geometries = [QgsGeometry(f.geometry()) for f in self.pick_layer.selectedFeatures()]
+        #self.temp_geometry_index = -1
+        self.geometries_changed.emit()
+
+
+class PlotTypeMenu(QMenu):
+
+    plot_type_changed = pyqtSignal(int)
+
+    def __init__(self, parent=None):
+        QMenu.__init__(self, parent)
+
+        self.names = ["Time series", "Cross-section"]
+        for i, plot_type_name in enumerate(self.names):
+            a = self.addAction(plot_type_name)
+            a.plot_type = i
+            a.triggered.connect(self.on_action)
+
+    def on_action(self):
+        self.plot_type_changed.emit(self.sender().plot_type)
+
+
 class CrayfishPlotWidget(QWidget):
+
+    PLOT_TIME, PLOT_CROSS_SECTION = range(2)
 
     def __init__(self, layer, parent=None):
         QWidget.__init__(self, parent)
@@ -301,26 +385,65 @@ class CrayfishPlotWidget(QWidget):
         self.btn_dataset.setMenu(self.menu_datasets)
         self.menu_datasets.datasets_changed.connect(self.on_datasets_changed)
 
+        self.menu_plot_types = PlotTypeMenu()
+
+        self.btn_plot_type = QToolButton()
+        self.btn_plot_type.setPopupMode(QToolButton.InstantPopup)
+        self.btn_plot_type.setMenu(self.menu_plot_types)
+        self.menu_plot_types.plot_type_changed.connect(self.on_plot_type_changed)
+
         self.point_picker = PointGeometryPickerWidget()
         self.point_picker.geometries_changed.connect(self.on_geometries_changed)
 
+        self.line_picker = LineGeometryPickerWidget()
+        self.line_picker.geometries_changed.connect(self.on_geometries_changed)
+
+        self.plot_type = self.PLOT_TIME
         self.datasets = []
-        self.markers = []
+        self.markers = []      # for points
+        self.rubberbands = []  # for lines
 
         self.gw = pyqtgraph.GraphicsWindow()
         self.plot = self.gw.addPlot()
         self.plot.showGrid(x=True, y=True)
 
         hl = QHBoxLayout()
+        hl.addWidget(self.btn_plot_type)
         hl.addWidget(self.btn_dataset)
         hl.addWidget(self.point_picker)
+        hl.addWidget(self.line_picker)
+        hl.addStretch()
 
         l = QVBoxLayout()
         l.addLayout(hl)
         l.addWidget(self.gw)
         self.setLayout(l)
 
+        self.on_plot_type_changed(self.PLOT_TIME)
         self.on_datasets_changed([])  # make the current dataset default
+
+
+    def hideEvent(self, e):
+        self.point_picker.clear_geometries()
+        self.point_picker.stop_picking()
+        # TODO: handle also line_picker
+        QWidget.hideEvent(self, e)
+
+
+    def on_plot_type_changed(self, plot_type):
+        self.plot_type = plot_type
+        self.btn_plot_type.setText("Plot: " + self.menu_plot_types.names[self.plot_type])
+        self.point_picker.setVisible(self.plot_type == self.PLOT_TIME)
+        self.line_picker.setVisible(self.plot_type == self.PLOT_CROSS_SECTION)
+
+        if self.plot_type != self.PLOT_TIME:
+            self.point_picker.clear_geometries()
+            self.point_picker.stop_picking()
+
+        # TODO: handle also line_picker cleanup
+
+        self.refresh_plot()
+
 
     def on_datasets_changed(self, lst):
         self.datasets = lst
@@ -331,21 +454,35 @@ class CrayfishPlotWidget(QWidget):
 
         self.refresh_plot()
 
+
     def on_geometries_changed(self):
         self.refresh_plot()
 
+
     def refresh_plot(self):
-        # clear the plot first
+        if self.plot_type == self.PLOT_TIME:
+            self.refresh_timeseries_plot()
+        elif self.plot_type == self.PLOT_CROSS_SECTION:
+            self.refresh_cross_section_plot()
+
+    def clear_plot(self):
         for m in self.markers:
             iface.mapCanvas().scene().removeItem(m)
         self.markers = []
+        for rb in self.rubberbands:
+            iface.mapCanvas().scene().removeItem(rb)
+        self.rubberbands = []
         self.plot.clear()
+
+
+    def refresh_timeseries_plot(self):
+        self.clear_plot()
         self.plot.getAxis('bottom').setLabel('Time [h]')
         # re-add curves
         for i, geometry in enumerate(self.point_picker.geometries):
 
             clr = colors[ i % len(colors) ]
-            self.add_plot(geometry, clr)
+            self.add_timeseries_plot(geometry, clr)
 
             # add marker if the geometry is not temporary
             if i != self.point_picker.temp_geometry_index:
@@ -356,7 +493,7 @@ class CrayfishPlotWidget(QWidget):
                 self.markers.append(marker)
 
 
-    def add_plot(self, geom_pt, clr):
+    def add_timeseries_plot(self, geom_pt, clr):
 
         if len(self.datasets) == 0:
           ds = self.layer.currentDataSet()
@@ -374,7 +511,43 @@ class CrayfishPlotWidget(QWidget):
         return self.plot.plot(x=x, y=y, connect='finite', pen=pen)
 
 
-    def hideEvent(self, e):
-        self.point_picker.clear_geometries()
-        self.point_picker.stop_picking()
-        QWidget.hideEvent(self, e)
+    def refresh_cross_section_plot(self):
+        self.clear_plot()
+        self.plot.getAxis('bottom').setLabel('Station [m]')
+
+        if len(self.line_picker.geometries) == 0:
+            return
+
+        geometry = self.line_picker.geometries[0]  # only using the first linestring
+        clr = colors[0]
+
+        if len(geometry.asPolyline()) == 0:
+            return  # not a linestring?
+
+        if len(self.datasets) == 0:
+          ds = self.layer.currentDataSet()
+        else:
+          ds = self.datasets[0]
+
+        # TODO: choose output
+        output = self.layer.currentOutputForDataset(ds)
+
+        x,y = cross_section_plot_data(output, geometry)
+        self.plot.getAxis('left').setLabel(output.dataset().name())
+
+        print "output", output
+        print "x", x
+        print "y", y
+
+        valid_plot = not all(map(math.isnan, y))
+        if not valid_plot:
+            return
+
+        pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
+        p = self.plot.plot(x=x, y=y, connect='finite', pen=pen)
+
+        rb = QgsRubberBand(iface.mapCanvas(), QGis.Line)
+        rb.setColor(clr)
+        rb.setWidth(2)
+        rb.setToGeometry(geometry, None)
+        self.rubberbands.append(rb)

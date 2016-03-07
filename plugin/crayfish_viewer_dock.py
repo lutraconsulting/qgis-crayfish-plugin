@@ -201,7 +201,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             return
           
         dataSet = l.mesh.dataset(dataSetItem.ds_index)
+        old_ds_index = l.current_ds_index
         l.current_ds_index = dataSetItem.ds_index
+        l.currentDataSetChanged.emit()  # let others know (e.g. plot widget)
 
         if l.lockCurrent:
             import crayfish

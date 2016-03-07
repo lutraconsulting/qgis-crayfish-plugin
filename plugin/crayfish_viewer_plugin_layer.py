@@ -98,6 +98,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     LAYER_TYPE="crayfish_viewer"
 
+    currentDataSetChanged = pyqtSignal()
+
     def __init__(self, meshFileName=None):
         QgsPluginLayer.__init__(self, CrayfishViewerPluginLayer.LAYER_TYPE, "Crayfish Viewer plugin layer")
 
