@@ -47,7 +47,8 @@ struct LoadStatus
       Err_NotEnoughMemory,
       Err_FileNotFound,
       Err_UnknownFormat,
-      Err_IncompatibleMesh
+      Err_IncompatibleMesh,
+      Err_InvalidData
   };
 
 
