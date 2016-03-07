@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QMap>
 #include <QHash>
 #include <QVector>
+#include <QRegExp>
 
 typedef QMap<int, QVector<GDALRasterBandH> > timestep_map; //TIME (sorted), [X, Y]
 typedef QHash<QString, timestep_map > data_hash; //Data Type, TIME (sorted), [X, Y]
@@ -149,7 +150,12 @@ static void parseBandInfo(const QString& elem, QString& band_name, int* data_cou
     band_name = band_name.replace("u-component of", "")
                          .replace("v-component of", "")
                          .replace("u-component", "")
-                         .replace("v-component", "");
+                         .replace("v-component", "")
+                         .replace(QRegExp("\\[.+\\/.+\\]"), "") // remove units
+                         .replace("/", ""); // slash cannot be in dataset name,
+                                            // because it means subdataset, see
+                                            // python class DataSetModel.setMesh()
+                                            // see #132
 
     if (elem.contains("u-component")) {
         *data_count = 2; // vector
@@ -216,6 +222,24 @@ static void parseRasterBands(GDALDatasetH hDataset, data_hash& bands, const GRIB
 
 }
 
+static void populateScaleForVector(const GRIBParams& params, NodeOutput* tos){
+    // there are no scalar data associated with vectors, so
+    // assign vector length as scalar data at least
+    // see #134
+    for (uint idx=0; idx<params.nPoints; ++idx)
+    {
+        if (is_nodata(tos->valuesV[idx].x) ||
+            is_nodata(tos->valuesV[idx].y))
+        {
+            tos->values[idx] = -9999.0;
+        }
+        else {
+            tos->values[idx] = tos->valuesV[idx].length();
+        }
+    }
+}
+
+
 static void addDataToOutput(GDALRasterBandH raster_band, const GRIBParams& params, NodeOutput* tos, float * pafScanline, bool is_vector, bool is_x) {
     float nodata = (float) (GDALGetRasterNoDataValue(raster_band, 0)); // in double
 
@@ -266,22 +290,6 @@ static void addDataToOutput(GDALRasterBandH raster_band, const GRIBParams& param
     }
 }
 
-static void populateScaleForVector(const GRIBParams& params, NodeOutput* tos){
-    // there are no scalar data associated with vectors, so
-    // assign vector length as scalar data at least
-    for (uint idx=0; idx<params.nPoints; ++idx)
-    {
-        if (is_nodata(tos->valuesV[idx].x) ||
-            is_nodata(tos->valuesV[idx].y))
-        {
-            tos->values[idx] = -9999.0;
-        }
-        else {
-            tos->values[idx] = tos->valuesV[idx].length();
-        }
-    }
-}
-
 static void activateElements(Mesh* mesh, const GRIBParams& params, NodeOutput* tos){
     // Activate only elements that do all node's outputs with some data
     char* active = tos->active.data();
@@ -329,7 +337,6 @@ static void addDatasets(Mesh* mesh, const QString& fileName, const data_hash& ba
             {
                 addDataToOutput(raster_bands[i], params, tos, pafScanline, is_vector, i==0);
             }
-
             if (is_vector)
             {
                 populateScaleForVector(params, tos);
