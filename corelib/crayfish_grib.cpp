@@ -103,7 +103,6 @@ static void initElements(Mesh::Elements& elements, const GRIBParams& params) {
         {
             elementsPtr->id = x + params.xSize*y;
             elementsPtr->eType = Element::E4Q;
-            // CLOCKWISE
             elementsPtr->p[1] = x + 1 + params.xSize*(y + 1);
             elementsPtr->p[2] = x + 1 + params.xSize*y;
             elementsPtr->p[3] = x + params.xSize*y;
