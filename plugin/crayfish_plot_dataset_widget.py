@@ -71,6 +71,9 @@ class DatasetsWidget(QToolButton):
     def __init__(self, layer, parent=None):
         QToolButton.__init__(self, parent)
 
+        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setIcon(QIcon(QPixmap(":/plugins/crayfish/icon_contours.png")))
+
         self.menu_datasets = DatasetsMenu(layer)
 
         self.setPopupMode(QToolButton.InstantPopup)

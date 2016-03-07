@@ -85,6 +85,9 @@ class MapLayersWidget(QToolButton):
     def __init__(self, geom_type, parent=None):
         QToolButton.__init__(self, parent)
 
+        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setIcon(geom2icon(geom_type))
+
         self.menu_layers = MapLayerMenu(QGis.Line)
 
         self.setText("From layer")

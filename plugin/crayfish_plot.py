@@ -126,6 +126,9 @@ class PlotTypeWidget(QToolButton):
     def __init__(self, parent=None):
         QToolButton.__init__(self, parent)
 
+        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setIcon(QgsApplication.getThemeIcon("/histogram.png"))
+
         self.menu_plot_types = PlotTypeMenu()
 
         self.setPopupMode(QToolButton.InstantPopup)
