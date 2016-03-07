@@ -33,6 +33,8 @@ from qgis.gui import *
 from qgis.utils import iface
 import pyqtgraph
 
+from crayfish_gui_utils import timeToString
+
 pyqtgraph.setConfigOption('background', 'w')
 pyqtgraph.setConfigOption('foreground', 'k')
 pyqtgraph.setConfigOption('antialias', True)
@@ -369,6 +371,51 @@ class PlotTypeMenu(QMenu):
         self.plot_type_changed.emit(self.sender().plot_type)
 
 
+class OutputsMenu(QMenu):
+
+    outputs_changed = pyqtSignal(list)
+
+    def __init__(self, layer, parent=None):
+        QMenu.__init__(self, parent)
+
+        self.set_dataset(None)
+
+        layer.currentOutputTimeChanged.connect(self.on_current_output_time_changed)
+
+    def set_dataset(self, ds):
+
+        # populate timesteps
+        self.clear()
+        self.action_current = self.addAction("[current]")
+        self.action_current.setCheckable(True)
+        self.action_current.setChecked(True)
+        self.action_current.triggered.connect(self.on_action_current)
+        self.addSeparator()
+
+        if ds is None:
+            return
+
+        for output in ds.outputs():
+            a = self.addAction(timeToString(output.time()))
+            a.output = output
+            a.setCheckable(True)
+            a.triggered.connect(self.on_action)
+
+    def on_action(self):
+        for a in self.actions():
+            a.setChecked(a == self.sender())
+        self.outputs_changed.emit([self.sender().output])
+
+    def on_action_current(self):
+        for a in self.actions():
+            a.setChecked(a == self.action_current)
+        self.outputs_changed.emit([])
+
+    def on_current_output_time_changed(self):
+        if self.action_current.isChecked():
+            self.outputs_changed.emit([])   # re-emit
+
+
 class CrayfishPlotWidget(QWidget):
 
     PLOT_TIME, PLOT_CROSS_SECTION = range(2)
@@ -398,8 +445,16 @@ class CrayfishPlotWidget(QWidget):
         self.line_picker = LineGeometryPickerWidget()
         self.line_picker.geometries_changed.connect(self.on_geometries_changed)
 
+        self.menu_outputs = OutputsMenu(self.layer)
+
+        self.btn_output = QToolButton()
+        self.btn_output.setPopupMode(QToolButton.InstantPopup)
+        self.btn_output.setMenu(self.menu_outputs)
+        self.menu_outputs.outputs_changed.connect(self.on_outputs_changed)
+
         self.plot_type = self.PLOT_TIME
         self.datasets = []
+        self.outputs = []   # only for cross-section plot
         self.markers = []      # for points
         self.rubberbands = []  # for lines
 
@@ -410,6 +465,7 @@ class CrayfishPlotWidget(QWidget):
         hl = QHBoxLayout()
         hl.addWidget(self.btn_plot_type)
         hl.addWidget(self.btn_dataset)
+        hl.addWidget(self.btn_output)
         hl.addWidget(self.point_picker)
         hl.addWidget(self.line_picker)
         hl.addStretch()
@@ -421,6 +477,7 @@ class CrayfishPlotWidget(QWidget):
 
         self.on_plot_type_changed(self.PLOT_TIME)
         self.on_datasets_changed([])  # make the current dataset default
+        self.on_outputs_changed([])
 
 
     def hideEvent(self, e):
@@ -435,6 +492,7 @@ class CrayfishPlotWidget(QWidget):
         self.btn_plot_type.setText("Plot: " + self.menu_plot_types.names[self.plot_type])
         self.point_picker.setVisible(self.plot_type == self.PLOT_TIME)
         self.line_picker.setVisible(self.plot_type == self.PLOT_CROSS_SECTION)
+        self.btn_output.setVisible(self.plot_type == self.PLOT_CROSS_SECTION)
 
         if self.plot_type != self.PLOT_TIME:
             self.point_picker.clear_geometries()
@@ -449,13 +507,25 @@ class CrayfishPlotWidget(QWidget):
         self.datasets = lst
         if len(lst) == 0:
             self.btn_dataset.setText("Dataset: [current]")
+            self.menu_outputs.set_dataset(self.layer.currentDataSet())
         elif len(lst) == 1:
             self.btn_dataset.setText("Dataset: " + lst[0].name())
+            self.menu_outputs.set_dataset(lst[0])
 
         self.refresh_plot()
 
 
     def on_geometries_changed(self):
+        self.refresh_plot()
+
+
+    def on_outputs_changed(self, lst):
+        self.outputs = lst
+        if len(lst) == 0:
+            self.btn_output.setText("Time: [current]")
+        elif len(lst) == 1:
+            self.btn_output.setText("Time: " + timeToString(lst[0].time()))
+
         self.refresh_plot()
 
 
@@ -529,8 +599,10 @@ class CrayfishPlotWidget(QWidget):
         else:
           ds = self.datasets[0]
 
-        # TODO: choose output
-        output = self.layer.currentOutputForDataset(ds)
+        if len(self.outputs) == 0:
+            output = self.layer.currentOutputForDataset(ds)
+        else:
+            output = self.outputs[0]  # TODO: multiple outputs
 
         x,y = cross_section_plot_data(output, geometry)
         self.plot.getAxis('left').setLabel(output.dataset().name())

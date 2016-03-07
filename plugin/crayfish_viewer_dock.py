@@ -278,6 +278,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         ds = l.currentDataSet()
         if ds.time_varying():
             l.current_output_time = ds.output(timeIdx).time()
+            l.currentOutputTimeChanged.emit()   # let others know (e.g. plot widget)
 
         self.redrawCurrentLayer()
 
