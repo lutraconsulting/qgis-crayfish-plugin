@@ -61,9 +61,16 @@ class OutputsMenu(QMenu):
             a.triggered.connect(self.on_action)
 
     def on_action(self):
-        for a in self.actions():
-            a.setChecked(a == self.sender())
-        self.outputs_changed.emit([self.sender().output])
+        this_action = self.sender()
+
+        if this_action.isChecked():
+            self.action_current.setChecked(False)
+
+        outputs = [ a.output for a in self.actions() if a != self.action_current and a.isChecked() ]
+        if len(outputs) == 0:
+            self.action_current.setChecked(True)
+
+        self.outputs_changed.emit(outputs)
 
     def on_action_current(self):
         for a in self.actions():
@@ -96,6 +103,8 @@ class OutputsWidget(QToolButton):
             self.setText("Time: [current]")
         elif len(lst) == 1:
             self.setText("Time: " + timeToString(lst[0].time()))
+        else:
+            self.setText("Time: [multiple]")
 
         self.outputs_changed.emit(lst)
 

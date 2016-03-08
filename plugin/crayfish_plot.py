@@ -298,7 +298,6 @@ class CrayfishPlotWidget(QWidget):
             return
 
         geometry = self.line_picker.geometries[0]  # only using the first linestring
-        clr = colors[0]
 
         if len(geometry.asPolyline()) == 0:
             return  # not a linestring?
@@ -309,28 +308,26 @@ class CrayfishPlotWidget(QWidget):
         else:
           ds = datasets[0]
 
+        self.plot.getAxis('left').setLabel(ds.name())
+
         outputs = self.btn_output.outputs
         if len(outputs) == 0:
-            output = self.layer.currentOutputForDataset(ds)
-        else:
-            output = outputs[0]  # TODO: multiple outputs
+            outputs = [self.layer.currentOutputForDataset(ds)]
 
-        x,y = cross_section_plot_data(output, geometry)
-        self.plot.getAxis('left').setLabel(output.dataset().name())
+        for i, output in enumerate(outputs):
 
-        print "output", output
-        print "x", x
-        print "y", y
+            x,y = cross_section_plot_data(output, geometry)
 
-        valid_plot = not all(map(math.isnan, y))
-        if not valid_plot:
-            return
+            valid_plot = not all(map(math.isnan, y))
+            if not valid_plot:
+                continue
 
-        pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
-        p = self.plot.plot(x=x, y=y, connect='finite', pen=pen)
+            clr = colors[i % len(colors)]
+            pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
+            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen)
 
         rb = QgsRubberBand(iface.mapCanvas(), QGis.Line)
-        rb.setColor(clr)
+        rb.setColor(colors[0])
         rb.setWidth(2)
         rb.setToGeometry(geometry, None)
         self.rubberbands.append(rb)
