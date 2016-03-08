@@ -112,8 +112,16 @@ static void initElements(Mesh::Elements& elements, const GRIBParams& params) {
     }
 }
 
-static bool parseMetadata(GDALRasterBandH gdalBand, int* time, QString& elem)
+static int parseMetadataTime(const QString& time_s)
 {
+    QString time_trimmed = time_s.trimmed();
+    QStringList times = time_trimmed.split(" ");
+    return times[0].toInt(); // sec
+}
+
+static bool parseMetadata(GDALRasterBandH gdalBand, int* time, int* ref_time, QString& elem)
+{
+    int valid_time = std::numeric_limits<int>::min();
     char** GDALmetadata = GDALGetMetadata( gdalBand, 0 );
     if ( GDALmetadata )
     {
@@ -125,19 +133,18 @@ static bool parseMetadata(GDALRasterBandH gdalBand, int* time, QString& elem)
                 if (metadata[0] == "GRIB_COMMENT")
                 {
                     elem = metadata[1];
-                } else if (metadata[0] == "GRIB_FORECAST_SECONDS")
+                } else if (metadata[0] == "GRIB_VALID_TIME")
                 {
-                    QString time_s = metadata[1];
-                    time_s = time_s.trimmed();
-                    QStringList times = time_s.split(" ");
-                    float time_sec = times[0].toFloat();
-                    *time = int(time_sec/3600);
+                    valid_time = parseMetadataTime(metadata[1]);
+                } else if (metadata[0] == "GRIB_REF_TIME" && *ref_time == std::numeric_limits<int>::min())
+                {
+                    *ref_time = parseMetadataTime(metadata[1]);
                 }
             }
         }
 
-        if (!elem.isEmpty() && *time > -999999) {
-            // check data sanity
+        if (!elem.isEmpty() && valid_time > std::numeric_limits<int>::min() && *ref_time > std::numeric_limits<int>::min()) {
+            *time = valid_time - *ref_time;
             return false;
         }
     }
@@ -171,6 +178,10 @@ static void parseBandInfo(const QString& elem, QString& band_name, int* data_cou
 }
 
 static void parseRasterBands(GDALDatasetH hDataset, data_hash& bands, const GRIBParams& params) {
+    int ref_time = std::numeric_limits<int>::min(); // ref time is parsed only once, because
+                                                      // some GRIB files do not use FORECAST_SEC, but VALID_TIME
+                                                      // metadata
+
     for (uint i = 1; i <= params.nBands; ++i ) // starts with 1 .... ehm....
     {
         // Get Band
@@ -179,8 +190,8 @@ static void parseRasterBands(GDALDatasetH hDataset, data_hash& bands, const GRIB
 
         // Get metadata
         QString elem;
-        int time = -999999;
-        if (parseMetadata(gdalBand, &time, elem)) {
+        int time = std::numeric_limits<int>::min(); //time difference from ref_time (sec)
+        if (parseMetadata(gdalBand, &time, &ref_time, elem)) {
             continue;
         }
 
@@ -331,7 +342,7 @@ static void addDatasets(Mesh* mesh, const QString& fileName, const data_hash& ba
 
             NodeOutput* tos = new NodeOutput;
             tos->init(params.nPoints, params.nVolumes, is_vector);
-            tos->time = time_step.key();
+            tos->time = time_step.key()/3600.0; // convert to hours
 
             for (int i=0; i<raster_bands.size(); ++i)
             {
