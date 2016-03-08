@@ -34,6 +34,7 @@ from qgis.utils import iface
 import pyqtgraph
 
 from .crayfish_gui_utils import timeToString
+from .crayfish_plot_cf_layer_widget import CrayfishLayerWidget
 from .crayfish_plot_line_geometry_widget import LineGeometryPickerWidget
 from .crayfish_plot_point_geometry_widget import PointGeometryPickerWidget
 from .crayfish_plot_output_widget import OutputsWidget
@@ -154,6 +155,9 @@ class CrayfishPlotWidget(QWidget):
 
         self.layer = layer
 
+        self.btn_layer = CrayfishLayerWidget(self.layer)
+        self.btn_layer.layer_changed.connect(self.on_layer_changed)
+
         self.btn_dataset = DatasetsWidget(self.layer)
         self.btn_dataset.datasets_changed.connect(self.on_datasets_changed)
 
@@ -178,6 +182,7 @@ class CrayfishPlotWidget(QWidget):
         self.plot.addLegend()
 
         hl = QHBoxLayout()
+        hl.addWidget(self.btn_layer)
         hl.addWidget(self.btn_plot_type)
         hl.addWidget(self.btn_dataset)
         hl.addWidget(self.btn_output)
@@ -199,12 +204,18 @@ class CrayfishPlotWidget(QWidget):
 
 
     def hideEvent(self, e):
-        self.point_picker.clear_geometries()
-        self.point_picker.stop_picking()
-        self.line_picker.clear_geometries()
-        self.line_picker.stop_picking()
+        self.reset_widget()
         QWidget.hideEvent(self, e)
 
+
+    def set_layer(self, layer):
+        self.btn_layer.set_layer(layer)
+
+    def on_layer_changed(self, layer):
+        self.layer = layer
+        self.btn_dataset.set_layer(layer)
+        self.btn_output.set_layer(layer)
+        self.reset_widget()
 
     def on_plot_type_changed(self, plot_type):
         self.point_picker.setVisible(plot_type == PlotTypeWidget.PLOT_TIME)
@@ -237,6 +248,12 @@ class CrayfishPlotWidget(QWidget):
     def on_outputs_changed(self, lst):
         self.refresh_plot()
 
+    def reset_widget(self):
+        self.point_picker.clear_geometries()
+        self.point_picker.stop_picking()
+        self.line_picker.clear_geometries()
+        self.line_picker.stop_picking()
+        self.refresh_plot()
 
     def refresh_plot(self):
         plot_type = self.btn_plot_type.plot_type

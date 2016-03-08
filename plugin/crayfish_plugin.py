@@ -142,6 +142,9 @@ class CrayfishPlugin:
 
     def unload(self):
         if self.dock is not None:
+            if self.dock.plot_dock_widget is not None:
+                self.dock.plot_dock_widget.close()
+                self.iface.removeDockWidget(self.dock.plot_dock_widget)
             self.dock.close()
             self.iface.removeDockWidget(self.dock)
 

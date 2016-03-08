@@ -35,6 +35,17 @@ class DatasetsMenu(QMenu):
     def __init__(self, layer, parent=None):
         QMenu.__init__(self, parent)
 
+        self.layer = None
+        self.action_current = None
+
+        self.populate_actions(layer)
+
+
+    def populate_actions(self, layer):
+
+        self.layer = layer
+        self.clear()
+
         self.action_current = self.addAction("[current]")
         self.action_current.setCheckable(True)
         self.action_current.setChecked(True)
@@ -62,6 +73,16 @@ class DatasetsMenu(QMenu):
     def on_current_dataset_changed(self):
         if self.action_current.isChecked():
             self.datasets_changed.emit([])  # re-emit changed signal
+
+    def set_layer(self, layer):
+
+        if layer is self.layer:
+            return
+
+        if self.layer is not None:
+            self.layer.currentDataSetChanged.disconnect(self.on_current_dataset_changed)
+
+        self.populate_actions(layer)
 
 
 class DatasetsWidget(QToolButton):
@@ -92,3 +113,7 @@ class DatasetsWidget(QToolButton):
 
     def set_datasets(self, lst):
         self.on_datasets_changed(lst)
+
+    def set_layer(self, layer):
+        self.menu_datasets.set_layer(layer)
+        self.set_datasets([])

@@ -37,11 +37,27 @@ class OutputsMenu(QMenu):
     def __init__(self, layer, parent=None):
         QMenu.__init__(self, parent)
 
+        self.layer = None
         self.set_dataset(None)
+
+        self.set_layer(layer)
+
+    def set_layer(self, layer):
+
+        if layer is self.layer:
+            return
+
+        if self.layer is not None:
+            self.layer.currentOutputTimeChanged.disconnect(self.on_current_output_time_changed)
 
         layer.currentOutputTimeChanged.connect(self.on_current_output_time_changed)
 
+        self.populate_actions(layer.currentDataSet())
+
     def set_dataset(self, ds):
+        self.populate_actions(ds)
+
+    def populate_actions(self, ds):
 
         # populate timesteps
         self.clear()
@@ -113,3 +129,7 @@ class OutputsWidget(QToolButton):
 
     def set_outputs(self, lst):
         self.on_outputs_changed(lst)
+
+    def set_layer(self, layer):
+        self.menu_outputs.set_layer(layer)
+        self.set_outputs([])

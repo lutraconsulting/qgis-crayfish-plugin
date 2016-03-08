@@ -558,4 +558,5 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             w = CrayfishPlotWidget(self.currentCrayfishLayer(), self.plot_dock_widget)
             self.plot_dock_widget.setWidget(w)
         else:
+            self.plot_dock_widget.widget().set_layer(self.currentCrayfishLayer())
             self.plot_dock_widget.setVisible(not self.plot_dock_widget.isVisible())
