@@ -122,7 +122,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         if meshFileName is not None:
             self.loadMesh(meshFileName)
 
-    def _determineCRS(crs, meshFileName):
+    def _determineCRS(self, crs, meshFileName):
         meshDir = os.path.dirname(meshFileName)
         prjFiles = glob.glob(meshDir + os.path.sep + '*.prj')
         if len(prjFiles) == 1:

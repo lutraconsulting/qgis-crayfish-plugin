@@ -174,6 +174,9 @@ class Mesh:
   def set_no_projection(self):
     self.set_projection(None, None)
 
+  def sourceCrsProj4(self):
+    print self.lib.CF_Mesh_sourceCrsProj4(self.handle)
+    return self.lib.CF_Mesh_sourceCrsProj4(self.handle)
 
 class DataSet(object):
 

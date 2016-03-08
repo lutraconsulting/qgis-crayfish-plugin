@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_output.h"
 
 #include <gdal.h>
+#include <ogr_srs_api.h>
 
 #include <QString>
 #include <QMap>
@@ -373,9 +374,18 @@ static Mesh* createMesh(const GRIBParams& params) {
 }
 
 static void addSrcProj(Mesh* mesh, GDALDatasetH hDataset) {
-    char* proj = GDALGetProjectionRef( hDataset );
+    char* proj = const_cast<char*> (GDALGetProjectionRef( hDataset ));
     if( proj != NULL ) {
-        mesh->setSourceCrsProj4(proj);
+
+        OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
+        OSRImportFromWkt(hSRS, &proj);
+        char * ppszReturn = 0;
+        if (OSRExportToProj4(hSRS, &ppszReturn) == OGRERR_NONE && ppszReturn != 0)
+        {
+            QString proj4(ppszReturn);
+            mesh->setSourceCrsProj4(proj4);
+        }
+        OSRDestroySpatialReference(hSRS);
     }
 }
 
@@ -403,7 +413,7 @@ Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
 
         // Create MESH
         mesh = createMesh(params);
-        addSrcProj(mesh, hDataset)
+        addSrcProj(mesh, hDataset);
 
         // Parse bands
         data_hash bands;
