@@ -35,6 +35,36 @@ from qgis.utils import iface
 from .crayfish_plot_map_layer_widget import MapLayersWidget
 
 
+class PickGeometryTool(QgsMapTool):
+
+    picked = pyqtSignal(list, bool)   # list of points, whether finished or still drawing
+
+    def __init__(self, canvas):
+        QgsMapTool.__init__(self, canvas)
+        self.points = []
+        self.capturing = False
+
+    def canvasMoveEvent(self, e):
+
+        if not self.capturing:
+            return
+
+        self.picked.emit(self.points + [e.mapPoint()], False)
+
+    def canvasPressEvent(self, e):
+        if e.button() == Qt.LeftButton:
+            self.capturing = True
+            self.points.append(e.mapPoint())
+            self.picked.emit(self.points, False)
+        if e.button() == Qt.RightButton:
+            self.picked.emit(self.points, True)
+            self.capturing = False
+            self.points = []
+
+    def canvasReleaseEvent(self, e):
+        pass
+
+
 
 class LineGeometryPickerWidget(QWidget):
 
@@ -48,23 +78,56 @@ class LineGeometryPickerWidget(QWidget):
         self.pick_mode = self.PICK_NO
         self.pick_layer = None
         self.geometries = []
-        #self.temp_geometry_index = -1
+
+        self.btn_picker = QToolButton()
+        self.btn_picker.setText("From map")
+        self.btn_picker.setCheckable(True)
+        self.btn_picker.clicked.connect(self.picker_clicked)
 
         self.btn_layer = MapLayersWidget(QGis.Line)
         self.btn_layer.picked_layer.connect(self.on_picked_layer)
 
+        self.tool = PickGeometryTool(iface.mapCanvas())
+        self.tool.picked.connect(self.on_picked)
+        self.tool.setButton(self.btn_picker)
+
         layout = QHBoxLayout()
-        #layout.addWidget(self.btn_picker)
+        layout.addWidget(self.btn_picker)
         layout.addWidget(self.btn_layer)
         self.setLayout(layout)
 
+    def clear_geometries(self):
+        self.geometries = []
+        self.geometries_changed.emit()
+
+    def picker_clicked(self):
+
+        was_active = (self.pick_mode == self.PICK_MAP)
+        self.stop_picking()
+
+        if not was_active:
+            self.start_picking_map()
+
+    def start_picking_map(self):
+        self.pick_mode = self.PICK_MAP
+        iface.mapCanvas().setMapTool(self.tool)
+        self.clear_geometries()
+
     def stop_picking(self):
         if self.pick_mode == self.PICK_MAP:
-            pass    # TODO: iface.mapCanvas().unsetMapTool(self.tool)
+            iface.mapCanvas().unsetMapTool(self.tool)
         elif self.pick_mode == self.PICK_LAYER:
             self.pick_layer.selectionChanged.disconnect(self.on_pick_selection_changed)
             self.pick_layer = None
         self.pick_mode = self.PICK_NO
+
+    def on_picked(self, points, finished):
+
+        self.geometries = [ QgsGeometry.fromPolyline(points) ]
+        self.geometries_changed.emit()
+
+        if finished:  # no more updates
+            self.stop_picking()
 
     def on_picked_layer(self, layer_id):
 
@@ -82,5 +145,4 @@ class LineGeometryPickerWidget(QWidget):
     def on_pick_selection_changed(self):
 
         self.geometries = [QgsGeometry(f.geometry()) for f in self.pick_layer.selectedFeatures()]
-        #self.temp_geometry_index = -1
         self.geometries_changed.emit()

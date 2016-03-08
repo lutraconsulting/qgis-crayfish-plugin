@@ -192,11 +192,15 @@ class CrayfishPlotWidget(QWidget):
         self.on_plot_type_changed(self.btn_plot_type.plot_type)
         self.on_datasets_changed(self.btn_dataset.datasets)
 
+        # make picking from map (for time series) default
+        self.point_picker.picker_clicked()
+
 
     def hideEvent(self, e):
         self.point_picker.clear_geometries()
         self.point_picker.stop_picking()
-        # TODO: handle also line_picker
+        self.line_picker.clear_geometries()
+        self.line_picker.stop_picking()
         QWidget.hideEvent(self, e)
 
 
@@ -208,8 +212,9 @@ class CrayfishPlotWidget(QWidget):
         if plot_type != PlotTypeWidget.PLOT_TIME:
             self.point_picker.clear_geometries()
             self.point_picker.stop_picking()
-
-        # TODO: handle also line_picker cleanup
+        if plot_type != PlotTypeWidget.PLOT_CROSS_SECTION:
+            self.line_picker.clear_geometries()
+            self.line_picker.stop_picking()
 
         self.refresh_plot()
 

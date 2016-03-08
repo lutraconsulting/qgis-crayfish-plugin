@@ -87,8 +87,6 @@ class PointGeometryPickerWidget(QWidget):
 
         self.setLayout(layout)
 
-        self.picker_clicked()  # make picking from map default
-
     def clear_geometries(self):
         self.geometries = []
         self.temp_geometry_index = -1
