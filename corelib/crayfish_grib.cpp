@@ -298,9 +298,9 @@ static void activateElements(Mesh* mesh, const GRIBParams& params, NodeOutput* t
         Element elem = mesh->elements().at(idx);
 
         if (is_nodata(tos->values[elem.p[0]]) ||
-            is_nodata(tos->values[elem.p[0]]) ||
-            is_nodata(tos->values[elem.p[0]]) ||
-            is_nodata(tos->values[elem.p[0]]))
+            is_nodata(tos->values[elem.p[1]]) ||
+            is_nodata(tos->values[elem.p[2]]) ||
+            is_nodata(tos->values[elem.p[3]]))
         {
             active[idx] = 0; //NOT ACTIVE
         } else {
