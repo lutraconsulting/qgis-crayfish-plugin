@@ -123,6 +123,7 @@ public:
   bool vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const;
 
   void setNoProjection();
+  void setSourceCrsProj4(const QString& srcProj4) {mSrcProj4 = srcProj4;}
   bool setProjection(const QString& srcProj4, const QString& destProj4);
   bool hasProjection() const;
   QString sourceCrsProj4() const { return mSrcProj4; }

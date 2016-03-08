@@ -122,6 +122,18 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         if meshFileName is not None:
             self.loadMesh(meshFileName)
 
+    def _determineCRS(self, crs, meshFileName):
+        meshDir = os.path.dirname(meshFileName)
+        prjFiles = glob.glob(meshDir + os.path.sep + '*.prj')
+        if len(prjFiles) == 1:
+            # try to load .prj file from the same directory
+            wkt = open(prjFiles[0]).read()
+            crs.createFromWkt(wkt)
+        else:
+            # try to load from mesh projection if set (GDAL)
+            srcProj = self.mesh.sourceCrsProj4()
+            if srcProj:
+                crs.createFromProj4(srcProj)
 
     def loadMesh(self, meshFileName):
         meshFileName = unicode(meshFileName)
@@ -139,13 +151,10 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
                           QgsPoint( e[2], e[3] ) )
         self.setExtent(r)
 
-        # try to load .prj file from the same directory
+
         crs = QgsCoordinateReferenceSystem()
-        meshDir = os.path.dirname(meshFileName)
-        prjFiles = glob.glob(meshDir + os.path.sep + '*.prj')
-        if len(prjFiles) == 1:
-            wkt = open(prjFiles[0]).read()
-            crs.createFromWkt(wkt)
+        self._determineCRS(crs, meshFileName)
+
 
         crs.validate()  # if CRS is not valid, validate it using user's preference (prompt / use project's CRS / use default CRS)
         self.setCrs(crs)
@@ -153,7 +162,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         self.set2DMFileName(meshFileName) # Set the 2dm file name
         if hasattr(self, 'setSource'):  # supported from QGIS 2.16
             self.setSource(meshFileName)
-        
+
         head, tail = os.path.split(meshFileName)
         layerName, ext = os.path.splitext(tail)
         self.setLayerName(layerName)
@@ -263,7 +272,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         }
         self.updateColorMap(ds)  # make sure to apply the settings to form a color map
 
-        
+
     def readXml(self, node):
         element = node.toElement()
         prj = QgsProject.instance()
@@ -587,9 +596,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         return cm
 
-    
+
     def draw(self, rendererContext):
-        
+
         mapToPixel = rendererContext.mapToPixel()
         pixelSize = mapToPixel.mapUnitsPerPixel()
         ct = rendererContext.coordinateTransform()
@@ -650,7 +659,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         r.draw()
 
         # img now contains the render of the crayfish layer, merge it
-        
+
         painter = rendererContext.painter()
         rasterScaleFactor = rendererContext.rasterScaleFactor()
         invRasterScaleFactor = 1.0/rasterScaleFactor
@@ -659,18 +668,18 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         painter.drawImage(0, 0, img)
         painter.restore()
         return True
-        
+
     def identify(self, pt):
         """
-            Returns a QString representing the value of the layer at 
+            Returns a QString representing the value of the layer at
             the given QgsPoint, pt
         """
-        
+
         x = pt.x()
         y = pt.y()
-        
+
         value = self.mesh.value(self.currentOutput(), x, y)
-        
+
         v = None
         if value == -9999.0:
             # Outide extent
@@ -683,27 +692,27 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
                 v = QString(str(value))
             except:
                 v = str(value)
-            
+
         d = dict()
         try:
             d[ QString('Band 1') ] = v
         except:
             d[ 'Band 1' ] = v
-        
+
         return (True, d)
-        
+
     def bandCount(self):
         return 1
-        
+
     def rasterUnitsPerPixel(self):
         # Only required so far for the profile tool
         # There's probably a better way of doing this
         return float(0.5)
-    
+
     def rasterUnitsPerPixelX(self):
         # Only required so far for the profile tool
         return self.rasterUnitsPerPixel()
-    
+
     def rasterUnitsPerPixelY(self):
         # Only required so far for the profile tool
         return self.rasterUnitsPerPixel()
