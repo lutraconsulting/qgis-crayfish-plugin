@@ -61,6 +61,7 @@ lib.CF_LoadMesh.argtypes = [ctypes.c_char_p]
 lib.CF_Mesh_loadDataSet.restype = ctypes.c_bool
 lib.CF_Mesh_loadDataSet.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
 lib.CF_Mesh_dataSetAt.restype = ctypes.c_void_p
+lib.CF_Mesh_sourceCrsProj4.restype = ctypes.c_char_p
 lib.CF_DS_name.restype = ctypes.c_char_p
 lib.CF_DS_fileName.restype = ctypes.c_char_p
 lib.CF_DS_outputAt.restype = ctypes.c_void_p
