@@ -1,4 +1,4 @@
-/*
+ /*
 Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
 Copyright (C) 2016 Lutra Consulting
 
@@ -90,8 +90,8 @@ static void initNodes(Mesh::Nodes& nodes, const GRIBParams& params) {
         for (uint x = 0; x < params.xSize; ++x, ++nodesPtr)
         {
             nodesPtr->id = x + params.xSize*y;
-            nodesPtr->x = params.GT[0] + x*params.GT[1] + y*params.GT[2];
-            nodesPtr->y = params.GT[3] + x*params.GT[4] + y*params.GT[5];
+            nodesPtr->x = params.GT[0] + (x+0.5)*params.GT[1] + (y+0.5)*params.GT[2];
+            nodesPtr->y = params.GT[3] + (x+0.5)*params.GT[4] + (y+0.5)*params.GT[5];
         }
     }
 }
