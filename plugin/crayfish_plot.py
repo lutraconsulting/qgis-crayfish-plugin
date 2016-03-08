@@ -33,6 +33,7 @@ from qgis.gui import *
 from qgis.utils import iface
 import pyqtgraph
 
+from .crayfish_gui_utils import timeToString
 from .crayfish_plot_line_geometry_widget import LineGeometryPickerWidget
 from .crayfish_plot_point_geometry_widget import PointGeometryPickerWidget
 from .crayfish_plot_output_widget import OutputsWidget
@@ -174,6 +175,7 @@ class CrayfishPlotWidget(QWidget):
         self.gw = pyqtgraph.GraphicsWindow()
         self.plot = self.gw.addPlot()
         self.plot.showGrid(x=True, y=True)
+        self.plot.addLegend()
 
         hl = QHBoxLayout()
         hl.addWidget(self.btn_plot_type)
@@ -251,6 +253,18 @@ class CrayfishPlotWidget(QWidget):
             iface.mapCanvas().scene().removeItem(rb)
         self.rubberbands = []
         self.plot.clear()
+        self.clear_plot_legend()
+
+    def clear_plot_legend(self):
+        layout = self.plot.legend.layout
+        # bulk removal of everything based on code in LegendItem.py
+        for sample, label in self.plot.legend.items:
+            layout.removeItem(sample)
+            sample.close()
+            layout.removeItem(label)
+            label.close()
+        self.plot.legend.items = []
+        self.plot.legend.updateSize()
 
 
     def refresh_timeseries_plot(self):
@@ -281,6 +295,7 @@ class CrayfishPlotWidget(QWidget):
 
         x, y = timeseries_plot_data(ds, geom_pt)
         self.plot.getAxis('left').setLabel(ds.name())
+        self.plot.legend.setVisible(False)
 
         valid_plot = not all(map(math.isnan, y))
         if not valid_plot:
@@ -314,6 +329,8 @@ class CrayfishPlotWidget(QWidget):
         if len(outputs) == 0:
             outputs = [self.layer.currentOutputForDataset(ds)]
 
+        self.plot.legend.setVisible(len(outputs) > 1)
+
         for i, output in enumerate(outputs):
 
             x,y = cross_section_plot_data(output, geometry)
@@ -324,7 +341,7 @@ class CrayfishPlotWidget(QWidget):
 
             clr = colors[i % len(colors)]
             pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
-            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen)
+            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=timeToString(output.time()))
 
         rb = QgsRubberBand(iface.mapCanvas(), QGis.Line)
         rb.setColor(colors[0])
