@@ -98,5 +98,26 @@ class TestCrayfishLoad(unittest.TestCase):
     self.assertEqual(o.value(0), 3.)
     self.assertEqual(o.value(1), 4.)
 
+  def test_load_grib_scalar_data_file(self):
+    m = crayfish.Mesh(TEST_DIR + "/Madagascar.wave.7days.grb")
+    self.assertEqual(m.dataset_count(), 3)
+    ds = m.dataset(0)
+    self.assertEqual(ds.type(), crayfish.DS_Scalar)
+    self.assertEqual(ds.output_count(), 27)
+    o = ds.output(0)
+    self.assertEqual(o.time(), 6.) # forecast 7 days/6hours
+    self.assertEqual(o.value(0), -9999.0) #nodata
+    self.assertEqual(o.value(1600), 15.34000015258789)
+
+  def test_load_grib_vector_data_file(self):
+    m = crayfish.Mesh(TEST_DIR + "/Madagascar.wind.7days.grb")
+    self.assertEqual(m.dataset_count(), 1)
+    ds = m.dataset(0)
+    self.assertEqual(ds.type(), crayfish.DS_Vector)
+    self.assertEqual(ds.output_count(), 27)
+    o = ds.output(0)
+    self.assertEqual(o.time(), 6.) # forecast 7 days/6hours
+    self.assertEqual(o.value(1600), 9.666419982910156)
+
 if __name__ == '__main__':
   unittest.main()

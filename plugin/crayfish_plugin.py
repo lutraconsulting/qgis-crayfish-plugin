@@ -54,13 +54,13 @@ class CrayfishPlugin:
         self.dock = None
         self.lr = QgsMapLayerRegistry.instance()
         self.crayfishViewerLibFound = False
-        
+
     def initGui(self):
 
         # Create action that will show the about page
         self.aboutAction = QAction(QIcon(":/plugins/crayfish/crayfish.png"), "About", self.iface.mainWindow())
         QObject.connect(self.aboutAction, SIGNAL("triggered()"), self.about)
-        
+
         # Create action for upload
         self.uploadAction = QAction(QIcon(":/plugins/illuvis/illuvis_u_32w.png"), "Upload to illuvis ...", self.iface.mainWindow())
         QObject.connect(self.uploadAction, SIGNAL("triggered()"), self.upload)
@@ -74,11 +74,11 @@ class CrayfishPlugin:
           return
 
         self.crayfishViewerLibFound = True
-        
+
         # Create action that will load a layer to view
         self.action = QAction(QIcon(":/plugins/crayfish/crayfish_viewer_add_layer.png"), "Add Crayfish Layer", self.iface.mainWindow())
         QObject.connect(self.action, SIGNAL("triggered()"), self.addCrayfishLayer)
-        
+
         self.actionExportGrid = QAction(QIcon(":/plugins/crayfish/crayfish_export_raster.png"), "Export to Raster Grid ...", self.iface.mainWindow())
         QObject.connect(self.actionExportGrid, SIGNAL("triggered()"), self.exportGrid)
 
@@ -88,7 +88,7 @@ class CrayfishPlugin:
         # Add toolbar button and menu item
         layerTB = self.iface.layerToolBar()
         layerTB.insertAction(self.iface.actionAddPgLayer(), self.action)
-        
+
         # Add menu item
         self.menu.addAction(self.action)
         self.menu.addAction(self.actionExportGrid)
@@ -125,11 +125,11 @@ class CrayfishPlugin:
 
 
 
-            
+
     def layersRemoved(self, layers):
         for layer in layers:
             self.layerRemoved(layer)
-    
+
     def layerRemoved(self, layer):
         """
             When a layer is removed, check if we have any crayfish layers left.
@@ -147,11 +147,11 @@ class CrayfishPlugin:
 
         self.menu.removeAction(self.aboutAction)
         self.menu.removeAction(self.uploadAction)
-            
+
         if not self.crayfishViewerLibFound:
             self.iface.pluginMenu().removeAction(self.menu.menuAction())
             return
-        
+
         self.iface.legendInterface().removeLegendLayerAction(self.actionExportGrid)
         self.iface.legendInterface().removeLegendLayerAction(self.uploadAction)
         self.iface.legendInterface().removeLegendLayerAction(self.actionExportAnimation)
@@ -165,7 +165,7 @@ class CrayfishPlugin:
         self.menu.removeAction(self.actionExportAnimation)
 
         self.iface.pluginMenu().removeAction(self.menu.menuAction())
-        
+
         # Unregister plugin layer type
         from crayfish_viewer_plugin_layer import CrayfishViewerPluginLayer
         QgsPluginLayerRegistry.instance().removePluginLayerType(CrayfishViewerPluginLayer.LAYER_TYPE)
@@ -203,35 +203,37 @@ class CrayfishPlugin:
                 That result is added to a layer already referencing its .2dm
                 Or if no such layer exists, a new layer is created
         """
-        
+
         # First get the file name of the 'thing' the user wants to view
-        
+
         # Get the file name
-        inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(), 'Open Crayfish Dat File', self.lastFolder(),
-                                                 "Results Files DAT, SOL, XMDF (*.dat *.sol *.xmdf *.sww);;2DM Mesh Files (*.2dm)")
+        inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(),
+                                                 'Open Crayfish Dat File',
+                                                 self.lastFolder(),
+                                                 "Results Files DAT, SOL, XMDF, GRIB (*.dat *.sol *.xmdf *.sww *.grb *.bin);;2DM Mesh Files (*.2dm)")
         inFileName = unicode(inFileName)
-        if len(inFileName) == 0: # If the length is 0 the user pressed cancel 
+        if len(inFileName) == 0: # If the length is 0 the user pressed cancel
             return
-            
+
         # Store the path we just looked in
         head, tail = os.path.split(inFileName)
         self.setLastFolder(head)
-        
+
         # Determine what type of file it is
         prefix, fileType = os.path.splitext(tail)
         fileType = fileType.lower()
-        if fileType == '.2dm' or fileType == '.sww':
+        if fileType == '.2dm' or fileType == '.sww' or fileType == '.grb' or fileType == '.bin':
             """
                 The user has selected a mesh file... add it if it is not already loaded
-                
+
             """
             layerWith2dm = self.getLayerWith2DM(inFileName)
-            
+
             if layerWith2dm:
                 # This 2dm has already been added
                 qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
                 return
-              
+
             if not self.addLayer(inFileName):
                 return # addLayer() reports errors/warnings
 
@@ -240,7 +242,7 @@ class CrayfishPlugin:
 
         elif fileType == '.dat' or fileType == '.sol' or fileType == '.xmdf':
             self.loadDatFile(inFileName)
-            
+
         else:
             # This is an unsupported file type
             qgis_message_bar.pushMessage("Crayfish", "The file type you are trying to load is not supported: " + fileType, level=QgsMessageBar.CRITICAL)
@@ -264,7 +266,7 @@ class CrayfishPlugin:
           # maybe we need more rules for guessing 2dm for different solvers
           first, sep, last = inFileName.rpartition('_')
         meshFileName = first + '.2dm'
-        
+
         parentLayer = self.getLayerWith2DM(meshFileName)
         if parentLayer is not None:
             return parentLayer   # already loaded
@@ -290,10 +292,10 @@ class CrayfishPlugin:
             self.lastFailedWidget.layout().addWidget(button)
             self.iface.messageBar().pushWidget(self.lastFailedWidget, QgsMessageBar.CRITICAL)
             return
-        
+
         if not self.addLayer(meshFileName):
             return    # errors/warnings reported in addLayer()
-          
+
         parentLayer = self.getLayerWith2DM(meshFileName)
         assert( parentLayer is not None)
         return parentLayer
@@ -381,13 +383,13 @@ class CrayfishPlugin:
         d = crayfish_about_dialog.CrayfishAboutDialog(self.iface)
         d.show()
         res = d.exec_()
-    
-    
+
+
     def upload(self):
         d = upload_dialog.UploadDialog(self.iface, self.dock.currentCrayfishLayer())
         d.exec_()
 
-    
+
     def getCrayfishLayers(self):
         crayfishLayers = []
         layers = QgsMapLayerRegistry.instance().mapLayers().values()
@@ -395,30 +397,30 @@ class CrayfishPlugin:
             if l.type() == QgsMapLayer.PluginLayer and str(l.pluginLayerType()) == 'crayfish_viewer':
                 crayfishLayers.append(l)
         return crayfishLayers
-    
-    
+
+
     def have2DM(self, fileName):
-        
+
         layers = self.getCrayfishLayers()
         for layer in layers:
             if layer.twoDMFileName == fileName:
                 return True
         return False
-        
+
     def getLayerWith2DM(self, fileName):
         layers = self.getCrayfishLayers()
         for layer in layers:
             if layer.twoDMFileName == fileName:
                 return layer
         return None
-    
+
     def addLayer(self, twoDMFileName):
         from crayfish_viewer_plugin_layer import CrayfishViewerPluginLayer
         layer = CrayfishViewerPluginLayer(twoDMFileName)
         if not layer.isValid():
             layer.showMeshLoadError(twoDMFileName)
             return None
-            
+
         # Add to layer registry
         QgsMapLayerRegistry.instance().addMapLayer(layer)
 
@@ -429,7 +431,7 @@ class CrayfishPlugin:
                 qgis_message_bar.pushMessage("Crayfish", "The mesh contains elements that are unsupported at this time. The following types of elements will be ignored for the time being: E2L, E3L, E6T, E8Q, E9Q", level=QgsMessageBar.WARNING)
         elif warn == crayfish.Warn_InvalidElements:
                 qgis_message_bar.pushMessage("Crayfish", "The mesh contains some invalid elements, they will not be rendered.", level=QgsMessageBar.WARNING)
-        
+
         return layer
 
     def layerWasAdded(self, layer):
@@ -446,7 +448,7 @@ class CrayfishPlugin:
         # make sure the dock is visible and up-to-date
         self.dock.show()
 
-        
+
     def dockVisibilityChanged(self, visible):
         if visible and len(self.getCrayfishLayers()) == 0:
             # force hidden on startup

@@ -38,7 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define DEPTH_THRESHOLD   0.0001   // in meters
 
 
-Mesh* loadSWW(const QString& fileName, LoadStatus* status)
+Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
 {
   if (status) status->clear();
 

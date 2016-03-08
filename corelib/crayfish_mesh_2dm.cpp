@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QFile>
 #include <QTextStream>
 
+#include "crayfish.h"
 #include "crayfish_mesh.h"
 #include "crayfish_mesh_2dm.h"
 #include "crayfish_dataset.h"
@@ -34,7 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <iostream>
 
-Mesh* loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
+Mesh* Crayfish::loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
 {
   if (status) status->clear();
   //std::cerr << "CF: opening 2DM: " << twoDMFileName.toAscii().data() << std::endl;

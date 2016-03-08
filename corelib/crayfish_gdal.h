@@ -59,11 +59,9 @@ private:
   Q_DISABLE_COPY(RawData)
 };
 
-
 class CrayfishGDAL
 {
 public:
-
   static bool writeGeoTIFF(const QString& outFilename, RawData* rd, const QString& wkt);
 };
 
