@@ -361,6 +361,13 @@ static Mesh* createMesh(const GRIBParams& params) {
     return new Mesh(nodes, elements);
 }
 
+static void addSrcProj(Mesh* mesh, GDALDatasetH hDataset) {
+    char* proj = GDALGetProjectionRef( hDataset );
+    if( proj != NULL ) {
+        mesh->setSourceCrsProj4(proj);
+    }
+}
+
 /* ************************************************************************** */
 
 Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
@@ -385,6 +392,7 @@ Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
 
         // Create MESH
         mesh = createMesh(params);
+        addSrcProj(mesh, hDataset)
 
         // Parse bands
         data_hash bands;
