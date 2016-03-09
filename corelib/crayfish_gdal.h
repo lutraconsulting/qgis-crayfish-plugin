@@ -27,10 +27,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef CRAYFISH_GDAL_H
 #define CRAYFISH_GDAL_H
 
+#include "gdal.h"
+
 #include <QString>
 #include <QVector>
+#include <QMap>
+#include <QHash>
 
+#include "crayfish_mesh.h"
 
+class LoadStatus;
+class NodeOutput;
+
+/******************************************************************************************************/
 
 class RawData
 {
@@ -63,6 +72,50 @@ class CrayfishGDAL
 {
 public:
   static bool writeGeoTIFF(const QString& outFilename, RawData* rd, const QString& wkt);
+};
+
+/******************************************************************************************************/
+
+class CrayfishGDALReader
+{
+public:
+    CrayfishGDALReader(const QString& fileName): mFileName(fileName), mHDataset(0), mPafScanline(0), mMesh(0){}
+    virtual ~CrayfishGDALReader(){}
+    Mesh* load(LoadStatus* status);
+
+protected:
+    virtual void createMesh();
+    virtual void addDatasets();
+    virtual void activateElements(NodeOutput* tos);
+    virtual void addSrcProj();
+    virtual void addDataToOutput(GDALRasterBandH raster_band, NodeOutput* tos, bool is_vector, bool is_x);
+    virtual void populateScaleForVector(NodeOutput* tos);
+    virtual void parseRasterBands();
+    virtual void parseBandInfo(const QString& elem, QString& band_name, int* data_count, int* data_index);
+    virtual bool parseMetadata(GDALRasterBandH gdalBand, int* time, int* ref_time, QString& elem);
+    virtual int parseMetadataTime(const QString& time_s);
+    virtual void initElements(Mesh::Elements& elements);
+    virtual void initNodes(Mesh::Nodes& nodes);
+    virtual void openFile();
+    virtual void parseParameters();
+
+private:
+    typedef QMap<int, QVector<GDALRasterBandH> > timestep_map; //TIME (sorted), [X, Y]
+    typedef QHash<QString, QString> metadata_hash; // KEY, VALUE
+    typedef QHash<QString, timestep_map > data_hash; //Data Type, TIME (sorted), [X, Y]
+
+    QString mFileName;
+    GDALDatasetH mHDataset;
+    float *mPafScanline;
+    Mesh* mMesh;
+    data_hash mBands;
+
+    uint mNBands;
+    uint mXSize;
+    uint mYSize;
+    uint mNPoints;
+    uint mNVolumes;
+    double mGT[6]; // affine transform matrix
 };
 
 #endif // CRAYFISH_GDAL_H

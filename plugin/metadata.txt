@@ -9,12 +9,13 @@ description=A collection of tools for TUFLOW and other hydraulic
 version=2.1.3
 author=Lutra Consulting
 email=info@lutraconsulting.co.uk
-about=The Crayfish plugin aspires to be a complete set of post-processing tools to support numerical modelling within QGIS. With Crayfish, users can load time varying mesh into QGIS. Currently, Crayfish supports a number of hydraulic modelling software packages which output results to XMDF, SMS DAT, GRIB and SWW. Examples of the software packages are: TUFLOW, AnuGA, BASEMENT, ISIS 2D and Hydro_AS 2D. Crayfish loads and renders results directly rather than converting them to GIS formats before viewing. This allows users to flick quickly through the various output steps in the result files and to create animations.
+about=The Crayfish plugin aspires to be a complete set of post-processing tools to support numerical modelling within QGIS. With Crayfish, users can load time varying mesh into QGIS. Currently, Crayfish supports a number of hydraulic modelling software packages which output results to XMDF, SMS DAT, GRIB, netCFD and SWW. Examples of the software packages are: TUFLOW, AnuGA, BASEMENT, ISIS 2D and Hydro_AS 2D. Crayfish loads and renders results directly rather than converting them to GIS formats before viewing. This allows users to flick quickly through the various output steps in the result files and to create animations.
 ; end of mandatory metadata
 
 ; start of optional metadata
 changelog=2.2 - New Features:
- - Support for GRIB result files (GRB)
+ - Support for GRIB result files (.grib, .bin, .grib1, .grib2, .grb)
+ - Support for netCFD result files (.nc)
  <p>2.1.3 - Bug fixes:
  - Export of animations fixes
  - AnuGA file format support fixes
