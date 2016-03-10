@@ -184,7 +184,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           qgis_message_bar.pushMessage("Crayfish", "Failed to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
         elif e == crayfish.Err_UnknownFormat:
           qgis_message_bar.pushMessage("Crayfish", "Mesh file format not recognized (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
-
+        # TODO register other errors
+        
     def currentDataSet(self):
         return self.mesh.dataset(self.current_ds_index)
 

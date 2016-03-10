@@ -194,7 +194,6 @@ class CrayfishPlugin:
             settings = QSettings()
             settings.setValue("crayfishViewer/lastFolder", path)
 
-
     def addCrayfishLayer(self):
         """
             The user wants to view an Crayfish layer
@@ -230,15 +229,26 @@ class CrayfishPlugin:
                 The user has selected a mesh file... add it if it is not already loaded
 
             """
-            layerWith2dm = self.getLayerWith2DM(inFileName)
+            layers_to_add = [inFileName]
+            if fileType == '.nc':
+                # this one is container of multiple sublayers
+                temp_raster = QgsRasterLayer(inFileName)
+                if temp_raster.isValid(): #just one dataset, nothing to choose from
+                    layers_to_add = [inFileName]
+                else:
+                    if len(temp_raster.subLayers()) > 1:
+                        layers_to_add = temp_raster.subLayers()
 
-            if layerWith2dm:
-                # This 2dm has already been added
-                qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
-                return
+            for layer_data_source in layers_to_add:
+                layerWith2dm = self.getLayerWith2DM(layer_data_source)
 
-            if not self.addLayer(inFileName):
-                return # addLayer() reports errors/warnings
+                if layerWith2dm:
+                    # This 2dm has already been added
+                    qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
+                    return
+
+                if not self.addLayer(layer_data_source):
+                    return # addLayer() reports errors/warnings
 
             # update GUI
             self.dock.currentLayerChanged()
@@ -250,8 +260,6 @@ class CrayfishPlugin:
             # This is an unsupported file type
             qgis_message_bar.pushMessage("Crayfish", "The file type you are trying to load is not supported: " + fileType, level=QgsMessageBar.CRITICAL)
             return
-
-
 
     def loadMeshForFile(self, inFileName):
 
@@ -332,6 +340,7 @@ class CrayfishPlugin:
             QApplication.restoreOverrideCursor()
             import crayfish
             err = crayfish.last_load_status()[0]
+            # reuse from showMeshLoadError
             err_msgs = {
               crayfish.Err_NotEnoughMemory : 'Not enough memory',
               crayfish.Err_FileNotFound : 'Unable to read the file - missing file or no read access',
