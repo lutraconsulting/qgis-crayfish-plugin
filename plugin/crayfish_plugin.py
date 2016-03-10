@@ -226,40 +226,47 @@ class CrayfishPlugin:
             fileType == '.grb' or fileType == '.bin' or fileType == '.grib' or fileType == '.grib1' or fileType == '.grib2' or
             fileType == '.nc'):
             """
-                The user has selected a mesh file... add it if it is not already loaded
-
+                The user has selected a mesh file...
             """
-            layers_to_add = [inFileName]
-            if fileType == '.nc':
-                # this one is container of multiple sublayers
-                temp_raster = QgsRasterLayer(inFileName)
-                if temp_raster.isValid(): #just one dataset, nothing to choose from
-                    layers_to_add = [inFileName]
-                else:
-                    if len(temp_raster.subLayers()) > 1:
-                        layers_to_add = temp_raster.subLayers()
-
-            for layer_data_source in layers_to_add:
-                layerWith2dm = self.getLayerWith2DM(layer_data_source)
-
-                if layerWith2dm:
-                    # This 2dm has already been added
-                    qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
-                    return
-
-                if not self.addLayer(layer_data_source):
-                    return # addLayer() reports errors/warnings
+            if not self.loadMesh(inFileName, fileType):
+                return
 
             # update GUI
             self.dock.currentLayerChanged()
 
         elif fileType == '.dat' or fileType == '.sol' or fileType == '.xmdf':
+            """
+                The user has selected a results-only file...
+            """
             self.loadDatFile(inFileName)
 
         else:
             # This is an unsupported file type
             qgis_message_bar.pushMessage("Crayfish", "The file type you are trying to load is not supported: " + fileType, level=QgsMessageBar.CRITICAL)
             return
+
+    def loadMesh(self, inFileName, fileType):
+        # Load mesh as new Crayfish layer for file
+        # In file is container of multiple meshes, load them all separately (e.g. netCFD file)
+        data_sources_to_add = [inFileName]
+        if fileType == '.nc':
+            # this one is container of multiple sublayers
+            temp_raster = QgsRasterLayer(inFileName)
+            if (not temp_raster.isValid()) and (len(temp_raster.subLayers()) > 1):
+                data_sources_to_add = temp_raster.subLayers()
+
+        for data_source in data_sources_to_add:
+            layerWith2dm = self.getLayerWith2DM(data_source)
+
+            if layerWith2dm:
+                # This 2dm has already been added
+                qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
+                return False
+
+            if not self.addLayer(data_source):
+                return False # addLayer() reports errors/warnings
+
+        return True # success
 
     def loadMeshForFile(self, inFileName):
 
