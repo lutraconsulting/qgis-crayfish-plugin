@@ -94,7 +94,7 @@ protected:
 
     /* return true on failure */
     virtual bool parseBandInfo(const metadata_hash& metadata, QString& band_name, int* time) = 0;
-    virtual void determineBandExtraInfo(QString& band_name, bool* is_vector, bool* is_x);
+    virtual void determineBandVectorInfo(QString& band_name, bool* is_vector, bool* is_x) = 0;
     virtual int parseMetadataTime(const QString& time_s);
 
 private:
@@ -113,7 +113,7 @@ private:
     void addDatasets();
     void createMesh();
     void parseRasterBands();
-
+    void sanitizeBandName(QString& band_name);
 
     const QString mFileName;
     const QString mDriverName;

@@ -61,6 +61,28 @@ protected:
 
        return false; // SUCCESS
     }
+
+    void determineBandVectorInfo(QString& band_name, bool* is_vector, bool* is_x)
+    {
+
+        if (band_name.contains("u-component")) {
+            *is_vector = true; // vector
+            *is_x =  true; //X-Axis
+        }
+        else if (band_name.contains("v-component")) {
+            *is_vector = true; // vector
+            *is_x =  false; //Y-Axis
+        } else {
+            *is_vector = false; // scalar
+            *is_x =  true; //X-Axis
+        }
+
+        band_name = band_name.replace("u-component of", "")
+                             .replace("v-component of", "")
+                             .replace("u-component", "")
+                             .replace("v-component", "");
+    }
+
 private:
     int mRefTime; // ref time is parsed only once, because
                   // some GRIB files do not use FORECAST_SEC, but VALID_TIME

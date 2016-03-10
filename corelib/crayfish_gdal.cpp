@@ -153,32 +153,17 @@ CrayfishGDALReader::metadata_hash CrayfishGDALReader::parseMetadata(GDALRasterBa
     return meta;
 }
 
-void CrayfishGDALReader::determineBandExtraInfo(QString& band_name, bool* is_vector, bool* is_x)
+void CrayfishGDALReader::sanitizeBandName(QString& band_name)
 {
-
-    if (band_name.contains("u-component")) {
-        *is_vector = true; // vector
-        *is_x =  true; //X-Axis
-    }
-    else if (band_name.contains("v-component")) {
-        *is_vector = true; // vector
-        *is_x =  false; //Y-Axis
-    } else {
-        *is_vector = false; // scalar
-        *is_x =  true; //X-Axis
-    }
-
-    band_name = band_name.replace("u-component of", "")
-            .replace("v-component of", "")
-            .replace("u-component", "")
-            .replace("v-component", "")
-            .replace(QRegExp("\\[.+\\/.+\\]"), "") // remove units
-            // slash cannot be in dataset name,
-            // because it means subdataset, see
-            // python class DataSetModel.setmMesh()
-            // see #132
-            .replace("/", "");
+    // remove units
+    // slash cannot be in dataset name,
+    // because it means subdataset, see
+    // python class DataSetModel.setmMesh()
+    // see #132
+    band_name = band_name.replace(QRegExp("\\[.+\\/.+\\]"), "").replace("/", "");
 }
+
+
 
 void CrayfishGDALReader::parseRasterBands() {
    for (uint i = 1; i <= mNBands; ++i ) // starts with 1 .... ehm....
@@ -199,8 +184,8 @@ void CrayfishGDALReader::parseRasterBands() {
 
        bool is_vector;
        bool is_x;
-       determineBandExtraInfo(band_name, &is_vector, &is_x);
-
+       determineBandVectorInfo(band_name, &is_vector, &is_x);
+       sanitizeBandName(band_name);
 
        // Add to data structures
        int data_count = is_vector ? 2 : 1;

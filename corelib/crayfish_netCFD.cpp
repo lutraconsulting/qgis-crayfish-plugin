@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_gdal.h"
 
 #include <QString>
-
+#include <QtGlobal>
 
 class NetCFDReader: public CrayfishGDALReader
 {
@@ -65,6 +65,11 @@ public:
        return false; // SUCCESS
     }
 
+    void determineBandVectorInfo(QString& , bool* is_vector, bool* is_x)
+    {
+        *is_vector = false; // ONLY scalars supported so far
+        *is_x =  true;
+    }
 };
 
 Mesh* Crayfish::loadNetCFD(const QString& fileName, LoadStatus* status)
