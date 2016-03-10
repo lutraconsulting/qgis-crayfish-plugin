@@ -116,18 +116,18 @@ private:
     void sanitizeBandName(QString& band_name);
 
     const QString mFileName;
-    const QString mDriverName;
+    const QString mDriverName; /* GDAL driver name */
     GDALDatasetH mHDataset;
-    float *mPafScanline;
+    float *mPafScanline; /* temporary buffer for reading one raster line */
     Mesh* mMesh;
-    data_hash mBands;
+    data_hash mBands; /* raster bands GDAL handlers ordered by layer name and time */
 
-    uint mNBands;
-    uint mXSize;
-    uint mYSize;
-    uint mNPoints;
-    uint mNVolumes;
-    double mGT[6]; // affine transform matrix
+    uint mNBands; /* number of bands */
+    uint mXSize; /* number of x pixels */
+    uint mYSize; /* number of y pixels */
+    uint mNPoints; /* nodes count */
+    uint mNVolumes; /* elements count */
+    double mGT[6]; /* affine transform matrix */
 };
 
 #endif // CRAYFISH_GDAL_H
