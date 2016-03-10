@@ -87,8 +87,8 @@ void CrayfishGDALReader::parseParameters() {
 void CrayfishGDALReader::openFile() {
 
    GDALAllRegister();
-   GDALDriverH hDriver = GDALGetDriverByName("GRIB");
-   if (!hDriver) throw LoadStatus::Err_UnknownFormat;
+   GDALDriverH hDriver = GDALGetDriverByName(mDriverName.toAscii().data());
+   if (!hDriver) throw LoadStatus::Err_MissingDriver;
 
    // Open dataset
    mHDataset = GDALOpen( mFileName.toAscii().data(), GA_ReadOnly );
@@ -131,88 +131,80 @@ int CrayfishGDALReader::parseMetadataTime(const QString& time_s)
    return times[0].toInt(); // sec
 }
 
-bool CrayfishGDALReader::parseMetadata(GDALRasterBandH gdalBand, int* time, int* ref_time, QString& elem)
+CrayfishGDALReader::metadata_hash CrayfishGDALReader::parseMetadata(GDALRasterBandH gdalBand)
 {
-   int valid_time = std::numeric_limits<int>::min();
-   char** GDALmetadata = GDALGetMetadata( gdalBand, 0 );
-   if ( GDALmetadata )
-   {
-       for ( int j = 0; GDALmetadata[j]; ++j )
-       {
-           QString metadata_pair = GDALmetadata[j]; //KEY = VALUE
-           QStringList metadata = metadata_pair.split("=");
-           if (metadata.length() == 2) {
-               if (metadata[0] == "GRIB_COMMENT")
-               {
-                   elem = metadata[1];
-               } else if (metadata[0] == "GRIB_VALID_TIME")
-               {
-                   valid_time = parseMetadataTime(metadata[1]);
-               } else if (metadata[0] == "GRIB_REF_TIME" && *ref_time == std::numeric_limits<int>::min())
-               {
-                   *ref_time = parseMetadataTime(metadata[1]);
-               }
-           }
-       }
+    CrayfishGDALReader::metadata_hash meta;
 
-       if (!elem.isEmpty() && valid_time > std::numeric_limits<int>::min() && *ref_time > std::numeric_limits<int>::min()) {
-           *time = valid_time - *ref_time;
-           return false;
-       }
-   }
+    char** GDALmetadata = GDALGetMetadata( gdalBand, 0 );
+    if ( GDALmetadata )
+    {
+        for ( int j = 0; GDALmetadata[j]; ++j )
+        {
+            QString metadata_pair = GDALmetadata[j]; //KEY = VALUE
+            QStringList metadata = metadata_pair.split("=");
+            if (metadata.length() > 1) {
+                QString key = metadata.takeFirst();
+                QString value = metadata.join("=");
+                meta[key] = value;
+            }
+        }
+    }
 
-   return true;
+    return meta;
 }
 
-void CrayfishGDALReader::parseBandInfo(const QString& elem, QString& band_name, int* data_count, int* data_index)
+void CrayfishGDALReader::determineBandExtraInfo(QString& band_name, bool* is_vector, bool* is_x)
 {
-   band_name = band_name.replace("u-component of", "")
-                        .replace("v-component of", "")
-                        .replace("u-component", "")
-                        .replace("v-component", "")
-                        .replace(QRegExp("\\[.+\\/.+\\]"), "") // remove units
-                        .replace("/", ""); // slash cannot be in dataset name,
-                                           // because it means subdataset, see
-                                           // python class DataSetModel.setmMesh()
-                                           // see #132
 
-   if (elem.contains("u-component")) {
-       *data_count = 2; // vector
-       *data_index =  0; //X-Axis
-   }
-   else if (elem.contains("v-component")) {
-       *data_count = 2; // vector
-       *data_index =  1; //Y-Axis
-   } else {
-       *data_count = 1; // scalar
-       *data_index =  0; //X-Axis
-   }
+    if (band_name.contains("u-component")) {
+        *is_vector = true; // vector
+        *is_x =  true; //X-Axis
+    }
+    else if (band_name.contains("v-component")) {
+        *is_vector = true; // vector
+        *is_x =  false; //Y-Axis
+    } else {
+        *is_vector = false; // scalar
+        *is_x =  true; //X-Axis
+    }
+
+    band_name = band_name.replace("u-component of", "")
+            .replace("v-component of", "")
+            .replace("u-component", "")
+            .replace("v-component", "")
+            .replace(QRegExp("\\[.+\\/.+\\]"), "") // remove units
+            // slash cannot be in dataset name,
+            // because it means subdataset, see
+            // python class DataSetModel.setmMesh()
+            // see #132
+            .replace("/", "");
 }
 
 void CrayfishGDALReader::parseRasterBands() {
-   int ref_time = std::numeric_limits<int>::min(); // ref time is parsed only once, because
-                                                     // some GRIB files do not use FORECAST_SEC, but VALID_TIME
-                                                     // metadata
-
    for (uint i = 1; i <= mNBands; ++i ) // starts with 1 .... ehm....
    {
        // Get Band
        GDALRasterBandH gdalBand = GDALGetRasterBand( mHDataset, i );
        if (!gdalBand) throw LoadStatus::Err_InvalidData;
 
+
        // Get metadata
-       QString elem;
+       metadata_hash metadata = parseMetadata(gdalBand);
+
+       QString band_name;
        int time = std::numeric_limits<int>::min(); //time difference from ref_time (sec)
-       if (parseMetadata(gdalBand, &time, &ref_time, elem)) {
+       if (parseBandInfo(metadata, band_name, &time)) {
            continue;
        }
 
-       // Add to data structures
-       QString band_name(elem);
-       int data_count;
-       int data_index;
-       parseBandInfo(elem, band_name, &data_count, &data_index);
+       bool is_vector;
+       bool is_x;
+       determineBandExtraInfo(band_name, &is_vector, &is_x);
 
+
+       // Add to data structures
+       int data_count = is_vector ? 2 : 1;
+       int data_index = is_x ? 0 : 1;
        if (mBands.find(band_name) == mBands.end())
        {
            // this element is not yet added at all

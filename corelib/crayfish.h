@@ -48,7 +48,8 @@ struct LoadStatus
       Err_FileNotFound,
       Err_UnknownFormat,
       Err_IncompatibleMesh,
-      Err_InvalidData
+      Err_InvalidData,
+      Err_MissingDriver
   };
 
 

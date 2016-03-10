@@ -79,32 +79,44 @@ public:
 class CrayfishGDALReader
 {
 public:
-    CrayfishGDALReader(const QString& fileName): mFileName(fileName), mHDataset(0), mPafScanline(0), mMesh(0){}
+    CrayfishGDALReader(const QString& fileName, const QString& driverName):
+        mFileName(fileName),
+        mDriverName(driverName),
+        mHDataset(0),
+        mPafScanline(0),
+        mMesh(0){}
+
     virtual ~CrayfishGDALReader(){}
     Mesh* load(LoadStatus* status);
 
 protected:
-    virtual void createMesh();
-    virtual void addDatasets();
-    virtual void activateElements(NodeOutput* tos);
-    virtual void addSrcProj();
-    virtual void addDataToOutput(GDALRasterBandH raster_band, NodeOutput* tos, bool is_vector, bool is_x);
-    virtual void populateScaleForVector(NodeOutput* tos);
-    virtual void parseRasterBands();
-    virtual void parseBandInfo(const QString& elem, QString& band_name, int* data_count, int* data_index);
-    virtual bool parseMetadata(GDALRasterBandH gdalBand, int* time, int* ref_time, QString& elem);
+    typedef QHash<QString, QString> metadata_hash; // KEY, VALUE
+
+    /* return true on failure */
+    virtual bool parseBandInfo(const metadata_hash& metadata, QString& band_name, int* time) = 0;
+    virtual void determineBandExtraInfo(QString& band_name, bool* is_vector, bool* is_x);
     virtual int parseMetadataTime(const QString& time_s);
-    virtual void initElements(Mesh::Elements& elements);
-    virtual void initNodes(Mesh::Nodes& nodes);
-    virtual void openFile();
-    virtual void parseParameters();
 
 private:
     typedef QMap<int, QVector<GDALRasterBandH> > timestep_map; //TIME (sorted), [X, Y]
-    typedef QHash<QString, QString> metadata_hash; // KEY, VALUE
     typedef QHash<QString, timestep_map > data_hash; //Data Type, TIME (sorted), [X, Y]
 
-    QString mFileName;
+    void openFile();
+    void initElements(Mesh::Elements& elements);
+    void initNodes(Mesh::Nodes& nodes);
+    void parseParameters();
+    metadata_hash parseMetadata(GDALRasterBandH gdalBand);
+    void populateScaleForVector(NodeOutput* tos);
+    void addDataToOutput(GDALRasterBandH raster_band, NodeOutput* tos, bool is_vector, bool is_x);
+    void addSrcProj();
+    void activateElements(NodeOutput* tos);
+    void addDatasets();
+    void createMesh();
+    void parseRasterBands();
+
+
+    const QString mFileName;
+    const QString mDriverName;
     GDALDatasetH mHDataset;
     float *mPafScanline;
     Mesh* mMesh;
