@@ -38,16 +38,16 @@ class GribReader: public CrayfishGDALReader
 {
 public:
     GribReader(const QString& fileName): CrayfishGDALReader(fileName, "GRIB"),
-        mRefTime(std::numeric_limits<int>::min()) {}
+        mRefTime(std::numeric_limits<float>::min()) {}
 protected:
-    bool parseBandInfo(const metadata_hash& metadata, QString& band_name, int* time) {
+    bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
        metadata_hash::const_iterator iter;
 
        iter = metadata.find("GRIB_COMMENT");
        if (iter == metadata.end()) return true; //FAILURE
        band_name = iter.value();
 
-       if (mRefTime == std::numeric_limits<int>::min())
+       if (mRefTime == std::numeric_limits<float>::min())
        {
            iter = metadata.find("GRIB_REF_TIME");
            if (iter == metadata.end()) return true; //FAILURE
@@ -56,8 +56,8 @@ protected:
 
        iter = metadata.find("GRIB_VALID_TIME");
        if (iter == metadata.end()) return true; //FAILURE
-       int valid_time = parseMetadataTime(iter.value());
-       *time = valid_time - mRefTime;
+       float valid_time = parseMetadataTime(iter.value());
+       *time = (valid_time - mRefTime) / 3600.0; // input times are always in seconds UTC, we need them back in hours
 
        return false; // SUCCESS
     }
@@ -84,9 +84,9 @@ protected:
     }
 
 private:
-    int mRefTime; // ref time is parsed only once, because
-                  // some GRIB files do not use FORECAST_SEC, but VALID_TIME
-                  // metadata, so ref time varies with dataset-to-dataset
+    float mRefTime; // ref time (UTC sec) is parsed only once, because
+                    // some GRIB files do not use FORECAST_SEC, but VALID_TIME
+                    // metadata, so ref time varies with dataset-to-dataset
 };
 
 

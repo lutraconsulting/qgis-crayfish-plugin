@@ -124,11 +124,11 @@ void CrayfishGDALReader::initElements(Mesh::Elements& elements) {
    }
 }
 
-int CrayfishGDALReader::parseMetadataTime(const QString& time_s)
+float CrayfishGDALReader::parseMetadataTime(const QString& time_s)
 {
    QString time_trimmed = time_s.trimmed();
    QStringList times = time_trimmed.split(" ");
-   return times[0].toInt(); // sec
+   return times[0].toFloat();
 }
 
 CrayfishGDALReader::metadata_hash CrayfishGDALReader::parseMetadata(GDALRasterBandH gdalBand)
@@ -177,7 +177,7 @@ void CrayfishGDALReader::parseRasterBands() {
        metadata_hash metadata = parseMetadata(gdalBand);
 
        QString band_name;
-       int time = std::numeric_limits<int>::min(); //time difference from ref_time (sec)
+       float time = std::numeric_limits<float>::min();
        if (parseBandInfo(metadata, band_name, &time)) {
            continue;
        }
@@ -331,7 +331,7 @@ void CrayfishGDALReader::addDatasets()
 
            NodeOutput* tos = new NodeOutput;
            tos->init(mNPoints, mNVolumes, is_vector);
-           tos->time = time_step.key()/3600.0; // convert to hours
+           tos->time = time_step.key();
 
            for (int i=0; i<raster_bands.size(); ++i)
            {

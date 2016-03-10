@@ -39,7 +39,7 @@ class NetCFDReader: public CrayfishGDALReader
 public:
     NetCFDReader(const QString& fileName): CrayfishGDALReader(fileName, "NETCDF"){}
 
-    bool parseBandInfo(const metadata_hash& metadata, QString& band_name, int* time) {
+    bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
        metadata_hash::const_iterator iter;
 
        iter = metadata.find("NETCDF_DIM_time");
@@ -51,7 +51,6 @@ public:
        band_name = iter.value();
 
        // Loop throught all additional dimensions but time
-       QRegExp rx("*.txt");
        for (iter = metadata.begin(); iter != metadata.end(); ++iter) {
          QString key = iter.key();
          if (key.contains("NETCDF_DIM_")) {
