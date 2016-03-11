@@ -40,6 +40,9 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
       meshFile.endsWith(".grib2"))
     return loadGRIB(meshFile, status);
 
+  if (meshFile.endsWith((".hdf")))
+    return loadHec2D(meshFile, status);
+
   return loadMesh2DM(meshFile, status);
 }
 
