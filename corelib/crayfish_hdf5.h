@@ -40,11 +40,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define HDF_MAX_NAME 1024
 
-template <int TYPE> void hdfClose(hid_t id) { qDebug("Unknown type!"); }
+template <int TYPE> inline void hdfClose(hid_t id) { qDebug("Unknown type!"); }
 
-template <> void hdfClose<H5I_FILE>(hid_t id) { H5Fclose(id); }
-template <> void hdfClose<H5I_GROUP>(hid_t id) { H5Gclose(id); }
-template <> void hdfClose<H5I_DATASET>(hid_t id) { H5Dclose(id); }
+template <> inline void hdfClose<H5I_FILE>(hid_t id) { H5Fclose(id); }
+template <> inline void hdfClose<H5I_GROUP>(hid_t id) { H5Gclose(id); }
+template <> inline void hdfClose<H5I_DATASET>(hid_t id) { H5Dclose(id); }
 
 template <int TYPE>
 class HdfH : public QSharedData
@@ -166,6 +166,10 @@ public:
   QVector<uchar> readArrayUint8() const { return readArray<uchar>(H5T_NATIVE_UINT8); }
 
   QVector<float> readArray() const { return readArray<float>(H5T_NATIVE_FLOAT); }
+
+  QVector<double> readArrayDouble() const { return readArray<double>(H5T_NATIVE_DOUBLE); }
+
+  QVector<int> readArrayInt() const { return readArray<int>(H5T_NATIVE_INT); }
 
   template <typename T> QVector<T> readArray(hid_t mem_type_id) const
   {

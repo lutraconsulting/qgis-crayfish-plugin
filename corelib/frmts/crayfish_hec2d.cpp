@@ -42,7 +42,7 @@ static HdfFile openHdfFile(const QString& fileName)
     return file;
 }
 
-static HdfGroup openHdfGroup(const HdfFile& hdfFile, const QString& name, bool x)
+static HdfGroup openHdfGroup(const HdfFile& hdfFile, const QString& name)
 {
     HdfGroup grp = hdfFile.group(name);
     if (!grp.isValid())
@@ -82,55 +82,68 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
     {
         HdfFile hdfFile = openHdfFile(fileName);
 
-        HdfGroup gGeom = openHdfGroup(hdfFile, "Geometry", true);
+        HdfGroup gGeom = openHdfGroup(hdfFile, "Geometry");
         HdfGroup gGeom2DFlowAreas = openHdfGroup(gGeom, "2D Flow Areas");
         //TODO parse dataset names
         //TODO loop over areas
         QString flowArea = "BaldEagleCr";
-        HdfGroup gArea = openHdfGroup(gGeom, flowArea);
+        HdfGroup gArea = openHdfGroup(gGeom2DFlowAreas, flowArea);
 
         HdfDataset dsCoords = openHdfDataset(gArea, "FacePoints Coordinate");
         QVector<hsize_t> cdims = dsCoords.dims();
-        QVector<float> coords = dsCoords.readArray(); //2xnNodes matrix in array
-        int nNodes = cdims[1];
-        Mesh::Nodes nodes(cdims[1]);
+        QVector<double> coords = dsCoords.readArrayDouble(); //2xnNodes matrix in array
+        int nNodes = cdims[0];
+        Mesh::Nodes nodes(nNodes);
         Node* nodesPtr = nodes.data();
-        for (uint n = 0; n < cdims[1]; ++n, ++nodesPtr)
+        for (uint n = 0; n < nNodes; ++n, ++nodesPtr)
         {
             nodesPtr->id = n;
-            nodesPtr->x = coords[cdims[0]*n];
-            nodesPtr->y = coords[cdims[0]*n+1];
+            nodesPtr->x = coords[cdims[1]*n];
+            nodesPtr->y = coords[cdims[1]*n+1];
         }
 
         HdfDataset dsElems = openHdfDataset(gArea, "Cells FacePoint Indexes");
         QVector<hsize_t> edims = dsElems.dims();
-        QVector<float> elem_nodes = dsElems.readArray(); //8xnElements matrix in array
+        QVector<int> elem_nodes = dsElems.readArrayInt(); //8xnElements matrix in array
         Mesh::Elements elements; // ! we need to ignore other than triangles or rectagles!
         int elem_id = 0;
 
-        for (uint e = 0; e < edims[1]; ++e)
+        for (uint e = 0; e < edims[0]; ++e)
         {
-            if (elem_nodes[edims[0]*e + 2] != -1) {
+            if (elem_nodes[edims[1]*e + 2] != -1) {
                 // is triange
                 Element elem;
                 elem.id = elem_id;
                 elem.eType = Element::E3T;
-                elem.p[0] = edims[0]*e + 0;
-                elem.p[1] = edims[0]*e + 1;
-                elem.p[2] = edims[0]*e + 2;
-                elem_id ++;
-                elements.push_back(elem);
-            } else if (elem_nodes[edims[0]*e + 3] != -1) {
+                elem.p[0] = edims[1]*e + 0;
+                elem.p[1] = edims[1]*e + 1;
+                elem.p[2] = edims[1]*e + 2;
+
+                // well, it seems that here we have some indexes> nNodes??? WHY?
+                if (elem.p[0] < nNodes &&
+                    elem.p[1] < nNodes &&
+                    elem.p[2] < nNodes) {
+                    elem_id ++;
+                    elements.push_back(elem);
+                }
+            } else if (elem_nodes[edims[1]*e + 3] != -1) {
                 // is rect
                 Element elem;
                 elem.id = elem_id;
                 elem.eType = Element::E4Q;
-                elem.p[0] = edims[0]*e + 0;
-                elem.p[1] = edims[0]*e + 1;
-                elem.p[2] = edims[0]*e + 2;
-                elem.p[3] = edims[0]*e + 3;
-                elem_id ++;
-                elements.push_back(elem);
+                elem.p[1] = edims[1]*e + 0;
+                elem.p[2] = edims[1]*e + 1;
+                elem.p[3] = edims[1]*e + 2;
+                elem.p[0] = edims[1]*e + 3;
+
+                // well, it seems that here we have some indexes> nNodes??? WHY?
+                if (elem.p[0] < nNodes &&
+                    elem.p[1] < nNodes &&
+                    elem.p[2] < nNodes &&
+                    elem.p[3] < nNodes) {
+                    elem_id ++;
+                    elements.push_back(elem);
+                }
             }
             //ignore others unfortunately
         }
@@ -147,7 +160,7 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         tos->time = 0;
         memset(tos->active.data(), 1, nElems); // All cells active
         for (int i = 0; i < nNodes; ++i)
-          tos->values[i] = i/100;
+          tos->values[i] = i;
         dsd->addOutput(tos);
         dsd->updateZRange();
         mesh->addDataSet(dsd);
