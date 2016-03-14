@@ -76,6 +76,7 @@ SOURCES += crayfish.cpp \
     crayfish_mesh.cpp \
     crayfish_capi.cpp \
     crayfish_renderer.cpp \
+<<<<<<< HEAD
     crayfish_e3t.cpp \
     crayfish_export_grid.cpp
 
@@ -85,8 +86,13 @@ SOURCES += frmts/crayfish_gdal.cpp \
     frmts/crayfish_grib.cpp \
     frmts/crayfish_hec2d.cpp \
     frmts/crayfish_sww.cpp \
-    frmts/crayfish_netcdf.cpp \
-    frmts/crayfish_mesh_2dm.cpp
+    frmts/crayfish_mesh_2dm.cpp \
+=======
+    crayfish_export_grid.cpp \
+    crayfish_sww.cpp \
+    crayfish_e3t.cpp \
+    crayfish_netcdf.cpp
+>>>>>>> origin/master
 
 HEADERS += crayfish.h \
     crayfish_e4q.h \

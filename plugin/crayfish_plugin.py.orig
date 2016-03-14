@@ -197,7 +197,6 @@ class CrayfishPlugin:
             settings = QSettings()
             settings.setValue("crayfishViewer/lastFolder", path)
 
-
     def addCrayfishLayer(self):
         """
             The user wants to view an Crayfish layer
@@ -213,7 +212,11 @@ class CrayfishPlugin:
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(),
                                                  'Open Crayfish Dat File',
                                                  self.lastFolder(),
-                                                 "Results Files DAT, SOL, XMDF, GRIB, HEC2D, netCDF, HEC 2D (*.dat *.sol *.xmdf *.sww *.grb *.bin *.grib *.grib1 *.grib2 *.hdf *.nc *.hdf);;2DM Mesh Files (*.2dm)")
+<<<<<<< HEAD
+                                                 "Results Files DAT, SOL, XMDF, GRIB, HEC2D (*.dat *.sol *.xmdf *.sww *.grb *.bin *.grib *.grib1 *.grib2 *.hdf);;2DM Mesh Files (*.2dm)")
+=======
+                                                 "Results Files DAT, SOL, XMDF, GRIB, netCFD (*.dat *.sol *.xmdf *.sww *.grb *.bin *.grib *.grib1 *.grib2 *.nc);;2DM Mesh Files (*.2dm)")
+>>>>>>> origin/master
         inFileName = unicode(inFileName)
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel
             return
@@ -225,11 +228,14 @@ class CrayfishPlugin:
         # Determine what type of file it is
         prefix, fileType = os.path.splitext(tail)
         fileType = fileType.lower()
+<<<<<<< HEAD
+        if fileType == '.2dm' or fileType == '.sww' or fileType == '.grb' or fileType == '.bin' or fileType == '.grib' or fileType == '.grib1' or fileType == '.grib2' or fileType == '.hdf':
+=======
         if (fileType == '.2dm' or
             fileType == '.sww' or
             fileType == '.grb' or fileType == '.bin' or fileType == '.grib' or fileType == '.grib1' or fileType == '.grib2' or
-            fileType == '.nc' or
-            fileType == '.hdf'):
+            fileType == '.nc'):
+>>>>>>> origin/master
             """
                 The user has selected a mesh file...
             """

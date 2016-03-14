@@ -105,7 +105,7 @@ class TestCrayfishLoad(unittest.TestCase):
     self.assertEqual(ds.type(), crayfish.DS_Scalar)
     self.assertEqual(ds.output_count(), 27)
     o = ds.output(0)
-    self.assertEqual(o.time(), 6.) # forecast 7 days/6hours
+    self.assertEqual(o.time(), 5.973333358764648) # forecast 7 days/6hours
     self.assertEqual(o.value(0), -9999.0) #nodata
     self.assertEqual(o.value(1600), 15.34000015258789)
 
@@ -116,8 +116,19 @@ class TestCrayfishLoad(unittest.TestCase):
     self.assertEqual(ds.type(), crayfish.DS_Vector)
     self.assertEqual(ds.output_count(), 27)
     o = ds.output(0)
-    self.assertEqual(o.time(), 6.) # forecast 7 days/6hours
+    self.assertEqual(o.time(), 5.973333358764648) # forecast 7 days/6hours
     self.assertEqual(o.value(1600), 9.666419982910156)
+
+  def test_load_netCFD_data_file(self):
+    m = crayfish.Mesh("NETCDF:\"" + TEST_DIR + "/indonesia.nc\":tcc")
+    self.assertEqual(m.dataset_count(), 1)
+    ds = m.dataset(0)
+    self.assertEqual(ds.type(), crayfish.DS_Scalar)
+    print ds.output_count
+    self.assertEqual(ds.output_count(), 31)
+    o = ds.output(0)
+    self.assertEqual(o.time(), 1008072.0)
+    self.assertEqual(o.value(1), 22952.0)
 
 if __name__ == '__main__':
   unittest.main()
