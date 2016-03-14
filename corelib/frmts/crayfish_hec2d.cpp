@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_mesh.h"
 
 #include "crayfish_hdf5.h"
+#include "crayfish_e4q.h"
 
 static HdfFile openHdfFile(const QString& fileName)
 {
@@ -187,6 +188,7 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         Element* elemPtr = elements.data();
         for (uint e = 0; e < nElems; ++e, ++elemPtr)
         {
+
             elemPtr->id = e;
             elemPtr->p[0] = elem_nodes[edims[1]*e + 0];
             elemPtr->p[1] = elem_nodes[edims[1]*e + 1];
@@ -204,6 +206,16 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
                 // Note that here falls also all general polygons with >4 vertexes
                 // where we do not yet have appropriate mesh element
                 elemPtr->eType = Element::E4Q;
+
+                // Few points here are ordered clockwise
+                // and few anti-clockwise
+                // WE need clockwise to work
+                if (! E4Q_isOrientedOk(*elemPtr, nodes.data())) {
+                    // Swap
+                    float tmp = elemPtr->p[1];
+                    elemPtr->p[1] = elemPtr->p[3];
+                    elemPtr->p[3] = tmp;
+                }
             }
         }
 

@@ -28,6 +28,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_e4q.h"
 
+bool E4Q_isOrientedOk(const Element& elem, Node* nodes)
+{
+    E4Qtmp e4q;
+    E4Q_computeMapping(elem, e4q, nodes);
+    double Lx, Ly;
+    return E4Q_mapPhysicalToLogical(e4q, 0.5, 0.5, Lx, Ly );
+}
+
 /*
 Physical vs logical mapping of quads:
 http://www.particleincell.com/blog/2012/quad-interpolation/
@@ -79,7 +87,11 @@ bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx,
     Ly = (-bb+sqrt(detSq))/(2*aa);
   }
 
-  Lx = (x-a[0]-a[2]*Ly) / (a[1]+a[3]*Ly);
+  float denom = (a[1]+a[3]*Ly);
+  if (denom == 0)
+      return false;
+
+  Lx = (x-a[0]-a[2]*Ly) / denom;
   return true;
 }
 
