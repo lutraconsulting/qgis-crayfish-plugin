@@ -197,7 +197,6 @@ class CrayfishPlugin:
             settings = QSettings()
             settings.setValue("crayfishViewer/lastFolder", path)
 
-
     def addCrayfishLayer(self):
         """
             The user wants to view an Crayfish layer
@@ -213,7 +212,7 @@ class CrayfishPlugin:
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(),
                                                  'Open Crayfish Dat File',
                                                  self.lastFolder(),
-                                                 "Results Files DAT, SOL, XMDF, GRIB (*.dat *.sol *.xmdf *.sww *.grb *.bin *.grib *.grib1 *.grib2);;2DM Mesh Files (*.2dm)")
+                                                 "Results Files DAT, SOL, XMDF, GRIB, netCFD (*.dat *.sol *.xmdf *.sww *.grb *.bin *.grib *.grib1 *.grib2 *.nc);;2DM Mesh Files (*.2dm)")
         inFileName = unicode(inFileName)
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel
             return
@@ -225,25 +224,23 @@ class CrayfishPlugin:
         # Determine what type of file it is
         prefix, fileType = os.path.splitext(tail)
         fileType = fileType.lower()
-        if fileType == '.2dm' or fileType == '.sww' or fileType == '.grb' or fileType == '.bin' or fileType == '.grib' or fileType == '.grib1' or fileType == '.grib2':
+        if (fileType == '.2dm' or
+            fileType == '.sww' or
+            fileType == '.grb' or fileType == '.bin' or fileType == '.grib' or fileType == '.grib1' or fileType == '.grib2' or
+            fileType == '.nc'):
             """
-                The user has selected a mesh file... add it if it is not already loaded
-
+                The user has selected a mesh file...
             """
-            layerWith2dm = self.getLayerWith2DM(inFileName)
-
-            if layerWith2dm:
-                # This 2dm has already been added
-                qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
+            if not self.loadMesh(inFileName, fileType):
                 return
-
-            if not self.addLayer(inFileName):
-                return # addLayer() reports errors/warnings
 
             # update GUI
             self.dock.currentLayerChanged()
 
         elif fileType == '.dat' or fileType == '.sol' or fileType == '.xmdf':
+            """
+                The user has selected a results-only file...
+            """
             self.loadDatFile(inFileName)
 
         else:
@@ -251,7 +248,28 @@ class CrayfishPlugin:
             qgis_message_bar.pushMessage("Crayfish", "The file type you are trying to load is not supported: " + fileType, level=QgsMessageBar.CRITICAL)
             return
 
+    def loadMesh(self, inFileName, fileType):
+        # Load mesh as new Crayfish layer for file
+        # In file is container of multiple meshes, load them all separately (e.g. netCFD file)
+        data_sources_to_add = [inFileName]
+        if fileType == '.nc':
+            # this one is container of multiple sublayers
+            temp_raster = QgsRasterLayer(inFileName)
+            if (not temp_raster.isValid()) and (len(temp_raster.subLayers()) > 1):
+                data_sources_to_add = temp_raster.subLayers()
 
+        for data_source in data_sources_to_add:
+            layerWith2dm = self.getLayerWith2DM(data_source)
+
+            if layerWith2dm:
+                # This 2dm has already been added
+                qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
+                return False
+
+            if not self.addLayer(data_source):
+                return False # addLayer() reports errors/warnings
+
+        return True # success
 
     def loadMeshForFile(self, inFileName):
 
@@ -332,6 +350,7 @@ class CrayfishPlugin:
             QApplication.restoreOverrideCursor()
             import crayfish
             err = crayfish.last_load_status()[0]
+            # reuse from showMeshLoadError
             err_msgs = {
               crayfish.Err_NotEnoughMemory : 'Not enough memory',
               crayfish.Err_FileNotFound : 'Unable to read the file - missing file or no read access',

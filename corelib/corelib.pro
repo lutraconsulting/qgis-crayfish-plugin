@@ -83,7 +83,8 @@ SOURCES += crayfish.cpp \
     crayfish_renderer.cpp \
     crayfish_export_grid.cpp \
     crayfish_sww.cpp \
-    crayfish_e3t.cpp
+    crayfish_e3t.cpp \
+    crayfish_netcdf.cpp
 
 HEADERS += crayfish.h \
     crayfish_e4q.h \

@@ -327,6 +327,10 @@ int CF_Mesh_setProjection(MeshH mesh, const char* srcProj4, const char* destProj
   }
 }
 
+const char* CF_Mesh_sourceCrsProj4(MeshH mesh)
+{
+  return _return_str(mesh->sourceCrsProj4());
+}
 
 void CF_DS_valueRange(DataSetH ds, float* vMin, float* vMax)
 {

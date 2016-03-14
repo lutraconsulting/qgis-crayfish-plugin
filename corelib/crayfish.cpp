@@ -40,6 +40,12 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
       meshFile.endsWith(".grib2"))
     return loadGRIB(meshFile, status);
 
+  // This may be either single filename or
+  // subdataset name in form NETCDF:filename:variable
+  if (meshFile.endsWith(".nc") ||
+      meshFile.startsWith("NETCDF:"))
+    return loadNetCDF(meshFile, status);
+
   return loadMesh2DM(meshFile, status);
 }
 

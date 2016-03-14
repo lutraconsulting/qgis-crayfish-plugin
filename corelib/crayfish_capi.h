@@ -83,6 +83,8 @@ CF_EXPORT double CF_Mesh_valueAt(MeshH mesh, OutputH output, double x, double y)
 
 CF_EXPORT int CF_Mesh_setProjection(MeshH mesh, const char* srcProj4, const char* destProj4);
 
+CF_EXPORT const char* CF_Mesh_sourceCrsProj4(MeshH mesh);
+
 // DataSet functions
 
 CF_EXPORT int CF_DS_type(DataSetH ds);
