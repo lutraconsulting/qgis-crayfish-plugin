@@ -108,44 +108,39 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         Mesh::Elements elements; // ! we need to ignore other than triangles or rectagles!
         int elem_id = 0;
 
+
         for (uint e = 0; e < edims[0]; ++e)
         {
-            if (elem_nodes[edims[1]*e + 2] != -1) {
-                // is triange
-                Element elem;
-                elem.id = elem_id;
-                elem.eType = Element::E3T;
-                elem.p[0] = edims[1]*e + 0;
-                elem.p[1] = edims[1]*e + 1;
-                elem.p[2] = edims[1]*e + 2;
+            int index0 = elem_nodes[edims[1]*e + 0];
+            int index1 = elem_nodes[edims[1]*e + 1];
+            int index2 = elem_nodes[edims[1]*e + 2];
+            int index3 = elem_nodes[edims[1]*e + 3];
+            int index4 = elem_nodes[edims[1]*e + 4];
 
-                // well, it seems that here we have some indexes> nNodes??? WHY?
-                if (elem.p[0] < nNodes &&
-                    elem.p[1] < nNodes &&
-                    elem.p[2] < nNodes) {
+            // look for triangles and rectangles only
+            // ignore others unfortunately
+            if (index2 != -1 && index4 == -1) {
+                if (index3 == -1) { // TRIANGLE
+                    Element elem;
+                    elem.id = elem_id;
+                    elem.eType = Element::E3T;
+                    elem.p[0] = index0;
+                    elem.p[1] = index1;
+                    elem.p[2] = index2;
                     elem_id ++;
                     elements.push_back(elem);
-                }
-            } else if (elem_nodes[edims[1]*e + 3] != -1) {
-                // is rect
-                Element elem;
-                elem.id = elem_id;
-                elem.eType = Element::E4Q;
-                elem.p[1] = edims[1]*e + 0;
-                elem.p[2] = edims[1]*e + 1;
-                elem.p[3] = edims[1]*e + 2;
-                elem.p[0] = edims[1]*e + 3;
-
-                // well, it seems that here we have some indexes> nNodes??? WHY?
-                if (elem.p[0] < nNodes &&
-                    elem.p[1] < nNodes &&
-                    elem.p[2] < nNodes &&
-                    elem.p[3] < nNodes) {
+                } else { // RECTANGLE
+                    Element elem;
+                    elem.id = elem_id;
+                    elem.eType = Element::E4Q;
+                    elem.p[0] = index0;
+                    elem.p[1] = index1;
+                    elem.p[2] = index2;
+                    elem.p[3] = index3;
                     elem_id ++;
                     elements.push_back(elem);
                 }
             }
-            //ignore others unfortunately
         }
         int nElems = elem_id;
 
