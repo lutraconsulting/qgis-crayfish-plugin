@@ -44,7 +44,7 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
   // subdataset name in form NETCDF:filename:variable
   if (meshFile.endsWith(".nc") ||
       meshFile.startsWith("NETCDF:"))
-    return loadNetCFD(meshFile, status);
+    return loadNetCDF(meshFile, status);
 
   return loadMesh2DM(meshFile, status);
 }

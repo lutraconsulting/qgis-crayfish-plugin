@@ -34,10 +34,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QString>
 #include <QtGlobal>
 
-class NetCFDReader: public CrayfishGDALReader
+class NetCDFReader: public CrayfishGDALReader
 {
 public:
-    NetCFDReader(const QString& fileName): CrayfishGDALReader(fileName, "NETCDF"){}
+    NetCDFReader(const QString& fileName): CrayfishGDALReader(fileName, "NETCDF"){}
 
     bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
        metadata_hash::const_iterator iter;
@@ -71,8 +71,8 @@ public:
     }
 };
 
-Mesh* Crayfish::loadNetCFD(const QString& fileName, LoadStatus* status)
+Mesh* Crayfish::loadNetCDF(const QString& fileName, LoadStatus* status)
 {
-    NetCFDReader reader(fileName);
+    NetCDFReader reader(fileName);
     return reader.load(status);
 }
