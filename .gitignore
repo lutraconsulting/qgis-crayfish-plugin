@@ -8,3 +8,4 @@ build-*
 *.obj
 Makefile
 *.aux.xml
+*.orig
