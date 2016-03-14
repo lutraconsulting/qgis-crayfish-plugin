@@ -72,6 +72,83 @@ static HdfDataset openHdfDataset(const HdfGroup& hdfGroup, const QString& name)
     return dsFileType;
 }
 
+static void readBedElevation(Mesh* mesh, const QString fileName, const HdfGroup& gArea, int nElems)
+{
+    DataSet* dsd = new DataSet(fileName);
+    dsd->setName("Bed Elevation");
+    dsd->setType(DataSet::Bed);
+
+    ElementOutput* tos = new ElementOutput;
+    tos->init(nElems, false);
+    tos->time = 0;
+
+    HdfDataset dsBed = openHdfDataset(gArea, "Cells Minimum Elevation");
+    QVector<float> elev_vals = dsBed.readArray();
+    for (int i = 0; i < nElems; ++i) {
+      float val = elev_vals[i];
+      if (val != val) { //NaN
+        tos->values[i] = -9999;
+      } else {
+        tos->values[i] = val;
+      }
+    }
+
+    dsd->addOutput(tos);
+    dsd->updateZRange();
+    mesh->addDataSet(dsd);
+}
+
+static void readUnsteadyResults(Mesh* mesh, const QString fileName, const HdfFile& hdfFile, int nElems)
+{
+    HdfGroup gResults = openHdfGroup(hdfFile, "Results");
+    HdfGroup gUnsteady = openHdfGroup(gResults, "Unsteady");
+    HdfGroup gOutput = openHdfGroup(gUnsteady, "Output");
+    HdfGroup gOBlocks = openHdfGroup(gOutput, "Output Blocks");
+    HdfGroup gBaseO = openHdfGroup(gOBlocks, "Base Output");
+    HdfGroup gUnsteadTS = openHdfGroup(gBaseO, "Unsteady Time Series");
+    HdfGroup g2DFlowRes = openHdfGroup(gUnsteadTS, "2D Flow Areas");
+    HdfGroup gFlowAreaRes = openHdfGroup(g2DFlowRes, "BaldEagleCr"); // #TODO
+
+
+    HdfDataset dsTimes = openHdfDataset(gUnsteadTS, "Time");
+    QVector<float> times = dsTimes.readArray();
+
+    // Cell center data datasets
+    QStringList datasets;
+    datasets.push_back("Water Surface");
+    datasets.push_back("Depth");
+
+    foreach(QString dsName, datasets) {
+        DataSet* dsd = new DataSet(fileName);
+        dsd->setName(dsName);
+        dsd->setType(DataSet::Scalar);
+        dsd->setIsTimeVarying(times.size()>1);
+
+        HdfDataset dsVals = openHdfDataset(gFlowAreaRes, dsName);
+        QVector<float> vals = dsVals.readArray();
+
+        for (int tidx=0; tidx<times.size(); ++tidx)
+        {
+            ElementOutput* tos = new ElementOutput;
+            tos->init(nElems, false);
+            tos->time = times[tidx];
+            for (int i = 0; i < nElems; ++i) {
+              int idx = tidx*times.size() + i;
+              float val = vals[idx];
+              if (val != val) { //NaN
+                tos->values[i] = -9999;
+              } else {
+                tos->values[i] = val;
+              }
+            }
+
+            dsd->addOutput(tos);
+        }
+
+        dsd->updateZRange();
+        mesh->addDataSet(dsd);
+    }
+}
 
 Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
 {
@@ -104,62 +181,41 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
 
         HdfDataset dsElems = openHdfDataset(gArea, "Cells FacePoint Indexes");
         QVector<hsize_t> edims = dsElems.dims();
+        int nElems = edims[0];
         QVector<int> elem_nodes = dsElems.readArrayInt(); //8xnElements matrix in array
-        Mesh::Elements elements; // ! we need to ignore other than triangles or rectagles!
-        int elem_id = 0;
-
-
-        for (uint e = 0; e < edims[0]; ++e)
+        Mesh::Elements elements(nElems); // ! we need to ignore other than triangles or rectagles!
+        Element* elemPtr = elements.data();
+        for (uint e = 0; e < nElems; ++e, ++elemPtr)
         {
-            int index0 = elem_nodes[edims[1]*e + 0];
-            int index1 = elem_nodes[edims[1]*e + 1];
-            int index2 = elem_nodes[edims[1]*e + 2];
-            int index3 = elem_nodes[edims[1]*e + 3];
-            int index4 = elem_nodes[edims[1]*e + 4];
+            elemPtr->id = e;
+            elemPtr->p[0] = elem_nodes[edims[1]*e + 0];
+            elemPtr->p[1] = elem_nodes[edims[1]*e + 1];
+            elemPtr->p[2] = elem_nodes[edims[1]*e + 2];
+            elemPtr->p[3] = elem_nodes[edims[1]*e + 3];
 
-            // look for triangles and rectangles only
-            // ignore others unfortunately
-            if (index2 != -1 && index4 == -1) {
-                if (index3 == -1) { // TRIANGLE
-                    Element elem;
-                    elem.id = elem_id;
-                    elem.eType = Element::E3T;
-                    elem.p[0] = index0;
-                    elem.p[1] = index1;
-                    elem.p[2] = index2;
-                    elem_id ++;
-                    elements.push_back(elem);
-                } else { // RECTANGLE
-                    Element elem;
-                    elem.id = elem_id;
-                    elem.eType = Element::E4Q;
-                    elem.p[0] = index0;
-                    elem.p[1] = index1;
-                    elem.p[2] = index2;
-                    elem.p[3] = index3;
-                    elem_id ++;
-                    elements.push_back(elem);
-                }
+            if (elemPtr->p[2] == -1) {
+                // transform lines to malformed triangles
+                elemPtr->eType = Element::E3T;
+                elemPtr->p[2] = elemPtr->p[0];
+            } else if (elemPtr->p[3] == -1) { // TRIANGLE
+                elemPtr->eType = Element::E3T;
+            } else {
+                // RECTANGLE
+                // Note that here falls also all general polygons with >4 vertexes
+                // where we do not yet have appropriate mesh element
+                elemPtr->eType = Element::E4Q;
             }
         }
-        int nElems = elem_id;
 
         mesh = new Mesh(nodes, elements);
 
-        DataSet* dsd = new DataSet(fileName);
-        dsd->setName("dummy");
-        dsd->setIsTimeVarying(false);
-        dsd->setType(DataSet::Scalar);
-        NodeOutput* tos = new NodeOutput;
-        tos->init(nNodes, nElems, false);
-        tos->time = 0;
-        memset(tos->active.data(), 1, nElems); // All cells active
-        for (int i = 0; i < nNodes; ++i)
-          tos->values[i] = i;
-        dsd->addOutput(tos);
-        dsd->updateZRange();
-        mesh->addDataSet(dsd);
+        //Elevation
+        readBedElevation(mesh, fileName, gArea, nElems);
+
+        // Values
+        readUnsteadyResults(mesh, fileName, hdfFile, nElems);
     }
+
     catch (LoadStatus::Error error)
     {
         if (status) status->mLastError = (error);
@@ -169,3 +225,4 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
 
     return mesh;
 }
+

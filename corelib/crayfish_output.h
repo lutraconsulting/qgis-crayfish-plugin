@@ -135,11 +135,14 @@ public:
       if (!isActive(j))
         continue;
 
-      // This is not a NULL value
-      if( v[j] < zMin )
-          zMin = v[j];
-      if( v[j] > zMax )
-          zMax = v[j];
+      if (v[j] != -9999.0)
+      {
+        // This is not a NULL value
+        if( v[j] < zMin )
+            zMin = v[j];
+        if( v[j] > zMax )
+            zMax = v[j];
+      }
     }
   }
 
