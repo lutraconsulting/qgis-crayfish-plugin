@@ -88,7 +88,7 @@ class MapLayersWidget(QToolButton):
         self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.setIcon(geom2icon(geom_type))
 
-        self.menu_layers = MapLayerMenu(QGis.Line)
+        self.menu_layers = MapLayerMenu(geom_type)
 
         self.setText("From layer")
         self.setPopupMode(QToolButton.InstantPopup)
