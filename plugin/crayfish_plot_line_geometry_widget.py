@@ -123,7 +123,10 @@ class LineGeometryPickerWidget(QWidget):
 
     def on_picked(self, points, finished):
 
-        self.geometries = [ QgsGeometry.fromPolyline(points) ]
+        if len(points) >= 2:
+            self.geometries = [ QgsGeometry.fromPolyline(points) ]
+        else:
+            self.geometries = []
         self.geometries_changed.emit()
 
         if finished:  # no more updates
