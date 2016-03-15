@@ -33,6 +33,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_hdf5.h"
 #include "crayfish_e4q.h"
 
+#include <algorithm>
+
 static HdfFile openHdfFile(const QString& fileName)
 {
     HdfFile file(fileName);
@@ -101,7 +103,77 @@ static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const
     return tos;
 }
 
-static void readUnsteadyResults(Mesh* mesh, const QString flowAreaName, const QString fileName, const HdfFile& hdfFile, int nElems, ElementOutput* bed_elevation)
+static void readUnsteadyFaceResults(Mesh* mesh, const QString flowAreaName, const QString fileName, const HdfFile& hdfFile, int nElems)
+{
+    // First read face to node mapping
+    HdfGroup gGeom = openHdfGroup(hdfFile, "Geometry");
+    HdfGroup gGeom2DFlowAreas = openHdfGroup(gGeom, "2D Flow Areas");
+    HdfGroup gArea = openHdfGroup(gGeom2DFlowAreas, flowAreaName);
+    HdfDataset dsFace2Cells = openHdfDataset(gArea, "Faces Cell Indexes");
+
+    QVector<hsize_t> fdims = dsFace2Cells.dims();
+    QVector<int> face2Cells = dsFace2Cells.readArrayInt(); //2x nFaces
+    int nFaces = fdims[0];
+
+    HdfGroup gResults = openHdfGroup(hdfFile, "Results");
+    HdfGroup gUnsteady = openHdfGroup(gResults, "Unsteady");
+    HdfGroup gOutput = openHdfGroup(gUnsteady, "Output");
+    HdfGroup gOBlocks = openHdfGroup(gOutput, "Output Blocks");
+    HdfGroup gBaseO = openHdfGroup(gOBlocks, "Base Output");
+    HdfGroup gUnsteadTS = openHdfGroup(gBaseO, "Unsteady Time Series");
+    HdfGroup g2DFlowRes = openHdfGroup(gUnsteadTS, "2D Flow Areas");
+    HdfGroup gFlowAreaRes = openHdfGroup(g2DFlowRes, flowAreaName);
+
+    //TODO we already have this somewhere else!
+    HdfDataset dsTimes = openHdfDataset(gUnsteadTS, "Time");
+    QVector<float> times = dsTimes.readArray();
+
+    // Face center data datasets
+    QStringList datasets;
+    datasets.push_back("Face Shear Stress");
+    datasets.push_back("Face Velocity"); //this is magnitude
+
+    double eps = std::numeric_limits<double>::min();
+
+    foreach(QString dsName, datasets) {
+        DataSet* dsd = new DataSet(fileName);
+        dsd->setName(dsName);
+        dsd->setType(DataSet::Scalar);
+        dsd->setIsTimeVarying(times.size()>1);
+
+        HdfDataset dsVals = openHdfDataset(gFlowAreaRes, dsName);
+        QVector<float> vals = dsVals.readArray();
+
+        for (int tidx=0; tidx<times.size(); ++tidx)
+        {
+            ElementOutput* tos = new ElementOutput;
+            tos->init(nElems, false);
+            tos->time = times[tidx];
+            std::fill(tos->values.begin(),tos->values.end(),-9999);
+            for (int i = 0; i < nFaces; ++i) {
+                int idx = tidx*nFaces + i;
+                float val = vals[idx]; // This is value on face!
+
+                if (val == val && fabs(val) > eps) { //not nan and not 0
+                    for (int c = 0; c < 2; ++c) {
+                        int cell_idx = face2Cells[2*i + c];
+                        // Take just maximum
+                        if (tos->values[cell_idx] < val ) {
+                            tos->values[cell_idx] = val;
+                        }
+                    }
+                }
+            }
+
+            dsd->addOutput(tos);
+        }
+
+        dsd->updateZRange();
+        mesh->addDataSet(dsd);
+    }
+}
+
+static void readUnsteadyElemResults(Mesh* mesh, const QString flowAreaName, const QString fileName, const HdfFile& hdfFile, int nElems, ElementOutput* bed_elevation)
 {
     HdfGroup gResults = openHdfGroup(hdfFile, "Results");
     HdfGroup gUnsteady = openHdfGroup(gResults, "Unsteady");
@@ -202,7 +274,7 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         int nNodes = cdims[0];
         Mesh::Nodes nodes(nNodes);
         Node* nodesPtr = nodes.data();
-        for (uint n = 0; n < nNodes; ++n, ++nodesPtr)
+        for (int n = 0; n < nNodes; ++n, ++nodesPtr)
         {
             nodesPtr->id = n;
             nodesPtr->x = coords[cdims[1]*n];
@@ -215,26 +287,31 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         QVector<int> elem_nodes = dsElems.readArrayInt(); //8xnElements matrix in array
         Mesh::Elements elements(nElems); // ! we need to ignore other than triangles or rectagles!
         Element* elemPtr = elements.data();
-        for (uint e = 0; e < nElems; ++e, ++elemPtr)
+        for (int e = 0; e < nElems; ++e, ++elemPtr)
         {
 
             elemPtr->id = e;
+
+            int idx2 = elem_nodes[edims[1]*e + 2];
+            int idx3 = elem_nodes[edims[1]*e + 3];
+
             elemPtr->p[0] = elem_nodes[edims[1]*e + 0];
             elemPtr->p[1] = elem_nodes[edims[1]*e + 1];
-            elemPtr->p[2] = elem_nodes[edims[1]*e + 2];
-            elemPtr->p[3] = elem_nodes[edims[1]*e + 3];
 
-            if (elemPtr->p[2] == -1) {
+            if (idx2 == -1) {
                 // transform lines to malformed triangles
                 elemPtr->eType = Element::E3T;
                 elemPtr->p[2] = elemPtr->p[0];
-            } else if (elemPtr->p[3] == -1) { // TRIANGLE
+            } else if (idx3 == -1) { // TRIANGLE
                 elemPtr->eType = Element::E3T;
+                elemPtr->p[2] = idx2;
             } else {
                 // RECTANGLE
                 // Note that here falls also all general polygons with >4 vertexes
                 // where we do not yet have appropriate mesh element
                 elemPtr->eType = Element::E4Q;
+                elemPtr->p[2] = idx2;
+                elemPtr->p[3] = idx3;
 
                 // Few points here are ordered clockwise
                 // and few anti-clockwise
@@ -253,8 +330,11 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         //Elevation
         ElementOutput* bed_elevation = readBedElevation(mesh, fileName, gArea, nElems);
 
-        // Values
-        readUnsteadyResults(mesh, flowAreaName, fileName, hdfFile, nElems, bed_elevation);
+        // Element centered Values
+        readUnsteadyElemResults(mesh, flowAreaName, fileName, hdfFile, nElems, bed_elevation);
+
+        // Face centered Values
+        readUnsteadyFaceResults(mesh, flowAreaName, fileName, hdfFile, nElems);
     }
 
     catch (LoadStatus::Error error)
