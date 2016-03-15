@@ -122,18 +122,32 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         if meshFileName is not None:
             self.loadMesh(meshFileName)
 
-    def _determineCRS(self, crs, meshFileName):
-        meshDir = os.path.dirname(meshFileName)
-        prjFiles = glob.glob(meshDir + os.path.sep + '*.prj')
-        if len(prjFiles) == 1:
-            # try to load .prj file from the same directory
-            wkt = open(prjFiles[0]).read()
-            crs.createFromWkt(wkt)
+    def setCrs(self, crs):
+        """ overload of QgsPluginLayer.setCrs() that also sets source CRS of mesh """
+        # call original method
+        QgsPluginLayer.setCrs(self, crs)
+        # store the final CRS in the mesh (it may have changed during validation)
+        self.mesh.set_source_crs(crs.toProj4())
+
+
+    def setupCRS(self):
+
+        crs = QgsCoordinateReferenceSystem()
+
+        # try to load from mesh projection if set (GDAL)
+        srcProj = self.mesh.source_crs()
+        if len(srcProj) != 0:
+            crs.createFromProj4(srcProj)
         else:
-            # try to load from mesh projection if set (GDAL)
-            srcProj = self.mesh.sourceCrsProj4()
-            if srcProj:
-                crs.createFromProj4(srcProj)
+            # try to load .prj file from the same directory
+            meshDir = os.path.dirname(self.twoDMFileName)
+            prjFiles = glob.glob(meshDir + os.path.sep + '*.prj')
+            if len(prjFiles) == 1:
+                wkt = open(prjFiles[0]).read()
+                crs.createFromWkt(wkt)
+
+        crs.validate()  # if CRS is not valid, validate it using user's preference (prompt / use project's CRS / use default CRS)
+        self.setCrs(crs)
 
     def loadMesh(self, meshFileName):
         meshFileName = unicode(meshFileName)
@@ -151,14 +165,6 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
                           QgsPoint( e[2], e[3] ) )
         self.setExtent(r)
 
-
-        crs = QgsCoordinateReferenceSystem()
-        self._determineCRS(crs, meshFileName)
-
-
-        crs.validate()  # if CRS is not valid, validate it using user's preference (prompt / use project's CRS / use default CRS)
-        self.setCrs(crs)
-
         self.set2DMFileName(meshFileName) # Set the 2dm file name
         if hasattr(self, 'setSource'):  # supported from QGIS 2.16
             self.setSource(meshFileName)
@@ -166,6 +172,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         head, tail = os.path.split(meshFileName)
         layerName, ext = os.path.splitext(tail)
         self.setLayerName(layerName)
+
+        self.setupCRS()
 
         for i in xrange(self.mesh.dataset_count()):
             self.initCustomValues(self.mesh.dataset(i))
@@ -616,12 +624,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         height = (bottomright.y() - topleft.y())
 
         # TODO: this code should be outside of rendering loop
-        if ct:
-          res = self.mesh.set_projection(self.crs().toProj4(), ct.destCRS().toProj4())
-          #if not res:
-          #  qgis_message_bar.pushMessage("Crayfish", "Failed to reproject the mesh!", level=QgsMessageBar.WARNING)
-        else:
-          self.mesh.set_no_projection()
+        self.mesh.set_destination_crs(ct.destCRS().toProj4() if ct else None)
 
         if False:
             print '\n'

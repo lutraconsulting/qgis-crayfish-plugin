@@ -81,9 +81,11 @@ CF_EXPORT void CF_Mesh_extent(MeshH mesh, double* xmin, double* ymin, double* xm
 
 CF_EXPORT double CF_Mesh_valueAt(MeshH mesh, OutputH output, double x, double y);
 
-CF_EXPORT int CF_Mesh_setProjection(MeshH mesh, const char* srcProj4, const char* destProj4);
+CF_EXPORT void CF_Mesh_setSourceCrs(MeshH mesh, const char* srcProj4);
+CF_EXPORT void CF_Mesh_setDestinationCrs(MeshH mesh, const char* destProj4);
 
-CF_EXPORT const char* CF_Mesh_sourceCrsProj4(MeshH mesh);
+CF_EXPORT const char* CF_Mesh_sourceCrs(MeshH mesh);
+CF_EXPORT const char* CF_Mesh_destinationCrs(MeshH mesh);
 
 // DataSet functions
 

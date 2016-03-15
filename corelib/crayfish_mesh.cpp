@@ -433,22 +433,36 @@ void Mesh::setNoProjection()
   }
 
   mProjection = false;
-  mSrcProj4.clear();
-  mDestProj4.clear();
 }
 
-bool Mesh::setProjection(const QString& srcProj4, const QString& destProj4)
+void Mesh::setSourceCrs(const QString& srcProj4)
 {
-  Q_ASSERT(!srcProj4.isEmpty() && !destProj4.isEmpty());
+  if (mSrcProj4 == srcProj4)
+    return; // nothing has changed - so do nothing!
 
-  if (mSrcProj4 == srcProj4 && mDestProj4 == destProj4)
-    return true; // nothing has changed - so do nothing!
-
-  mProjection = true;
   mSrcProj4 = srcProj4;
-  mDestProj4 = destProj4;
+  reprojectMesh();
+}
 
-  projPJ projSrc = pj_init_plus(srcProj4.toAscii().data());
+void Mesh::setDestinationCrs(const QString& destProj4)
+{
+  if (mDestProj4 == destProj4)
+    return; // nothing has changed - so do nothing!
+
+  mDestProj4 = destProj4;
+  reprojectMesh();
+}
+
+bool Mesh::reprojectMesh()
+{
+  // if source or destination CRS is empty, that implies we do not reproject anything
+  if (mSrcProj4.isEmpty() || mDestProj4.isEmpty())
+  {
+    setNoProjection();
+    return true;
+  }
+
+  projPJ projSrc = pj_init_plus(mSrcProj4.toAscii().data());
   if (!projSrc)
   {
     qDebug("Crayfish: source proj4 string is not valid! (%s)", pj_strerrno(pj_errno));
@@ -456,7 +470,7 @@ bool Mesh::setProjection(const QString& srcProj4, const QString& destProj4)
     return false;
   }
 
-  projPJ projDst = pj_init_plus(destProj4.toAscii().data());
+  projPJ projDst = pj_init_plus(mDestProj4.toAscii().data());
   if (!projDst)
   {
     pj_free(projSrc);
@@ -464,6 +478,8 @@ bool Mesh::setProjection(const QString& srcProj4, const QString& destProj4)
     setNoProjection();
     return false;
   }
+
+  mProjection = true;
 
   if (mProjNodes == 0)
     mProjNodes = new Node[mNodes.count()];

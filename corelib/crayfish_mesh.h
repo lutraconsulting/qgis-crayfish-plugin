@@ -122,12 +122,11 @@ public:
 
   bool vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const;
 
-  void setNoProjection();
-  void setSourceCrsProj4(const QString& srcProj4) {mSrcProj4 = srcProj4;}
-  bool setProjection(const QString& srcProj4, const QString& destProj4);
+  void setSourceCrs(const QString& srcProj4);
+  void setDestinationCrs(const QString& destProj4);
   bool hasProjection() const;
-  QString sourceCrsProj4() const { return mSrcProj4; }
-  QString destCrsProj4() const { return mDestProj4; }
+  QString sourceCrs() const { return mSrcProj4; }
+  QString destinationCrs() const { return mDestProj4; }
 
   BBox projectedExtent() const { return mProjection ? mProjExtent : mExtent; }
   const Node* projectedNodes() const { return mProjection ? mProjNodes : mNodes.constData(); }
@@ -138,6 +137,9 @@ public:
   void elementCentroid(int elemIndex, double& cx, double& cy) const;
 
 protected:
+
+  bool reprojectMesh();
+  void setNoProjection();
 
   BBox computeMeshExtent(bool projected);
   void computeTempRendererData();

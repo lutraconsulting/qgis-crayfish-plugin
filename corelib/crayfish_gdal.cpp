@@ -371,7 +371,7 @@ void CrayfishGDALReader::addSrcProj() {
        if (OSRExportToProj4(hSRS, &ppszReturn) == OGRERR_NONE && ppszReturn != 0)
        {
            QString proj4(ppszReturn);
-           mMesh->setSourceCrsProj4(proj4);
+           mMesh->setSourceCrs(proj4);
        }
        OSRDestroySpatialReference(hSRS);
    }
