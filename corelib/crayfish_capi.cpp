@@ -371,6 +371,10 @@ void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
     cfg->ds.mVectorUserGridCellSize.setWidth(value->toInt());
   else if (k == "v_grid_y")
     cfg->ds.mVectorUserGridCellSize.setHeight(value->toInt());
+  else if (k == "v_filter_min")
+    cfg->ds.mVectorFilterMin = value->toFloat();
+  else if (k == "v_filter_max")
+    cfg->ds.mVectorFilterMax = value->toFloat();
   else
     qDebug("[setParam] unknown key: %s", key);
 }
@@ -408,6 +412,10 @@ void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value)
     *value = QVariant(cfg->ds.mVectorUserGridCellSize.width());
   else if (k == "v_grid_y")
     *value = QVariant(cfg->ds.mVectorUserGridCellSize.height());
+  else if (k == "v_filter_min")
+    *value = QVariant(cfg->ds.mVectorFilterMin);
+  else if (k == "v_filter_max")
+    *value = QVariant(cfg->ds.mVectorFilterMax);
   else
     qDebug("[getParam] unknown key: %s", key);
 }

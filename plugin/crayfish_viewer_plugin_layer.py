@@ -267,7 +267,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           "v_head_length" : 40,
           "v_grid" : False,
           "v_grid_x" : 10,
-          "v_grid_y" : 10
+          "v_grid_y" : 10,
+          "v_filter_min": -1,
+          "v_filter_max": -1,
         }
         ds.custom = {
           "c_basic" : True,
@@ -464,6 +466,12 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             if gridX is not None and gridY is not None:
                 ds.config["v_grid_x"] = gridX
                 ds.config["v_grid_y"] = gridY
+            filterMin = qstring2float(vectElem.attribute("filter-min"))
+            filterMax = qstring2float(vectElem.attribute("filter-max"))
+            if filterMin is not None:
+                ds.config["v_filter_min"] = filterMin
+            if filterMax is not None:
+                ds.config["v_filter_max"] = filterMax
 
 
     def writeDataSetXml(self, ds, elem, doc):
@@ -501,6 +509,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           vectElem.setAttribute("user-grid", "1" if ds.config["v_grid"] else "0")
           vectElem.setAttribute("user-grid-x", str(ds.config["v_grid_x"]))
           vectElem.setAttribute("user-grid-y", str(ds.config["v_grid_y"]))
+          vectElem.setAttribute("filter-min", str(ds.config["v_filter_min"]))
+          vectElem.setAttribute("filter-max", str(ds.config["v_filter_max"]))
           elem.appendChild(vectElem)
 
 

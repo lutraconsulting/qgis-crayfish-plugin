@@ -38,21 +38,14 @@ class CrayfishViewerRenderSettings():
         self.shaftLengthMax = ds.config["v_shaft_length_max"]
         self.shaftLengthFixedLength = ds.config["v_shaft_length_fixed"]
         self.shaftLengthScale = ds.config["v_shaft_length_scale"]
-
         self.lineWidth = ds.config["v_pen_width"]
-
         self.headWidth = ds.config["v_head_width"]
         self.headLength = ds.config["v_head_length"]
-
-        # unused stuff
-
         self.displayVectorsOnGrid = ds.config["v_grid"]
         self.xSpacing = ds.config["v_grid_x"]
         self.ySpacing = ds.config["v_grid_y"]
-        
-        self.filterByMag = False
-        self.minMag = 0.0
-        self.maxMag = 100.0
+        self.filterMin = ds.config["v_filter_min"]
+        self.filterMax = ds.config["v_filter_max"]
 
 
     def applyToDataSet(self):
@@ -68,3 +61,5 @@ class CrayfishViewerRenderSettings():
         self.ds.config["v_grid"] = self.displayVectorsOnGrid
         self.ds.config["v_grid_x"] = self.xSpacing
         self.ds.config["v_grid_y"] = self.ySpacing
+        self.ds.config["v_filter_min"] = self.filterMin
+        self.ds.config["v_filter_max"] = self.filterMax

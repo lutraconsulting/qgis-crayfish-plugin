@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'crayfish_viewer_vector_options_dialog_widget.ui'
+# Form implementation generated from reading ui file 'plugin/crayfish_viewer_vector_options_dialog_widget.ui'
 #
-# Created: Thu Apr 23 16:27:14 2015
+# Created: Tue Mar 15 13:57:23 2016
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -171,21 +171,19 @@ class Ui_Dialog(object):
         self.gridLayout_4.addWidget(self.percShaftLenLabel_2, 1, 2, 1, 1)
         self.verticalLayout_2.addWidget(self.headOptionsGroupBox)
         self.filterByMagGroupBox = QtGui.QGroupBox(Dialog)
-        self.filterByMagGroupBox.setEnabled(False)
-        self.filterByMagGroupBox.setCheckable(True)
         self.filterByMagGroupBox.setChecked(False)
         self.filterByMagGroupBox.setObjectName(_fromUtf8("filterByMagGroupBox"))
         self.gridLayout_5 = QtGui.QGridLayout(self.filterByMagGroupBox)
         self.gridLayout_5.setObjectName(_fromUtf8("gridLayout_5"))
-        self.maximumMagLineEdit = QtGui.QLineEdit(self.filterByMagGroupBox)
-        self.maximumMagLineEdit.setObjectName(_fromUtf8("maximumMagLineEdit"))
-        self.gridLayout_5.addWidget(self.maximumMagLineEdit, 1, 1, 1, 1)
+        self.maxMagLineEdit = QtGui.QLineEdit(self.filterByMagGroupBox)
+        self.maxMagLineEdit.setObjectName(_fromUtf8("maxMagLineEdit"))
+        self.gridLayout_5.addWidget(self.maxMagLineEdit, 1, 1, 1, 1)
         self.minimumMagLabel = QtGui.QLabel(self.filterByMagGroupBox)
         self.minimumMagLabel.setObjectName(_fromUtf8("minimumMagLabel"))
         self.gridLayout_5.addWidget(self.minimumMagLabel, 0, 0, 1, 1)
-        self.minimumMagLineEdit = QtGui.QLineEdit(self.filterByMagGroupBox)
-        self.minimumMagLineEdit.setObjectName(_fromUtf8("minimumMagLineEdit"))
-        self.gridLayout_5.addWidget(self.minimumMagLineEdit, 0, 1, 1, 1)
+        self.minMagLineEdit = QtGui.QLineEdit(self.filterByMagGroupBox)
+        self.minMagLineEdit.setObjectName(_fromUtf8("minMagLineEdit"))
+        self.gridLayout_5.addWidget(self.minMagLineEdit, 0, 1, 1, 1)
         self.maximumMagLabel = QtGui.QLabel(self.filterByMagGroupBox)
         self.maximumMagLabel.setObjectName(_fromUtf8("maximumMagLabel"))
         self.gridLayout_5.addWidget(self.maximumMagLabel, 1, 0, 1, 1)
@@ -205,7 +203,7 @@ class Ui_Dialog(object):
         self.gridLayout_9.addLayout(self.verticalLayout_3, 0, 0, 1, 1)
 
         self.retranslateUi(Dialog)
-        self.stackedWidget.setCurrentIndex(2)
+        self.stackedWidget.setCurrentIndex(0)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Dialog.accept)
         QtCore.QObject.connect(self.shaftLengthComboBox, QtCore.SIGNAL(_fromUtf8("currentIndexChanged(int)")), Dialog.shaftLengthMethodChanged)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), Dialog.reject)
@@ -221,9 +219,9 @@ class Ui_Dialog(object):
         Dialog.setTabOrder(self.ySpacingLineEdit, self.headWidthLineEdit)
         Dialog.setTabOrder(self.headWidthLineEdit, self.headLengthLineEdit)
         Dialog.setTabOrder(self.headLengthLineEdit, self.filterByMagGroupBox)
-        Dialog.setTabOrder(self.filterByMagGroupBox, self.minimumMagLineEdit)
-        Dialog.setTabOrder(self.minimumMagLineEdit, self.maximumMagLineEdit)
-        Dialog.setTabOrder(self.maximumMagLineEdit, self.buttonBox)
+        Dialog.setTabOrder(self.filterByMagGroupBox, self.minMagLineEdit)
+        Dialog.setTabOrder(self.minMagLineEdit, self.maxMagLineEdit)
+        Dialog.setTabOrder(self.maxMagLineEdit, self.buttonBox)
 
     def retranslateUi(self, Dialog):
         Dialog.setWindowTitle(_translate("Dialog", "Vector Rendering Options", None))

@@ -345,6 +345,13 @@ void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF&
   if (xVal == 0.0 && yVal == 0.0)
     return;
 
+  // do not render if magnitude is outside of the filtered range (if filtering is enabled)
+  float magnitude = sqrt(xVal*xVal + yVal*yVal);
+  if (mCfg.ds.mVectorFilterMin >= 0 && magnitude < mCfg.ds.mVectorFilterMin)
+    return;
+  if (mCfg.ds.mVectorFilterMax >= 0 && magnitude > mCfg.ds.mVectorFilterMax)
+    return;
+
   // Determine the angle of the vector, counter-clockwise, from east
   // (and associated trigs)
   double vectorAngle = -1.0 * atan( (-1.0 * yVal) / xVal );
