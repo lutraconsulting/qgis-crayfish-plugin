@@ -311,5 +311,5 @@ class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
         for i in range(self.colormap.item_count()):
             item = self.colormap[i]
             c = item.color
-            f.write("%.3f,%d,%d,%d,%d,%.3f\n" % (item.value, c[0], c[1], c[2], c[3], item.label))
+            f.write("%.3f,%d,%d,%d,%d,%s\n" % (item.value, c[0], c[1], c[2], c[3], item.label))
         f.close()
