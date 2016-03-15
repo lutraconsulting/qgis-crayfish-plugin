@@ -375,6 +375,8 @@ void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
     cfg->ds.mVectorFilterMin = value->toFloat();
   else if (k == "v_filter_max")
     cfg->ds.mVectorFilterMax = value->toFloat();
+  else if (k == "v_color")
+    cfg->ds.mVectorColor = value->value<QColor>();
   else
     qDebug("[setParam] unknown key: %s", key);
 }
@@ -416,6 +418,8 @@ void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value)
     *value = QVariant(cfg->ds.mVectorFilterMin);
   else if (k == "v_filter_max")
     *value = QVariant(cfg->ds.mVectorFilterMax);
+  else if (k == "v_color")
+    *value = QVariant(cfg->ds.mVectorColor);
   else
     qDebug("[getParam] unknown key: %s", key);
 }

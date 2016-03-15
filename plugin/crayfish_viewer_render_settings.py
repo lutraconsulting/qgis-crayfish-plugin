@@ -46,6 +46,7 @@ class CrayfishViewerRenderSettings():
         self.ySpacing = ds.config["v_grid_y"]
         self.filterMin = ds.config["v_filter_min"]
         self.filterMax = ds.config["v_filter_max"]
+        self.color = ds.config["v_color"]
 
 
     def applyToDataSet(self):
@@ -63,3 +64,4 @@ class CrayfishViewerRenderSettings():
         self.ds.config["v_grid_y"] = self.ySpacing
         self.ds.config["v_filter_min"] = self.filterMin
         self.ds.config["v_filter_max"] = self.filterMax
+        self.ds.config["v_color"] = self.color

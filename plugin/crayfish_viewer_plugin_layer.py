@@ -270,6 +270,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           "v_grid_y" : 10,
           "v_filter_min": -1,
           "v_filter_max": -1,
+          "v_color": (0, 0, 0, 255)   # black
         }
         ds.custom = {
           "c_basic" : True,
@@ -472,6 +473,10 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
                 ds.config["v_filter_min"] = filterMin
             if filterMax is not None:
                 ds.config["v_filter_max"] = filterMax
+            try:
+                ds.config["v_color"] = qstring2rgb(vectElem.attribute("color"))
+            except ValueError:
+                pass
 
 
     def writeDataSetXml(self, ds, elem, doc):
@@ -511,6 +516,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           vectElem.setAttribute("user-grid-y", str(ds.config["v_grid_y"]))
           vectElem.setAttribute("filter-min", str(ds.config["v_filter_min"]))
           vectElem.setAttribute("filter-max", str(ds.config["v_filter_max"]))
+          vectElem.setAttribute("color", rgb2string(ds.config["v_color"]))
           elem.appendChild(vectElem)
 
 

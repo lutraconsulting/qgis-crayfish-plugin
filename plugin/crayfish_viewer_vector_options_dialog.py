@@ -49,8 +49,10 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         self.rs = renderSettings
         self.redraw = redrawFunction
 
-        self.buttonBox.hide()  # not used currently
-        
+        self.colorButton.setColorDialogOptions(QColorDialog.ShowAlphaChannel)
+        c = self.rs.color
+        self.colorButton.setColor(QColor(c[0],c[1],c[2],c[3]))
+
         # Populate the various widgets
         self.shaftLengthComboBox.setCurrentIndex( self.rs.shaftLength )
         self.stackedWidget.setCurrentIndex( self.rs.shaftLength )
@@ -94,6 +96,7 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         QObject.connect( self.headLengthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.minMagLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.maxMagLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.connect( self.colorButton, SIGNAL("colorChanged(QColor)"), self.inputFocusChanged )
 
     def inputFocusChanged(self, arg=None):
         self.saveRenderSettings()
@@ -124,6 +127,9 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         
         self.rs.filterMin = float_safe( self.minMagLineEdit.text() ) if len(self.minMagLineEdit.text()) != 0 else -1
         self.rs.filterMax = float_safe( self.maxMagLineEdit.text() ) if len(self.maxMagLineEdit.text()) != 0 else -1
+
+        clr = self.colorButton.color()
+        self.rs.color = (clr.red(),clr.green(),clr.blue(),clr.alpha())
 
         self.rs.applyToDataSet()
     

@@ -93,6 +93,7 @@ public:
       , mVectorUserGridCellSize(10, 10)
       , mVectorFilterMin(-1)
       , mVectorFilterMax(-1)
+      , mVectorColor(Qt::black)
     {}
 
     enum VectorLengthMethod
@@ -118,6 +119,7 @@ public:
     QSize mVectorUserGridCellSize;//!< size of user grid (in pixels) for vector arrows
     float mVectorFilterMin;   //!< minimum vector magnitude in order to be drawn. negative value == no filter for minimum
     float mVectorFilterMax;   //!< maximum vector magnitude in order to be drawn. negative value == no filter for maximum
+    QColor mVectorColor;      //!< color of arrows
   };
 
   //! Master configuration for rendering

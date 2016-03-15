@@ -225,11 +225,12 @@ void Renderer::drawVectorData(const Output* output)
   // Set up the render configuration options
   QPainter p(&mImage);
   p.setRenderHint(QPainter::Antialiasing);
-  p.setBrush( Qt::SolidPattern );
+  p.setBrush(QBrush(mCfg.ds.mVectorColor));
   QPen pen = p.pen();
   pen.setCapStyle(Qt::FlatCap);
   pen.setJoinStyle(Qt::MiterJoin);
   pen.setWidth(mCfg.ds.mLineWidth);
+  pen.setColor(mCfg.ds.mVectorColor);
   p.setPen(pen);
 
   if (mCfg.ds.mVectorUserGrid)
