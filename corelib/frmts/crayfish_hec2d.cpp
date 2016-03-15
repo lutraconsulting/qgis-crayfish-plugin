@@ -134,7 +134,7 @@ static void readUnsteadyResults(Mesh* mesh, const QString fileName, const HdfFil
             tos->init(nElems, false);
             tos->time = times[tidx];
             for (int i = 0; i < nElems; ++i) {
-              int idx = tidx*times.size() + i;
+              int idx = tidx*nElems + i;
               float val = vals[idx];
               if (val != val) { //NaN
                 tos->values[i] = -9999;
