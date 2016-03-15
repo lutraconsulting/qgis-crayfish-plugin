@@ -73,7 +73,7 @@ static HdfDataset openHdfDataset(const HdfGroup& hdfGroup, const QString& name)
     return dsFileType;
 }
 
-static void readBedElevation(Mesh* mesh, const QString fileName, const HdfGroup& gArea, int nElems)
+static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const HdfGroup& gArea, int nElems)
 {
     DataSet* dsd = new DataSet(fileName);
     dsd->setName("Bed Elevation");
@@ -97,9 +97,11 @@ static void readBedElevation(Mesh* mesh, const QString fileName, const HdfGroup&
     dsd->addOutput(tos);
     dsd->updateZRange();
     mesh->addDataSet(dsd);
+
+    return tos;
 }
 
-static void readUnsteadyResults(Mesh* mesh, const QString fileName, const HdfFile& hdfFile, int nElems)
+static void readUnsteadyResults(Mesh* mesh, const QString fileName, const HdfFile& hdfFile, int nElems, ElementOutput* bed_elevation)
 {
     HdfGroup gResults = openHdfGroup(hdfFile, "Results");
     HdfGroup gUnsteady = openHdfGroup(gResults, "Unsteady");
@@ -118,6 +120,8 @@ static void readUnsteadyResults(Mesh* mesh, const QString fileName, const HdfFil
     QStringList datasets;
     datasets.push_back("Water Surface");
     datasets.push_back("Depth");
+
+    float eps = std::numeric_limits<float>::min();
 
     foreach(QString dsName, datasets) {
         DataSet* dsd = new DataSet(fileName);
@@ -139,7 +143,20 @@ static void readUnsteadyResults(Mesh* mesh, const QString fileName, const HdfFil
               if (val != val) { //NaN
                 tos->values[i] = -9999;
               } else {
-                tos->values[i] = val;
+                if (dsName == "Depth") {
+                    if (fabs(val) < eps) {
+                        tos->values[i] = -9999; // 0 Depth is no-data
+                    } else {
+                        tos->values[i] = val;
+                    }
+                } else { //Water surface
+                    float bed_elev = bed_elevation->values[i];
+                    if (fabs(bed_elev - val) < eps) {
+                        tos->values[i] = -9999; // no change from bed elevation
+                    } else {
+                        tos->values[i] = val;
+                    }
+                }
               }
             }
 
@@ -222,10 +239,10 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         mesh = new Mesh(nodes, elements);
 
         //Elevation
-        readBedElevation(mesh, fileName, gArea, nElems);
+        ElementOutput* bed_elevation = readBedElevation(mesh, fileName, gArea, nElems);
 
         // Values
-        readUnsteadyResults(mesh, fileName, hdfFile, nElems);
+        readUnsteadyResults(mesh, fileName, hdfFile, nElems, bed_elevation);
     }
 
     catch (LoadStatus::Error error)

@@ -153,6 +153,8 @@ public:
       valuesV.resize(elemCount);
   }
 
+  virtual bool isActive(int elemIndex) const { return values[elemIndex] != -9999.0; }
+
   QVector<float> values;    //!< array of values per element (size = element count)
   QVector<float2D> valuesV; //!< in case of dataset with vector data - array of X,Y coords - otherwise empty
 };
