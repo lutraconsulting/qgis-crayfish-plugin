@@ -39,6 +39,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QVector>
 
 #define HDF_MAX_NAME 1024
+struct HdfString {
+    char data [HDF_MAX_NAME];
+};
 
 template <int TYPE> inline void hdfClose(hid_t id) { qDebug("Unknown type!"); }
 
@@ -170,6 +173,26 @@ public:
   QVector<double> readArrayDouble() const { return readArray<double>(H5T_NATIVE_DOUBLE); }
 
   QVector<int> readArrayInt() const { return readArray<int>(H5T_NATIVE_INT); }
+
+  QStringList readArrayString() const {
+      QStringList ret;
+
+      hid_t datatype = H5Tcopy(H5T_C_S1);
+      H5Tset_size(datatype, HDF_MAX_NAME);
+
+      QVector<HdfString> arr = readArray<HdfString>(datatype);
+
+      H5Tclose(datatype);
+
+      foreach (HdfString str, arr)
+      {
+          QString dat = QString::fromUtf8(str.data);
+          ret.push_back(dat.trimmed());
+      }
+
+      return ret;
+  }
+
 
   template <typename T> QVector<T> readArray(hid_t mem_type_id) const
   {

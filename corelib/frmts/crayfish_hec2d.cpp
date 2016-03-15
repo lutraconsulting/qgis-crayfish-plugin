@@ -101,7 +101,7 @@ static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const
     return tos;
 }
 
-static void readUnsteadyResults(Mesh* mesh, const QString fileName, const HdfFile& hdfFile, int nElems, ElementOutput* bed_elevation)
+static void readUnsteadyResults(Mesh* mesh, const QString flowAreaName, const QString fileName, const HdfFile& hdfFile, int nElems, ElementOutput* bed_elevation)
 {
     HdfGroup gResults = openHdfGroup(hdfFile, "Results");
     HdfGroup gUnsteady = openHdfGroup(gResults, "Unsteady");
@@ -110,7 +110,7 @@ static void readUnsteadyResults(Mesh* mesh, const QString fileName, const HdfFil
     HdfGroup gBaseO = openHdfGroup(gOBlocks, "Base Output");
     HdfGroup gUnsteadTS = openHdfGroup(gBaseO, "Unsteady Time Series");
     HdfGroup g2DFlowRes = openHdfGroup(gUnsteadTS, "2D Flow Areas");
-    HdfGroup gFlowAreaRes = openHdfGroup(g2DFlowRes, "BaldEagleCr"); // #TODO
+    HdfGroup gFlowAreaRes = openHdfGroup(g2DFlowRes, flowAreaName);
 
 
     HdfDataset dsTimes = openHdfDataset(gUnsteadTS, "Time");
@@ -168,6 +168,15 @@ static void readUnsteadyResults(Mesh* mesh, const QString fileName, const HdfFil
     }
 }
 
+QStringList read2DFlowAreasNames(HdfGroup gGeom2DFlowAreas) {
+    HdfDataset dsNames = openHdfDataset(gGeom2DFlowAreas, "Names");
+    QStringList names = dsNames.readArrayString();
+    if (names.isEmpty()) {
+        throw LoadStatus::Err_InvalidData;
+    }
+    return names;
+}
+
 Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
 {
     if (status) status->clear();
@@ -179,10 +188,13 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
 
         HdfGroup gGeom = openHdfGroup(hdfFile, "Geometry");
         HdfGroup gGeom2DFlowAreas = openHdfGroup(gGeom, "2D Flow Areas");
-        //TODO parse dataset names
-        //TODO loop over areas
-        QString flowArea = "BaldEagleCr";
-        HdfGroup gArea = openHdfGroup(gGeom2DFlowAreas, flowArea);
+
+        // The file may contain multiple FLOW areas. However we do not have
+        // representative examples, so for now just take first one
+        QStringList flowAreaNames = read2DFlowAreasNames(gGeom2DFlowAreas);
+        QString flowAreaName = flowAreaNames[0];
+
+        HdfGroup gArea = openHdfGroup(gGeom2DFlowAreas, flowAreaName);
 
         HdfDataset dsCoords = openHdfDataset(gArea, "FacePoints Coordinate");
         QVector<hsize_t> cdims = dsCoords.dims();
@@ -242,7 +254,7 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         ElementOutput* bed_elevation = readBedElevation(mesh, fileName, gArea, nElems);
 
         // Values
-        readUnsteadyResults(mesh, fileName, hdfFile, nElems, bed_elevation);
+        readUnsteadyResults(mesh, flowAreaName, fileName, hdfFile, nElems, bed_elevation);
     }
 
     catch (LoadStatus::Error error)
