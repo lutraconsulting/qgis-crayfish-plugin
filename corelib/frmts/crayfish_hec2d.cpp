@@ -347,7 +347,7 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         mesh = new Mesh(nodes, elements);
         // Get projection
         QString proj_wkt = openHdfAttribute(hdfFile, "Projection");
-        mesh->setSourceCrsProj4(proj_wkt);
+        mesh->setSourceCrsFromWKT(proj_wkt);
 
         //Elevation
         ElementOutput* bed_elevation = readBedElevation(mesh, fileName, gArea, nElems);

@@ -33,6 +33,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <QVector2D>
 
+#include <ogr_srs_api.h>
 #include <proj_api.h>
 
 #define DEG2RAD   (3.14159265358979323846 / 180)
@@ -433,6 +434,30 @@ void Mesh::setNoProjection()
   }
 
   mProjection = false;
+}
+
+void Mesh::setSourceCrsFromWKT(const QString& wkt)
+{
+    OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
+
+    const char* raw_data = wkt.toUtf8().constData();
+    OGRErr err = OSRImportFromWkt(hSRS, const_cast<char**>(&raw_data));
+    if (err != OGRERR_NONE)
+    {
+        QString wkt2("ESRI::" + wkt);
+        err = OSRSetFromUserInput(hSRS, wkt2.toUtf8().constData());
+    }
+
+    if (err == OGRERR_NONE)
+    {
+        char * ppszReturn = 0;
+        if (OSRExportToProj4(hSRS, &ppszReturn) == OGRERR_NONE && ppszReturn != 0)
+        {
+            QString proj4(ppszReturn);
+            setSourceCrs(proj4);
+        }
+    }
+    OSRDestroySpatialReference(hSRS);
 }
 
 void Mesh::setSourceCrs(const QString& srcProj4)

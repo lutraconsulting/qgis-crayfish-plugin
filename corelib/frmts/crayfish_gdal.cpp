@@ -31,8 +31,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_output.h"
 
 #include <gdal.h>
-#include <ogr_srs_api.h>
-
 #include <QString>
 #include <QMap>
 #include <QHash>
@@ -364,16 +362,8 @@ void CrayfishGDALReader::createMesh() {
 void CrayfishGDALReader::addSrcProj() {
    char* proj = const_cast<char*> (GDALGetProjectionRef( mHDataset ));
    if( proj != NULL ) {
-
-       OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
-       OSRImportFromWkt(hSRS, &proj);
-       char * ppszReturn = 0;
-       if (OSRExportToProj4(hSRS, &ppszReturn) == OGRERR_NONE && ppszReturn != 0)
-       {
-           QString proj4(ppszReturn);
-           mMesh->setSourceCrs(proj4);
-       }
-       OSRDestroySpatialReference(hSRS);
+       QString proj_wkt(proj);
+       mMesh->setSourceCrsFromWKT(proj_wkt);
    }
 }
 
