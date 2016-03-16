@@ -92,8 +92,6 @@ def gradientColorRampStop(ramp, i):
     else:  # QGIS 2.0 returns list of structures
       return (stops[i].offset, stops[i].color)
 
-
-
 class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     LAYER_TYPE="crayfish_viewer"
@@ -193,7 +191,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         elif e == crayfish.Err_UnknownFormat:
           qgis_message_bar.pushMessage("Crayfish", "Mesh file format not recognized (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
         # TODO register other errors
-        
+
     def currentDataSet(self):
         return self.mesh.dataset(self.current_ds_index)
 
@@ -622,8 +620,13 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         return cm
 
 
-    def draw(self, rendererContext):
+    def createMapRenderer(self, rendererContext):
+        ct = rendererContext.coordinateTransform()
+        self.mesh.set_destination_crs(ct.destCRS().toProj4() if ct else None)
 
+        return QgsPluginLayer.createMapRenderer(self, rendererContext)
+
+    def draw(self, rendererContext):
         mapToPixel = rendererContext.mapToPixel()
         pixelSize = mapToPixel.mapUnitsPerPixel()
         ct = rendererContext.coordinateTransform()
@@ -638,9 +641,6 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         bottomright = mapToPixel.transform(extent.xMaximum(), extent.yMinimum())
         width = (bottomright.x() - topleft.x())
         height = (bottomright.y() - topleft.y())
-
-        # TODO: this code should be outside of rendering loop
-        self.mesh.set_destination_crs(ct.destCRS().toProj4() if ct else None)
 
         if False:
             print '\n'
