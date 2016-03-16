@@ -43,8 +43,32 @@ class CrayfishViewerPluginLayerRenderer(QgsMapLayerRenderer):
 
         self.layer = layer
         self.rendererContext = rendererContext
-        self.rconfig = self._create_rconfig()
+
+        # Now extract all relevant information from the layer settings for rendering
+        self._calculate_extent()
+        self._create_rconfig()
+
+        # And notify corelib to reproject if needed
         self._set_destination_crs()
+
+    def _calculate_extent(self):
+        mapToPixel = self.rendererContext.mapToPixel()
+        pixelSize = mapToPixel.mapUnitsPerPixel()
+        ct = self.rendererContext.coordinateTransform()
+        extent = self.rendererContext.extent()  # this is extent in layer's coordinate system - but we need
+        if ct:
+          # TODO: need a proper way how to get visible extent without using map canvas from interface
+          if iface.mapCanvas().isDrawing():
+            extent = iface.mapCanvas().extent()
+          else:
+            extent = ct.transformBoundingBox(extent)  # TODO: this is just approximate :-(
+        topleft = mapToPixel.transform(extent.xMinimum(), extent.yMaximum())
+        bottomright = mapToPixel.transform(extent.xMaximum(), extent.yMinimum())
+
+        self.pixelSize = pixelSize
+        self.width = (bottomright.x() - topleft.x())
+        self.height = (bottomright.y() - topleft.y())
+        self.extent = extent
 
     def _create_rconfig(self):
         rconfig = crayfish.RendererConfig()
@@ -67,42 +91,31 @@ class CrayfishViewerPluginLayerRenderer(QgsMapLayerRenderer):
         for k,v in self.layer.config.iteritems():
           rconfig[k] = v
 
-        return rconfig
+        rconfig.set_view((int(self.width),int(self.height)), (self.extent.xMinimum(), self.extent.yMinimum()), self.pixelSize)
+        self.rconfig = rconfig
 
     def _set_destination_crs(self):
+        # Set in main thread, so the mesh projection arrays
+        # are populated correctly before used for example by identify tools
         ct = self.rendererContext.coordinateTransform()
         self.layer.mesh.set_destination_crs(ct.destCRS().toProj4() if ct else None)
 
-    def render(self):
-
-        mapToPixel = self.rendererContext.mapToPixel()
-        pixelSize = mapToPixel.mapUnitsPerPixel()
-        ct = self.rendererContext.coordinateTransform()
-        extent = self.rendererContext.extent()  # this is extent in layer's coordinate system - but we need
-        if ct:
-          # TODO: need a proper way how to get visible extent without using map canvas from interface
-          if iface.mapCanvas().isDrawing():
-            extent = iface.mapCanvas().extent()
-          else:
-            extent = ct.transformBoundingBox(extent)  # TODO: this is just approximate :-(
-        topleft = mapToPixel.transform(extent.xMinimum(), extent.yMaximum())
-        bottomright = mapToPixel.transform(extent.xMaximum(), extent.yMinimum())
-        width = (bottomright.x() - topleft.x())
-        height = (bottomright.y() - topleft.y())
-
-        self.rconfig.set_view((int(width),int(height)), (extent.xMinimum(), extent.yMinimum()), pixelSize)
-
-        if False:
+    def _print_debug_info(self):
             print '\n'
             print 'About to render with the following parameters:'
-            print '\tExtent:\t%f,%f - %f,%f\n' % (extent.xMinimum(),extent.yMinimum(),extent.xMaximum(),extent.yMaximum())
-            print '\tWidth:\t' + str(width) + '\n'
-            print '\tHeight:\t' + str(height) + '\n'
-            print '\tXMin:\t' + str(extent.xMinimum()) + '\n'
-            print '\tYMin:\t' + str(extent.yMinimum()) + '\n'
-            print '\tPixSz:\t' + str(pixelSize) + '\n'
+            print '\tExtent:\t%f,%f - %f,%f' % (self.extent.xMinimum(), self.extent.yMinimum(), self.extent.xMaximum(), self.extent.yMaximum())
+            print '\tWidth:\t' + str(self.width)
+            print '\tHeight:\t' + str(self.height)
+            print '\tXMin:\t' + str(self.extent.xMinimum())
+            print '\tYMin:\t' + str(self.extent.yMinimum())
+            print '\tPixSz:\t' + str(self.pixelSize)
 
-        img = QImage(width,height, QImage.Format_ARGB32)
+    def render(self):
+        # This is done in separate rendering thread
+        if False:
+            self._print_debug_info()
+
+        img = QImage(self.width, self.height, QImage.Format_ARGB32)
         img.fill(0)
 
         r = crayfish.Renderer(self.rconfig, img)
