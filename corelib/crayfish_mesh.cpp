@@ -32,6 +32,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_output.h"
 
 #include <QVector2D>
+#include <QReadLocker>
+#include <QWriteLocker>
 
 #include <ogr_srs_api.h>
 #include <proj_api.h>
@@ -39,7 +41,28 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define DEG2RAD   (3.14159265358979323846 / 180)
 #define RAD2DEG   (180 / 3.14159265358979323846)
 
+class TryReadLocker {
+private:
+    QReadWriteLock* mLock;
+    bool success;
 
+public:
+    TryReadLocker(QReadWriteLock* lock): mLock(lock)
+    {
+        success = mLock->tryLockForRead();
+    }
+
+    ~TryReadLocker()
+    {
+        if (success) {mLock->unlock();}
+    }
+    bool lockFailed() const {return !success;}
+};
+
+
+static QString _setSourceCrsFromWKT(const QString& wkt);
+static QString _setSourceCrsFromESRI(const QString& wkt);
+static void updateBBox(BBox& bbox, const Element& elem, const Node* nodes);
 
 BasicMesh::BasicMesh(const Mesh::Nodes& nodes, const Mesh::Elements& elements)
   : mNodes(nodes)
@@ -49,12 +72,6 @@ BasicMesh::BasicMesh(const Mesh::Nodes& nodes, const Mesh::Elements& elements)
 
 BasicMesh::~BasicMesh()
 {
-}
-
-void Mesh::addDataSet(DataSet* ds)
-{
-  mDataSets.append(ds);
-  ds->setMesh(this);
 }
 
 int BasicMesh::elementCountForType(Element::Type type)
@@ -68,21 +85,19 @@ int BasicMesh::elementCountForType(Element::Type type)
   return cnt;
 }
 
-
-
 Mesh::Mesh(const BasicMesh::Nodes& nodes, const BasicMesh::Elements& elements)
   : BasicMesh(nodes, elements)
+  , mExtent(computeMeshExtent(false))
   , mE4Qtmp(0)
   , mE4QtmpIndex(0)
   , mBBoxes(0)
   , mProjection(false)
   , mProjNodes(0)
   , mProjBBoxes(0)
+  , mLock(QReadWriteLock::Recursive)
 {
-  mExtent = computeMeshExtent(false);
   computeTempRendererData();
 }
-
 
 Mesh::~Mesh()
 {
@@ -104,35 +119,67 @@ Mesh::~Mesh()
   mProjBBoxes = 0;
 }
 
-
-BBox Mesh::computeMeshExtent(bool projected)
+void Mesh::addDataSet(DataSet* ds)
 {
-  BBox b;
-
-  const Node* nodes = projected ? projectedNodes() : mNodes.constData();
-
-  if (mNodes.count() == 0)
-    return b;
-
-  b.minX = nodes[0].x;
-  b.maxX = nodes[0].x;
-  b.minY = nodes[0].y;
-  b.maxY = nodes[0].y;
-
-  for (int i = 0; i < mNodes.count(); i++)
-  {
-    const Node& n = nodes[i];
-    if(n.x > b.maxX) b.maxX = n.x;
-    if(n.x < b.minX) b.minX = n.x;
-    if(n.y > b.maxY) b.maxY = n.y;
-    if(n.y < b.minY) b.minY = n.y;
-  }
-  return b;
+  mDataSets.append(ds);
+  ds->setMesh(this);
 }
 
+const Mesh::DataSets& Mesh::dataSets() const {
+    return mDataSets;
+}
+
+BBox Mesh::extent() const {
+    return mExtent;
+}
+
+QString Mesh::sourceCrs() const {
+    QReadLocker rLock(&mLock);
+    Q_UNUSED(rLock);
+
+    return mSrcProj4;
+}
+QString Mesh::destinationCrs() const {
+    QReadLocker rLock(&mLock);
+    Q_UNUSED(rLock);
+
+    return mDestProj4;
+}
+
+BBox Mesh::projectedExtent() const {
+    QReadLocker rLock(&mLock);
+    Q_UNUSED(rLock);
+
+    return mProjection ? mProjExtent : mExtent;
+}
+
+const Node* Mesh::projectedNodes() const {
+    QReadLocker rLock(&mLock);
+    Q_UNUSED(rLock);
+
+    return mProjection ? mProjNodes : mNodes.constData();
+}
+
+const Node& Mesh::projectedNode(int nodeIndex) const {
+    QReadLocker rLock(&mLock);
+    Q_UNUSED(rLock);
+
+    return mProjection ? mProjNodes[nodeIndex] : mNodes[nodeIndex];
+}
+
+const BBox& Mesh::projectedBBox(int elemIndex) const {
+    QReadLocker rLock(&mLock);
+    Q_UNUSED(rLock);
+
+    return mProjection ? mProjBBoxes[elemIndex] : mBBoxes[elemIndex];
+}
 
 double Mesh::valueAt(const Output* output, double xCoord, double yCoord) const
 {
+  TryReadLocker rLock(&mLock);
+  if (rLock.lockFailed())
+    return -9999.0;
+
   if (!output)
     return -9999.0;
 
@@ -197,6 +244,10 @@ struct VectorValueAccessorY : public ValueAccessor
 
 bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const
 {
+  TryReadLocker rLock(&mLock);
+  if (rLock.lockFailed())
+      return -9999.0;
+
   if (output->type() == Output::TypeNode)
   {
     const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
@@ -208,6 +259,272 @@ bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const O
     const ElementOutput* elemOutput = static_cast<const ElementOutput*>(output);
     ScalarValueAccessor accessor(elemOutput->values.constData());
     return interpolateElementCentered(elementIndex, x, y, value, elemOutput, &accessor);
+  }
+}
+
+bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const
+{
+  TryReadLocker rLock(&mLock);
+  if (rLock.lockFailed())
+    return -9999.0;
+
+  if (output->type() == Output::TypeNode)
+  {
+    const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
+    VectorValueAccessorX accessorX(nodeOutput->valuesV.constData());
+    VectorValueAccessorY accessorY(nodeOutput->valuesV.constData());
+    bool resX = interpolate(elementIndex, x, y, valueX, nodeOutput, &accessorX);
+    bool resY = interpolate(elementIndex, x, y, valueY, nodeOutput, &accessorY);
+    return resX && resY;
+  }
+  else
+  {
+    const ElementOutput* elemOutput = static_cast<const ElementOutput*>(output);
+    VectorValueAccessorX accessorX(elemOutput->valuesV.constData());
+    VectorValueAccessorY accessorY(elemOutput->valuesV.constData());
+    bool resX = interpolateElementCentered(elementIndex, x, y, valueX, elemOutput, &accessorX);
+    bool resY = interpolateElementCentered(elementIndex, x, y, valueY, elemOutput, &accessorY);
+    return resX && resY;
+  }
+}
+
+void Mesh::setSourceCrsFromWKT(const QString& wkt)
+{
+    QWriteLocker wLock(&mLock);
+    Q_UNUSED(wLock);
+
+    QString proj4 = _setSourceCrsFromWKT(wkt);
+    if (proj4.isEmpty()) {
+        proj4 = _setSourceCrsFromESRI(wkt);
+    }
+    setSourceCrs(proj4);
+}
+
+void Mesh::setSourceCrs(const QString& srcProj4)
+{
+  QWriteLocker wLock(&mLock);
+  Q_UNUSED(wLock);
+
+  if (mSrcProj4 == srcProj4)
+    return; // nothing has changed - so do nothing!
+
+  mSrcProj4 = srcProj4;
+  reprojectMesh();
+}
+
+void Mesh::setDestinationCrs(const QString& destProj4)
+{
+  QWriteLocker wLock(&mLock);
+  Q_UNUSED(wLock);
+
+  if (mDestProj4 == destProj4)
+    return; // nothing has changed - so do nothing!
+
+  mDestProj4 = destProj4;
+  reprojectMesh();
+}
+
+void Mesh::elementCentroid(int elemIndex, double& cx, double& cy) const
+{
+  QReadLocker rLock(&mLock);
+  Q_UNUSED(rLock);
+
+  const Element& e = mElems[elemIndex];
+  if (e.eType == Element::E3T)
+  {
+    const Node* nodes = projectedNodes();
+    E3T_centroid(nodes[e.p[0]].toPointF(), nodes[e.p[1]].toPointF(), nodes[e.p[2]].toPointF(), cx, cy);
+  }
+  else if (e.eType == Element::E4Q)
+  {
+    int e4qIndex = mE4QtmpIndex[elemIndex];
+    E4Qtmp& e4q = mE4Qtmp[e4qIndex];
+    E4Q_centroid(e4q, cx, cy);
+  }
+  else
+    Q_ASSERT(0 && "element not supported");
+}
+
+bool Mesh::hasProjection() const
+{
+  QReadLocker rLock(&mLock);
+  Q_UNUSED(rLock);
+
+  return mProjection;
+}
+
+/**********************************************************/
+/********** PRIVATE, no need to lock mutex ****************/
+/**********************************************************/
+
+bool Mesh::reprojectMesh()
+{
+  // if source or destination CRS is empty, that implies we do not reproject anything
+  if (mSrcProj4.isEmpty() || mDestProj4.isEmpty())
+  {
+    setNoProjection();
+    return true;
+  }
+
+  projPJ projSrc = pj_init_plus(mSrcProj4.toAscii().data());
+  if (!projSrc)
+  {
+    qDebug("Crayfish: source proj4 string is not valid! (%s)", pj_strerrno(pj_errno));
+    setNoProjection();
+    return false;
+  }
+
+  projPJ projDst = pj_init_plus(mDestProj4.toAscii().data());
+  if (!projDst)
+  {
+    pj_free(projSrc);
+    qDebug("Crayfish: source proj4 string is not valid! (%s)", pj_strerrno(pj_errno));
+    setNoProjection();
+    return false;
+  }
+
+  mProjection = true;
+
+  if (mProjNodes == 0)
+    mProjNodes = new Node[mNodes.count()];
+
+  memcpy(mProjNodes, mNodes.constData(), sizeof(Node)*mNodes.count());
+
+  if (pj_is_latlong(projSrc))
+  {
+    // convert source from degrees to radians
+    for (int i = 0; i < mNodes.count(); ++i)
+    {
+      mProjNodes[i].x *= DEG2RAD;
+      mProjNodes[i].y *= DEG2RAD;
+    }
+  }
+
+  int res = pj_transform(projSrc, projDst, mNodes.count(), 3, &mProjNodes->x, &mProjNodes->y, NULL);
+
+  if (res != 0)
+  {
+    qDebug("Crayfish: reprojection failed (%s)", pj_strerrno(res));
+    setNoProjection();
+    return false;
+  }
+
+  if (pj_is_latlong(projDst))
+  {
+    // convert source from degrees to radians
+    for (int i = 0; i < mNodes.count(); ++i)
+    {
+      mProjNodes[i].x *= RAD2DEG;
+      mProjNodes[i].y *= RAD2DEG;
+    }
+  }
+
+  pj_free(projSrc);
+  pj_free(projDst);
+
+  mProjExtent = computeMeshExtent(true);
+
+  if (mProjBBoxes == 0)
+    mProjBBoxes = new BBox[mElems.count()];
+
+  for (int i = 0; i < mElems.count(); ++i)
+  {
+    const Element& elem = mElems[i];
+    updateBBox(mProjBBoxes[i], elem, mProjNodes);
+
+    if (elem.eType == Element::E4Q)
+    {
+      int e4qIndex = mE4QtmpIndex[i];
+      E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mProjNodes); // update interpolation coefficients
+    }
+  }
+
+  return true;
+}
+
+void Mesh::setNoProjection()
+{
+  if (!mProjection)
+    return; // nothing to do
+
+  delete [] mProjNodes;
+  mProjNodes = 0;
+  delete [] mProjBBoxes;
+  mProjBBoxes = 0;
+
+  for (int i = 0; i < mElems.count(); ++i)
+  {
+    const Element& elem = mElems[i];
+    if (elem.eType == Element::E4Q)
+    {
+      int e4qIndex = mE4QtmpIndex[i];
+      E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mNodes.constData());
+    }
+  }
+
+  mProjection = false;
+}
+
+BBox Mesh::computeMeshExtent(bool projected)
+{
+  BBox b;
+
+  const Node* nodes = (projected && mProjection) ? mProjNodes : mNodes.constData();
+
+  if (mNodes.count() == 0)
+    return b;
+
+  b.minX = nodes[0].x;
+  b.maxX = nodes[0].x;
+  b.minY = nodes[0].y;
+  b.maxY = nodes[0].y;
+
+  for (int i = 0; i < mNodes.count(); i++)
+  {
+    const Node& n = nodes[i];
+    if(n.x > b.maxX) b.maxX = n.x;
+    if(n.x < b.minX) b.minX = n.x;
+    if(n.y > b.maxY) b.maxY = n.y;
+    if(n.y < b.minY) b.minY = n.y;
+  }
+  return b;
+}
+
+void Mesh::computeTempRendererData()
+{
+
+  // In order to keep things running quickly, we pre-compute many
+  // element properties to speed up drawing at the expenses of memory.
+
+  // Element bounding box (xmin, xmax and friends)
+
+  mBBoxes = new BBox[mElems.count()];
+
+  int E4Qcount = elementCountForType(Element::E4Q);
+  mE4Qtmp = new E4Qtmp[E4Qcount];
+  mE4QtmpIndex = new int[mElems.count()];
+  memset(mE4QtmpIndex, -1, sizeof(int)*mElems.count());
+  int e4qIndex = 0;
+
+  int i = 0;
+  for (Mesh::Elements::const_iterator it = mElems.constBegin(); it != mElems.constEnd(); ++it, ++i)
+  {
+    if (it->isDummy())
+      continue;
+
+    const Element& elem = *it;
+
+    updateBBox(mBBoxes[i], elem, mNodes.constData());
+
+    if (elem.eType == Element::E4Q)
+    {
+      // cache some temporary data for faster rendering
+      mE4QtmpIndex[i] = e4qIndex;
+      E4Qtmp& e4q = mE4Qtmp[e4qIndex];
+
+      E4Q_computeMapping(elem, e4q, mNodes.constData());
+      e4qIndex++;
+    }
   }
 }
 
@@ -325,31 +642,7 @@ bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, dou
 
 }
 
-
-bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const
-{
-  if (output->type() == Output::TypeNode)
-  {
-    const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
-    VectorValueAccessorX accessorX(nodeOutput->valuesV.constData());
-    VectorValueAccessorY accessorY(nodeOutput->valuesV.constData());
-    bool resX = interpolate(elementIndex, x, y, valueX, nodeOutput, &accessorX);
-    bool resY = interpolate(elementIndex, x, y, valueY, nodeOutput, &accessorY);
-    return resX && resY;
-  }
-  else
-  {
-    const ElementOutput* elemOutput = static_cast<const ElementOutput*>(output);
-    VectorValueAccessorX accessorX(elemOutput->valuesV.constData());
-    VectorValueAccessorY accessorY(elemOutput->valuesV.constData());
-    bool resX = interpolateElementCentered(elementIndex, x, y, valueX, elemOutput, &accessorX);
-    bool resY = interpolateElementCentered(elementIndex, x, y, valueY, elemOutput, &accessorY);
-    return resX && resY;
-  }
-}
-
-
-static void updateBBox(BBox& bbox, const Element& elem, const Node* nodes)
+void updateBBox(BBox& bbox, const Element& elem, const Node* nodes)
 {
   const Node& node0 = nodes[elem.p[0]];
 
@@ -372,71 +665,7 @@ static void updateBBox(BBox& bbox, const Element& elem, const Node* nodes)
 
 }
 
-
-
-void Mesh::computeTempRendererData()
-{
-
-  // In order to keep things running quickly, we pre-compute many
-  // element properties to speed up drawing at the expenses of memory.
-
-  // Element bounding box (xmin, xmax and friends)
-
-  mBBoxes = new BBox[mElems.count()];
-
-  int E4Qcount = elementCountForType(Element::E4Q);
-  mE4Qtmp = new E4Qtmp[E4Qcount];
-  mE4QtmpIndex = new int[mElems.count()];
-  memset(mE4QtmpIndex, -1, sizeof(int)*mElems.count());
-  int e4qIndex = 0;
-
-  int i = 0;
-  for (Mesh::Elements::const_iterator it = mElems.constBegin(); it != mElems.constEnd(); ++it, ++i)
-  {
-    if (it->isDummy())
-      continue;
-
-    const Element& elem = *it;
-
-    updateBBox(mBBoxes[i], elem, mNodes.constData());
-
-    if (elem.eType == Element::E4Q)
-    {
-      // cache some temporary data for faster rendering
-      mE4QtmpIndex[i] = e4qIndex;
-      E4Qtmp& e4q = mE4Qtmp[e4qIndex];
-
-      E4Q_computeMapping(elem, e4q, mNodes.constData());
-      e4qIndex++;
-    }
-  }
-}
-
-
-void Mesh::setNoProjection()
-{
-  if (!mProjection)
-    return; // nothing to do
-
-  delete [] mProjNodes;
-  mProjNodes = 0;
-  delete [] mProjBBoxes;
-  mProjBBoxes = 0;
-
-  for (int i = 0; i < mElems.count(); ++i)
-  {
-    const Element& elem = mElems[i];
-    if (elem.eType == Element::E4Q)
-    {
-      int e4qIndex = mE4QtmpIndex[i];
-      E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mNodes.constData());
-    }
-  }
-
-  mProjection = false;
-}
-
-static QString _setSourceCrsFromESRI(const QString& wkt)
+QString _setSourceCrsFromESRI(const QString& wkt)
 {
     QString ret;
 
@@ -456,7 +685,7 @@ static QString _setSourceCrsFromESRI(const QString& wkt)
     return ret;
 }
 
-static QString _setSourceCrsFromWKT(const QString& wkt)
+QString _setSourceCrsFromWKT(const QString& wkt)
 {
     QString ret;
     OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
@@ -473,140 +702,4 @@ static QString _setSourceCrsFromWKT(const QString& wkt)
     OSRDestroySpatialReference(hSRS);
 
     return ret;
-}
-
-void Mesh::setSourceCrsFromWKT(const QString& wkt)
-{
-    QString proj4 = _setSourceCrsFromWKT(wkt);
-    if (proj4.isEmpty()) {
-        proj4 = _setSourceCrsFromESRI(wkt);
-    }
-    setSourceCrs(proj4);
-}
-
-void Mesh::setSourceCrs(const QString& srcProj4)
-{
-  if (mSrcProj4 == srcProj4)
-    return; // nothing has changed - so do nothing!
-
-  mSrcProj4 = srcProj4;
-  reprojectMesh();
-}
-
-void Mesh::setDestinationCrs(const QString& destProj4)
-{
-  if (mDestProj4 == destProj4)
-    return; // nothing has changed - so do nothing!
-
-  mDestProj4 = destProj4;
-  reprojectMesh();
-}
-
-bool Mesh::reprojectMesh()
-{
-  // if source or destination CRS is empty, that implies we do not reproject anything
-  if (mSrcProj4.isEmpty() || mDestProj4.isEmpty())
-  {
-    setNoProjection();
-    return true;
-  }
-
-  projPJ projSrc = pj_init_plus(mSrcProj4.toAscii().data());
-  if (!projSrc)
-  {
-    qDebug("Crayfish: source proj4 string is not valid! (%s)", pj_strerrno(pj_errno));
-    setNoProjection();
-    return false;
-  }
-
-  projPJ projDst = pj_init_plus(mDestProj4.toAscii().data());
-  if (!projDst)
-  {
-    pj_free(projSrc);
-    qDebug("Crayfish: source proj4 string is not valid! (%s)", pj_strerrno(pj_errno));
-    setNoProjection();
-    return false;
-  }
-
-  mProjection = true;
-
-  if (mProjNodes == 0)
-    mProjNodes = new Node[mNodes.count()];
-
-  memcpy(mProjNodes, mNodes.constData(), sizeof(Node)*mNodes.count());
-
-  if (pj_is_latlong(projSrc))
-  {
-    // convert source from degrees to radians
-    for (int i = 0; i < mNodes.count(); ++i)
-    {
-      mProjNodes[i].x *= DEG2RAD;
-      mProjNodes[i].y *= DEG2RAD;
-    }
-  }
-
-  int res = pj_transform(projSrc, projDst, mNodes.count(), 3, &mProjNodes->x, &mProjNodes->y, NULL);
-
-  if (res != 0)
-  {
-    qDebug("Crayfish: reprojection failed (%s)", pj_strerrno(res));
-    setNoProjection();
-    return false;
-  }
-
-  if (pj_is_latlong(projDst))
-  {
-    // convert source from degrees to radians
-    for (int i = 0; i < mNodes.count(); ++i)
-    {
-      mProjNodes[i].x *= RAD2DEG;
-      mProjNodes[i].y *= RAD2DEG;
-    }
-  }
-
-  pj_free(projSrc);
-  pj_free(projDst);
-
-  mProjExtent = computeMeshExtent(true);
-
-  if (mProjBBoxes == 0)
-    mProjBBoxes = new BBox[mElems.count()];
-
-  for (int i = 0; i < mElems.count(); ++i)
-  {
-    const Element& elem = mElems[i];
-    updateBBox(mProjBBoxes[i], elem, mProjNodes);
-
-    if (elem.eType == Element::E4Q)
-    {
-      int e4qIndex = mE4QtmpIndex[i];
-      E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mProjNodes); // update interpolation coefficients
-    }
-  }
-
-  return true;
-}
-
-bool Mesh::hasProjection() const
-{
-  return mProjection;
-}
-
-
-void Mesh::elementCentroid(int elemIndex, double& cx, double& cy) const
-{
-  const Element& e = mElems[elemIndex];
-  if (e.eType == Element::E3T)
-  {
-    const Node* nodes = projectedNodes();
-    E3T_centroid(nodes[e.p[0]].toPointF(), nodes[e.p[1]].toPointF(), nodes[e.p[2]].toPointF(), cx, cy);
-  }
-  else if (e.eType == Element::E4Q)
-  {
-    int e4qIndex = mE4QtmpIndex[elemIndex];
-    E4Qtmp& e4q = mE4Qtmp[e4qIndex];
-    E4Q_centroid(e4q, cx, cy);
-  }
-  else
-    Q_ASSERT(0 && "element not supported");
 }
