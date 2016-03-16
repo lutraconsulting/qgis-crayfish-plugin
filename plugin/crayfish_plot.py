@@ -91,11 +91,20 @@ def cross_section_plot_data(output, geometry):
         pt = geometry.interpolate(offset).asPoint()
 
         value = mesh.value(output, pt.x(), pt.y())
-        if value != -9999.0:
-            x.append(offset)
-            y.append(value)
+        if value == -9999.0:
+            value = float("nan")
+        x.append(offset)
+        y.append(value)
 
         offset += step
+
+    # let's make sure we include also the last point
+    last_pt = geometry.asPolyline()[-1]
+    last_value = mesh.value(output, last_pt.x(), last_pt.y())
+    if last_value == -9999.0:
+        last_value = float("nan")
+    x.append(length)
+    y.append(last_value)
 
     return x, y
 
