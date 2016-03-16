@@ -6,414 +6,318 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>652</width>
-    <height>351</height>
+    <width>341</width>
+    <height>555</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Vector Rendering Options</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_9">
-   <item row="0" column="0">
-    <layout class="QVBoxLayout" name="verticalLayout_3">
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <item>
-        <widget class="QGroupBox" name="generalOptionsGroupBox">
-         <property name="title">
-          <string>General Options</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_3">
-          <item row="0" column="0">
-           <layout class="QVBoxLayout" name="verticalLayout">
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_2">
-              <item>
-               <widget class="QLabel" name="shaftLengthLabel">
-                <property name="text">
-                 <string>Shaft Length</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QComboBox" name="shaftLengthComboBox">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="sizeAdjustPolicy">
-                 <enum>QComboBox::AdjustToContents</enum>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>Defined by Min and Max</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Scaled to Magnitude</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Fixed</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="QStackedWidget" name="stackedWidget">
-              <property name="currentIndex">
-               <number>2</number>
-              </property>
-              <widget class="QWidget" name="page">
-               <layout class="QGridLayout" name="gridLayout_6">
-                <item row="1" column="1">
-                 <widget class="QLineEdit" name="maximumShaftLineEdit"/>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLineEdit" name="minimumShaftLineEdit"/>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="maximumShaftLabel">
-                  <property name="text">
-                   <string>Maximum</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="0">
-                 <widget class="QLabel" name="minimumShaftLabel">
-                  <property name="text">
-                   <string>Minimum</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <spacer name="verticalSpacer_4">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>20</width>
-                    <height>40</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QWidget" name="page_2">
-               <layout class="QGridLayout" name="gridLayout_7">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="scaleByFactorOfLabel">
-                  <property name="text">
-                   <string>Scale by a Factor of:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLineEdit" name="scaleByFactorOfLineEdit"/>
-                </item>
-                <item row="1" column="1">
-                 <spacer name="verticalSpacer_2">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>20</width>
-                    <height>40</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QWidget" name="page_3">
-               <layout class="QGridLayout" name="gridLayout_8">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="LengthLabel">
-                  <property name="text">
-                   <string>Length</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <spacer name="verticalSpacer_3">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>20</width>
-                    <height>40</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLineEdit" name="lengthLineEdit"/>
-                </item>
-               </layout>
-              </widget>
-             </widget>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout">
-              <item>
-               <widget class="QLabel" name="lineWidthLabel">
-                <property name="text">
-                 <string>Line Width</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QSpinBox" name="lineWidthSpinBox">
-                <property name="minimum">
-                 <number>1</number>
-                </property>
-                <property name="maximum">
-                 <number>10</number>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="pxLabel">
-                <property name="text">
-                 <string>px</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="QGroupBox" name="displayVectorsOnGridGroupBox">
-              <property name="title">
-               <string>Display Vectors on User Grid</string>
-              </property>
-              <property name="checkable">
-               <bool>true</bool>
-              </property>
-              <property name="checked">
-               <bool>false</bool>
-              </property>
-              <layout class="QGridLayout" name="gridLayout_2">
-               <item row="0" column="0">
-                <layout class="QGridLayout" name="gridLayout">
-                 <item row="0" column="0">
-                  <widget class="QLabel" name="xSpacingLabel">
-                   <property name="text">
-                    <string>X Spacing</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="1">
-                  <widget class="QLineEdit" name="xSpacingLineEdit"/>
-                 </item>
-                 <item row="0" column="2">
-                  <widget class="QLabel" name="pxLabel_2">
-                   <property name="text">
-                    <string>px</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="0">
-                  <widget class="QLabel" name="ySpacingLabel">
-                   <property name="text">
-                    <string>Y Spacing</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="1">
-                  <widget class="QLineEdit" name="ySpacingLineEdit"/>
-                 </item>
-                 <item row="1" column="2">
-                  <widget class="QLabel" name="pxLabel_3">
-                   <property name="text">
-                    <string>px</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-              </layout>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item>
-          <widget class="QGroupBox" name="headOptionsGroupBox">
-           <property name="title">
-            <string>Head Options</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_4">
-            <item row="0" column="0">
-             <widget class="QLabel" name="headWidthLabel">
-              <property name="text">
-               <string>Width</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLineEdit" name="headWidthLineEdit"/>
-            </item>
-            <item row="0" column="2">
-             <widget class="QLabel" name="percShaftLenLabel">
-              <property name="text">
-               <string>% of Shaft Length</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="headLengthLabel">
-              <property name="text">
-               <string>Length</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QLineEdit" name="headLengthLineEdit"/>
-            </item>
-            <item row="1" column="2">
-             <widget class="QLabel" name="percShaftLenLabel_2">
-              <property name="text">
-               <string>% of Shaft Length</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="filterByMagGroupBox">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="title">
-            <string>Filter by Magnitude</string>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="checked">
-            <bool>false</bool>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_5">
-            <item row="1" column="1">
-             <widget class="QLineEdit" name="maximumMagLineEdit"/>
-            </item>
-            <item row="0" column="0">
-             <widget class="QLabel" name="minimumMagLabel">
-              <property name="text">
-               <string>Minimum</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLineEdit" name="minimumMagLineEdit"/>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="maximumMagLabel">
-              <property name="text">
-               <string>Maximum</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="2">
-             <spacer name="horizontalSpacer">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <spacer name="verticalSpacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>40</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <widget class="QDialogButtonBox" name="buttonBox">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="standardButtons">
-        <set>QDialogButtonBox::Apply|QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::Ok</set>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QFormLayout" name="formLayout_4">
+     <item row="0" column="0">
+      <widget class="QLabel" name="lineWidthLabel">
+       <property name="text">
+        <string>Line Width</string>
        </property>
       </widget>
      </item>
+     <item row="0" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QSpinBox" name="lineWidthSpinBox">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>10000</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="pxLabel">
+         <property name="text">
+          <string>px</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Color</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QgsColorButton" name="colorButton"/>
+     </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="generalOptionsGroupBox">
+     <property name="title">
+      <string>Arrow Length</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QComboBox" name="shaftLengthComboBox">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="sizeAdjustPolicy">
+         <enum>QComboBox::AdjustToContents</enum>
+        </property>
+        <item>
+         <property name="text">
+          <string>Defined by Min and Max</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Scaled to Magnitude</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Fixed</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <widget class="QStackedWidget" name="stackedWidget">
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="page">
+         <layout class="QFormLayout" name="formLayout">
+          <item row="0" column="0">
+           <widget class="QLabel" name="minimumShaftLabel">
+            <property name="text">
+             <string>Minimum</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="minimumShaftLineEdit"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="maximumShaftLabel">
+            <property name="text">
+             <string>Maximum</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="maximumShaftLineEdit"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="page_2">
+         <layout class="QFormLayout" name="formLayout_2">
+          <item row="0" column="0">
+           <widget class="QLabel" name="scaleByFactorOfLabel">
+            <property name="text">
+             <string>Scale by a Factor of:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="scaleByFactorOfLineEdit"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="page_3">
+         <layout class="QFormLayout" name="formLayout_3">
+          <item row="0" column="0">
+           <widget class="QLabel" name="LengthLabel">
+            <property name="text">
+             <string>Length</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="lengthLineEdit"/>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="headOptionsGroupBox">
+     <property name="title">
+      <string>Head Options</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <widget class="QLabel" name="headWidthLabel">
+        <property name="text">
+         <string>Width</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="headWidthLineEdit"/>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="percShaftLenLabel">
+        <property name="text">
+         <string>% of Shaft Length</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="headLengthLabel">
+        <property name="text">
+         <string>Length</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="headLengthLineEdit"/>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="percShaftLenLabel_2">
+        <property name="text">
+         <string>% of Shaft Length</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="filterByMagGroupBox">
+     <property name="title">
+      <string>Filter by Magnitude</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="maxMagLineEdit"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="minimumMagLabel">
+        <property name="text">
+         <string>Minimum</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="minMagLineEdit"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="maximumMagLabel">
+        <property name="text">
+         <string>Maximum</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="displayVectorsOnGridGroupBox">
+     <property name="title">
+      <string>Display Vectors on User Grid</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="xSpacingLabel">
+          <property name="text">
+           <string>X Spacing</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="xSpacingLineEdit"/>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="pxLabel_2">
+          <property name="text">
+           <string>px</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="ySpacingLabel">
+          <property name="text">
+           <string>Y Spacing</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="ySpacingLineEdit"/>
+        </item>
+        <item row="1" column="2">
+         <widget class="QLabel" name="pxLabel_3">
+          <property name="text">
+           <string>px</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QgsColorButton</class>
+   <extends>QPushButton</extends>
+   <header>qgis.gui</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
-  <tabstop>shaftLengthComboBox</tabstop>
   <tabstop>minimumShaftLineEdit</tabstop>
   <tabstop>maximumShaftLineEdit</tabstop>
   <tabstop>scaleByFactorOfLineEdit</tabstop>
   <tabstop>lengthLineEdit</tabstop>
   <tabstop>lineWidthSpinBox</tabstop>
-  <tabstop>displayVectorsOnGridGroupBox</tabstop>
   <tabstop>xSpacingLineEdit</tabstop>
   <tabstop>ySpacingLineEdit</tabstop>
   <tabstop>headWidthLineEdit</tabstop>
   <tabstop>headLengthLineEdit</tabstop>
   <tabstop>filterByMagGroupBox</tabstop>
-  <tabstop>minimumMagLineEdit</tabstop>
-  <tabstop>maximumMagLineEdit</tabstop>
-  <tabstop>buttonBox</tabstop>
+  <tabstop>minMagLineEdit</tabstop>
+  <tabstop>maxMagLineEdit</tabstop>
  </tabstops>
  <resources/>
  <connections>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>Dialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>258</x>
-     <y>340</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>460</x>
-     <y>270</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>shaftLengthComboBox</sender>
    <signal>currentIndexChanged(int)</signal>
@@ -427,22 +331,6 @@
     <hint type="destinationlabel">
      <x>295</x>
      <y>221</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>rejected()</signal>
-   <receiver>Dialog</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>281</x>
-     <y>327</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>281</x>
-     <y>175</y>
     </hint>
    </hints>
   </connection>

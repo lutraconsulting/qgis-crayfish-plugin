@@ -122,18 +122,32 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         if meshFileName is not None:
             self.loadMesh(meshFileName)
 
-    def _determineCRS(self, crs, meshFileName):
-        meshDir = os.path.dirname(meshFileName)
-        prjFiles = glob.glob(meshDir + os.path.sep + '*.prj')
-        if len(prjFiles) == 1:
-            # try to load .prj file from the same directory
-            wkt = open(prjFiles[0]).read()
-            crs.createFromWkt(wkt)
+    def setCrs(self, crs):
+        """ overload of QgsPluginLayer.setCrs() that also sets source CRS of mesh """
+        # call original method
+        QgsPluginLayer.setCrs(self, crs)
+        # store the final CRS in the mesh (it may have changed during validation)
+        self.mesh.set_source_crs(crs.toProj4())
+
+
+    def setupCRS(self):
+
+        crs = QgsCoordinateReferenceSystem()
+
+        # try to load from mesh projection if set (GDAL)
+        srcProj = self.mesh.source_crs()
+        if len(srcProj) != 0:
+            crs.createFromProj4(srcProj)
         else:
-            # try to load from mesh projection if set (GDAL)
-            srcProj = self.mesh.sourceCrsProj4()
-            if srcProj:
-                crs.createFromProj4(srcProj)
+            # try to load .prj file from the same directory
+            meshDir = os.path.dirname(self.twoDMFileName)
+            prjFiles = glob.glob(meshDir + os.path.sep + '*.prj')
+            if len(prjFiles) == 1:
+                wkt = open(prjFiles[0]).read()
+                crs.createFromWkt(wkt)
+
+        crs.validate()  # if CRS is not valid, validate it using user's preference (prompt / use project's CRS / use default CRS)
+        self.setCrs(crs)
 
     def loadMesh(self, meshFileName):
         meshFileName = unicode(meshFileName)
@@ -151,14 +165,6 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
                           QgsPoint( e[2], e[3] ) )
         self.setExtent(r)
 
-
-        crs = QgsCoordinateReferenceSystem()
-        self._determineCRS(crs, meshFileName)
-
-
-        crs.validate()  # if CRS is not valid, validate it using user's preference (prompt / use project's CRS / use default CRS)
-        self.setCrs(crs)
-
         self.set2DMFileName(meshFileName) # Set the 2dm file name
         if hasattr(self, 'setSource'):  # supported from QGIS 2.16
             self.setSource(meshFileName)
@@ -166,6 +172,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         head, tail = os.path.split(meshFileName)
         layerName, ext = os.path.splitext(tail)
         self.setLayerName(layerName)
+
+        self.setupCRS()
 
         for i in xrange(self.mesh.dataset_count()):
             self.initCustomValues(self.mesh.dataset(i))
@@ -259,7 +267,10 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           "v_head_length" : 40,
           "v_grid" : False,
           "v_grid_x" : 10,
-          "v_grid_y" : 10
+          "v_grid_y" : 10,
+          "v_filter_min": -1,
+          "v_filter_max": -1,
+          "v_color": (0, 0, 0, 255)   # black
         }
         ds.custom = {
           "c_basic" : True,
@@ -456,6 +467,16 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             if gridX is not None and gridY is not None:
                 ds.config["v_grid_x"] = gridX
                 ds.config["v_grid_y"] = gridY
+            filterMin = qstring2float(vectElem.attribute("filter-min"))
+            filterMax = qstring2float(vectElem.attribute("filter-max"))
+            if filterMin is not None:
+                ds.config["v_filter_min"] = filterMin
+            if filterMax is not None:
+                ds.config["v_filter_max"] = filterMax
+            try:
+                ds.config["v_color"] = qstring2rgb(vectElem.attribute("color"))
+            except ValueError:
+                pass
 
 
     def writeDataSetXml(self, ds, elem, doc):
@@ -493,6 +514,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           vectElem.setAttribute("user-grid", "1" if ds.config["v_grid"] else "0")
           vectElem.setAttribute("user-grid-x", str(ds.config["v_grid_x"]))
           vectElem.setAttribute("user-grid-y", str(ds.config["v_grid_y"]))
+          vectElem.setAttribute("filter-min", str(ds.config["v_filter_min"]))
+          vectElem.setAttribute("filter-max", str(ds.config["v_filter_max"]))
+          vectElem.setAttribute("color", rgb2string(ds.config["v_color"]))
           elem.appendChild(vectElem)
 
 
@@ -616,12 +640,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         height = (bottomright.y() - topleft.y())
 
         # TODO: this code should be outside of rendering loop
-        if ct:
-          res = self.mesh.set_projection(self.crs().toProj4(), ct.destCRS().toProj4())
-          #if not res:
-          #  qgis_message_bar.pushMessage("Crayfish", "Failed to reproject the mesh!", level=QgsMessageBar.WARNING)
-        else:
-          self.mesh.set_no_projection()
+        self.mesh.set_destination_crs(ct.destCRS().toProj4() if ct else None)
 
         if False:
             print '\n'

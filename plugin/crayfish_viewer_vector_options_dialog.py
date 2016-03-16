@@ -49,8 +49,10 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         self.rs = renderSettings
         self.redraw = redrawFunction
 
-        self.buttonBox.hide()  # not used currently
-        
+        self.colorButton.setColorDialogOptions(QColorDialog.ShowAlphaChannel)
+        c = self.rs.color
+        self.colorButton.setColor(QColor(c[0],c[1],c[2],c[3]))
+
         # Populate the various widgets
         self.shaftLengthComboBox.setCurrentIndex( self.rs.shaftLength )
         self.stackedWidget.setCurrentIndex( self.rs.shaftLength )
@@ -68,15 +70,15 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         self.headWidthLineEdit.setText( str(self.rs.headWidth) )
         self.headLengthLineEdit.setText( str(self.rs.headLength) )
         
-        self.filterByMagGroupBox.setChecked( self.rs.filterByMag )
-        self.minimumMagLineEdit.setText( str(self.rs.minMag) )
-        self.maximumMagLineEdit.setText( str(self.rs.maxMag) )
+        self.minMagLineEdit.setText( str(self.rs.filterMin) if self.rs.filterMin >= 0 else '' )
+        self.maxMagLineEdit.setText( str(self.rs.filterMax) if self.rs.filterMax >= 0 else '' )
 
         # set validators so that user cannot type text into numeric line edits
         doubleWidgets = [ self.minimumShaftLineEdit, self.maximumShaftLineEdit,
                           self.scaleByFactorOfLineEdit, self.lengthLineEdit,
                           self.xSpacingLineEdit, self.ySpacingLineEdit,
-                          self.headWidthLineEdit, self.headLengthLineEdit ]
+                          self.headWidthLineEdit, self.headLengthLineEdit,
+                          self.minMagLineEdit, self.maxMagLineEdit ]
         for w in doubleWidgets:
             w.setValidator(QDoubleValidator(w))
         
@@ -92,7 +94,10 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         QObject.connect( self.ySpacingLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.headWidthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.headLengthLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
-    
+        QObject.connect( self.minMagLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.connect( self.maxMagLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
+        QObject.connect( self.colorButton, SIGNAL("colorChanged(QColor)"), self.inputFocusChanged )
+
     def inputFocusChanged(self, arg=None):
         self.saveRenderSettings()
         self.redraw()
@@ -120,9 +125,11 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
         self.rs.headWidth = float_safe( self.headWidthLineEdit.text() )
         self.rs.headLength = float_safe( self.headLengthLineEdit.text() )
         
-        self.rs.filterByMag = self.filterByMagGroupBox.isChecked()
-        self.rs.minMag = float_safe( self.minimumMagLineEdit.text() )
-        self.rs.maxMag = float_safe( self.maximumMagLineEdit.text() )
+        self.rs.filterMin = float_safe( self.minMagLineEdit.text() ) if len(self.minMagLineEdit.text()) != 0 else -1
+        self.rs.filterMax = float_safe( self.maxMagLineEdit.text() ) if len(self.maxMagLineEdit.text()) != 0 else -1
+
+        clr = self.colorButton.color()
+        self.rs.color = (clr.red(),clr.green(),clr.blue(),clr.alpha())
 
         self.rs.applyToDataSet()
     
@@ -154,9 +161,13 @@ class CrayfishViewerVectorOptionsDialog(QDialog, Ui_Dialog):
                 return False
         except ValueError:
             return False
-            
-        """
-            FIXME - Finish this when you can be bothered
-        """
-        
+
+        try:
+            if len(self.minMagLineEdit.text()) != 0:
+                filterMin = float(self.minMagLineEdit.text())
+            if len(self.maxMagLineEdit.text()) != 0:
+                filterMax = float(self.maxMagLineEdit.text())
+        except ValueError:
+            return False
+
         return True

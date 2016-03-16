@@ -91,6 +91,9 @@ public:
       , mVectorHeadLengthPerc(40)
       , mVectorUserGrid(false)
       , mVectorUserGridCellSize(10, 10)
+      , mVectorFilterMin(-1)
+      , mVectorFilterMax(-1)
+      , mVectorColor(Qt::black)
     {}
 
     enum VectorLengthMethod
@@ -114,6 +117,9 @@ public:
     float mVectorHeadLengthPerc;  //!< arrow head's length (in percent to shaft's length)
     bool mVectorUserGrid;         //!< whether to display vectors on a grid instead of nodes
     QSize mVectorUserGridCellSize;//!< size of user grid (in pixels) for vector arrows
+    float mVectorFilterMin;   //!< minimum vector magnitude in order to be drawn. negative value == no filter for minimum
+    float mVectorFilterMax;   //!< maximum vector magnitude in order to be drawn. negative value == no filter for maximum
+    QColor mVectorColor;      //!< color of arrows
   };
 
   //! Master configuration for rendering

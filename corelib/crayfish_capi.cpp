@@ -312,25 +312,26 @@ double CF_Mesh_valueAt(MeshH mesh, OutputH output, double x, double y)
   return mesh->valueAt(output, x, y);
 }
 
-int CF_Mesh_setProjection(MeshH mesh, const char* srcProj4, const char* destProj4)
+void CF_Mesh_setSourceCrs(MeshH mesh, const char* srcProj4)
 {
-  if (srcProj4 && destProj4)
-  {
-    QString src = QString::fromAscii(srcProj4);
-    QString dest = QString::fromAscii(destProj4);
-    return mesh->setProjection(src, dest);
-  }
-  else
-  {
-    mesh->setNoProjection();
-    return 1;
-  }
+  mesh->setSourceCrs(QString::fromAscii(srcProj4));
 }
 
-const char* CF_Mesh_sourceCrsProj4(MeshH mesh)
+void CF_Mesh_setDestinationCrs(MeshH mesh, const char* destProj4)
 {
-  return _return_str(mesh->sourceCrsProj4());
+  mesh->setDestinationCrs(QString::fromAscii(destProj4));
 }
+
+const char* CF_Mesh_sourceCrs(MeshH mesh)
+{
+  return _return_str(mesh->sourceCrs());
+}
+
+const char* CF_Mesh_destinationCrs(MeshH mesh)
+{
+  return _return_str(mesh->destinationCrs());
+}
+
 
 void CF_DS_valueRange(DataSetH ds, float* vMin, float* vMax)
 {
@@ -370,6 +371,12 @@ void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
     cfg->ds.mVectorUserGridCellSize.setWidth(value->toInt());
   else if (k == "v_grid_y")
     cfg->ds.mVectorUserGridCellSize.setHeight(value->toInt());
+  else if (k == "v_filter_min")
+    cfg->ds.mVectorFilterMin = value->toFloat();
+  else if (k == "v_filter_max")
+    cfg->ds.mVectorFilterMax = value->toFloat();
+  else if (k == "v_color")
+    cfg->ds.mVectorColor = value->value<QColor>();
   else
     qDebug("[setParam] unknown key: %s", key);
 }
@@ -407,6 +414,12 @@ void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value)
     *value = QVariant(cfg->ds.mVectorUserGridCellSize.width());
   else if (k == "v_grid_y")
     *value = QVariant(cfg->ds.mVectorUserGridCellSize.height());
+  else if (k == "v_filter_min")
+    *value = QVariant(cfg->ds.mVectorFilterMin);
+  else if (k == "v_filter_max")
+    *value = QVariant(cfg->ds.mVectorFilterMax);
+  else if (k == "v_color")
+    *value = QVariant(cfg->ds.mVectorColor);
   else
     qDebug("[getParam] unknown key: %s", key);
 }

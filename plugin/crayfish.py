@@ -61,7 +61,8 @@ lib.CF_LoadMesh.argtypes = [ctypes.c_char_p]
 lib.CF_Mesh_loadDataSet.restype = ctypes.c_bool
 lib.CF_Mesh_loadDataSet.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
 lib.CF_Mesh_dataSetAt.restype = ctypes.c_void_p
-lib.CF_Mesh_sourceCrsProj4.restype = ctypes.c_char_p
+lib.CF_Mesh_sourceCrs.restype = ctypes.c_char_p
+lib.CF_Mesh_destinationCrs.restype = ctypes.c_char_p
 lib.CF_DS_name.restype = ctypes.c_char_p
 lib.CF_DS_fileName.restype = ctypes.c_char_p
 lib.CF_DS_outputAt.restype = ctypes.c_void_p
@@ -169,15 +170,18 @@ class Mesh:
   def value(self, output, x, y):
     return self.lib.CF_Mesh_valueAt(self.handle, output.handle, x, y)
 
-  def set_projection(self, src_proj4, dest_proj4):
-    return self.lib.CF_Mesh_setProjection(self.handle, ctypes.c_char_p(src_proj4), ctypes.c_char_p(dest_proj4))
+  def source_crs(self):
+    return self.lib.CF_Mesh_sourceCrs(self.handle)
 
-  def set_no_projection(self):
-    self.set_projection(None, None)
+  def destination_crs(self):
+    return self.lib.CF_Mesh_destinationCrs(self.handle)
 
-  def sourceCrsProj4(self):
-    print self.lib.CF_Mesh_sourceCrsProj4(self.handle)
-    return self.lib.CF_Mesh_sourceCrsProj4(self.handle)
+  def set_source_crs(self, src_proj4):
+    self.lib.CF_Mesh_setSourceCrs(self.handle, ctypes.c_char_p(src_proj4))
+
+  def set_destination_crs(self, dest_proj4):
+    self.lib.CF_Mesh_setDestinationCrs(self.handle, ctypes.c_char_p(dest_proj4))
+
 
 class DataSet(object):
 

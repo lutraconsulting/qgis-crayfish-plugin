@@ -225,11 +225,12 @@ void Renderer::drawVectorData(const Output* output)
   // Set up the render configuration options
   QPainter p(&mImage);
   p.setRenderHint(QPainter::Antialiasing);
-  p.setBrush( Qt::SolidPattern );
+  p.setBrush(QBrush(mCfg.ds.mVectorColor));
   QPen pen = p.pen();
   pen.setCapStyle(Qt::FlatCap);
   pen.setJoinStyle(Qt::MiterJoin);
   pen.setWidth(mCfg.ds.mLineWidth);
+  pen.setColor(mCfg.ds.mVectorColor);
   p.setPen(pen);
 
   if (mCfg.ds.mVectorUserGrid)
@@ -343,6 +344,13 @@ void Renderer::drawVectorDataOnElements(QPainter& p, const ElementOutput* output
 void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float V)
 {
   if (xVal == 0.0 && yVal == 0.0)
+    return;
+
+  // do not render if magnitude is outside of the filtered range (if filtering is enabled)
+  float magnitude = sqrt(xVal*xVal + yVal*yVal);
+  if (mCfg.ds.mVectorFilterMin >= 0 && magnitude < mCfg.ds.mVectorFilterMin)
+    return;
+  if (mCfg.ds.mVectorFilterMax >= 0 && magnitude > mCfg.ds.mVectorFilterMax)
     return;
 
   // Determine the angle of the vector, counter-clockwise, from east
