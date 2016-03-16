@@ -75,6 +75,19 @@ static HdfDataset openHdfDataset(const HdfGroup& hdfGroup, const QString& name)
     return dsFileType;
 }
 
+
+static QString openHdfAttribute(const HdfFile& hdfFile, const QString& name)
+{
+    HdfAttribute attr = hdfFile.attribute(name);
+    if (!attr.isValid())
+    {
+      throw LoadStatus::Err_UnknownFormat;
+    }
+    return attr.readString();
+}
+
+
+
 static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const HdfGroup& gArea, int nElems)
 {
     DataSet* dsd = new DataSet(fileName);
@@ -258,6 +271,12 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
     {
         HdfFile hdfFile = openHdfFile(fileName);
 
+        // Verify it is correct file
+        QString fileType = openHdfAttribute(hdfFile, "File Type");
+        if (fileType != "HEC-RAS Results") {
+            throw LoadStatus::Err_UnknownFormat;
+        }
+
         HdfGroup gGeom = openHdfGroup(hdfFile, "Geometry");
         HdfGroup gGeom2DFlowAreas = openHdfGroup(gGeom, "2D Flow Areas");
 
@@ -326,6 +345,9 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         }
 
         mesh = new Mesh(nodes, elements);
+        // Get projection
+        QString proj_wkt = openHdfAttribute(hdfFile, "Projection");
+        mesh->setSourceCrsProj4(proj_wkt);
 
         //Elevation
         ElementOutput* bed_elevation = readBedElevation(mesh, fileName, gArea, nElems);

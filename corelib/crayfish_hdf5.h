@@ -48,6 +48,7 @@ template <int TYPE> inline void hdfClose(hid_t id) { qDebug("Unknown type!"); }
 template <> inline void hdfClose<H5I_FILE>(hid_t id) { H5Fclose(id); }
 template <> inline void hdfClose<H5I_GROUP>(hid_t id) { H5Gclose(id); }
 template <> inline void hdfClose<H5I_DATASET>(hid_t id) { H5Dclose(id); }
+template <> inline void hdfClose<H5I_ATTR>(hid_t id) { H5Dclose(id); }
 
 template <int TYPE>
 class HdfH : public QSharedData
@@ -62,6 +63,7 @@ public:
 
 class HdfGroup;
 class HdfDataset;
+class HdfAttribute;
 
 class HdfFile
 {
@@ -77,6 +79,7 @@ public:
 
   inline HdfGroup group(const QString& path) const;
   inline HdfDataset dataset(const QString& path) const;
+  inline HdfAttribute attribute(const QString& attr_name) const;
 
 protected:
   QSharedDataPointer<Handle> d;
@@ -107,6 +110,7 @@ public:
 
   inline HdfGroup group(const QString& groupName) const;
   inline HdfDataset dataset(const QString& dsName) const;
+  inline HdfAttribute attribute(const QString& attr_name) const;
 
 protected:
   QStringList objects(H5G_obj_t type) const
@@ -127,6 +131,35 @@ protected:
     return lst;
   }
 
+protected:
+  QSharedDataPointer<Handle> d;
+};
+
+
+class HdfAttribute
+{
+public:
+    typedef HdfH<H5I_ATTR> Handle;
+
+    HdfAttribute(hid_t obj_id, const QString& attr_name) { d = new Handle( H5Aopen(obj_id, attr_name.toUtf8().data(), H5P_DEFAULT) ); }
+
+    bool isValid() const { return d->id >= 0; }
+    hid_t id() const { return d->id; }
+
+    QString readString() const
+    {
+      char name[HDF_MAX_NAME];
+      hid_t datatype = H5Tcopy(H5T_C_S1);
+      H5Tset_size(datatype, HDF_MAX_NAME);
+      herr_t status = H5Aread(d->id, datatype, name);
+      if (status < 0)
+      {
+        qDebug("Failed to read data!");
+        return QString();
+      }
+      H5Tclose(datatype);
+      return QString::fromUtf8(name);
+    }
 protected:
   QSharedDataPointer<Handle> d;
 };
@@ -259,5 +292,9 @@ inline HdfDataset HdfFile::dataset(const QString& path) const { return HdfDatase
 inline HdfGroup HdfGroup::group(const QString& groupName) const { return HdfGroup(file_id(), childPath(groupName)); }
 
 inline HdfDataset HdfGroup::dataset(const QString& dsName) const { return HdfDataset(file_id(), childPath(dsName)); }
+
+inline HdfAttribute HdfFile::attribute(const QString& attr_name) const { return HdfAttribute(d->id, attr_name); }
+
+inline HdfAttribute HdfGroup::attribute(const QString& attr_name) const { return HdfAttribute(d->id, attr_name); }
 
 #endif // CRAYFISH_HDF5_H
