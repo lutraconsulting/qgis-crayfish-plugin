@@ -183,7 +183,7 @@
               <x>0</x>
               <y>0</y>
               <width>397</width>
-              <height>175</height>
+              <height>198</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -421,15 +421,15 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>AnimationLayoutItemProps</class>
-   <extends>QWidget</extends>
-   <header>crayfish_animation_layout_item_props</header>
+   <class>QgsCollapsibleGroupBox</class>
+   <extends>QGroupBox</extends>
+   <header>qgscollapsiblegroupbox.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>QgsCollapsibleGroupBox</class>
-   <extends>QGroupBox</extends>
-   <header>qgis.gui</header>
+   <class>AnimationLayoutItemProps</class>
+   <extends>QWidget</extends>
+   <header>crayfish.crayfish_animation_layout_item_props</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

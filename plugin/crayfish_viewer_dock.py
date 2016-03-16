@@ -28,18 +28,19 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 
-from crayfish_viewer_dock_widget import Ui_DockWidget
 import crayfish_viewer_vector_options_dialog
 from crayfish_viewer_render_settings import CrayfishViewerRenderSettings
 from crayfish_gui_utils import initColorButton, initColorRampComboBox, name2ramp, timeToString
+from crayfish_ui_loader import load_ui
+uiDialog, qtBaseClass = load_ui('crayfish_viewer_dock_widget')
 
-class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
-    
+class CrayfishViewerDock(qtBaseClass, uiDialog):
+
     def __init__(self, iface):
-        
-        QDockWidget.__init__(self)
-        Ui_DockWidget.__init__(self)
-        
+
+        qtBaseClass.__init__(self)
+        uiDialog.__init__(self)
+
         self.setupUi(self)
         self.setObjectName("CrayfishViewerDock") # used by main window to save/restore state
         self.iface = iface
@@ -67,7 +68,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.setEnabled(False)
         self.vectorPropsDialog = None
         self.advancedColorMapDialog = None
-        
+
         # Ensure refresh() is called when the layer changes
         QObject.connect(self.cboTime, SIGNAL("currentIndexChanged(int)"), self.outputTimeChanged)
         QObject.connect(self.sliderTime, SIGNAL("valueChanged(int)"), self.cboTime.setCurrentIndex)
@@ -91,7 +92,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.treeDataSets.contourClicked.connect(self.datasetContourClicked)
         self.treeDataSets.vectorClicked.connect(self.datasetVectorClicked)
 
-        
+
     def currentCrayfishLayer(self):
         """ return currently selected crayfish layer or None if there is no selection (of non-crayfish layer is current) """
         l = self.iface.mapCanvas().currentLayer()
@@ -102,7 +103,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         l = self.currentCrayfishLayer()
         return l.currentDataSet() if l else None
 
-        
+
     def displayVectorPropsDialog(self):
         if self.vectorPropsDialog is not None:
             self.vectorPropsDialog.close()
@@ -111,21 +112,21 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.vectorPropsDialog = crayfish_viewer_vector_options_dialog.CrayfishViewerVectorOptionsDialog(self.iface, rs, self.redrawCurrentLayer, self)
         self.vectorPropsDialog.show()
 
-    
+
     def displayContoursButtonToggled(self, newState):
         """
             displayContoursCheckBox has been toggled
         """
         self.datasetContourClicked(self.currentCrayfishLayer().current_ds_index)
-            
-            
+
+
     def displayVectorsButtonToggled(self, newState):
         """
             displayVectorsCheckBox has been toggled
         """
         self.datasetVectorClicked(self.currentCrayfishLayer().current_ds_index)
 
-        
+
     def displayMeshButtonToggled(self, newState):
         """
             displayMeshCheckBox has been toggled
@@ -183,23 +184,23 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.contourMinLineEdit.setText( str("%.3f" % zMin) )
         self.contourMaxLineEdit.setText( str("%.3f" % zMax) )
 
-        
+
     def transparencyChanged(self, value):
         ds = self.currentDataSet()
         ds.custom["c_alpha"] = 255-value
         self.updateColorMapAndRedraw(ds)
 
-        
+
     def dataSetChanged(self, index):
 
         dataSetItem = self.treeDataSets.model().index2item(index)
         if dataSetItem is None:
             return
-        
+
         l = self.currentCrayfishLayer()
         if not l:
             return
-          
+
         dataSet = l.mesh.dataset(dataSetItem.ds_index)
         old_ds_index = l.current_ds_index
         l.current_ds_index = dataSetItem.ds_index
@@ -259,7 +260,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         # Disable the vector options if we are looking at a scalar dataset
         from crayfish import DS_Vector
         self.displayVectorsCheckBox.setEnabled(dataSet.type() == DS_Vector)
-        
+
         self.iface.legendInterface().refreshLayerSymbology(l)
 
         self.redrawCurrentLayer()
@@ -326,7 +327,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.displayVectorsCheckBox.blockSignals(False)
         self.btnVectorOptions.setEnabled(l.vector_ds_index == l.current_ds_index)
 
-        
+
     def deactivate(self):
         if not self.isEnabled():
             return
@@ -335,44 +336,44 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         self.cboTime.clear()
         self.valueLabel.setText( "" )
         self.setEnabled(False)
-        
-        
+
+
     def activate(self):
         """
             Activate should be called when an Crayfish layer is selected
-            We also connect an event to the canvas here to report the 
+            We also connect an event to the canvas here to report the
             bed and quatity values
         """
         if self.isEnabled():
             return
         QObject.connect(self.iface.mapCanvas(), SIGNAL("xyCoordinates(QgsPoint)"), self.reportValues)
         self.setEnabled(True)
-        
-        
+
+
     def reportValues(self, p):
-        
+
         nullValue = -9999.0
-        
+
         xCoord = p.x()
         yCoord = p.y()
-        
+
         l = self.iface.mapCanvas().currentLayer()
 
         dataSetItem = self.treeDataSets.model().index2item(self.treeDataSets.currentIndex())
 
         currentDs = dataSetItem.ds_index
         currentTs = self.cboTime.currentIndex()
-        
+
         bed = l.mesh.dataset(0).output(0)
         bedValue = l.mesh.value(bed, xCoord, yCoord) # Note that the bed will always be 0, 0
-        
+
         if bedValue == nullValue:
             # The mouse cursor is outside the mesh, exit nicely
             self.valueLabel.setText( '' )
             return
-            
+
         textValue = str( '(%.3f)' % bedValue )
-        
+
         dataSet = l.currentDataSet()
         from crayfish import DS_Bed
         if dataSet.type() != DS_Bed:
@@ -380,9 +381,9 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
             dsValue = l.mesh.value(l.currentOutput(), xCoord, yCoord)
             if dsValue != nullValue:
                 textValue += str(' %.3f' % dsValue)
-        
+
         self.valueLabel.setText( textValue )
-        
+
 
     def currentLayerChanged(self):
         """
@@ -394,7 +395,7 @@ class CrayfishViewerDock(QDockWidget, Ui_DockWidget):
         if l is None:
             self.deactivate()
             return
-                
+
         self.activate()
 
         self.updateLockCurrentIcon()

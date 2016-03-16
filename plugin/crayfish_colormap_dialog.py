@@ -29,7 +29,8 @@ from PyQt4.QtGui import *
 
 from qgis.core import QgsApplication, QgsStyleV2
 
-from crayfish_colormap_dialog_ui import Ui_CrayfishColorMapDialog
+from crayfish_ui_loader import load_ui
+uiDialog, qtBaseClass = load_ui('crayfish_colormap_dialog')
 
 from crayfish import ColorMap, qcolor2rgb, rgb2qcolor
 
@@ -134,9 +135,10 @@ class ColorMapModel(QAbstractTableModel):
 
 
 
-class CrayfishColorMapDialog(QDialog, Ui_CrayfishColorMapDialog):
+class CrayfishColorMapDialog(qtBaseClass, uiDialog):
     def __init__(self, colormap, vMin, vMax, fnRedraw, parent=None):
-        QDialog.__init__(self, parent)
+        qtBaseClass.__init__(self)
+        uiDialog.__init__(self, parent)
 
         self.setupUi(self)
 

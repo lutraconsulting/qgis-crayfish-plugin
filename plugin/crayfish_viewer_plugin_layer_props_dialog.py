@@ -30,12 +30,14 @@ from PyQt4.QtGui import *
 from qgis.core import QgsCoordinateReferenceSystem
 from qgis.gui import QgsGenericProjectionSelector
 
-from crayfish_viewer_plugin_layer_props_dialog_ui import Ui_CrayfishViewerPluginLayerPropsDialog
+from crayfish_ui_loader import load_ui
+uiDialog, qtBaseClass = load_ui('crayfish_viewer_plugin_layer_props_dialog')
 
 
-class CrayfishViewerPluginPropsDialog(QDialog, Ui_CrayfishViewerPluginLayerPropsDialog):
+class CrayfishViewerPluginPropsDialog(qtBaseClass, uiDialog):
     def __init__(self, layer):
-        QDialog.__init__(self)
+        qtBaseClass.__init__(self)
+        uiDialog.__init__(self)
         self.layer = layer
 
         self.setupUi(self)

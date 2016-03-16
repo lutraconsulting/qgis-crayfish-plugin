@@ -36,9 +36,8 @@ import tempfile
 from crayfish_animation import animation, images_to_video
 from crayfish_gui_utils import timeToString
 
-from crayfish_animation_dialog_widget import Ui_CrayfishAnimationDialog
-
-
+from crayfish_ui_loader import load_ui
+uiDialog, qtBaseClass = load_ui('crayfish_animation_dialog_widget')
 
 # http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
 def which(program):
@@ -60,10 +59,12 @@ def which(program):
     return None
 
 
-class CrayfishAnimationDialog(QDialog, Ui_CrayfishAnimationDialog):
+class CrayfishAnimationDialog(qtBaseClass, uiDialog):
 
     def __init__(self, iface, parent=None):
-        QDialog.__init__(self, parent)
+
+        qtBaseClass.__init__(self)
+        uiDialog.__init__(self, parent)
         self.setupUi(self)
 
         self.l = iface.activeLayer()

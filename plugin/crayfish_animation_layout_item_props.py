@@ -28,13 +28,14 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 
-from crayfish_animation_layout_item_props_ui import Ui_AnimationLayoutItemProps
+from crayfish_ui_loader import load_ui
+uiDialog, qtBaseClass = load_ui('crayfish_animation_layout_item_props')
 
-
-class AnimationLayoutItemProps(QWidget, Ui_AnimationLayoutItemProps):
+class AnimationLayoutItemProps(qtBaseClass, uiDialog):
 
     def __init__(self, iface, parent=None):
-        QDialog.__init__(self, parent)
+        qtBaseClass.__init__(self)
+        uiDialog.__init__(self, parent)
         self.setupUi(self)
 
         self.btnFont.clicked.connect(self.onFontClicked)
