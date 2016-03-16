@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QPointF>
 #include <QString>
 #include <QVector>
-
+#include <QReadWriteLock>
 
 struct BBox;
 struct E4Qtmp;
@@ -104,42 +104,44 @@ protected:
 
 class ValueAccessor;
 
-/** Adds data + functionality for reprojection, identification, support for rendering */
+/** Adds data + functionality for reprojection, identification, support for rendering
+
+    Note that this class must be thread-safe, because of QGIS multithread rendering
+    in combination with identify tools
+*/
 class Mesh : public BasicMesh
 {
 public:
   Mesh(const Nodes& nodes, const Elements& elements);
   ~Mesh();
 
-  void addDataSet(DataSet* ds);
 
-  const DataSets& dataSets() const { return mDataSets; }
+  void addDataSet(DataSet* ds); /** mutex not used, datasets should be modified only when input data are read */
+  const DataSets& dataSets() const; /** mutex not used, datasets should be modified only when input data are read */
 
-  BBox extent() const { return mExtent; }
+  BBox extent() const; /** mutex not used, access to const member */
 
-  double valueAt(const Output* output, double xCoord, double yCoord) const;
-  bool valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const;
-
-  bool vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const;
+  double valueAt(const Output* output, double xCoord, double yCoord) const; /** return -9999 when read mutex is not available */
+  bool valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const; /** return -9999 when read mutex is not available */
+  bool vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const; /** return -9999 when read mutex is not available */
 
   void setSourceCrs(const QString& srcProj4); // proj4
   void setSourceCrsFromWKT(const QString& wkt); // wkt
-
   void setDestinationCrs(const QString& destProj4);
   bool hasProjection() const;
-  QString sourceCrs() const { return mSrcProj4; }
-  QString destinationCrs() const { return mDestProj4; }
 
-  BBox projectedExtent() const { return mProjection ? mProjExtent : mExtent; }
-  const Node* projectedNodes() const { return mProjection ? mProjNodes : mNodes.constData(); }
-  const Node& projectedNode(int nodeIndex) const { return mProjection ? mProjNodes[nodeIndex] : mNodes[nodeIndex]; }
-  const BBox& projectedBBox(int elemIndex) const { return mProjection ? mProjBBoxes[elemIndex] : mBBoxes[elemIndex]; }
+  QString sourceCrs() const;
+  QString destinationCrs() const;
+
+  BBox projectedExtent() const;
+  const Node* projectedNodes() const;
+  const Node& projectedNode(int nodeIndex) const;
+  const BBox& projectedBBox(int elemIndex) const;
 
   //! calculate centroid of given element (takes reprojection into account)
   void elementCentroid(int elemIndex, double& cx, double& cy) const;
 
-protected:
-
+private:
   bool reprojectMesh();
   void setNoProjection();
 
@@ -152,7 +154,7 @@ protected:
   //! low-level interpolation routine for element-centered results
   bool interpolateElementCentered(uint elementIndex, double x, double y, double* value, const ElementOutput* output, const ValueAccessor* accessor) const;
 
-  BBox mExtent; //!< unprojected mesh extent
+  const BBox mExtent; //!< unprojected mesh extent
 
   // associated data
   DataSets mDataSets;  //!< pointers to datasets are owned by this class
@@ -172,6 +174,8 @@ protected:
   Node* mProjNodes; //!< reprojected nodes
   BBox* mProjBBoxes; //!< reprojected bounding boxes of elements
   BBox mProjExtent;
+
+  mutable QReadWriteLock mLock;
 };
 
 
