@@ -40,6 +40,9 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
       meshFile.endsWith(".grib2"))
     return loadGRIB(meshFile, status);
 
+  if (meshFile.endsWith((".hdf")))
+    return loadHec2D(meshFile, status);
+
   // This may be either single filename or
   // subdataset name in form NETCDF:filename:variable
   if (meshFile.endsWith(".nc") ||

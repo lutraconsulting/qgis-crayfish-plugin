@@ -33,6 +33,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <QVector2D>
 
+#include <ogr_srs_api.h>
 #include <proj_api.h>
 
 #define DEG2RAD   (3.14159265358979323846 / 180)
@@ -433,6 +434,54 @@ void Mesh::setNoProjection()
   }
 
   mProjection = false;
+}
+
+static QString _setSourceCrsFromESRI(const QString& wkt)
+{
+    QString ret;
+
+    QString wkt2("ESRI::" + wkt);
+    OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
+    QByteArray arr = wkt2.toUtf8();
+    if (OSRSetFromUserInput(hSRS, arr.constData()) == OGRERR_NONE)
+    {
+        char * ppszReturn = 0;
+        if (OSRExportToProj4(hSRS, &ppszReturn) == OGRERR_NONE && ppszReturn != 0)
+        {
+            ret = ppszReturn;
+        }
+    }
+    OSRDestroySpatialReference(hSRS);
+
+    return ret;
+}
+
+static QString _setSourceCrsFromWKT(const QString& wkt)
+{
+    QString ret;
+    OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
+    QByteArray arr = wkt.toUtf8();
+    const char* raw_data = arr.constData();
+    if (OSRImportFromWkt(hSRS, const_cast<char**>(&raw_data)) == OGRERR_NONE)
+    {
+        char * ppszReturn = 0;
+        if (OSRExportToProj4(hSRS, &ppszReturn) == OGRERR_NONE && ppszReturn != 0)
+        {
+            ret = ppszReturn;
+        }
+    }
+    OSRDestroySpatialReference(hSRS);
+
+    return ret;
+}
+
+void Mesh::setSourceCrsFromWKT(const QString& wkt)
+{
+    QString proj4 = _setSourceCrsFromWKT(wkt);
+    if (proj4.isEmpty()) {
+        proj4 = _setSourceCrsFromESRI(wkt);
+    }
+    setSourceCrs(proj4);
 }
 
 void Mesh::setSourceCrs(const QString& srcProj4)

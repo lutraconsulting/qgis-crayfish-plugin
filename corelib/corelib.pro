@@ -73,18 +73,20 @@ SOURCES += crayfish.cpp \
     crayfish_e4q.cpp \
     crayfish_colormap.cpp \
     crayfish_dataset.cpp \
-    crayfish_gdal.cpp \
     crayfish_mesh.cpp \
-    crayfish_mesh_2dm.cpp \
     crayfish_capi.cpp \
-    crayfish_dataset_dat.cpp \
-    crayfish_grib.cpp \
-    crayfish_dataset_xmdf.cpp \
     crayfish_renderer.cpp \
-    crayfish_export_grid.cpp \
-    crayfish_sww.cpp \
     crayfish_e3t.cpp \
-    crayfish_netcdf.cpp
+    crayfish_export_grid.cpp
+
+SOURCES += frmts/crayfish_gdal.cpp \
+    frmts/crayfish_dataset_dat.cpp \
+    frmts/crayfish_dataset_xmdf.cpp \
+    frmts/crayfish_grib.cpp \
+    frmts/crayfish_hec2d.cpp \
+    frmts/crayfish_sww.cpp \
+    frmts/crayfish_netcdf.cpp \
+    frmts/crayfish_mesh_2dm.cpp
 
 HEADERS += crayfish.h \
     crayfish_e4q.h \

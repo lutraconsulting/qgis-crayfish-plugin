@@ -83,6 +83,7 @@ protected:
   static Mesh* loadSWW(const QString& fileName, LoadStatus* status = 0);
   static Mesh* loadGRIB(const QString& fileName, LoadStatus* status = 0);
   static Mesh* loadMesh2DM(const QString& fileName, LoadStatus* status = 0);
+  static Mesh* loadHec2D(const QString& fileName, LoadStatus* status = 0);
   static Mesh* loadNetCDF(const QString& fileName, LoadStatus* status = 0);
 
   static Mesh::DataSets loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
