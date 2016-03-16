@@ -436,28 +436,52 @@ void Mesh::setNoProjection()
   mProjection = false;
 }
 
-void Mesh::setSourceCrsFromWKT(const QString& wkt)
+static QString _setSourceCrsFromESRI(const QString& wkt)
 {
+    QString ret;
+
+    QString wkt2("ESRI::" + wkt);
     OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
-
-    const char* raw_data = wkt.toUtf8().constData();
-    OGRErr err = OSRImportFromWkt(hSRS, const_cast<char**>(&raw_data));
-    if (err != OGRERR_NONE)
-    {
-        QString wkt2("ESRI::" + wkt);
-        err = OSRSetFromUserInput(hSRS, wkt2.toUtf8().constData());
-    }
-
-    if (err == OGRERR_NONE)
+    QByteArray arr = wkt2.toUtf8();
+    if (OSRSetFromUserInput(hSRS, arr.constData()) == OGRERR_NONE)
     {
         char * ppszReturn = 0;
         if (OSRExportToProj4(hSRS, &ppszReturn) == OGRERR_NONE && ppszReturn != 0)
         {
-            QString proj4(ppszReturn);
-            setSourceCrs(proj4);
+            ret = ppszReturn;
         }
     }
     OSRDestroySpatialReference(hSRS);
+
+    return ret;
+}
+
+static QString _setSourceCrsFromWKT(const QString& wkt)
+{
+    QString ret;
+    OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
+    QByteArray arr = wkt.toUtf8();
+    const char* raw_data = arr.constData();
+    if (OSRImportFromWkt(hSRS, const_cast<char**>(&raw_data)) == OGRERR_NONE)
+    {
+        char * ppszReturn = 0;
+        if (OSRExportToProj4(hSRS, &ppszReturn) == OGRERR_NONE && ppszReturn != 0)
+        {
+            ret = ppszReturn;
+        }
+    }
+    OSRDestroySpatialReference(hSRS);
+
+    return ret;
+}
+
+void Mesh::setSourceCrsFromWKT(const QString& wkt)
+{
+    QString proj4 = _setSourceCrsFromWKT(wkt);
+    if (proj4.isEmpty()) {
+        proj4 = _setSourceCrsFromESRI(wkt);
+    }
+    setSourceCrs(proj4);
 }
 
 void Mesh::setSourceCrs(const QString& srcProj4)
