@@ -27,13 +27,10 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
-from crayfish_gui_utils import QgsMessageBar, qgis_message_bar, defaultColorRamp
+
 from qgis.utils import iface
 
 import crayfish
-
-import os
-import glob
 
 
 class CrayfishViewerPluginLayerRenderer(QgsMapLayerRenderer):
