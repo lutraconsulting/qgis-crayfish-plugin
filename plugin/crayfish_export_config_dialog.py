@@ -27,11 +27,13 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from crayfish_export_config_dialog_ui import Ui_CrayfishExportConfigDialog
+from crayfish_ui_loader import load_ui
+uiDialog, qtBaseClass = load_ui('crayfish_export_config_dialog')
 
-class CrayfishExportConfigDialog(QDialog, Ui_CrayfishExportConfigDialog):
+class CrayfishExportConfigDialog(qtBaseClass, uiDialog):
     def __init__(self, parent=None):
-        QDialog.__init__(self, parent)
+        qtBaseClass.__init__(self)
+        uiDialog.__init__(self, parent)
 
         self.setupUi(self)
 

@@ -381,8 +381,13 @@ by clicking the icons next to dataset names.</string>
   <customwidget>
    <class>QgsCollapsibleGroupBox</class>
    <extends>QGroupBox</extends>
-   <header>crayfish_gui_utils</header>
+   <header>qgscollapsiblegroupbox.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QgsColorButton</class>
+   <extends>QPushButton</extends>
+   <header>qgscolorbutton.h</header>
   </customwidget>
   <customwidget>
    <class>QgsColorRampComboBox</class>
@@ -390,14 +395,9 @@ by clicking the icons next to dataset names.</string>
    <header>qgis.gui</header>
   </customwidget>
   <customwidget>
-   <class>QgsColorButton</class>
-   <extends>QPushButton</extends>
-   <header>qgis.gui</header>
-  </customwidget>
-  <customwidget>
    <class>DataSetView</class>
    <extends>QTreeView</extends>
-   <header>crayfish_viewer_dataset_view.h</header>
+   <header>crayfish.crayfish_viewer_dataset_view</header>
   </customwidget>
  </customwidgets>
  <tabstops>

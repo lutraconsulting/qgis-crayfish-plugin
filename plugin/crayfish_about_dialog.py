@@ -29,19 +29,21 @@ from PyQt4.QtGui import *
 from PyQt4.QtWebKit import *
 from qgis.core import *
 
-from crayfish_about_dialog_widget import Ui_Dialog
+
 from crayfish_install_helper import plugin_version_str
 
 import os
 
+from crayfish_ui_loader import load_ui
+uiDialog, qtBaseClass = load_ui('crayfish_about_dialog_widget')
 
-class CrayfishAboutDialog(QDialog, Ui_Dialog):
-    
+class CrayfishAboutDialog(qtBaseClass, uiDialog):
+
     def __init__(self, iface, activateNews=False):
-        
-        QDialog.__init__(self)
-        Ui_Dialog.__init__(self)
-        
+
+        qtBaseClass.__init__(self)
+        uiDialog.__init__(self)
+
         self.setupUi(self)
         self.iface = iface
 
@@ -52,7 +54,7 @@ class CrayfishAboutDialog(QDialog, Ui_Dialog):
         self.aboutBrowser.setHtml(self.sourceAbout(), QUrl.fromLocalFile(self.about_page))
         self.aboutBrowser.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
         self.aboutBrowser.linkClicked.connect(QDesktopServices.openUrl)
-        
+
         self.newsBrowser.setHtml(self.sourceNews(), QUrl.fromLocalFile(self.news_page))
         self.newsBrowser.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
         self.newsBrowser.linkClicked.connect(QDesktopServices.openUrl)
