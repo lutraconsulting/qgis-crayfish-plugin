@@ -6,6 +6,5 @@
         <file>icon_contours.png</file>
         <file>icon_vectors.png</file>
         <file>icon_vectors_disabled.png</file>
-        <file>icon_video.png</file>
     </qresource>
 </RCC>
