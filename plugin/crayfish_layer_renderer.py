@@ -42,9 +42,8 @@ class CrayfishViewerPluginLayerRenderer(QgsMapLayerRenderer):
         QgsMapLayerRenderer.__init__(self, layer.id())
 
         self.layer = layer
-        self.rconfig = self._create_rconfig()
         self.rendererContext = rendererContext
-
+        self.rconfig = self._create_rconfig()
         self._set_destination_crs()
 
     def _create_rconfig(self):
@@ -75,6 +74,7 @@ class CrayfishViewerPluginLayerRenderer(QgsMapLayerRenderer):
         self.layer.mesh.set_destination_crs(ct.destCRS().toProj4() if ct else None)
 
     def render(self):
+
         mapToPixel = self.rendererContext.mapToPixel()
         pixelSize = mapToPixel.mapUnitsPerPixel()
         ct = self.rendererContext.coordinateTransform()
@@ -90,7 +90,7 @@ class CrayfishViewerPluginLayerRenderer(QgsMapLayerRenderer):
         width = (bottomright.x() - topleft.x())
         height = (bottomright.y() - topleft.y())
 
-        rconfig.set_view((int(width),int(height)), (extent.xMinimum(), extent.yMinimum()), pixelSize)
+        self.rconfig.set_view((int(width),int(height)), (extent.xMinimum(), extent.yMinimum()), pixelSize)
 
         if False:
             print '\n'
