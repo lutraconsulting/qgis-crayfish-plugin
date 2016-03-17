@@ -24,13 +24,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef CRAYFISH_E5P_H
-#define CRAYFISH_E5P_H
+#ifndef CRAYFISH_ENP_H
+#define CRAYFISH_ENP_H
 
 /**
   Utility functions for handling Generalized Barycentric Coordinates on Irregular Polygons
 
-  So far it is not cached to keep it simple. Needs 5 vertexes, but algorithm works for 3-N vertexes
+  So far it is not cached to keep it simple. algorithm works for 3-N vertexes
 
   based on http://geometry.caltech.edu/pubs/MHBD02.pdf
 
@@ -43,8 +43,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QVector>
 #include <QPointF>
 
-bool E5P_physicalToLogical(const QVector<QPointF>& pX, QPointF pP, QVector<double>& lam);
+bool ENP_physicalToLogical(const QVector<QPointF>& pX, QPointF pP, QVector<double>& lam);
 
-void E5P_centroid(const QVector<QPointF>& pX, double& cx, double& cy);
+void ENP_centroid(const QVector<QPointF>& pX, double& cx, double& cy);
 
-#endif // CRAYFISH_E5P_H
+#endif // CRAYFISH_ENP_H

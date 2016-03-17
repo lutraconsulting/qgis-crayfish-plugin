@@ -322,6 +322,7 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
             int idx2 = elem_nodes[edims[1]*e + 2];
             int idx3 = elem_nodes[edims[1]*e + 3];
             int idx4 = elem_nodes[edims[1]*e + 4];
+            int idx5 = elem_nodes[edims[1]*e + 5];
 
             elemPtr->p[0] = elem_nodes[edims[1]*e + 0];
             elemPtr->p[1] = elem_nodes[edims[1]*e + 1];
@@ -345,14 +346,20 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
                     elemPtr->p[1] = elemPtr->p[3];
                     elemPtr->p[3] = tmp;
                 }
-            } else {
-                // here falls also all general polygons with >4 vertexes
-                // HEC2D supports 2-8 vertex polygons, so those with 6-8 will
-                // be stored in 5 vertex polygon, loosing some mesh area
+            } else if (idx5 == -1) { // polygon with 5 nodes
                 elemPtr->eType = Element::E5P;
                 elemPtr->p[2] = idx2;
                 elemPtr->p[3] = idx3;
                 elemPtr->p[4] = idx4;
+            } else {
+                // here falls also all general polygons with >5 vertexes
+                // HEC2D supports 2-8 vertex polygons, so those with 7-8 will
+                // be stored in 6 vertex polygon, loosing some mesh area
+                elemPtr->eType = Element::E6P;
+                elemPtr->p[2] = idx2;
+                elemPtr->p[3] = idx3;
+                elemPtr->p[4] = idx4;
+                elemPtr->p[5] = idx5;
             }
         }
 

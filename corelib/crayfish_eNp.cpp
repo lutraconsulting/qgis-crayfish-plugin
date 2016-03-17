@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 
-#include "crayfish_e5p.h"
+#include "crayfish_eNp.h"
 
 #include "math.h"
 #include <QPointF>
@@ -34,7 +34,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QVector2D>
 #include <limits>
 
-static double E5P_contangent(QPointF a, QPointF b, QPointF c) {
+static bool ENP_isInside(const QVector<QPointF>& pX, QPointF pP) {
+     //https://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+      int i, j, c = 0;
+
+      for (i = 0, j = pX.size()-1; i < pX.size(); j = i++) {
+        if ( ((pX[i].y()>pP.y()) != (pX[j].y()>pP.y())) &&
+         (pP.x() < (pX[j].x()-pX[i].x()) * (pP.y()-pX[i].y()) / (pX[j].y()-pX[i].y()) + pX[i].x()) )
+           c = !c;
+      }
+      return c;
+}
+
+static double ENP_contangent(QPointF a, QPointF b, QPointF c) {
+    //http://geometry.caltech.edu/pubs/MHBD02.pdf
     QVector3D ba (b-a);
     QVector3D bc (b-c);
 
@@ -44,24 +57,30 @@ static double E5P_contangent(QPointF a, QPointF b, QPointF c) {
     return dp/cp.length();
 }
 
-bool E5P_physicalToLogical(const QVector<QPointF>& pX, QPointF pP, QVector<double>& lam)
+bool ENP_physicalToLogical(const QVector<QPointF>& pX, QPointF pP, QVector<double>& lam)
 {
+    //http://geometry.caltech.edu/pubs/MHBD02.pdf
     if (pX.size() < 3 || pX.size() != lam.size())
         return false;
 
-    double weightSum = 0;
-    QVector<QPointF>::const_iterator prev = pX.end();
-    QVector<QPointF>::const_iterator next = pX.begin();
+    if (!ENP_isInside(pX, pP)) {
+        return false;
+    }
 
-    QVector<double>::iterator lamit=lam.begin();
-    for (QVector<QPointF>::const_iterator it=pX.begin(); it!=pX.end(); ++it, ++lamit)
+    double weightSum = 0;
+    size_t prev = pX.size() -1;
+    size_t next = 1;
+    for (int i=0; i<pX.size(); i++)
     {
-        double cotPrev = E5P_contangent(pP, *it, *prev);
-        double cotNext = E5P_contangent(pP, *it, *next);
-        double len2 = QVector2D(*it - pP).lengthSquared();
-        double val = (cotPrev + cotNext) / len2;
-        *lamit = val;
-        prev = it;
+        double cotPrev = ENP_contangent(pP, pX[i], pX[prev]);
+        double cotNext = ENP_contangent(pP, pX[i], pX[next]);
+        double len2 = QVector2D(pX[i] - pP).lengthSquared();
+        lam[i] = (cotPrev + cotNext) / len2;
+
+        ++prev;
+        if (prev == pX.size()) prev = 0;
+        ++next;
+        if (next == pX.size()) next = 0;
     }
 
     for (QVector<double>::iterator lamit=lam.begin(); lamit!=lam.end(); ++lamit)
@@ -72,7 +91,7 @@ bool E5P_physicalToLogical(const QVector<QPointF>& pX, QPointF pP, QVector<doubl
     return true;
 }
 
-void E5P_centroid(const QVector<QPointF>& pX, double& cx, double& cy)
+void ENP_centroid(const QVector<QPointF>& pX, double& cx, double& cy)
 {
     cx = 0;
     cy = 0;

@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_e2l.h"
 #include "crayfish_e3t.h"
 #include "crayfish_e4q.h"
-#include "crayfish_e5p.h"
+#include "crayfish_eNp.h"
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
 
@@ -218,21 +218,21 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
   const Mesh* mesh = output->dataSet->mesh();
   const Element& elem = mesh->elements()[elementIndex];
 
-  if (elem.eType == Element::E5P)
+  if (elem.eType == Element::E6P || elem.eType == Element::E5P)
   {
     const Node* nodes = projectedNodes();
-    QVector<QPointF> pX(5);
-    QVector<double> lam(5);
+    QVector<QPointF> pX(elem.nodeCount());
+    QVector<double> lam(elem.nodeCount());
 
-    for (int i=0; i<5; i++) {
+    for (int i=0; i<elem.nodeCount(); i++) {
         pX[i] = nodes[elem.p[i]].toPointF();
     }
 
-    if (!E5P_physicalToLogical(pX, QPointF(x, y), lam))
+    if (!ENP_physicalToLogical(pX, QPointF(x, y), lam))
       return false;
 
     *value = 0;
-    for (int i=0; i<5; i++) {
+    for (int i=0; i<elem.nodeCount(); i++) {
         *value += lam[i] * accessor->value( elem.p[i] );
     }
 
@@ -330,17 +330,17 @@ bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, dou
   const Mesh* mesh = output->dataSet->mesh();
   const Element& elem = mesh->elements()[elementIndex];
 
-  if (elem.eType == Element::E5P)
+  if (elem.eType == Element::E6P || elem.eType == Element::E5P)
     {
       const Node* nodes = projectedNodes();
-      QVector<QPointF> pX(5);
-      QVector<double> lam(5);
+      QVector<QPointF> pX(elem.nodeCount());
+      QVector<double> lam(elem.nodeCount());
 
-      for (int i=0; i<5; i++) {
+      for (int i=0; i<elem.nodeCount(); i++) {
           pX[i] = nodes[elem.p[i]].toPointF();
       }
 
-      if (!E5P_physicalToLogical(pX, QPointF(x, y), lam))
+      if (!ENP_physicalToLogical(pX, QPointF(x, y), lam))
         return false;
 
       *value = accessor->value(elementIndex);
@@ -676,14 +676,14 @@ void Mesh::elementCentroid(int elemIndex, double& cx, double& cy) const
 {
   const Element& e = mElems[elemIndex];
 
-  if (e.eType == Element::E5P)
+  if (e.eType == Element::E6P || e.eType == Element::E5P)
   {
     const Node* nodes = projectedNodes();
-    QVector<QPointF> pX(5);
-    for (int i=0; i<5; i++) {
+    QVector<QPointF> pX(e.nodeCount());
+    for (int i=0; i<e.nodeCount(); i++) {
         pX[i] = nodes[e.p[i]].toPointF();
     }
-    E5P_centroid(pX, cx, cy);
+    ENP_centroid(pX, cx, cy);
   }
   else if (e.eType == Element::E4Q)
   {
