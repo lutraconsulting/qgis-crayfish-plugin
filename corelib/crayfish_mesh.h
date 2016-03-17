@@ -42,12 +42,15 @@ class NodeOutput;
 
 struct Node
 {
-    int id;    //!< just a reference to the ID in the input file (internally we use indices)
     double x;
     double y;
 
     bool operator==(const Node& other) const { return x == other.x && y == other.y; }
     QPointF toPointF() const { return QPointF(x,y); }
+    void setId(int id) {mId = id;}
+    int id() const {return mId;}
+private:
+    int mId;    //!< just a reference to the ID in the input file (internally we use indices)
 };
 
 struct BBox
@@ -60,24 +63,44 @@ struct BBox
   bool isPointInside(double x, double y) const { return x >= minX && x <= maxX && y >= minY && y <= maxY; }
 };
 
-struct Element
+class Element
 {
+public:
     enum Type
     {
       Undefined,
-      E6P,
-      E5P,
+      ENP,
       E4Q,
       E3T,
       E2L
     };
 
-    int nodeCount() const { switch (eType) { case E6P: return 6; case E5P: return 5; case E4Q: return 4; case E3T: return 3; case E2L: return 2;  default: return 0; } }
-    bool isDummy() const { return eType == Undefined; }
+    int nodeCount() const { return mP.size(); }
+    bool isDummy() const { return mEType == Undefined; }
+    Type eType() const {return mEType;}
 
-    int id;        //!< just a reference to the ID in the input file (internally we use indices)
-    Type eType;
-    uint p[6];     //!< indices of nodes
+    void setEType(Type eType) {
+        Q_ASSERT(eType != ENP);
+        switch (eType) {
+            case E4Q : setEType(eType, 4); break;
+            case E3T : setEType(eType, 3); break;
+            case E2L : setEType(eType, 2); break;
+            default: setEType(eType, 0);
+        }
+    }
+    void setEType(Type eType, int node_count) {
+        mEType = eType;
+        mP.resize(node_count);
+    }
+    uint p(int idx) const {Q_ASSERT(idx < nodeCount()); return mP[idx];}
+    void setP(int idx, uint val) {Q_ASSERT(idx < nodeCount()); mP[idx] = val;}
+    void setP(uint* vals) {for (int i=0; i<nodeCount(); i++) {mP[i] = vals[i];}}
+    void setId(int id) {mId = id;}
+    int id() const {return mId;}
+private:
+    int mId;        //!< just a reference to the ID in the input file (internally we use indices)
+    Type mEType;
+    QVector<uint> mP; //!< indices of nodes
 };
 
 

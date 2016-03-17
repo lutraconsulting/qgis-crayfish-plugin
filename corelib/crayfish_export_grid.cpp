@@ -39,7 +39,7 @@ static void exportRawDataElements(Element::Type elemType, const Output* output, 
   for (int i=0; i < elems.count(); i++)
   {
     const Element& elem = elems[i];
-    if(elem.eType != elemType)
+    if(elem.eType() != elemType)
       continue;
 
     if (elem.isDummy())
@@ -117,8 +117,7 @@ static RawData* exportRawData(const Output* output, double mupp)
   // First export quads, then triangles.
   // We use this ordering because from 1D simulation we will get tesselated river polygons from linestrings
   // and we want them to be on top of the terrain (quads)
-  exportRawDataElements(Element::E6P, output, rd, xform);
-  exportRawDataElements(Element::E5P, output, rd, xform);
+  exportRawDataElements(Element::ENP, output, rd, xform);
   exportRawDataElements(Element::E4Q, output, rd, xform);
   exportRawDataElements(Element::E3T, output, rd, xform);
   exportRawDataElements(Element::E2L, output, rd, xform);

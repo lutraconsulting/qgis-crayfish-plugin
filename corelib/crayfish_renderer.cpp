@@ -107,6 +107,22 @@ void Renderer::draw()
     drawVectorData(mOutputVector);
 }
 
+void Renderer::drawElementMeshPolyline(QPainter& p, const Element& elem) {
+    int nPoints = elem.nodeCount();
+    QPoint pts[nPoints + 1];
+    for (int i=0; i<nPoints; ++i)
+    {
+        pts[i] = realToPixel( elem.p(i) );
+    }
+
+    if (elem.eType() != Element::E2L)
+    {
+        pts[nPoints] = pts[0];
+        nPoints += 1;
+    }
+
+    p.drawPolyline(pts, nPoints);
+}
 
 void Renderer::drawMesh()
 {
@@ -115,7 +131,6 @@ void Renderer::drawMesh()
   QPainter p(&mImage);
   p.setRenderHint(QPainter::Antialiasing);
   p.setPen(QPen(QBrush(mCfg.mesh.mMeshColor),0.5));
-  QPoint pts[7];
   const Mesh::Elements& elems = mMesh->elements();
   for (int i=0; i < elems.count(); ++i)
   {
@@ -127,46 +142,7 @@ void Renderer::drawMesh()
     if( elemOutsideView(i) )
         continue;
 
-    if (elem.eType == Element::E6P)
-    {
-      pts[0] = pts[6] = realToPixel( elem.p[0] ); // first and last point
-      pts[1] = realToPixel( elem.p[1] );
-      pts[2] = realToPixel( elem.p[2] );
-      pts[3] = realToPixel( elem.p[3] );
-      pts[4] = realToPixel( elem.p[4] );
-      pts[5] = realToPixel( elem.p[5] );
-      p.drawPolyline(pts, 7);
-    }
-    else if (elem.eType == Element::E5P)
-    {
-      pts[0] = pts[5] = realToPixel( elem.p[0] ); // first and last point
-      pts[1] = realToPixel( elem.p[1] );
-      pts[2] = realToPixel( elem.p[2] );
-      pts[3] = realToPixel( elem.p[3] );
-      pts[4] = realToPixel( elem.p[4] );
-      p.drawPolyline(pts, 6);
-    }
-    else if (elem.eType == Element::E4Q)
-    {
-      pts[0] = pts[4] = realToPixel( elem.p[0] ); // first and last point
-      pts[1] = realToPixel( elem.p[1] );
-      pts[2] = realToPixel( elem.p[2] );
-      pts[3] = realToPixel( elem.p[3] );
-      p.drawPolyline(pts, 5);
-    }
-    else if (elem.eType == Element::E3T)
-    {
-      pts[0] = pts[3] = realToPixel( elem.p[0] ); // first and last point
-      pts[1] = realToPixel( elem.p[1] );
-      pts[2] = realToPixel( elem.p[2] );
-      p.drawPolyline(pts, 4);
-    }
-    else if (elem.eType == Element::E2L)
-    {
-      pts[0] = realToPixel( elem.p[0] );
-      pts[1] = realToPixel( elem.p[1] );
-      p.drawPolyline(pts, 2);
-    }
+    drawElementMeshPolyline(p, elem);
   }
 }
 
@@ -177,8 +153,7 @@ void Renderer::drawContourData(const Output* output)
 {
   // Render E4Q before E3T
   QVector<Element::Type> typesToRender;
-  typesToRender.append(Element::E6P);
-  typesToRender.append(Element::E5P);
+  typesToRender.append(Element::ENP);
   typesToRender.append(Element::E4Q);
   typesToRender.append(Element::E3T);
   typesToRender.append(Element::E2L);
@@ -191,7 +166,7 @@ void Renderer::drawContourData(const Output* output)
     for(int i = 0; i < elems.count(); i++){
 
       const Element& elem = elems[i];
-      if( elem.eType != elemTypeToRender )
+      if( elem.eType() != elemTypeToRender )
           continue;
 
       if( elem.isDummy() )

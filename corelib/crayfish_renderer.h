@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define CRAYFISH_RENDERER_H
 
 #include "crayfish_dataset.h"
-
+#include "crayfish_mesh.h"
 #include <QImage>
 #include <QSize>
 
@@ -155,8 +155,8 @@ public:
   void draw();
 
 protected:
-
   void drawMesh();
+  void drawElementMeshPolyline(QPainter& p, const Element& elem);
   void drawContourData(const Output* output);
   void drawVectorData(const Output* output);
   void drawVectorDataOnGrid(QPainter& p, const Output* output);

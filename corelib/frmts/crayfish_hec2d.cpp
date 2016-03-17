@@ -303,7 +303,7 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         Node* nodesPtr = nodes.data();
         for (int n = 0; n < nNodes; ++n, ++nodesPtr)
         {
-            nodesPtr->id = n;
+            nodesPtr->setId(n);
             nodesPtr->x = coords[cdims[1]*n];
             nodesPtr->y = coords[cdims[1]*n+1];
         }
@@ -317,22 +317,30 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         for (int e = 0; e < nElems; ++e, ++elemPtr)
         {
 
-            elemPtr->id = e;
+            elemPtr->setId(e);
+            uint idx[8]; // there is up to 8 vertexes
+            int nValidVertexes = 0;
+            for (int fi=0; fi<8; ++fi)
+            {
+                int elem_node_idx = elem_nodes[edims[1]*e + fi];
 
-            int idx2 = elem_nodes[edims[1]*e + 2];
-            int idx3 = elem_nodes[edims[1]*e + 3];
-            int idx4 = elem_nodes[edims[1]*e + 4];
-            int idx5 = elem_nodes[edims[1]*e + 5];
+                if (elem_node_idx == -1) {
+                    nValidVertexes = fi;
+                    break;
+                } else {
+                   idx[fi] = elem_node_idx;
+                }
+            }
 
-            elemPtr->p[0] = elem_nodes[edims[1]*e + 0];
-            elemPtr->p[1] = elem_nodes[edims[1]*e + 1];
-
-            if (idx2 == -1) {
-                elemPtr->eType = Element::E2L;
-            } else if (idx3 == -1) { // TRIANGLE
+            if (nValidVertexes == 2) { // Line
+                elemPtr->setEType(Element::E2L);
+                elemPtr->setP(idx);
+            }
+            /*
+            } else if (idx[3] == -1) { // TRIANGLE
                 elemPtr->eType = Element::E3T;
-                elemPtr->p[2] = idx2;
-            } else if (idx4 == -1) { // RECTANGLE
+                elemPtr->setP(idx);
+            } else if (idx[4] == -1) { // RECTANGLE
                 elemPtr->eType = Element::E4Q;
                 elemPtr->p[2] = idx2;
                 elemPtr->p[3] = idx3;
@@ -351,15 +359,11 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
                 elemPtr->p[2] = idx2;
                 elemPtr->p[3] = idx3;
                 elemPtr->p[4] = idx4;
-            } else {
-                // here falls also all general polygons with >5 vertexes
-                // HEC2D supports 2-8 vertex polygons, so those with 7-8 will
-                // be stored in 6 vertex polygon, loosing some mesh area
-                elemPtr->eType = Element::E6P;
-                elemPtr->p[2] = idx2;
-                elemPtr->p[3] = idx3;
-                elemPtr->p[4] = idx4;
-                elemPtr->p[5] = idx5;
+                */
+            else {
+                // here falls also all general polygons
+                elemPtr->setEType(Element::ENP, nValidVertexes);
+                elemPtr->setP(idx);
             }
         }
 

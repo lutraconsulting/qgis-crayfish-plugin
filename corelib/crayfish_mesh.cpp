@@ -64,7 +64,7 @@ int BasicMesh::elementCountForType(Element::Type type)
   int cnt = 0;
   for (int i = 0; i < mElems.count(); ++i)
   {
-    if (mElems[i].eType == type)
+    if (mElems[i].eType() == type)
       ++cnt;
   }
   return cnt;
@@ -218,14 +218,14 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
   const Mesh* mesh = output->dataSet->mesh();
   const Element& elem = mesh->elements()[elementIndex];
 
-  if (elem.eType == Element::E6P || elem.eType == Element::E5P)
+  if (elem.eType() == Element::ENP)
   {
     const Node* nodes = projectedNodes();
     QVector<QPointF> pX(elem.nodeCount());
     QVector<double> lam(elem.nodeCount());
 
     for (int i=0; i<elem.nodeCount(); i++) {
-        pX[i] = nodes[elem.p[i]].toPointF();
+        pX[i] = nodes[elem.p(i)].toPointF();
     }
 
     if (!ENP_physicalToLogical(pX, QPointF(x, y), lam))
@@ -233,12 +233,12 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
 
     *value = 0;
     for (int i=0; i<elem.nodeCount(); i++) {
-        *value += lam[i] * accessor->value( elem.p[i] );
+        *value += lam[i] * accessor->value( elem.p(i) );
     }
 
     return true;
   }
-  else if (elem.eType == Element::E4Q)
+  else if (elem.eType() == Element::E4Q)
   {
     int e4qIndex = mE4QtmpIndex[elementIndex];
     E4Qtmp& e4q = mE4Qtmp[e4qIndex];
@@ -250,17 +250,17 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
     if (Lx < 0 || Ly < 0 || Lx > 1 || Ly > 1)
       return false;
 
-    double q11 = accessor->value( elem.p[2] );
-    double q12 = accessor->value( elem.p[1] );
-    double q21 = accessor->value( elem.p[3] );
-    double q22 = accessor->value( elem.p[0] );
+    double q11 = accessor->value( elem.p(2) );
+    double q12 = accessor->value( elem.p(1) );
+    double q21 = accessor->value( elem.p(3) );
+    double q22 = accessor->value( elem.p(0) );
 
     *value = q11*Lx*Ly + q21*(1-Lx)*Ly + q12*Lx*(1-Ly) + q22*(1-Lx)*(1-Ly);
 
     return true;
 
   }
-  else if (elem.eType == Element::E3T)
+  else if (elem.eType() == Element::E3T)
   {
 
     /*
@@ -277,23 +277,23 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
     const Node* nodes = projectedNodes();
 
     double lam1, lam2, lam3;
-    if (!E3T_physicalToBarycentric(nodes[elem.p[0]].toPointF(),
-                                   nodes[elem.p[1]].toPointF(),
-                                   nodes[elem.p[2]].toPointF(),
+    if (!E3T_physicalToBarycentric(nodes[elem.p(0)].toPointF(),
+                                   nodes[elem.p(1)].toPointF(),
+                                   nodes[elem.p(2)].toPointF(),
                                    QPointF(x, y),
                                    lam1, lam2, lam3))
       return false;
 
     // Now interpolate
 
-    double z1 = accessor->value( elem.p[0] );
-    double z2 = accessor->value( elem.p[1] );
-    double z3 = accessor->value( elem.p[2] );
+    double z1 = accessor->value( elem.p(0));
+    double z2 = accessor->value( elem.p(1));
+    double z3 = accessor->value( elem.p(2));
     *value = lam1 * z3 + lam2 * z2 + lam3 * z1;
     return true;
 
   }
-  else if (elem.eType == Element::E2L)
+  else if (elem.eType() == Element::E2L)
   {
 
     /*
@@ -302,16 +302,16 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
     const Node* nodes = projectedNodes();
     double lam;
 
-    if (!E2L_physicalToLogical(nodes[elem.p[0]].toPointF(),
-                               nodes[elem.p[1]].toPointF(),
+    if (!E2L_physicalToLogical(nodes[elem.p(0)].toPointF(),
+                               nodes[elem.p(1)].toPointF(),
                                QPointF(x, y),
                                lam))
       return false;
 
     // Now interpolate
 
-    double z1 = accessor->value( elem.p[0] );
-    double z2 = accessor->value( elem.p[1] );
+    double z1 = accessor->value( elem.p(0) );
+    double z2 = accessor->value( elem.p(1) );
 
     *value = z1 + lam * (z2 - z1);
     return true;
@@ -330,14 +330,14 @@ bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, dou
   const Mesh* mesh = output->dataSet->mesh();
   const Element& elem = mesh->elements()[elementIndex];
 
-  if (elem.eType == Element::E6P || elem.eType == Element::E5P)
+  if (elem.eType() == Element::ENP)
     {
       const Node* nodes = projectedNodes();
       QVector<QPointF> pX(elem.nodeCount());
       QVector<double> lam(elem.nodeCount());
 
       for (int i=0; i<elem.nodeCount(); i++) {
-          pX[i] = nodes[elem.p[i]].toPointF();
+          pX[i] = nodes[elem.p(i)].toPointF();
       }
 
       if (!ENP_physicalToLogical(pX, QPointF(x, y), lam))
@@ -346,7 +346,7 @@ bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, dou
       *value = accessor->value(elementIndex);
       return true;
     }
-  else if (elem.eType == Element::E4Q)
+  else if (elem.eType() == Element::E4Q)
   {
     int e4qIndex = mE4QtmpIndex[elementIndex];
     E4Qtmp& e4q = mE4Qtmp[e4qIndex];
@@ -361,14 +361,14 @@ bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, dou
     *value = accessor->value(elementIndex);
     return true;
   }
-  else if (elem.eType == Element::E3T)
+  else if (elem.eType() == Element::E3T)
   {
     const Node* nodes = projectedNodes();
 
     double lam1, lam2, lam3;
-    if (!E3T_physicalToBarycentric(nodes[elem.p[0]].toPointF(),
-                                   nodes[elem.p[1]].toPointF(),
-                                   nodes[elem.p[2]].toPointF(),
+    if (!E3T_physicalToBarycentric(nodes[elem.p(0)].toPointF(),
+                                   nodes[elem.p(1)].toPointF(),
+                                   nodes[elem.p(2)].toPointF(),
                                    QPointF(x, y),
                                    lam1, lam2, lam3))
       return false;
@@ -379,13 +379,13 @@ bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, dou
     return true;
 
   }
-  else if (elem.eType == Element::E2L)
+  else if (elem.eType() == Element::E2L)
   {
     const Node* nodes = projectedNodes();
 
     double lam;
-    if (!E2L_physicalToLogical(nodes[elem.p[0]].toPointF(),
-                               nodes[elem.p[1]].toPointF(),
+    if (!E2L_physicalToLogical(nodes[elem.p(0)].toPointF(),
+                               nodes[elem.p(1)].toPointF(),
                                QPointF(x, y),
                                lam))
       return false;
@@ -430,7 +430,7 @@ bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, 
 
 static void updateBBox(BBox& bbox, const Element& elem, const Node* nodes)
 {
-  const Node& node0 = nodes[elem.p[0]];
+  const Node& node0 = nodes[elem.p(0)];
 
   bbox.minX = node0.x;
   bbox.minY = node0.y;
@@ -439,7 +439,7 @@ static void updateBBox(BBox& bbox, const Element& elem, const Node* nodes)
 
   for (int j = 1; j < elem.nodeCount(); ++j)
   {
-    const Node& n = nodes[elem.p[j]];
+    const Node& n = nodes[elem.p(j)];
     if (n.x < bbox.minX) bbox.minX = n.x;
     if (n.x > bbox.maxX) bbox.maxX = n.x;
     if (n.y < bbox.minY) bbox.minY = n.y;
@@ -479,7 +479,7 @@ void Mesh::computeTempRendererData()
 
     updateBBox(mBBoxes[i], elem, mNodes.constData());
 
-    if (elem.eType == Element::E4Q)
+    if (elem.eType() == Element::E4Q)
     {
       // cache some temporary data for faster rendering
       mE4QtmpIndex[i] = e4qIndex;
@@ -505,7 +505,7 @@ void Mesh::setNoProjection()
   for (int i = 0; i < mElems.count(); ++i)
   {
     const Element& elem = mElems[i];
-    if (elem.eType == Element::E4Q)
+    if (elem.eType() == Element::E4Q)
     {
       int e4qIndex = mE4QtmpIndex[i];
       E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mNodes.constData());
@@ -656,7 +656,7 @@ bool Mesh::reprojectMesh()
     const Element& elem = mElems[i];
     updateBBox(mProjBBoxes[i], elem, mProjNodes);
 
-    if (elem.eType == Element::E4Q)
+    if (elem.eType() == Element::E4Q)
     {
       int e4qIndex = mE4QtmpIndex[i];
       E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mProjNodes); // update interpolation coefficients
@@ -676,30 +676,30 @@ void Mesh::elementCentroid(int elemIndex, double& cx, double& cy) const
 {
   const Element& e = mElems[elemIndex];
 
-  if (e.eType == Element::E6P || e.eType == Element::E5P)
+  if (e.eType() == Element::ENP)
   {
     const Node* nodes = projectedNodes();
     QVector<QPointF> pX(e.nodeCount());
     for (int i=0; i<e.nodeCount(); i++) {
-        pX[i] = nodes[e.p[i]].toPointF();
+        pX[i] = nodes[e.p(i)].toPointF();
     }
     ENP_centroid(pX, cx, cy);
   }
-  else if (e.eType == Element::E4Q)
+  else if (e.eType() == Element::E4Q)
   {
     int e4qIndex = mE4QtmpIndex[elemIndex];
     E4Qtmp& e4q = mE4Qtmp[e4qIndex];
     E4Q_centroid(e4q, cx, cy);
   }
-  else if (e.eType == Element::E3T)
+  else if (e.eType() == Element::E3T)
   {
     const Node* nodes = projectedNodes();
-    E3T_centroid(nodes[e.p[0]].toPointF(), nodes[e.p[1]].toPointF(), nodes[e.p[2]].toPointF(), cx, cy);
+    E3T_centroid(nodes[e.p(0)].toPointF(), nodes[e.p(1)].toPointF(), nodes[e.p(2)].toPointF(), cx, cy);
   }
-  else if (e.eType == Element::E2L)
+  else if (e.eType() == Element::E2L)
   {
     const Node* nodes = projectedNodes();
-    E2L_centroid(nodes[e.p[0]].toPointF(), nodes[e.p[1]].toPointF(), cx, cy);
+    E2L_centroid(nodes[e.p(0)].toPointF(), nodes[e.p(1)].toPointF(), cx, cy);
   }
   else
     Q_ASSERT(0 && "element not supported");
