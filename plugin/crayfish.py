@@ -29,7 +29,7 @@ import os
 import platform
 import weakref
 
-this_dir = os.path.dirname(__file__)
+this_dir = os.path.dirname(os.path.realpath(__file__))
 libname = "crayfish.dll" if platform.system() == "Windows" else "libcrayfish.so.1"
 lib=ctypes.cdll.LoadLibrary(os.path.join(this_dir, libname))
 

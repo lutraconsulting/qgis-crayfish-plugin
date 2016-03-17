@@ -28,7 +28,7 @@ from PyQt4 import uic
 import os
 
 def load_ui(name):
-    ui_file = os.path.join(os.path.dirname(__file__),
+    ui_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                           'ui',
                           name + '.ui')
     return uic.loadUiType(ui_file)

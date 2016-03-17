@@ -43,8 +43,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QVector>
 #include <QPointF>
 
-bool E5P_physicalToLogical(QVector<QPointF> pX, QPointF pP, QVector<double>& lam);
+bool E5P_physicalToLogical(const QVector<QPointF>& pX, QPointF pP, QVector<double>& lam);
 
-void E5P_centroid(QVector<QPointF> pX, double& cx, double& cy);
+void E5P_centroid(const QVector<QPointF>& pX, double& cx, double& cy);
 
 #endif // CRAYFISH_E5P_H
