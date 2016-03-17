@@ -30,6 +30,9 @@ from qgis.core import *
 from crayfish_gui_utils import QgsMessageBar, qgis_message_bar, defaultColorRamp
 from qgis.utils import iface
 
+from crayfish_layer_renderer import CrayfishViewerPluginLayerRenderer
+
+
 import crayfish
 
 import os
@@ -92,8 +95,6 @@ def gradientColorRampStop(ramp, i):
     else:  # QGIS 2.0 returns list of structures
       return (stops[i].offset, stops[i].color)
 
-
-
 class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     LAYER_TYPE="crayfish_viewer"
@@ -110,6 +111,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         }
 
         self.lockCurrent = True
+
+        self.renderer = None
 
         # cache dataset objects - we associate further properties to them
         # so we don't want the object to be deleted while this layer is alive
@@ -193,7 +196,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         elif e == crayfish.Err_UnknownFormat:
           qgis_message_bar.pushMessage("Crayfish", "Mesh file format not recognized (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
         # TODO register other errors
-        
+
     def currentDataSet(self):
         return self.mesh.dataset(self.current_ds_index)
 
@@ -621,73 +624,9 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         return cm
 
-
-    def draw(self, rendererContext):
-
-        mapToPixel = rendererContext.mapToPixel()
-        pixelSize = mapToPixel.mapUnitsPerPixel()
-        ct = rendererContext.coordinateTransform()
-        extent = rendererContext.extent()  # this is extent in layer's coordinate system - but we need
-        if ct:
-          # TODO: need a proper way how to get visible extent without using map canvas from interface
-          if iface.mapCanvas().isDrawing():
-            extent = iface.mapCanvas().extent()
-          else:
-            extent = ct.transformBoundingBox(extent)  # TODO: this is just approximate :-(
-        topleft = mapToPixel.transform(extent.xMinimum(), extent.yMaximum())
-        bottomright = mapToPixel.transform(extent.xMaximum(), extent.yMinimum())
-        width = (bottomright.x() - topleft.x())
-        height = (bottomright.y() - topleft.y())
-
-        # TODO: this code should be outside of rendering loop
-        self.mesh.set_destination_crs(ct.destCRS().toProj4() if ct else None)
-
-        if False:
-            print '\n'
-            print 'About to render with the following parameters:'
-            print '\tExtent:\t%f,%f - %f,%f\n' % (extent.xMinimum(),extent.yMinimum(),extent.xMaximum(),extent.yMaximum())
-            print '\tWidth:\t' + str(width) + '\n'
-            print '\tHeight:\t' + str(height) + '\n'
-            print '\tXMin:\t' + str(extent.xMinimum()) + '\n'
-            print '\tYMin:\t' + str(extent.yMinimum()) + '\n'
-            print '\tPixSz:\t' + str(pixelSize) + '\n'
-
-        rconfig = crayfish.RendererConfig()
-        rconfig.set_output_mesh(self.mesh)
-
-        dsC = self.currentContourDataSet()
-        if dsC:
-          rconfig.set_output_contour(self.currentContourOutput())
-          for k,v in dsC.config.iteritems():
-            if k.startswith("c_"):
-              rconfig[k] = v
-
-        dsV = self.currentVectorDataSet()
-        if dsV:
-          rconfig.set_output_vector(self.currentVectorOutput())
-          for k,v in dsV.config.iteritems():
-            if k.startswith("v_"):
-              rconfig[k] = v
-
-        rconfig.set_view((int(width),int(height)), (extent.xMinimum(),extent.yMinimum()), pixelSize)
-        for k,v in self.config.iteritems():
-          rconfig[k] = v
-        img = QImage(width,height, QImage.Format_ARGB32)
-        img.fill(0)
-
-        r = crayfish.Renderer(rconfig, img)
-        r.draw()
-
-        # img now contains the render of the crayfish layer, merge it
-
-        painter = rendererContext.painter()
-        rasterScaleFactor = rendererContext.rasterScaleFactor()
-        invRasterScaleFactor = 1.0/rasterScaleFactor
-        painter.save()
-        painter.scale(invRasterScaleFactor, invRasterScaleFactor)
-        painter.drawImage(0, 0, img)
-        painter.restore()
-        return True
+    def createMapRenderer(self, rendererContext):
+        self.renderer = CrayfishViewerPluginLayerRenderer(self, rendererContext)
+        return self.renderer
 
     def identify(self, pt):
         """

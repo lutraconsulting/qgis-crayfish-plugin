@@ -262,6 +262,14 @@ QStringList read2DFlowAreasNames(HdfGroup gGeom2DFlowAreas) {
     return names;
 }
 
+static void setProjection(Mesh* mesh, HdfFile hdfFile) {
+    try {
+        QString proj_wkt = openHdfAttribute(hdfFile, "Projection");
+        mesh->setSourceCrsFromWKT(proj_wkt);
+    }
+    catch (LoadStatus::Error error) { /* projection not set */}
+}
+
 Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
 {
     if (status) status->clear();
@@ -344,8 +352,7 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
 
         mesh = new Mesh(nodes, elements);
         // Get projection
-        QString proj_wkt = openHdfAttribute(hdfFile, "Projection");
-        mesh->setSourceCrsFromWKT(proj_wkt);
+        setProjection(mesh, hdfFile);
 
         //Elevation
         ElementOutput* bed_elevation = readBedElevation(mesh, fileName, gArea, nElems);
