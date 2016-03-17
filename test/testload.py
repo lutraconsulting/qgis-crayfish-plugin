@@ -124,11 +124,23 @@ class TestCrayfishLoad(unittest.TestCase):
     self.assertEqual(m.dataset_count(), 1)
     ds = m.dataset(0)
     self.assertEqual(ds.type(), crayfish.DS_Scalar)
-    print ds.output_count
     self.assertEqual(ds.output_count(), 31)
     o = ds.output(0)
     self.assertEqual(o.time(), 1008072.0)
     self.assertEqual(o.value(1), 22952.0)
+
+  def test_load_hec2d_file(self):
+    m = crayfish.Mesh(TEST_DIR + "/test.p01.hdf")
+    self.assertEqual(m.dataset_count(), 5)
+
+    self.assertEqual(m.dataset(0).type(), crayfish.DS_Bed)
+    self.assertEqual(m.dataset(1).type(), crayfish.DS_Scalar)
+
+    ds = m.dataset(1)
+    self.assertEqual(ds.output_count(), 41)
+    o = ds.output(0)
+    self.assertEqual(o.time(), 0.0)
+    self.assertEqual(o.value(1), 9.699999809265137)
 
 if __name__ == '__main__':
   unittest.main()
