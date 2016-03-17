@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_e2l.h"
 #include "crayfish_e3t.h"
 #include "crayfish_e4q.h"
+#include "crayfish_e5p.h"
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
 
@@ -217,7 +218,27 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
   const Mesh* mesh = output->dataSet->mesh();
   const Element& elem = mesh->elements()[elementIndex];
 
-  if (elem.eType == Element::E4Q)
+  if (elem.eType == Element::E5P)
+  {
+    const Node* nodes = projectedNodes();
+    QVector<QPointF> pX(5);
+    QVector<double> lam(5);
+
+    for (int i=0; i<5; i++) {
+        pX[i] = nodes[elem.p[i]].toPointF();
+    }
+
+    if (!E5P_physicalToLogical(pX, QPointF(x, y), lam))
+      return false;
+
+    *value = 0;
+    for (int i=0; i<5; i++) {
+        *value += lam[i] * accessor->value( elem.p[i] );
+    }
+
+    return true;
+  }
+  else if (elem.eType == Element::E4Q)
   {
     int e4qIndex = mE4QtmpIndex[elementIndex];
     E4Qtmp& e4q = mE4Qtmp[e4qIndex];
@@ -309,7 +330,23 @@ bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, dou
   const Mesh* mesh = output->dataSet->mesh();
   const Element& elem = mesh->elements()[elementIndex];
 
-  if (elem.eType == Element::E4Q)
+  if (elem.eType == Element::E5P)
+    {
+      const Node* nodes = projectedNodes();
+      QVector<QPointF> pX(5);
+      QVector<double> lam(5);
+
+      for (int i=0; i<5; i++) {
+          pX[i] = nodes[elem.p[i]].toPointF();
+      }
+
+      if (!E5P_physicalToLogical(pX, QPointF(x, y), lam))
+        return false;
+
+      *value = accessor->value(elementIndex);
+      return true;
+    }
+  else if (elem.eType == Element::E4Q)
   {
     int e4qIndex = mE4QtmpIndex[elementIndex];
     E4Qtmp& e4q = mE4Qtmp[e4qIndex];
@@ -638,17 +675,28 @@ bool Mesh::hasProjection() const
 void Mesh::elementCentroid(int elemIndex, double& cx, double& cy) const
 {
   const Element& e = mElems[elemIndex];
-  if (e.eType == Element::E3T)
+
+  if (e.eType == Element::E5P)
   {
     const Node* nodes = projectedNodes();
-    E3T_centroid(nodes[e.p[0]].toPointF(), nodes[e.p[1]].toPointF(), nodes[e.p[2]].toPointF(), cx, cy);
+    QVector<QPointF> pX(5);
+    for (int i=0; i<5; i++) {
+        pX[i] = nodes[e.p[i]].toPointF();
+    }
+    E5P_centroid(pX, cx, cy);
   }
   else if (e.eType == Element::E4Q)
   {
     int e4qIndex = mE4QtmpIndex[elemIndex];
     E4Qtmp& e4q = mE4Qtmp[e4qIndex];
     E4Q_centroid(e4q, cx, cy);
-  } else if (e.eType == Element::E2L)
+  }
+  else if (e.eType == Element::E3T)
+  {
+    const Node* nodes = projectedNodes();
+    E3T_centroid(nodes[e.p[0]].toPointF(), nodes[e.p[1]].toPointF(), nodes[e.p[2]].toPointF(), cx, cy);
+  }
+  else if (e.eType == Element::E2L)
   {
     const Node* nodes = projectedNodes();
     E2L_centroid(nodes[e.p[0]].toPointF(), nodes[e.p[1]].toPointF(), cx, cy);

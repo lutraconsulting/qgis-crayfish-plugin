@@ -127,7 +127,16 @@ void Renderer::drawMesh()
     if( elemOutsideView(i) )
         continue;
 
-    if (elem.eType == Element::E4Q)
+    if (elem.eType == Element::E5P)
+    {
+      pts[0] = pts[5] = realToPixel( elem.p[0] ); // first and last point
+      pts[1] = realToPixel( elem.p[1] );
+      pts[2] = realToPixel( elem.p[2] );
+      pts[3] = realToPixel( elem.p[3] );
+      pts[4] = realToPixel( elem.p[4] );
+      p.drawPolyline(pts, 6);
+    }
+    else if (elem.eType == Element::E4Q)
     {
       pts[0] = pts[4] = realToPixel( elem.p[0] ); // first and last point
       pts[1] = realToPixel( elem.p[1] );
