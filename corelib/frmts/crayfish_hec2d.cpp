@@ -326,7 +326,9 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
             elemPtr->p[1] = elem_nodes[edims[1]*e + 1];
 
             if (idx2 == -1) {
-                elemPtr->eType = Element::E2L;
+                // transform lines to malformed triangles
+                elemPtr->eType = Element::E3T;
+                elemPtr->p[2] = elemPtr->p[0];
             } else if (idx3 == -1) { // TRIANGLE
                 elemPtr->eType = Element::E3T;
                 elemPtr->p[2] = idx2;

@@ -66,11 +66,10 @@ struct Element
     {
       Undefined,
       E4Q,
-      E3T,
-      E2L
+      E3T
     };
 
-    int nodeCount() const { switch (eType) { case E4Q: return 4; case E3T: return 3; case E2L: return 2;  default: return 0; } }
+    int nodeCount() const { switch (eType) { case E4Q: return 4; case E3T: return 3; default: return 0; } }
     bool isDummy() const { return eType == Undefined; }
 
     int id;        //!< just a reference to the ID in the input file (internally we use indices)
