@@ -142,6 +142,12 @@ void Renderer::drawMesh()
       pts[2] = realToPixel( elem.p[2] );
       p.drawPolyline(pts, 4);
     }
+    else if (elem.eType == Element::E2L)
+    {
+      pts[0] = realToPixel( elem.p[0] );
+      pts[1] = realToPixel( elem.p[1] );
+      p.drawPolyline(pts, 2);
+    }
   }
 }
 

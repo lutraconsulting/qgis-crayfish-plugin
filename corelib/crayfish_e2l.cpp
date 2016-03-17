@@ -1,41 +1,32 @@
 #include "crayfish_e2l.h"
-
+#include "math.h"
 #include <QPointF>
 #include <QVector2D>
+#include <limits>
 
-bool E2L_physicalToBarycentric(QPointF pA, QPointF pB, QPointF pC, QPointF pP, double& lam1, double& lam2, double& lam3)
+bool E2L_physicalToLogical(QPointF pA, QPointF pB, QPointF pP, double& lam)
 {
-  if (pA == pB || pA == pC || pB == pC)
-    return false; // this is not a valid triangle!
+  if (pA == pB)
+    return false; // this is not a valid line!
 
-  // Compute vectors
-  QVector2D v0( pC - pA );
-  QVector2D v1( pB - pA );
-  QVector2D v2( pP - pA );
+  //distance from pA
+  double vBA = QVector2D(pB-pA).length();
+  double vPA = QVector2D(pP-pA).length();
+  double vPB = QVector2D(pP-pB).length();
+  double eps = std::numeric_limits<double>::min();
 
-  // Compute dot products
-  double dot00 = QVector2D::dotProduct(v0, v0);
-  double dot01 = QVector2D::dotProduct(v0, v1);
-  double dot02 = QVector2D::dotProduct(v0, v2);
-  double dot11 = QVector2D::dotProduct(v1, v1);
-  double dot12 = QVector2D::dotProduct(v1, v2);
 
-  // Compute barycentric coordinates
-  double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
-  lam1 = (dot11 * dot02 - dot01 * dot12) * invDenom;
-  lam2 = (dot00 * dot12 - dot01 * dot02) * invDenom;
-  lam3 = 1.0 - lam1 - lam2;
-
-  // Return if POI is outside triangle
-  if( (lam1 < 0) || (lam2 < 0) || (lam3 < 0) ){
-    return false;
+  if (fabs(vBA - vPA - vPB) > eps) {
+      // not on line
+      return false;
   }
 
+  lam = vPA/vBA;
   return true;
 }
 
-void E2L_centroid(QPointF pA, QPointF pB, QPointF pC, double& cx, double& cy)
+void E2L_centroid(QPointF pA, QPointF pB, double& cx, double& cy)
 {
-  cx = (pA.x() + pB.x() + pC.x())/3.;
-  cy = (pA.y() + pB.y() + pC.y())/3.;
+  cx = (pA.x() + pB.x())/2.;
+  cy = (pA.y() + pB.y())/2.;
 }

@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_mesh.h"
 
+#include "crayfish_e2l.h"
 #include "crayfish_e3t.h"
 #include "crayfish_e4q.h"
 #include "crayfish_dataset.h"
@@ -271,6 +272,30 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
     return true;
 
   }
+  else if (elem.eType == Element::E2L)
+  {
+
+    /*
+        So - we're interpoalting a 2-noded line
+    */
+    const Node* nodes = projectedNodes();
+    double lam;
+
+    if (!E2L_physicalToLogical(nodes[elem.p[0]].toPointF(),
+                               nodes[elem.p[1]].toPointF(),
+                               QPointF(x, y),
+                               lam))
+      return false;
+
+    // Now interpolate
+
+    double z1 = accessor->value( elem.p[0] );
+    double z2 = accessor->value( elem.p[1] );
+
+    *value = z1 + lam * (z2 - z1);
+    return true;
+
+  }
   else
   {
     Q_ASSERT(0 && "unknown element type");
@@ -313,6 +338,23 @@ bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, dou
 
     // Now interpolate
 
+    *value = accessor->value(elementIndex);
+    return true;
+
+  }
+  else if (elem.eType == Element::E2L)
+  {
+    const Node* nodes = projectedNodes();
+
+    double lam;
+    if (!E2L_physicalToLogical(nodes[elem.p[0]].toPointF(),
+                               nodes[elem.p[1]].toPointF(),
+                               QPointF(x, y),
+                               lam))
+      return false;
+
+
+    // Now interpolate
     *value = accessor->value(elementIndex);
     return true;
 
@@ -606,6 +648,10 @@ void Mesh::elementCentroid(int elemIndex, double& cx, double& cy) const
     int e4qIndex = mE4QtmpIndex[elemIndex];
     E4Qtmp& e4q = mE4Qtmp[e4qIndex];
     E4Q_centroid(e4q, cx, cy);
+  } else if (e.eType == Element::E2L)
+  {
+    const Node* nodes = projectedNodes();
+    E2L_centroid(nodes[e.p[0]].toPointF(), nodes[e.p[1]].toPointF(), cx, cy);
   }
   else
     Q_ASSERT(0 && "element not supported");

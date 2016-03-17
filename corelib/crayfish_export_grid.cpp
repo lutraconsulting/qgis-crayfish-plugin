@@ -119,6 +119,7 @@ static RawData* exportRawData(const Output* output, double mupp)
   // and we want them to be on top of the terrain (quads)
   exportRawDataElements(Element::E4Q, output, rd, xform);
   exportRawDataElements(Element::E3T, output, rd, xform);
+  exportRawDataElements(Element::E2L, output, rd, xform);
 
   return rd;
 }
