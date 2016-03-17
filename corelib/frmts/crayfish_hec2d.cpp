@@ -335,31 +335,25 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
             if (nValidVertexes == 2) { // Line
                 elemPtr->setEType(Element::E2L);
                 elemPtr->setP(idx);
-            }
-            /*
-            } else if (idx[3] == -1) { // TRIANGLE
-                elemPtr->eType = Element::E3T;
+            } else if (nValidVertexes == 3) { // TRIANGLE
+                elemPtr->setEType(Element::E3T);
                 elemPtr->setP(idx);
-            } else if (idx[4] == -1) { // RECTANGLE
-                elemPtr->eType = Element::E4Q;
-                elemPtr->p[2] = idx2;
-                elemPtr->p[3] = idx3;
+            }
+/*            else if (nValidVertexes == 4) { // RECTANGLE
+                elemPtr->setEType(Element::E4Q);
+                elemPtr->setP(idx);
 
                 // Few points here are ordered clockwise
                 // and few anti-clockwise
                 // WE need clockwise to work
                 if (! E4Q_isOrientedOk(*elemPtr, nodes.data())) {
                     // Swap
-                    float tmp = elemPtr->p[1];
-                    elemPtr->p[1] = elemPtr->p[3];
-                    elemPtr->p[3] = tmp;
+                    float tmp = elemPtr->p(1);
+                    elemPtr->setP(1, elemPtr->p(3));
+                    elemPtr->setP(3, tmp);
                 }
-            } else if (idx5 == -1) { // polygon with 5 nodes
-                elemPtr->eType = Element::E5P;
-                elemPtr->p[2] = idx2;
-                elemPtr->p[3] = idx3;
-                elemPtr->p[4] = idx4;
-                */
+                }
+*/
             else {
                 // here falls also all general polygons
                 elemPtr->setEType(Element::ENP, nValidVertexes);
