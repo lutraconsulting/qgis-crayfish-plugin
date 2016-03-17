@@ -319,7 +319,7 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
 
             elemPtr->setId(e);
             uint idx[8]; // there is up to 8 vertexes
-            int nValidVertexes = 0;
+            int nValidVertexes = 8;
             for (int fi=0; fi<8; ++fi)
             {
                 int elem_node_idx = elem_nodes[edims[1]*e + fi];

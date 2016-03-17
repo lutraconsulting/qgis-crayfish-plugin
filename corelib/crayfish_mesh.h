@@ -75,6 +75,9 @@ public:
       E2L
     };
 
+    Element(): mEType(Undefined), mP(4) {}
+    ~Element() {}
+
     int nodeCount() const { return mP.size(); }
     bool isDummy() const { return mEType == Undefined; }
     Type eType() const {return mEType;}

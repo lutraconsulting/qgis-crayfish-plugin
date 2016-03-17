@@ -430,6 +430,7 @@ bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, 
 
 static void updateBBox(BBox& bbox, const Element& elem, const Node* nodes)
 {
+  Q_ASSERT(elem.nodeCount() > 1);
   const Node& node0 = nodes[elem.p(0)];
 
   bbox.minX = node0.x;

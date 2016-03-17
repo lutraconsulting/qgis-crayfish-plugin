@@ -68,8 +68,8 @@ bool ENP_physicalToLogical(const QVector<QPointF>& pX, QPointF pP, QVector<doubl
     }
 
     double weightSum = 0;
-    size_t prev = pX.size() -1;
-    size_t next = 1;
+    int prev = pX.size() -1;
+    int next = 1;
     for (int i=0; i<pX.size(); i++)
     {
         double cotPrev = ENP_contangent(pP, pX[i], pX[prev]);
