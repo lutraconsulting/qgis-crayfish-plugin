@@ -48,9 +48,9 @@ if len(sys.argv) > 1:
       print("  -pkg      Create a package for upload instead of installing")
       sys.exit(0)
 
-install_files = ['metadata.txt'] + glob.glob("*.py") + glob.glob("*.png") + glob.glob("illuvis/*.py") + glob.glob("doc/*")
+install_files = ['metadata.txt'] + glob.glob("*.py") + glob.glob("*.png") + glob.glob("illuvis/*.py") + glob.glob("doc/*") + glob.glob("ui/*")
 install_files.remove("install.py")  # exclude this file!
-install_dirs = ['illuvis', 'doc']
+install_dirs = ['illuvis', 'doc', 'ui']
 
 # add pyqtgraph
 for entry in os.walk('pyqtgraph'):
