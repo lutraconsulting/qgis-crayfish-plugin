@@ -339,21 +339,18 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
                 elemPtr->setEType(Element::E3T);
                 elemPtr->setP(idx);
             }
-/*            else if (nValidVertexes == 4) { // RECTANGLE
+            else if (nValidVertexes == 4) { // RECTANGLE
                 elemPtr->setEType(Element::E4Q);
                 elemPtr->setP(idx);
 
-                // Few points here are ordered clockwise
-                // and few anti-clockwise
-                // WE need clockwise to work
-                if (! E4Q_isOrientedOk(*elemPtr, nodes.data())) {
-                    // Swap
-                    float tmp = elemPtr->p(1);
-                    elemPtr->setP(1, elemPtr->p(3));
-                    elemPtr->setP(3, tmp);
+                // It seems that some polygons with 4 vertexes
+                // are triangles. In this case the E4Q elements
+                // are not properly working
+                if (! E4Q_isValid(*elemPtr, nodes.data())) {
+                    elemPtr->setEType(Element::ENP, nValidVertexes);
+                    elemPtr->setP(idx);
                 }
-                }
-*/
+             }
             else {
                 // here falls also all general polygons
                 elemPtr->setEType(Element::ENP, nValidVertexes);

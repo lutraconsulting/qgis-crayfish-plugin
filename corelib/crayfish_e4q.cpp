@@ -28,8 +28,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_e4q.h"
 
-bool E4Q_isOrientedOk(const Element& elem, Node* nodes)
+bool E4Q_isValid(const Element& elem, Node* nodes)
 {
+    // It may not be valid for several reasons, e.g
+    // lines are on line , so it is triangle with 4 vertexes
     E4Qtmp e4q;
     E4Q_computeMapping(elem, e4q, nodes);
     double Lx, Ly;
