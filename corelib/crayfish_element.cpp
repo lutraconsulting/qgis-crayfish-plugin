@@ -1,8 +1,4 @@
 #include "crayfish_element.h"
-#include "crayfish_e2l.h"
-#include "crayfish_e3t.h"
-#include "crayfish_e4q.h"
-#include "crayfish_eNp.h"
 
 Element::Element(): mEType(Undefined), mP(4) {}
 Element::~Element() {}

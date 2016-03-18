@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish.h"
 
-#include "crayfish_mesh_2dm.h"
+#include "frmts/crayfish_mesh_2dm.h"
 
 Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
 {

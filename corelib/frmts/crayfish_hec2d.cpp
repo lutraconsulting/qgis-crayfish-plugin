@@ -30,8 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_output.h"
 #include "crayfish_mesh.h"
 
-#include "crayfish_hdf5.h"
-#include "crayfish_e4q.h"
+#include "frmts/crayfish_hdf5.h"
+#include "elem/crayfish_e4q.h"
 
 #include <algorithm>
 
