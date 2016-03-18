@@ -65,9 +65,6 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         self.btnPlot.setIcon(QgsApplication.getThemeIcon("/histogram.png"))
         self.btnLockCurrent.setIcon(QgsApplication.getThemeIcon("/locked.svg"))
 
-        #initColorButton(self.btnMeshColor)
-        #self.btnMeshColor.setColorDialogOptions(QColorDialog.ShowAlphaChannel)
-
         self.setEnabled(False)
         self.vectorPropsDialog = None
         self.advancedColorMapDialog = None

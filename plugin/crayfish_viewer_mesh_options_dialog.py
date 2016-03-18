@@ -44,13 +44,17 @@ class CrayfishViewerMeshOptionsDialog(qtBaseClass, uiDialog):
         self.layer = layer
         self.redrawFunction = redrawFunction
 
+        self._init_color_buttons()
         self._load_from_config()
         self._connect_signals()
 
-    def _connect_signals(self):
+    def _init_color_buttons(self):
         initColorButton(self.borderColorButton)
         initColorButton(self.fillColorButton)
+        self.borderColorButton.setColorDialogOptions(QColorDialog.ShowAlphaChannel)
+        self.fillColorButton.setColorDialogOptions(QColorDialog.ShowAlphaChannel)
 
+    def _connect_signals(self):
         self.borderColorButton.colorChanged.connect(self.setMeshBorderColor)
         self.fillColorButton.colorChanged.connect(self.setMeshFillColor)
         self.elementLabelCheckBox.toggled.connect(self.setMeshElementLabel)

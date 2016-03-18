@@ -404,8 +404,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         meshElem.setAttribute("border-color", rgb2string(self.config["m_border_color"]))
         meshElem.setAttribute("border-width", int2string(self.config["m_border_width"]))
         meshElem.setAttribute("fill-color", rgb2string(self.config["m_fill_color"]))
-        meshElem.setAttribute("label-elements-enabled", rgb2string(self.config["m_label_elem"]))
-        meshElem.setAttribute("fill-enabled", rgb2string(self.config["m_fill_enabled"]))
+        meshElem.setAttribute("label-elements-enabled", "1" if self.config["m_label_elem"] else "0")
+        meshElem.setAttribute("fill-enabled", "1" if self.config["m_fill_enabled"] else "0")
         element.appendChild(meshElem)
 
         for i in range(self.mesh.dataset_count()):
