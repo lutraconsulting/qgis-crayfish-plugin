@@ -28,10 +28,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define CRAYFISH_RENDERER_H
 
 #include "crayfish_dataset.h"
-
+#include "crayfish_mesh.h"
 #include <QImage>
 #include <QSize>
-
+#include <QPolygonF>
 
 // TODO: use also directly for viewer rendering
 class MapToPixel
@@ -72,10 +72,11 @@ public:
 
   struct ConfigMesh
   {
-    ConfigMesh() : mRenderMesh(false), mMeshColor(Qt::black) {}
+    ConfigMesh() : mRenderMesh(false), mMeshColor(Qt::black), mRenderMeshLabels(false) {}
 
     bool mRenderMesh;   //!< whether to render the mesh as a wireframe
     QColor mMeshColor;  //!< color used for rendering of the wireframe
+    bool mRenderMeshLabels;  //!< whether to render the element ids in a mesh element's center
   };
 
   struct ConfigDataSet
@@ -155,8 +156,8 @@ public:
   void draw();
 
 protected:
-
   void drawMesh();
+  QPolygonF elementPolygonPixel(const Element& elem);
   void drawContourData(const Output* output);
   void drawVectorData(const Output* output);
   void drawVectorDataOnGrid(QPainter& p, const Output* output);

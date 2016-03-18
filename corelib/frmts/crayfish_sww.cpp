@@ -119,7 +119,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
   Node* nodesPtr = nodes.data();
   for (int i = 0; i < nPoints; ++i, ++nodesPtr)
   {
-    nodesPtr->id = i;
+    nodesPtr->setId(i);
     nodesPtr->x = px[i] + xLLcorner;
     nodesPtr->y = py[i] + yLLcorner;
   }
@@ -194,11 +194,9 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
 
   for (int i = 0; i < nVolumes; ++i, ++elementsPtr)
   {
-    elementsPtr->id = i;
-    elementsPtr->eType = Element::E3T;
-    elementsPtr->p[0] = pvolumes[3*i+0];
-    elementsPtr->p[1] = pvolumes[3*i+1];
-    elementsPtr->p[2] = pvolumes[3*i+2];
+    elementsPtr->setId(i);
+    elementsPtr->setEType(Element::E3T);
+    elementsPtr->setP(&pvolumes[3*i]);
   }
 
   delete [] pvolumes;
@@ -266,9 +264,9 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
     for (int elemidx = 0; elemidx < nVolumes; ++elemidx)
     {
       const Element& elem = mesh->elements()[elemidx];
-      float v0 = depths[elem.p[0]];
-      float v1 = depths[elem.p[1]];
-      float v2 = depths[elem.p[2]];
+      float v0 = depths[elem.p(0)];
+      float v1 = depths[elem.p(1)];
+      float v2 = depths[elem.p(2)];
       tos->active[elemidx] = v0 > DEPTH_THRESHOLD && v1 > DEPTH_THRESHOLD && v2 > DEPTH_THRESHOLD;
     }
     tod->active = tos->active;

@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QString>
 #include <QVector>
 
+#include "crayfish_element.h"
 
 struct BBox;
 struct E4Qtmp;
@@ -39,15 +40,17 @@ class ElementOutput;
 class Output;
 class NodeOutput;
 
-
 struct Node
 {
-    int id;    //!< just a reference to the ID in the input file (internally we use indices)
     double x;
     double y;
 
     bool operator==(const Node& other) const { return x == other.x && y == other.y; }
     QPointF toPointF() const { return QPointF(x,y); }
+    void setId(int id) {mId = id;}
+    int id() const {return mId;}
+private:
+    int mId;    //!< just a reference to the ID in the input file (internally we use indices)
 };
 
 struct BBox
@@ -59,24 +62,6 @@ struct BBox
 
   bool isPointInside(double x, double y) const { return x >= minX && x <= maxX && y >= minY && y <= maxY; }
 };
-
-struct Element
-{
-    enum Type
-    {
-      Undefined,
-      E4Q,
-      E3T
-    };
-
-    int nodeCount() const { switch (eType) { case E4Q: return 4; case E3T: return 3; default: return 0; } }
-    bool isDummy() const { return eType == Undefined; }
-
-    int id;        //!< just a reference to the ID in the input file (internally we use indices)
-    Type eType;
-    uint p[4];     //!< indices of nodes
-};
-
 
 /** core Mesh data structure: nodes + elements */
 class BasicMesh

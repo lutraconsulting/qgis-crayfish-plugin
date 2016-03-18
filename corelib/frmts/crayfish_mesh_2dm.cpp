@@ -121,11 +121,11 @@ Mesh* Crayfish::loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
       //  maxElemID = elemID;
 
       Element& elem = elements[elemIndex];
-      elem.id = elemID;
-      elem.eType = Element::E4Q;
+      elem.setId(elemID);
+      elem.setEType(Element::E4Q);
       // Right now we just store node IDs here - we will convert them to node indices afterwards
       for (int i = 0; i < 4; ++i)
-        elem.p[i] = chunks[i+2].toInt();
+        elem.setP(i, chunks[i+2].toInt());
 
       elemIndex++;
     }
@@ -145,12 +145,12 @@ Mesh* Crayfish::loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
       //  maxElemID = elemID;
 
       Element& elem = elements[elemIndex];
-      elem.id = elemID;
-      elem.eType = Element::E3T;
+      elem.setId(elemID);
+      elem.setEType(Element::E3T);
       // Right now we just store node IDs here - we will convert them to node indices afterwards
       for (int i = 0; i < 3; ++i)
-        elem.p[i] = chunks[i+2].toInt();
-      elem.p[3] = -1; // only three points
+        elem.setP(i, chunks[i+2].toInt());
+      elem.setP(3, -1); // only three points
 
       elemIndex++;
     }
@@ -174,7 +174,7 @@ Mesh* Crayfish::loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
       //if (elemID > maxElemID)
       //  maxElemID = elemID;
 
-      elements[elemIndex].eType = Element::Undefined;
+      elements[elemIndex].setEType(Element::Undefined);
 
       elemIndex++;
     }
@@ -195,7 +195,7 @@ Mesh* Crayfish::loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
       Q_ASSERT(nodeIndex < nodeCount);
 
       Node& n = nodes[nodeIndex];
-      n.id = nodeID;
+      n.setId(nodeID);
       n.x = chunks[2].toDouble();
       n.y = chunks[3].toDouble();
       o->values[nodeIndex] = chunks[4].toFloat();
@@ -215,15 +215,15 @@ Mesh* Crayfish::loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
     // Resolve node IDs in elements to node indices
     for (int nd = 0; nd < elem.nodeCount(); ++nd)
     {
-      int nodeID = elem.p[nd];
+      int nodeID = elem.p(nd);
       QMap<int, int>::const_iterator ni2i = nodeIDtoIndex.constFind(nodeID);
       if (ni2i != nodeIDtoIndex.end())
       {
-        elem.p[nd] = *ni2i; // convert from ID to index
+        elem.setP(nd, *ni2i); // convert from ID to index
       }
       else
       {
-        elem.eType = Element::Undefined; // mark element as unusable
+        elem.setEType(Element::Undefined); // mark element as unusable
 
         if (status) status->mLastWarning = LoadStatus::Warn_ElementWithInvalidNode;
       }
@@ -231,14 +231,14 @@ Mesh* Crayfish::loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
 
     // check validity of the triangle
     // for now just checking if we have three distinct nodes
-    if (elem.eType == Element::E3T)
+    if (elem.eType() == Element::E3T)
     {
-      const Node& n1 = nodes[elem.p[0]];
-      const Node& n2 = nodes[elem.p[1]];
-      const Node& n3 = nodes[elem.p[2]];
+      const Node& n1 = nodes[elem.p(0)];
+      const Node& n2 = nodes[elem.p(1)];
+      const Node& n3 = nodes[elem.p(2)];
       if (n1 == n2 || n1 == n3 || n2 == n3)
       {
-        elem.eType = Element::Undefined; // mark element as unusable
+        elem.setEType(Element::Undefined); // mark element as unusable
 
         if (status) status->mLastWarning = LoadStatus::Warn_InvalidElements;
       }

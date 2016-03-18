@@ -261,7 +261,7 @@ QVector<int> _mapIDToIndex(const T& items)
   int maxID = 0;
   for (int i = 0; i < items.count(); ++i)
   {
-    int itemID = items[i].id;
+    int itemID = items[i].id();
     if (itemID > maxID)
       maxID = itemID;
   }
@@ -269,7 +269,7 @@ QVector<int> _mapIDToIndex(const T& items)
   QVector<int> map(maxID, -1);
   for (int i = 0; i < items.count(); ++i)
   {
-    int itemID = items[i].id;
+    int itemID = items[i].id();
     map[itemID-1] = i;
   }
 

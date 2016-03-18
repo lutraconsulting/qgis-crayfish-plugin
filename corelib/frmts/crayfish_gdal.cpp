@@ -99,7 +99,7 @@ void CrayfishGDALReader::initNodes(Mesh::Nodes& nodes) {
    {
        for (uint x = 0; x < mXSize; ++x, ++nodesPtr)
        {
-           nodesPtr->id = x + mXSize*y;
+           nodesPtr->setId(x + mXSize*y);
            nodesPtr->x = mGT[0] + (x+0.5)*mGT[1] + (y+0.5)*mGT[2];
            nodesPtr->y = mGT[3] + (x+0.5)*mGT[4] + (y+0.5)*mGT[5];
        }
@@ -112,12 +112,12 @@ void CrayfishGDALReader::initElements(Mesh::Elements& elements) {
    {
        for (uint x = 0; x < mXSize-1; ++x, ++elementsPtr)
        {
-           elementsPtr->id = x + mXSize*y;
-           elementsPtr->eType = Element::E4Q;
-           elementsPtr->p[1] = x + 1 + mXSize*(y + 1);
-           elementsPtr->p[2] = x + 1 + mXSize*y;
-           elementsPtr->p[3] = x + mXSize*y;
-           elementsPtr->p[0] = x + mXSize*(y + 1);
+           elementsPtr->setId(x + mXSize*y);
+           elementsPtr->setEType(Element::E4Q);
+           elementsPtr->setP(1, x + 1 + mXSize*(y + 1));
+           elementsPtr->setP(2, x + 1 + mXSize*y);
+           elementsPtr->setP(3, x + mXSize*y);
+           elementsPtr->setP(0, x + mXSize*(y + 1));
        }
    }
 }
@@ -295,10 +295,10 @@ void CrayfishGDALReader::activateElements(NodeOutput* tos){
    {
        Element elem = mMesh->elements().at(idx);
 
-       if (is_nodata(tos->values[elem.p[0]]) ||
-           is_nodata(tos->values[elem.p[1]]) ||
-           is_nodata(tos->values[elem.p[2]]) ||
-           is_nodata(tos->values[elem.p[3]]))
+       if (is_nodata(tos->values[elem.p(0)]) ||
+           is_nodata(tos->values[elem.p(1)]) ||
+           is_nodata(tos->values[elem.p(2)]) ||
+           is_nodata(tos->values[elem.p(3)]))
        {
            active[idx] = 0; //NOT ACTIVE
        } else {

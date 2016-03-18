@@ -30,8 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_output.h"
 #include "crayfish_mesh.h"
 
-#include "crayfish_hdf5.h"
-#include "crayfish_e4q.h"
+#include "frmts/crayfish_hdf5.h"
+#include "elem/crayfish_e4q.h"
 
 #include <algorithm>
 
@@ -303,7 +303,7 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         Node* nodesPtr = nodes.data();
         for (int n = 0; n < nNodes; ++n, ++nodesPtr)
         {
-            nodesPtr->id = n;
+            nodesPtr->setId(n);
             nodesPtr->x = coords[cdims[1]*n];
             nodesPtr->y = coords[cdims[1]*n+1];
         }
@@ -317,38 +317,43 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         for (int e = 0; e < nElems; ++e, ++elemPtr)
         {
 
-            elemPtr->id = e;
+            elemPtr->setId(e);
+            uint idx[8]; // there is up to 8 vertexes
+            int nValidVertexes = 8;
+            for (int fi=0; fi<8; ++fi)
+            {
+                int elem_node_idx = elem_nodes[edims[1]*e + fi];
 
-            int idx2 = elem_nodes[edims[1]*e + 2];
-            int idx3 = elem_nodes[edims[1]*e + 3];
-
-            elemPtr->p[0] = elem_nodes[edims[1]*e + 0];
-            elemPtr->p[1] = elem_nodes[edims[1]*e + 1];
-
-            if (idx2 == -1) {
-                // transform lines to malformed triangles
-                elemPtr->eType = Element::E3T;
-                elemPtr->p[2] = elemPtr->p[0];
-            } else if (idx3 == -1) { // TRIANGLE
-                elemPtr->eType = Element::E3T;
-                elemPtr->p[2] = idx2;
-            } else {
-                // RECTANGLE
-                // Note that here falls also all general polygons with >4 vertexes
-                // where we do not yet have appropriate mesh element
-                elemPtr->eType = Element::E4Q;
-                elemPtr->p[2] = idx2;
-                elemPtr->p[3] = idx3;
-
-                // Few points here are ordered clockwise
-                // and few anti-clockwise
-                // WE need clockwise to work
-                if (! E4Q_isOrientedOk(*elemPtr, nodes.data())) {
-                    // Swap
-                    float tmp = elemPtr->p[1];
-                    elemPtr->p[1] = elemPtr->p[3];
-                    elemPtr->p[3] = tmp;
+                if (elem_node_idx == -1) {
+                    nValidVertexes = fi;
+                    break;
+                } else {
+                   idx[fi] = elem_node_idx;
                 }
+            }
+
+            if (nValidVertexes == 2) { // Line
+                elemPtr->setEType(Element::E2L);
+                elemPtr->setP(idx);
+            } else if (nValidVertexes == 3) { // TRIANGLE
+                elemPtr->setEType(Element::E3T);
+                elemPtr->setP(idx);
+            }
+            else if (nValidVertexes == 4) { // RECTANGLE
+                elemPtr->setEType(Element::E4Q);
+                elemPtr->setP(idx);
+
+                // It seems that some polygons with 4 vertexes
+                // are triangles. In this case the E4Q elements
+                // are not properly working
+                if (! E4Q_isValid(*elemPtr, nodes.data())) {
+                    elemPtr->setEType(Element::ENP, nValidVertexes);
+                    elemPtr->setP(idx);
+                }
+             }
+            else {
+                elemPtr->setEType(Element::ENP, nValidVertexes);
+                elemPtr->setP(idx);
             }
         }
 

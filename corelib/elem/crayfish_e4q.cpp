@@ -28,8 +28,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_e4q.h"
 
-bool E4Q_isOrientedOk(const Element& elem, Node* nodes)
+bool E4Q_isValid(const Element& elem, Node* nodes)
 {
+    // It may not be valid for several reasons, e.g
+    // lines are on line , so it is triangle with 4 vertexes
     E4Qtmp e4q;
     E4Q_computeMapping(elem, e4q, nodes);
     double Lx, Ly;
@@ -43,12 +45,12 @@ http://www.particleincell.com/blog/2012/quad-interpolation/
 
 void E4Q_computeMapping(const Element& elem, E4Qtmp& e4q, const Node* nodes)
 {
-  Q_ASSERT(elem.eType == Element::E4Q);
+  Q_ASSERT(elem.eType() == Element::E4Q);
 
-  const Node& n1 = nodes[elem.p[0]];
-  const Node& n2 = nodes[elem.p[1]];
-  const Node& n3 = nodes[elem.p[2]];
-  const Node& n4 = nodes[elem.p[3]];
+  const Node& n1 = nodes[elem.p(0)];
+  const Node& n2 = nodes[elem.p(1)];
+  const Node& n3 = nodes[elem.p(2)];
+  const Node& n4 = nodes[elem.p(3)];
 
   e4q.a[0] = n1.x;
   e4q.a[1] = - n1.x + n2.x;
@@ -136,10 +138,10 @@ bool lineSegmentIntersection(double x[], double y[])
 
 bool E4Q_isComplex(const Element& elem, Node* nodes)
 {
-  const Node& n1 = nodes[elem.p[0]];
-  const Node& n2 = nodes[elem.p[1]];
-  const Node& n3 = nodes[elem.p[2]];
-  const Node& n4 = nodes[elem.p[3]];
+  const Node& n1 = nodes[elem.p(0)];
+  const Node& n2 = nodes[elem.p(1)];
+  const Node& n3 = nodes[elem.p(2)];
+  const Node& n4 = nodes[elem.p(3)];
 
   // test crossing p1-p2 vs p3-p4
   double xA[4] = { n1.x, n2.x, n3.x, n4.x };

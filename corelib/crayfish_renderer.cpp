@@ -27,14 +27,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_renderer.h"
 
 #include "crayfish_dataset.h"
-#include "crayfish_e3t.h"
-#include "crayfish_e4q.h"
 #include "crayfish_mesh.h"
 #include "crayfish_output.h"
 
 #include <QImage>
 #include <QPainter>
 #include <QVector2D>
+#include <QPolygonF>
 
 Renderer::Renderer(const Config& cfg, QImage& img)
   : mCfg(cfg)
@@ -107,6 +106,24 @@ void Renderer::draw()
     drawVectorData(mOutputVector);
 }
 
+QPolygonF Renderer::elementPolygonPixel(const Element& elem)
+{
+    int nPoints = elem.nodeCount();
+    QPolygonF pts(nPoints + 1);
+    for (int i=0; i<nPoints; ++i)
+    {
+        pts[i] = realToPixel( elem.p(i) );
+    }
+
+    if (elem.eType() != Element::E2L)
+    {
+        pts.resize(nPoints); //remove last one
+    } else {
+        pts[nPoints] = pts[0]; // last one == first one
+    }
+
+    return pts;
+}
 
 void Renderer::drawMesh()
 {
@@ -115,7 +132,7 @@ void Renderer::drawMesh()
   QPainter p(&mImage);
   p.setRenderHint(QPainter::Antialiasing);
   p.setPen(QPen(QBrush(mCfg.mesh.mMeshColor),0.5));
-  QPoint pts[5];
+  p.setFont(QFont(""));
   const Mesh::Elements& elems = mMesh->elements();
   for (int i=0; i < elems.count(); ++i)
   {
@@ -127,20 +144,25 @@ void Renderer::drawMesh()
     if( elemOutsideView(i) )
         continue;
 
-    if (elem.eType == Element::E4Q)
+    QPolygonF pts = elementPolygonPixel(elem);
+    p.drawPolyline(pts.constData(), pts.size());
+
+    if (mCfg.mesh.mRenderMeshLabels)
     {
-      pts[0] = pts[4] = realToPixel( elem.p[0] ); // first and last point
-      pts[1] = realToPixel( elem.p[1] );
-      pts[2] = realToPixel( elem.p[2] );
-      pts[3] = realToPixel( elem.p[3] );
-      p.drawPolyline(pts, 5);
-    }
-    else if (elem.eType == Element::E3T)
-    {
-      pts[0] = pts[3] = realToPixel( elem.p[0] ); // first and last point
-      pts[1] = realToPixel( elem.p[1] );
-      pts[2] = realToPixel( elem.p[2] );
-      p.drawPolyline(pts, 4);
+        double cx, cy;
+        mMesh->elementCentroid(i, cx, cy);
+        QString txt = QString::number(elem.id());
+        QRect bb = p.fontMetrics().boundingRect(txt);
+        QPointF xy = mtp.realToPixel(cx, cy);
+        bb.moveTo(xy.x() - bb.width()/2.0, xy.y() - bb.height()/2.0);
+
+        if (pts.containsPoint(bb.bottomLeft(), Qt::WindingFill) &&
+            pts.containsPoint(bb.bottomRight(), Qt::WindingFill) &&
+            pts.containsPoint(bb.topLeft(), Qt::WindingFill) &&
+            pts.containsPoint(bb.topRight(), Qt::WindingFill))
+        {
+            p.drawText(bb, Qt::AlignCenter, txt);
+        }
     }
   }
 }
@@ -152,8 +174,10 @@ void Renderer::drawContourData(const Output* output)
 {
   // Render E4Q before E3T
   QVector<Element::Type> typesToRender;
+  typesToRender.append(Element::ENP);
   typesToRender.append(Element::E4Q);
   typesToRender.append(Element::E3T);
+  typesToRender.append(Element::E2L);
   QVectorIterator<Element::Type> it(typesToRender);
   while(it.hasNext())
   {
@@ -163,7 +187,7 @@ void Renderer::drawContourData(const Output* output)
     for(int i = 0; i < elems.count(); i++){
 
       const Element& elem = elems[i];
-      if( elem.eType != elemTypeToRender )
+      if( elem.eType() != elemTypeToRender )
           continue;
 
       if( elem.isDummy() )
@@ -495,7 +519,6 @@ bool Renderer::elemOutsideView(uint i)
   // Determine if this element is visible within the view
   return bbox.maxX < mLlX || bbox.minX > mUrX || bbox.minY > mUrY || bbox.maxY < mLlY;
 }
-
 
 QPoint Renderer::realToPixel(int nodeIndex)
 {

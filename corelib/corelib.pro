@@ -70,16 +70,18 @@ TEMPLATE = lib
 DEFINES += CRAYFISH_LIBRARY
 
 SOURCES += crayfish.cpp \
-    crayfish_e4q.cpp \
     crayfish_colormap.cpp \
     crayfish_dataset.cpp \
     crayfish_mesh.cpp \
     crayfish_capi.cpp \
     crayfish_renderer.cpp \
-    crayfish_e3t.cpp \
-    crayfish_export_grid.cpp
-
-SOURCES += frmts/crayfish_gdal.cpp \
+    crayfish_export_grid.cpp \
+    crayfish_element.cpp \
+    elem/crayfish_eNp.cpp \
+    elem/crayfish_e4q.cpp \
+    elem/crayfish_e3t.cpp \
+    elem/crayfish_e2l.cpp \
+    frmts/crayfish_gdal.cpp \
     frmts/crayfish_dataset_dat.cpp \
     frmts/crayfish_dataset_xmdf.cpp \
     frmts/crayfish_grib.cpp \
@@ -89,17 +91,20 @@ SOURCES += frmts/crayfish_gdal.cpp \
     frmts/crayfish_mesh_2dm.cpp
 
 HEADERS += crayfish.h \
-    crayfish_e4q.h \
     crayfish_colormap.h \
     crayfish_dataset.h \
     crayfish_output.h \
     crayfish_mesh.h \
     crayfish_gdal.h \
-    crayfish_mesh_2dm.h \
     crayfish_capi.h \
-    crayfish_hdf5.h \
     crayfish_renderer.h \
-    crayfish_e3t.h
+    crayfish_element.h\
+    elem/crayfish_eNp.h \
+    elem/crayfish_e4q.h \
+    elem/crayfish_e3t.h \
+    elem/crayfish_e2l.h \
+    frmts/crayfish_mesh_2dm.h \
+    frmts/crayfish_hdf5.h 
 
 DESTDIR = $$PWD/../plugin
 

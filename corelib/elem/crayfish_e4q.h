@@ -52,7 +52,7 @@ bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx,
 bool E4Q_isComplex(const Element& elem, Node* nodes);
 
 //! check if quadrilateral has correct orientation (needs clockwise)
-bool E4Q_isOrientedOk(const Element& elem, Node* nodes);
+bool E4Q_isValid(const Element& elem, Node* nodes);
 
 //! calculate centroid of the quadrilateral
 void E4Q_centroid(const E4Qtmp& e4q, double& cx, double& cy);
