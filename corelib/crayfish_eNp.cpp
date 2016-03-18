@@ -80,20 +80,46 @@ bool ENP_physicalToLogical(const QPolygonF& pX, QPointF pP, QVector<double>& lam
     return true;
 }
 
+static void ENP_centroid_step(const QPolygonF& pX, double& cx, double& cy, double& signedArea, int i, int i1)
+{
+    double x0 = 0.0; // Current vertex X
+    double y0 = 0.0; // Current vertex Y
+    double x1 = 0.0; // Next vertex X
+    double y1 = 0.0; // Next vertex Y
+    double a = 0.0;  // Partial signed area
+
+    x0 = pX[i].x();
+    y0 = pX[i].y();
+    x1 = pX[i1].x();
+    y1 = pX[i1].y();
+    a = x0*y1 - x1*y0;
+    signedArea += a;
+    cx += (x0 + x1)*a;
+    cy += (y0 + y1)*a;
+}
+
 void ENP_centroid(const QPolygonF& pX, double& cx, double& cy)
 {
+    // http://stackoverflow.com/questions/2792443/finding-the-centroid-of-a-polygon/2792459#2792459
     cx = 0;
     cy = 0;
 
     if (pX.isEmpty())
         return;
 
-    for (QPolygonF::const_iterator it=pX.begin(); it!=pX.end(); ++it)
-    {
-        cx += it->x();
-        cy += it->y();
-    }
+    double signedArea = 0.0;
 
-    cx /= pX.size();
-    cy /= pX.size();
+    // For all vertices except last
+    int i=0;
+    for (; i<pX.size()-1; ++i)
+    {
+        ENP_centroid_step(pX, cx, cy, signedArea, i, i+1);
+    }
+    // Do last vertex separately to avoid performing an expensive
+    // modulus operation in each iteration.
+    ENP_centroid_step(pX, cx, cy, signedArea, i, 0);
+
+    signedArea *= 0.5;
+    cx /= (6.0*signedArea);
+    cy /= (6.0*signedArea);
 }

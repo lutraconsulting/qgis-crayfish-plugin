@@ -72,7 +72,7 @@ public:
 
   struct ConfigMesh
   {
-    ConfigMesh() : mRenderMesh(false), mMeshColor(Qt::black), mRenderMeshLabels(true) {}
+    ConfigMesh() : mRenderMesh(false), mMeshColor(Qt::black), mRenderMeshLabels(false) {}
 
     bool mRenderMesh;   //!< whether to render the mesh as a wireframe
     QColor mMeshColor;  //!< color used for rendering of the wireframe

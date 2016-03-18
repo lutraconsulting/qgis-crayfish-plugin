@@ -221,7 +221,7 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
   if (elem.eType() == Element::ENP)
   {
     const Node* nodes = projectedNodes();
-    QVector<QPointF> pX(elem.nodeCount());
+    QPolygonF pX(elem.nodeCount());
     QVector<double> lam(elem.nodeCount());
 
     for (int i=0; i<elem.nodeCount(); i++) {
@@ -333,7 +333,7 @@ bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, dou
   if (elem.eType() == Element::ENP)
     {
       const Node* nodes = projectedNodes();
-      QVector<QPointF> pX(elem.nodeCount());
+      QPolygonF pX(elem.nodeCount());
       QVector<double> lam(elem.nodeCount());
 
       for (int i=0; i<elem.nodeCount(); i++) {
@@ -680,7 +680,7 @@ void Mesh::elementCentroid(int elemIndex, double& cx, double& cy) const
   if (e.eType() == Element::ENP)
   {
     const Node* nodes = projectedNodes();
-    QVector<QPointF> pX(e.nodeCount());
+    QPolygonF pX(e.nodeCount());
     for (int i=0; i<e.nodeCount(); i++) {
         pX[i] = nodes[e.p(i)].toPointF();
     }
