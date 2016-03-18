@@ -49,6 +49,9 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
       meshFile.startsWith("NETCDF:"))
     return loadNetCDF(meshFile, status);
 
+  if (meshFile.endsWith((".slf")))
+    return loadSerafin(meshFile, status);
+
   return loadMesh2DM(meshFile, status);
 }
 

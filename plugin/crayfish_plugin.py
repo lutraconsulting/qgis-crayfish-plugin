@@ -213,7 +213,7 @@ class CrayfishPlugin:
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(),
                                                  'Open Crayfish Dat File',
                                                  self.lastFolder(),
-                                                 "Results Files DAT, SOL, XMDF, GRIB, HEC2D, netCDF, HEC 2D (*.dat *.sol *.xmdf *.sww *.grb *.bin *.grib *.grib1 *.grib2 *.hdf *.nc *.hdf);;2DM Mesh Files (*.2dm)")
+                                                 "Results Files DAT, SOL, XMDF, GRIB, HEC2D, netCDF, Serafin, HEC 2D (*.dat *.sol *.xmdf *.sww *.grb *.bin *.grib *.grib1 *.grib2 *.hdf *.nc *.hdf *.slf);;2DM Mesh Files (*.2dm)")
         inFileName = unicode(inFileName)
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel
             return
@@ -229,7 +229,8 @@ class CrayfishPlugin:
             fileType == '.sww' or
             fileType == '.grb' or fileType == '.bin' or fileType == '.grib' or fileType == '.grib1' or fileType == '.grib2' or
             fileType == '.nc' or
-            fileType == '.hdf'):
+            fileType == '.hdf' or
+            fileType == '.slf'):
             """
                 The user has selected a mesh file...
             """
