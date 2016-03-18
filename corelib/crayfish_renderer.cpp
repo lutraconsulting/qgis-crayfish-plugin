@@ -122,7 +122,7 @@ QPolygonF Renderer::elementPolygonPixel(const Element& elem)
         pts[i] = realToPixel( elem.p(i) );
     }
 
-    if (elem.eType() != Element::E2L)
+    if (elem.eType() == Element::E2L)
     {
         pts.resize(nPoints); //remove last one
     } else {
