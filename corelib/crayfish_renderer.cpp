@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QImage>
 #include <QPainter>
 #include <QVector2D>
+#include <QPolygonF>
 
 Renderer::Renderer(const Config& cfg, QImage& img)
   : mCfg(cfg)
@@ -107,9 +108,10 @@ void Renderer::draw()
     drawVectorData(mOutputVector);
 }
 
-void Renderer::drawElementMeshPolyline(QPainter& p, const Element& elem) {
+QPolygonF Renderer::elementPolygonPixel(const Element& elem)
+{
     int nPoints = elem.nodeCount();
-    QPoint pts[nPoints + 1];
+    QPolygonF pts(nPoints + 1);
     for (int i=0; i<nPoints; ++i)
     {
         pts[i] = realToPixel( elem.p(i) );
@@ -117,11 +119,12 @@ void Renderer::drawElementMeshPolyline(QPainter& p, const Element& elem) {
 
     if (elem.eType() != Element::E2L)
     {
-        pts[nPoints] = pts[0];
-        nPoints += 1;
+        pts.resize(nPoints); //remove last one
+    } else {
+        pts[nPoints] = pts[0]; // last one == first one
     }
 
-    p.drawPolyline(pts, nPoints);
+    return pts;
 }
 
 void Renderer::drawMesh()
@@ -131,6 +134,7 @@ void Renderer::drawMesh()
   QPainter p(&mImage);
   p.setRenderHint(QPainter::Antialiasing);
   p.setPen(QPen(QBrush(mCfg.mesh.mMeshColor),0.5));
+  p.setFont(QFont(""));
   const Mesh::Elements& elems = mMesh->elements();
   for (int i=0; i < elems.count(); ++i)
   {
@@ -142,7 +146,26 @@ void Renderer::drawMesh()
     if( elemOutsideView(i) )
         continue;
 
-    drawElementMeshPolyline(p, elem);
+    QPolygonF pts = elementPolygonPixel(elem);
+    p.drawPolyline(pts.constData(), pts.size());
+
+    if (mCfg.mesh.mRenderMeshLabels)
+    {
+        double cx, cy;
+        mMesh->elementCentroid(i, cx, cy);
+        QString txt = QString::number(elem.id());
+        QRect bb = p.fontMetrics().boundingRect(txt);
+        QPointF xy = mtp.realToPixel(cx, cy);
+        bb.moveTo(xy.x() - bb.width()/2.0, xy.y() - bb.height()/2.0);
+
+        if (pts.containsPoint(bb.bottomLeft(), Qt::WindingFill) &&
+            pts.containsPoint(bb.bottomRight(), Qt::WindingFill) &&
+            pts.containsPoint(bb.topLeft(), Qt::WindingFill) &&
+            pts.containsPoint(bb.topRight(), Qt::WindingFill))
+        {
+            p.drawText(bb, Qt::AlignCenter, txt);
+        }
+    }
   }
 }
 
@@ -498,7 +521,6 @@ bool Renderer::elemOutsideView(uint i)
   // Determine if this element is visible within the view
   return bbox.maxX < mLlX || bbox.minX > mUrX || bbox.minY > mUrY || bbox.maxY < mLlY;
 }
-
 
 QPoint Renderer::realToPixel(int nodeIndex)
 {

@@ -79,7 +79,8 @@ SOURCES += crayfish.cpp \
     crayfish_e3t.cpp \
     crayfish_e2l.cpp \
     crayfish_export_grid.cpp \
-    crayfish_eNp.cpp
+    crayfish_eNp.cpp \
+    crayfish_element.cpp
 
 SOURCES += frmts/crayfish_gdal.cpp \
     frmts/crayfish_dataset_dat.cpp \
@@ -103,7 +104,8 @@ HEADERS += crayfish.h \
     crayfish_renderer.h \
     crayfish_e3t.h \
     crayfish_e2l.h \
-    crayfish_eNp.h
+    crayfish_eNp.h \
+    crayfish_element.h
 
 DESTDIR = $$PWD/../plugin
 

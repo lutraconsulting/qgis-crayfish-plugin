@@ -352,7 +352,6 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
                 }
              }
             else {
-                // here falls also all general polygons
                 elemPtr->setEType(Element::ENP, nValidVertexes);
                 elemPtr->setP(idx);
             }

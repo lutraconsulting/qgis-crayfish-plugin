@@ -42,9 +42,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <QVector>
 #include <QPointF>
+#include <QPolygonF>
 
-bool ENP_physicalToLogical(const QVector<QPointF>& pX, QPointF pP, QVector<double>& lam);
+bool ENP_physicalToLogical(const QPolygonF& pX, QPointF pP, QVector<double>& lam);
 
-void ENP_centroid(const QVector<QPointF>& pX, double& cx, double& cy);
+void ENP_centroid(const QPolygonF& pX, double& cx, double& cy);
 
 #endif // CRAYFISH_ENP_H

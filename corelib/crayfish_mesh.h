@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QString>
 #include <QVector>
 
+#include "crayfish_element.h"
 
 struct BBox;
 struct E4Qtmp;
@@ -38,7 +39,6 @@ class DataSet;
 class ElementOutput;
 class Output;
 class NodeOutput;
-
 
 struct Node
 {
@@ -62,50 +62,6 @@ struct BBox
 
   bool isPointInside(double x, double y) const { return x >= minX && x <= maxX && y >= minY && y <= maxY; }
 };
-
-class Element
-{
-public:
-    enum Type
-    {
-      Undefined,
-      ENP,
-      E4Q,
-      E3T,
-      E2L
-    };
-
-    Element(): mEType(Undefined), mP(4) {}
-    ~Element() {}
-
-    int nodeCount() const { return mP.size(); }
-    bool isDummy() const { return mEType == Undefined; }
-    Type eType() const {return mEType;}
-
-    void setEType(Type eType) {
-        Q_ASSERT(eType != ENP);
-        switch (eType) {
-            case E4Q : setEType(eType, 4); break;
-            case E3T : setEType(eType, 3); break;
-            case E2L : setEType(eType, 2); break;
-            default: setEType(eType, 0);
-        }
-    }
-    void setEType(Type eType, int node_count) {
-        mEType = eType;
-        mP.resize(node_count);
-    }
-    uint p(int idx) const {Q_ASSERT(idx < nodeCount()); return mP[idx];}
-    void setP(int idx, uint val) {Q_ASSERT(idx < nodeCount()); mP[idx] = val;}
-    void setP(uint* vals) {for (int i=0; i<nodeCount(); i++) {mP[i] = vals[i];}}
-    void setId(int id) {mId = id;}
-    int id() const {return mId;}
-private:
-    int mId;        //!< just a reference to the ID in the input file (internally we use indices)
-    Type mEType;
-    QVector<uint> mP; //!< indices of nodes
-};
-
 
 /** core Mesh data structure: nodes + elements */
 class BasicMesh

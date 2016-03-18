@@ -32,19 +32,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <QVector3D>
 #include <QVector2D>
+#include <QPolygonF>
 #include <limits>
-
-static bool ENP_isInside(const QVector<QPointF>& pX, QPointF pP) {
-     //https://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
-      int i, j, c = 0;
-
-      for (i = 0, j = pX.size()-1; i < pX.size(); j = i++) {
-        if ( ((pX[i].y()>pP.y()) != (pX[j].y()>pP.y())) &&
-         (pP.x() < (pX[j].x()-pX[i].x()) * (pP.y()-pX[i].y()) / (pX[j].y()-pX[i].y()) + pX[i].x()) )
-           c = !c;
-      }
-      return c;
-}
 
 static double ENP_contangent(QPointF a, QPointF b, QPointF c) {
     //http://geometry.caltech.edu/pubs/MHBD02.pdf
@@ -57,13 +46,13 @@ static double ENP_contangent(QPointF a, QPointF b, QPointF c) {
     return dp/cp.length();
 }
 
-bool ENP_physicalToLogical(const QVector<QPointF>& pX, QPointF pP, QVector<double>& lam)
+bool ENP_physicalToLogical(const QPolygonF& pX, QPointF pP, QVector<double>& lam)
 {
     //http://geometry.caltech.edu/pubs/MHBD02.pdf
     if (pX.size() < 3 || pX.size() != lam.size())
         return false;
 
-    if (!ENP_isInside(pX, pP)) {
+    if (!pX.containsPoint(pP, Qt::WindingFill)) {
         return false;
     }
 
@@ -91,7 +80,7 @@ bool ENP_physicalToLogical(const QVector<QPointF>& pX, QPointF pP, QVector<doubl
     return true;
 }
 
-void ENP_centroid(const QVector<QPointF>& pX, double& cx, double& cy)
+void ENP_centroid(const QPolygonF& pX, double& cx, double& cy)
 {
     cx = 0;
     cy = 0;
@@ -99,7 +88,7 @@ void ENP_centroid(const QVector<QPointF>& pX, double& cx, double& cy)
     if (pX.isEmpty())
         return;
 
-    for (QVector<QPointF>::const_iterator it=pX.begin(); it!=pX.end(); ++it)
+    for (QPolygonF::const_iterator it=pX.begin(); it!=pX.end(); ++it)
     {
         cx += it->x();
         cy += it->y();
