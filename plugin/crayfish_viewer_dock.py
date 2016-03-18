@@ -29,7 +29,9 @@ from PyQt4.QtGui import *
 from qgis.core import *
 
 import crayfish_viewer_vector_options_dialog
+import crayfish_viewer_mesh_options_dialog
 from crayfish_viewer_render_settings import CrayfishViewerRenderSettings
+
 from crayfish_gui_utils import initColorButton, initColorRampComboBox, name2ramp, timeToString
 from crayfish_ui_loader import load_ui
 uiDialog, qtBaseClass = load_ui('crayfish_viewer_dock_widget')
@@ -58,16 +60,18 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         iconOptions = QgsApplication.getThemeIcon( "/mActionOptions.svg" )
         self.btnAdvanced.setIcon(iconOptions)
         self.btnVectorOptions.setIcon(iconOptions)
+        self.btnMeshOptions.setIcon(iconOptions)
 
         self.btnPlot.setIcon(QgsApplication.getThemeIcon("/histogram.png"))
         self.btnLockCurrent.setIcon(QgsApplication.getThemeIcon("/locked.svg"))
 
-        initColorButton(self.btnMeshColor)
-        self.btnMeshColor.setColorDialogOptions(QColorDialog.ShowAlphaChannel)
+        #initColorButton(self.btnMeshColor)
+        #self.btnMeshColor.setColorDialogOptions(QColorDialog.ShowAlphaChannel)
 
         self.setEnabled(False)
         self.vectorPropsDialog = None
         self.advancedColorMapDialog = None
+        self.meshPropsDialog = None
 
         # Ensure refresh() is called when the layer changes
         QObject.connect(self.cboTime, SIGNAL("currentIndexChanged(int)"), self.outputTimeChanged)
@@ -86,7 +90,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         QObject.connect(self.btnAdvanced, SIGNAL("clicked()"), self.editAdvanced)
         QObject.connect(self.radContourBasic, SIGNAL("clicked()"), self.setContourType)
         QObject.connect(self.radContourAdvanced, SIGNAL("clicked()"), self.setContourType)
-        QObject.connect(self.btnMeshColor, SIGNAL("colorChanged(QColor)"), self.setMeshColor)
+        QObject.connect(self.btnMeshOptions, SIGNAL("clicked()"), self.displayMeshPropsDialog)
         QObject.connect(self.btnLockCurrent, SIGNAL("clicked()"), self.toggleLockCurrent)
         QObject.connect(self.btnPlot, SIGNAL("clicked()"), self.plot)
         self.treeDataSets.contourClicked.connect(self.datasetContourClicked)
@@ -132,12 +136,20 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
             displayMeshCheckBox has been toggled
         """
 
-        self.btnMeshColor.setEnabled(newState)
+        self.btnMeshOptions.setEnabled(newState)
 
         l = self.iface.mapCanvas().currentLayer()
         l.config["mesh"] = newState
         self.redrawCurrentLayer()
 
+
+    def displayMeshPropsDialog(self):
+        if self.meshPropsDialog is not None:
+            self.meshPropsDialog.close()
+
+        if self.currentCrayfishLayer():
+            self.meshPropsDialog = crayfish_viewer_mesh_options_dialog.CrayfishViewerMeshOptionsDialog(self.currentCrayfishLayer(), self.redrawCurrentLayer, self)
+            self.meshPropsDialog.show()
 
     def contourCustomRangeToggled(self, on):
         """ set provider's custom range """
@@ -418,13 +430,8 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
 
         self.displayMeshCheckBox.blockSignals(True)
         self.displayMeshCheckBox.setChecked(l.config["mesh"])
+        self.btnMeshOptions.setEnabled(l.config["mesh"])
         self.displayMeshCheckBox.blockSignals(False)
-
-        self.btnMeshColor.setEnabled(l.config["mesh"])
-        self.btnMeshColor.blockSignals(True)
-        c = l.config["m_color"]
-        self.btnMeshColor.setColor(QColor(c[0],c[1],c[2],c[3]))
-        self.btnMeshColor.blockSignals(False)
 
         #self.redrawCurrentLayer()
 
@@ -485,13 +492,6 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         vMin,vMax = ds.value_range()
         pix = cm.previewPixmap(self.lblAdvancedPreview.size(), vMin, vMax)
         self.lblAdvancedPreview.setPixmap(pix)
-
-
-
-    def setMeshColor(self, clr):
-        l = self.iface.mapCanvas().currentLayer()
-        l.config["m_color"] = (clr.red(),clr.green(),clr.blue(),clr.alpha())
-        self.redrawCurrentLayer()
 
 
     def addIlluvisPromo(self):

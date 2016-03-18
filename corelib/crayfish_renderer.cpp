@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QPainter>
 #include <QVector2D>
 #include <QPolygonF>
+#include <QPainterPath>
 
 Renderer::Renderer(const Config& cfg, QImage& img)
   : mCfg(cfg)
@@ -96,11 +97,17 @@ void Renderer::draw()
   if (!mMesh)
     return; // nothing to do
 
+  if (mCfg.mesh.mRenderMesh && mCfg.mesh.mMeshFillEnabled)
+    drawMeshFill();
+
   if (mOutputContour)
     drawContourData(mOutputContour);
 
   if (mCfg.mesh.mRenderMesh)
-    drawMesh();
+    drawMeshFrame();
+
+  if (mCfg.mesh.mRenderMesh && mCfg.mesh.mMeshElemLabel)
+    drawMeshLabels();
 
   if (mOutputVector && mOutputVector->dataSet->type() == DataSet::Vector)
     drawVectorData(mOutputVector);
@@ -125,30 +132,73 @@ QPolygonF Renderer::elementPolygonPixel(const Element& elem)
     return pts;
 }
 
-void Renderer::drawMesh()
+void Renderer::drawMeshFill()
 {
-  // render mesh as a wireframe
+    QPainter p(&mImage);
+    p.setRenderHint(QPainter::Antialiasing);
+    QBrush fillBrush(mCfg.mesh.mMeshFillColor);
 
-  QPainter p(&mImage);
-  p.setRenderHint(QPainter::Antialiasing);
-  p.setPen(QPen(QBrush(mCfg.mesh.mMeshColor),0.5));
-  p.setFont(QFont(""));
-  const Mesh::Elements& elems = mMesh->elements();
-  for (int i=0; i < elems.count(); ++i)
-  {
-    const Element& elem = elems[i];
-    if( elem.isDummy() )
-        continue;
-
-    // If the element is outside the view of the canvas, skip it
-    if( elemOutsideView(i) )
-        continue;
-
-    QPolygonF pts = elementPolygonPixel(elem);
-    p.drawPolyline(pts.constData(), pts.size());
-
-    if (mCfg.mesh.mRenderMeshLabels)
+    const Mesh::Elements& elems = mMesh->elements();
+    for (int i=0; i < elems.count(); ++i)
     {
+      const Element& elem = elems[i];
+      if( elem.isDummy() )
+          continue;
+
+      // If the element is outside the view of the canvas, skip it
+      if( elemOutsideView(i) )
+          continue;
+
+      QPolygonF pts = elementPolygonPixel(elem);
+
+      QPainterPath elemPath;
+      elemPath.addPolygon(pts);
+      p.fillPath(elemPath, fillBrush);
+    }
+}
+
+void Renderer::drawMeshFrame()
+{
+    QPainter p(&mImage);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(QPen(QBrush(mCfg.mesh.mMeshBorderColor), mCfg.mesh.mMeshBorderWidth));
+
+    const Mesh::Elements& elems = mMesh->elements();
+    for (int i=0; i < elems.count(); ++i)
+    {
+      const Element& elem = elems[i];
+      if( elem.isDummy() )
+          continue;
+
+      // If the element is outside the view of the canvas, skip it
+      if( elemOutsideView(i) )
+          continue;
+
+      QPolygonF pts = elementPolygonPixel(elem);
+
+      p.drawPolyline(pts.constData(), pts.size());
+    }
+}
+
+void Renderer::drawMeshLabels()
+{
+    QPainter p(&mImage);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(QPen(QBrush(mCfg.mesh.mMeshBorderColor), mCfg.mesh.mMeshBorderWidth));
+    p.setFont(QFont(""));
+    const Mesh::Elements& elems = mMesh->elements();
+    for (int i=0; i < elems.count(); ++i)
+    {
+        const Element& elem = elems[i];
+        if( elem.isDummy() )
+            continue;
+
+        // If the element is outside the view of the canvas, skip it
+        if( elemOutsideView(i) )
+            continue;
+
+        QPolygonF pts = elementPolygonPixel(elem);
+
         double cx, cy;
         mMesh->elementCentroid(i, cx, cy);
         QString txt = QString::number(elem.id());
@@ -164,11 +214,7 @@ void Renderer::drawMesh()
             p.drawText(bb, Qt::AlignCenter, txt);
         }
     }
-  }
 }
-
-
-
 
 void Renderer::drawContourData(const Output* output)
 {

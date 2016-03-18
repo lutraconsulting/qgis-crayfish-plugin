@@ -72,11 +72,20 @@ public:
 
   struct ConfigMesh
   {
-    ConfigMesh() : mRenderMesh(false), mMeshColor(Qt::black), mRenderMeshLabels(false) {}
+    ConfigMesh():
+        mRenderMesh(false),
+        mMeshBorderColor(Qt::black),
+        mMeshBorderWidth(1),
+        mMeshFillColor(Qt::transparent),
+        mMeshFillEnabled(false),
+        mMeshElemLabel(false) {}
 
-    bool mRenderMesh;   //!< whether to render the mesh as a wireframe
-    QColor mMeshColor;  //!< color used for rendering of the wireframe
-    bool mRenderMeshLabels;  //!< whether to render the element ids in a mesh element's center
+    bool mRenderMesh;   //!< whether to render the mesh as a wireframe/fill
+    QColor mMeshBorderColor;  //!< color used for rendering of the wireframe
+    int mMeshBorderWidth; //!< width of wireframe
+    QColor mMeshFillColor;  //!< color used for rendering of the wireframe fill
+    bool mMeshFillEnabled; //!< if to fill element with mMeshFillColor
+    bool mMeshElemLabel;  //!< whether to render the element ids in a mesh element's center
   };
 
   struct ConfigDataSet
@@ -156,7 +165,10 @@ public:
   void draw();
 
 protected:
-  void drawMesh();
+  void drawMeshFill();
+  void drawMeshFrame();
+  void drawMeshLabels();
+
   QPolygonF elementPolygonPixel(const Element& elem);
   void drawContourData(const Output* output);
   void drawVectorData(const Output* output);
