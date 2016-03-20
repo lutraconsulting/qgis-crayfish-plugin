@@ -311,6 +311,8 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         HdfDataset dsElems = openHdfDataset(gArea, "Cells FacePoint Indexes");
         QVector<hsize_t> edims = dsElems.dims();
         int nElems = edims[0];
+        // elems have up to 8 faces, but sometimes the table has less than 8 columns
+        int maxFaces = edims[1];
         QVector<int> elem_nodes = dsElems.readArrayInt(); //8xnElements matrix in array
         Mesh::Elements elements(nElems); // ! we need to ignore other than triangles or rectagles!
         Element* elemPtr = elements.data();
@@ -318,9 +320,9 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         {
 
             elemPtr->setId(e);
-            uint idx[8]; // there is up to 8 vertexes
-            int nValidVertexes = 8;
-            for (int fi=0; fi<8; ++fi)
+            uint idx[maxFaces]; 
+            int nValidVertexes = maxFaces;
+            for (int fi=0; fi<maxFaces; ++fi)
             {
                 int elem_node_idx = elem_nodes[edims[1]*e + fi];
 
@@ -380,4 +382,3 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
 
     return mesh;
 }
-
