@@ -158,7 +158,7 @@ OutputH CF_DS_outputAt(DataSetH ds, int index)
   if (index < 0 || index >= ds->outputCount())
     return 0;
 
-  return ds->output(index);
+  return ds->constOutput(index);
 }
 
 

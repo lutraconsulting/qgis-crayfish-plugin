@@ -86,10 +86,21 @@ static QString openHdfAttribute(const HdfFile& hdfFile, const QString& name)
     return attr.readString();
 }
 
-
-
-static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const HdfGroup& gArea, int nElems)
+static ElementOutput* getOutput(DataSet* dataset, const int time)
 {
+
+    ElementOutput* eo = dataset->elemOutput(time);
+    if (!eo)
+    {
+        throw LoadStatus::Err_InvalidData;
+    }
+    return eo;
+}
+
+static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const HdfGroup& gGeom2DFlowAreas, const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames)
+{
+    int nElems = mesh->elements().size();
+
     DataSet* dsd = new DataSet(fileName);
     dsd->setName("Bed Elevation");
     dsd->setType(DataSet::Bed);
@@ -98,15 +109,24 @@ static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const
     tos->init(nElems, false);
     tos->time = 0;
 
-    HdfDataset dsBed = openHdfDataset(gArea, "Cells Minimum Elevation");
-    QVector<float> elev_vals = dsBed.readArray();
-    for (int i = 0; i < nElems; ++i) {
-      float val = elev_vals[i];
-      if (val != val) { //NaN
-        tos->values[i] = -9999;
-      } else {
-        tos->values[i] = val;
-      }
+    for (int nArea=0; nArea < flowAreaNames.size(); ++nArea)
+    {
+        int nAreaElements = areaElemStartIndex[nArea + 1] - areaElemStartIndex[nArea];
+
+        QString flowAreaName = flowAreaNames[nArea];
+        HdfGroup gArea = openHdfGroup(gGeom2DFlowAreas, flowAreaName);
+
+        HdfDataset dsBed = openHdfDataset(gArea, "Cells Minimum Elevation");
+        QVector<float> elev_vals = dsBed.readArray();
+        for (int i = 0; i < nAreaElements; ++i) {
+          float val = elev_vals[i];
+          int aIdx = areaElemStartIndex[nArea] + i;
+          if (val != val) { //NaN
+            tos->values[aIdx] = -9999;
+          } else {
+            tos->values[aIdx] = val;
+          }
+        }
     }
 
     dsd->addOutput(tos);
@@ -116,17 +136,9 @@ static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const
     return tos;
 }
 
-static void readUnsteadyFaceResults(Mesh* mesh, const QString flowAreaName, const QString fileName, const HdfFile& hdfFile, int nElems)
+static void readUnsteadyFaceResults(Mesh* mesh, const QString fileName, const HdfFile& hdfFile, const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames)
 {
-    // First read face to node mapping
-    HdfGroup gGeom = openHdfGroup(hdfFile, "Geometry");
-    HdfGroup gGeom2DFlowAreas = openHdfGroup(gGeom, "2D Flow Areas");
-    HdfGroup gArea = openHdfGroup(gGeom2DFlowAreas, flowAreaName);
-    HdfDataset dsFace2Cells = openHdfDataset(gArea, "Faces Cell Indexes");
-
-    QVector<hsize_t> fdims = dsFace2Cells.dims();
-    QVector<int> face2Cells = dsFace2Cells.readArrayInt(); //2x nFaces
-    int nFaces = fdims[0];
+    int nElems = mesh->elements().size();
 
     HdfGroup gResults = openHdfGroup(hdfFile, "Results");
     HdfGroup gUnsteady = openHdfGroup(gResults, "Unsteady");
@@ -135,9 +147,7 @@ static void readUnsteadyFaceResults(Mesh* mesh, const QString flowAreaName, cons
     HdfGroup gBaseO = openHdfGroup(gOBlocks, "Base Output");
     HdfGroup gUnsteadTS = openHdfGroup(gBaseO, "Unsteady Time Series");
     HdfGroup g2DFlowRes = openHdfGroup(gUnsteadTS, "2D Flow Areas");
-    HdfGroup gFlowAreaRes = openHdfGroup(g2DFlowRes, flowAreaName);
 
-    //TODO we already have this somewhere else!
     HdfDataset dsTimes = openHdfDataset(gUnsteadTS, "Time");
     QVector<float> times = dsTimes.readArray();
 
@@ -154,40 +164,61 @@ static void readUnsteadyFaceResults(Mesh* mesh, const QString flowAreaName, cons
         dsd->setType(DataSet::Scalar);
         dsd->setIsTimeVarying(times.size()>1);
 
-        HdfDataset dsVals = openHdfDataset(gFlowAreaRes, dsName);
-        QVector<float> vals = dsVals.readArray();
-
         for (int tidx=0; tidx<times.size(); ++tidx)
         {
             ElementOutput* tos = new ElementOutput;
             tos->init(nElems, false);
             tos->time = times[tidx];
             std::fill(tos->values.begin(),tos->values.end(),-9999);
-            for (int i = 0; i < nFaces; ++i) {
-                int idx = tidx*nFaces + i;
-                float val = vals[idx]; // This is value on face!
+            dsd->addOutput(tos);
+        }
 
-                if (val == val && fabs(val) > eps) { //not nan and not 0
-                    for (int c = 0; c < 2; ++c) {
-                        int cell_idx = face2Cells[2*i + c];
-                        // Take just maximum
-                        if (tos->values[cell_idx] < val ) {
-                            tos->values[cell_idx] = val;
+        for (int nArea=0; nArea < flowAreaNames.size(); ++nArea)
+        {
+            QString flowAreaName = flowAreaNames[nArea];
+
+            HdfGroup gFlowAreaRes = openHdfGroup(g2DFlowRes, flowAreaName);
+            // First read face to node mapping
+            HdfGroup gGeom = openHdfGroup(hdfFile, "Geometry");
+            HdfGroup gGeom2DFlowAreas = openHdfGroup(gGeom, "2D Flow Areas");
+            HdfGroup gArea = openHdfGroup(gGeom2DFlowAreas, flowAreaName);
+            HdfDataset dsFace2Cells = openHdfDataset(gArea, "Faces Cell Indexes");
+
+            QVector<hsize_t> fdims = dsFace2Cells.dims();
+            QVector<int> face2Cells = dsFace2Cells.readArrayInt(); //2x nFaces
+            int nFaces = fdims[0];
+
+            HdfDataset dsVals = openHdfDataset(gFlowAreaRes, dsName);
+            QVector<float> vals = dsVals.readArray();
+
+            for (int tidx=0; tidx<times.size(); ++tidx)
+            {
+                ElementOutput* tos = getOutput(dsd, tidx);
+                for (int i = 0; i < nFaces; ++i) {
+                    int idx = tidx*nFaces + i;
+                    float val = vals[idx]; // This is value on face!
+
+                    if (val == val && fabs(val) > eps) { //not nan and not 0
+                        for (int c = 0; c < 2; ++c) {
+                            int cell_idx = face2Cells[2*i + c] + areaElemStartIndex[nArea];
+                            // Take just maximum
+                            if (tos->values[cell_idx] < val ) {
+                                tos->values[cell_idx] = val;
+                            }
                         }
                     }
                 }
             }
-
-            dsd->addOutput(tos);
         }
-
         dsd->updateZRange();
         mesh->addDataSet(dsd);
     }
 }
 
-static void readUnsteadyElemResults(Mesh* mesh, const QString flowAreaName, const QString fileName, const HdfFile& hdfFile, int nElems, ElementOutput* bed_elevation)
+static void readUnsteadyElemResults(Mesh* mesh, const QString fileName, const HdfFile& hdfFile, ElementOutput* bed_elevation, const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames)
 {
+    int nElems = mesh->elements().size();
+
     HdfGroup gResults = openHdfGroup(hdfFile, "Results");
     HdfGroup gUnsteady = openHdfGroup(gResults, "Unsteady");
     HdfGroup gOutput = openHdfGroup(gUnsteady, "Output");
@@ -195,8 +226,6 @@ static void readUnsteadyElemResults(Mesh* mesh, const QString flowAreaName, cons
     HdfGroup gBaseO = openHdfGroup(gOBlocks, "Base Output");
     HdfGroup gUnsteadTS = openHdfGroup(gBaseO, "Unsteady Time Series");
     HdfGroup g2DFlowRes = openHdfGroup(gUnsteadTS, "2D Flow Areas");
-    HdfGroup gFlowAreaRes = openHdfGroup(g2DFlowRes, flowAreaName);
-
 
     HdfDataset dsTimes = openHdfDataset(gUnsteadTS, "Time");
     QVector<float> times = dsTimes.readArray();
@@ -213,39 +242,51 @@ static void readUnsteadyElemResults(Mesh* mesh, const QString flowAreaName, cons
         dsd->setName(dsName);
         dsd->setType(DataSet::Scalar);
         dsd->setIsTimeVarying(times.size()>1);
-
-        HdfDataset dsVals = openHdfDataset(gFlowAreaRes, dsName);
-        QVector<float> vals = dsVals.readArray();
-
         for (int tidx=0; tidx<times.size(); ++tidx)
         {
             ElementOutput* tos = new ElementOutput;
             tos->init(nElems, false);
             tos->time = times[tidx];
-            for (int i = 0; i < nElems; ++i) {
-              int idx = tidx*nElems + i;
-              float val = vals[idx];
-              if (val != val) { //NaN
-                tos->values[i] = -9999;
-              } else {
-                if (dsName == "Depth") {
-                    if (fabs(val) < eps) {
-                        tos->values[i] = -9999; // 0 Depth is no-data
-                    } else {
-                        tos->values[i] = val;
-                    }
-                } else { //Water surface
-                    float bed_elev = bed_elevation->values[i];
-                    if (fabs(bed_elev - val) < eps) {
-                        tos->values[i] = -9999; // no change from bed elevation
-                    } else {
-                        tos->values[i] = val;
-                    }
-                }
-              }
-            }
-
             dsd->addOutput(tos);
+        }
+
+        for (int nArea=0; nArea < flowAreaNames.size(); ++nArea)
+        {
+            int nAreaElements = areaElemStartIndex[nArea + 1] - areaElemStartIndex[nArea];
+            QString flowAreaName = flowAreaNames[nArea];
+            HdfGroup gFlowAreaRes = openHdfGroup(g2DFlowRes, flowAreaName);
+
+            HdfDataset dsVals = openHdfDataset(gFlowAreaRes, dsName);
+            QVector<float> vals = dsVals.readArray();
+
+            for (int tidx=0; tidx<times.size(); ++tidx)
+            {
+                ElementOutput* tos = getOutput(dsd, tidx);
+
+                for (int i = 0; i < nAreaElements; ++i) {
+                  int idx = tidx*nAreaElements + i;
+                  int eInx = areaElemStartIndex[nArea] + i;
+                  float val = vals[idx];
+                  if (val != val) { //NaN
+                    tos->values[eInx] = -9999;
+                  } else {
+                    if (dsName == "Depth") {
+                        if (fabs(val) < eps) {
+                            tos->values[eInx] = -9999; // 0 Depth is no-data
+                        } else {
+                            tos->values[eInx] = val;
+                        }
+                    } else { //Water surface
+                        float bed_elev = bed_elevation->values[eInx];
+                        if (fabs(bed_elev - val) < eps) {
+                            tos->values[eInx] = -9999; // no change from bed elevation
+                        } else {
+                            tos->values[eInx] = val;
+                        }
+                    }
+                  }
+                }
+            }
         }
 
         dsd->updateZRange();
@@ -270,6 +311,86 @@ static void setProjection(Mesh* mesh, HdfFile hdfFile) {
     catch (LoadStatus::Error error) { /* projection not set */}
 }
 
+static Mesh* parseMesh(HdfGroup gGeom2DFlowAreas, QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames)
+{
+    Mesh::Nodes nodes;
+    Mesh::Elements elements;
+
+    for (int nArea=0; nArea < flowAreaNames.size(); ++nArea)
+    {
+        QString flowAreaName = flowAreaNames[nArea];
+
+        HdfGroup gArea = openHdfGroup(gGeom2DFlowAreas, flowAreaName);
+
+        HdfDataset dsCoords = openHdfDataset(gArea, "FacePoints Coordinate");
+        QVector<hsize_t> cdims = dsCoords.dims();
+        QVector<double> coords = dsCoords.readArrayDouble(); //2xnNodes matrix in array
+        int nNodes = cdims[0];
+        int areaNodeStartIndex = nodes.size();
+        nodes.resize(areaNodeStartIndex + nNodes);
+        for (int n = 0; n < nNodes; ++n)
+        {
+            int nIdx = areaNodeStartIndex + n;
+            nodes[nIdx].setId(nIdx);
+            nodes[nIdx].x = coords[cdims[1]*n];
+            nodes[nIdx].y = coords[cdims[1]*n+1];
+        }
+
+        HdfDataset dsElems = openHdfDataset(gArea, "Cells FacePoint Indexes");
+        QVector<hsize_t> edims = dsElems.dims();
+        int nElems = edims[0];
+        int maxFaces = edims[1]; // elems have up to 8 faces, but sometimes the table has less than 8 columns
+        QVector<int> elem_nodes = dsElems.readArrayInt(); //maxFacesxnElements matrix in array
+        areaElemStartIndex[nArea] = elements.size();
+        elements.resize(elements.size() + nElems);
+        for (int e = 0; e < nElems; ++e)
+        {
+            int eIdx = areaElemStartIndex[nArea] + e;
+            elements[eIdx].setId(eIdx);
+            uint idx[maxFaces];
+            int nValidVertexes = maxFaces;
+            for (int fi=0; fi<maxFaces; ++fi)
+            {
+                int elem_node_idx = elem_nodes[edims[1]*e + fi];
+
+                if (elem_node_idx == -1) {
+                    nValidVertexes = fi;
+                    break;
+                } else {
+                    idx[fi] = areaNodeStartIndex + elem_node_idx; // shift by this area start node index
+                }
+            }
+
+            if (nValidVertexes == 2) { // Line
+                elements[eIdx].setEType(Element::E2L);
+                elements[eIdx].setP(idx);
+            } else if (nValidVertexes == 3) { // TRIANGLE
+                elements[eIdx].setEType(Element::E3T);
+                elements[eIdx].setP(idx);
+            }
+            else if (nValidVertexes == 4) { // RECTANGLE
+                elements[eIdx].setEType(Element::E4Q);
+                elements[eIdx].setP(idx);
+
+                // It seems that some polygons with 4 vertexes
+                // are triangles. In this case the E4Q elements
+                // are not properly working
+                if (! E4Q_isValid(elements[eIdx], nodes.data())) {
+                    elements[eIdx].setEType(Element::ENP, nValidVertexes);
+                    elements[eIdx].setP(idx);
+                }
+            }
+            else {
+                elements[eIdx].setEType(Element::ENP, nValidVertexes);
+                elements[eIdx].setP(idx);
+            }
+        }
+    }
+    areaElemStartIndex[flowAreaNames.size()] = elements.size();
+
+    return new Mesh(nodes, elements);
+}
+
 Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
 {
     if (status) status->clear();
@@ -288,89 +409,20 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         HdfGroup gGeom = openHdfGroup(hdfFile, "Geometry");
         HdfGroup gGeom2DFlowAreas = openHdfGroup(gGeom, "2D Flow Areas");
 
-        // The file may contain multiple FLOW areas. However we do not have
-        // representative examples, so for now just take first one
         QStringList flowAreaNames = read2DFlowAreasNames(gGeom2DFlowAreas);
-        QString flowAreaName = flowAreaNames[0];
+        QVector<int> areaElemStartIndex(flowAreaNames.size() + 1);
 
-        HdfGroup gArea = openHdfGroup(gGeom2DFlowAreas, flowAreaName);
-
-        HdfDataset dsCoords = openHdfDataset(gArea, "FacePoints Coordinate");
-        QVector<hsize_t> cdims = dsCoords.dims();
-        QVector<double> coords = dsCoords.readArrayDouble(); //2xnNodes matrix in array
-        int nNodes = cdims[0];
-        Mesh::Nodes nodes(nNodes);
-        Node* nodesPtr = nodes.data();
-        for (int n = 0; n < nNodes; ++n, ++nodesPtr)
-        {
-            nodesPtr->setId(n);
-            nodesPtr->x = coords[cdims[1]*n];
-            nodesPtr->y = coords[cdims[1]*n+1];
-        }
-
-        HdfDataset dsElems = openHdfDataset(gArea, "Cells FacePoint Indexes");
-        QVector<hsize_t> edims = dsElems.dims();
-        int nElems = edims[0];
-        // elems have up to 8 faces, but sometimes the table has less than 8 columns
-        int maxFaces = edims[1];
-        QVector<int> elem_nodes = dsElems.readArrayInt(); //maxFacesxnElements matrix in array
-        Mesh::Elements elements(nElems);
-        Element* elemPtr = elements.data();
-        for (int e = 0; e < nElems; ++e, ++elemPtr)
-        {
-
-            elemPtr->setId(e);
-            uint idx[maxFaces]; 
-            int nValidVertexes = maxFaces;
-            for (int fi=0; fi<maxFaces; ++fi)
-            {
-                int elem_node_idx = elem_nodes[edims[1]*e + fi];
-
-                if (elem_node_idx == -1) {
-                    nValidVertexes = fi;
-                    break;
-                } else {
-                   idx[fi] = elem_node_idx;
-                }
-            }
-
-            if (nValidVertexes == 2) { // Line
-                elemPtr->setEType(Element::E2L);
-                elemPtr->setP(idx);
-            } else if (nValidVertexes == 3) { // TRIANGLE
-                elemPtr->setEType(Element::E3T);
-                elemPtr->setP(idx);
-            }
-            else if (nValidVertexes == 4) { // RECTANGLE
-                elemPtr->setEType(Element::E4Q);
-                elemPtr->setP(idx);
-
-                // It seems that some polygons with 4 vertexes
-                // are triangles. In this case the E4Q elements
-                // are not properly working
-                if (! E4Q_isValid(*elemPtr, nodes.data())) {
-                    elemPtr->setEType(Element::ENP, nValidVertexes);
-                    elemPtr->setP(idx);
-                }
-             }
-            else {
-                elemPtr->setEType(Element::ENP, nValidVertexes);
-                elemPtr->setP(idx);
-            }
-        }
-
-        mesh = new Mesh(nodes, elements);
-        // Get projection
+        mesh = parseMesh(gGeom2DFlowAreas, areaElemStartIndex, flowAreaNames);
         setProjection(mesh, hdfFile);
 
         //Elevation
-        ElementOutput* bed_elevation = readBedElevation(mesh, fileName, gArea, nElems);
+        ElementOutput* bed_elevation = readBedElevation(mesh, fileName, gGeom2DFlowAreas, areaElemStartIndex, flowAreaNames);
 
         // Element centered Values
-        readUnsteadyElemResults(mesh, flowAreaName, fileName, hdfFile, nElems, bed_elevation);
+        readUnsteadyElemResults(mesh, fileName, hdfFile, bed_elevation, areaElemStartIndex, flowAreaNames);
 
         // Face centered Values
-        readUnsteadyFaceResults(mesh, flowAreaName, fileName, hdfFile, nElems);
+        readUnsteadyFaceResults(mesh, fileName, hdfFile, areaElemStartIndex, flowAreaNames);
     }
 
     catch (LoadStatus::Error error)
