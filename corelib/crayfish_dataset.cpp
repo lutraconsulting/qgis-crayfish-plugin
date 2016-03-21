@@ -44,14 +44,18 @@ DataSet::~DataSet()
   outputs.clear();
 }
 
-void DataSet::setName(const QString& name) {
+QString DataSet::sanitizeName(const QString& name) {
     // remove units
     // slash cannot be in dataset name,
     // because it means subdataset, see
     // python class DataSetModel.setmMesh()
     // see #132
-    mName = name;
-    mName = mName.replace(QRegExp("\\[.+\\/.+\\]"), "").replace("/", "");
+    QString nm(name);
+    return nm.replace(QRegExp("\\[.+\\/.+\\]"), "").replace("/", "");
+}
+
+void DataSet::setName(const QString& name) {
+    mName = sanitizeName(name);
 }
 
 void DataSet::addOutput(Output* output)

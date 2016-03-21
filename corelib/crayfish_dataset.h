@@ -46,6 +46,8 @@ struct DataSet
     DataSet(const QString& fileName);
     ~DataSet();
 
+    static QString sanitizeName(const QString& name);
+
     //! mesh to which this dataset is associated
     const Mesh* mesh() const { return mMesh; }
     void setMesh(const Mesh* m) { mMesh = m; }

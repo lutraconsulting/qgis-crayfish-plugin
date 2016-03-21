@@ -40,7 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <math.h>
 
-static inline bool is_equal(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
+static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
 typedef QMap<float, QVector<float> > timestep_map; //TIME (sorted), nodeVal
 
 static void record_boundary(QDataStream& in) {
@@ -305,11 +305,47 @@ static Mesh* createMesh(int xOrigin,
     return new Mesh(nodes, elements);
 }
 
+static void populateScaleForVector(NodeOutput* tos, int nPoints){
+   // there are no scalar data associated with vectors, so
+   // assign vector length as scalar data at least
+   // see #134
+   for (uint idx=0; idx<nPoints; ++idx)
+   {
+       if (is_nodata(tos->valuesV[idx].x) ||
+           is_nodata(tos->valuesV[idx].y))
+       {
+           tos->values[idx] = -9999.0;
+       }
+       else {
+           tos->values[idx] = tos->valuesV[idx].length();
+       }
+   }
+}
+
+static void activateElements(Mesh* mesh, NodeOutput* tos, int nElem){
+   // Activate only elements that do all node's outputs with some data
+   char* active = tos->active.data();
+   for (uint idx=0; idx<nElem; ++idx)
+   {
+       Element elem = mesh->elements().at(idx);
+
+       if (is_nodata(tos->values[elem.p(0)]) ||
+           is_nodata(tos->values[elem.p(1)]) ||
+           is_nodata(tos->values[elem.p(2)]))
+       {
+           active[idx] = 0; //NOT ACTIVE
+       } else {
+           active[idx] = 1; //ACTIVE
+       }
+   }
+}
+
 static void addData(Mesh* mesh, const QString& fileName, const QStringList& var_names, const QVector<timestep_map>& data, int nPoints, int nElems)
 {
     for (int nName = 0; nName < var_names.size(); ++nName) {
         QString var_name(var_names[nName]);
         var_name = var_name.trimmed().toLower();
+        var_name = DataSet::sanitizeName(var_name);
 
         bool is_vector = false;
         bool is_x = true;
@@ -327,10 +363,11 @@ static void addData(Mesh* mesh, const QString& fileName, const QStringList& var_
         DataSet* dsd = mesh->dataSet(var_name);
         if (!dsd)
         {
-            DataSet* dsd = new DataSet(fileName);
-            dsd->setName(var_names[nName]);
+            dsd = new DataSet(fileName);
+            dsd->setName(var_name);
             dsd->setType(is_vector ? DataSet::Vector : DataSet::Scalar);
             dsd->setIsTimeVarying(data[nName].size() > 1);
+            mesh->addDataSet(dsd);
         }
 
         int i = 0;
@@ -340,7 +377,7 @@ static void addData(Mesh* mesh, const QString& fileName, const QStringList& var_
             NodeOutput* tos = dsd->nodeOutput(i);
             if (!tos) {
                 tos = new NodeOutput;
-                tos->init(nPoints, nElems, false);
+                tos->init(nPoints, nElems, is_vector);
                 tos->time = it.key();
                 dsd->addOutput(tos);
             }
@@ -348,7 +385,7 @@ static void addData(Mesh* mesh, const QString& fileName, const QStringList& var_
             for (int nP=0; nP<nPoints; nP++)
             {
                 float val = it.value().at(nP);
-                if (is_equal(val, 0)) {
+                if (is_nodata(val, 0)) {
                     val = -9999;
                 }
                 if (is_vector) {
@@ -361,12 +398,24 @@ static void addData(Mesh* mesh, const QString& fileName, const QStringList& var_
                     tos->values[nP] = val;
                 }
             }
-
-            memset(tos->active.data(), 1, nElems); // All cells active
         }
-        dsd->updateZRange();
-        mesh->addDataSet(dsd);
     }
+
+    // now sanitize data added
+    foreach (DataSet* ds, mesh->dataSets()) {
+        for (int i=0; i< ds->outputCount(); ++i)
+        {
+            NodeOutput* tos = ds->nodeOutput(i);
+            if (ds->type() == DataSet::Vector)
+            {
+                populateScaleForVector(tos, nPoints);
+            }
+            activateElements(mesh, tos, nElems);
+        }
+        ds->updateZRange();
+    }
+
+
 }
 
 Mesh* Crayfish::loadSerafin(const QString& fileName, LoadStatus* status)
