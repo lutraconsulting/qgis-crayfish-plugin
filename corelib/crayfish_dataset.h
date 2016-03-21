@@ -52,7 +52,7 @@ struct DataSet
 
     QString fileName() const { return mFileName; }
 
-    void setName(const QString& name) { mName = name; }
+    void setName(const QString& name);
     QString name() const { return mName; }
 
     enum Type
