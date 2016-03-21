@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>341</width>
-    <height>225</height>
+    <height>235</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -140,7 +140,7 @@
   <customwidget>
    <class>QgsColorButton</class>
    <extends>QPushButton</extends>
-   <header>qgscolorbutton.h</header>
+   <header>qgis.gui</header>
   </customwidget>
  </customwidgets>
  <tabstops>
