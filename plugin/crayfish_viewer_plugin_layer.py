@@ -364,25 +364,30 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             if meshRendering is not None:
                 self.config["mesh"] = meshRendering
 
-            meshBorderColor = qstring2rgb(meshElem.attribute("border-color"))
-            if meshBorderColor is not None:
-                self.config["m_border_color"] = meshBorderColor
+            if meshElem.hasAttribute("border-color"):
+                meshBorderColor = qstring2rgb(meshElem.attribute("border-color"))
+                if meshBorderColor is not None:
+                    self.config["m_border_color"] = meshBorderColor
 
-            meshBorderWidth = qstring2int(meshElem.attribute("border-width"))
-            if meshBorderWidth is not None:
-                self.config["m_border_width"] = meshBorderWidth
+            if meshElem.hasAttribute("border-width"):
+                meshBorderWidth = qstring2int(meshElem.attribute("border-width"))
+                if meshBorderWidth is not None:
+                    self.config["m_border_width"] = meshBorderWidth
 
-            meshFillColor = qstring2rgb(meshElem.attribute("fill-color"))
-            if meshFillColor is not None:
-                self.config["m_fill_color"] = meshFillColor
+            if meshElem.hasAttribute("fill-color"):
+                meshFillColor = qstring2rgb(meshElem.attribute("fill-color"))
+                if meshFillColor is not None:
+                    self.config["m_fill_color"] = meshFillColor
 
-            meshElemLabel = qstring2bool(meshElem.attribute("label-elements-enabled"))
-            if meshElemLabel is not None:
-                self.config["m_label_elem"] = meshElemLabel
+            if meshElem.hasAttribute("label-elements-enabled"):
+                meshElemLabel = qstring2bool(meshElem.attribute("label-elements-enabled"))
+                if meshElemLabel is not None:
+                    self.config["m_label_elem"] = meshElemLabel
 
-            meshFillEnabled = qstring2bool(meshElem.attribute("fill-enabled"))
-            if meshFillEnabled is not None:
-                self.config["m_fill_enabled"] = meshFillEnabled
+            if meshElem.hasAttribute("fill-enabled"):
+                meshFillEnabled = qstring2bool(meshElem.attribute("fill-enabled"))
+                if meshFillEnabled is not None:
+                    self.config["m_fill_enabled"] = meshFillEnabled
 
         return True
 
