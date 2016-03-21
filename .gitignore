@@ -9,3 +9,5 @@ build-*
 Makefile
 *.aux.xml
 *.orig
+*~
+nbproject*

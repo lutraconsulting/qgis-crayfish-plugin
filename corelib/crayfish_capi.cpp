@@ -158,7 +158,7 @@ OutputH CF_DS_outputAt(DataSetH ds, int index)
   if (index < 0 || index >= ds->outputCount())
     return 0;
 
-  return ds->output(index);
+  return ds->constOutput(index);
 }
 
 
@@ -345,8 +345,16 @@ void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
   QString k = QString::fromAscii(key);
   if (k == "mesh")
     cfg->mesh.mRenderMesh = value->toBool();
-  else if (k == "m_color")
-    cfg->mesh.mMeshColor = value->value<QColor>();
+  else if (k == "m_border_color")
+    cfg->mesh.mMeshBorderColor = value->value<QColor>();
+  else if (k == "m_fill_color")
+    cfg->mesh.mMeshFillColor = value->value<QColor>();
+  else if (k == "m_label_elem")
+    cfg->mesh.mMeshElemLabel = value->toBool();
+  else if (k == "m_border_width")
+    cfg->mesh.mMeshBorderWidth = value->toInt();
+  else if (k == "m_fill_enabled")
+    cfg->mesh.mMeshFillEnabled = value->toBool();
   else if (k == "c_colormap")
     cfg->ds.mColorMap = value->value<ColorMap>();
   else if (k == "v_shaft_length_method")
@@ -388,8 +396,16 @@ void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value)
   QString k = QString::fromAscii(key);
   if (k == "mesh")
     *value = QVariant(cfg->mesh.mRenderMesh);
-  else if (k == "m_color")
-    *value = QVariant::fromValue(cfg->mesh.mMeshColor);
+  else if (k == "m_border_color")
+    *value = QVariant::fromValue(cfg->mesh.mMeshBorderColor);
+  else if (k == "m_fill_color")
+    *value = QVariant::fromValue(cfg->mesh.mMeshFillColor);
+  else if (k == "m_label_elem")
+    *value = QVariant::fromValue(cfg->mesh.mMeshElemLabel);
+  else if (k == "m_border_width")
+    *value = QVariant::fromValue(cfg->mesh.mMeshBorderWidth);
+  else if (k == "m_fill_enabled")
+    *value = QVariant::fromValue(cfg->mesh.mMeshFillEnabled);
   else if (k == "c_colormap")
     *value = QVariant::fromValue(cfg->ds.mColorMap);
   else if (k == "v_shaft_length_method")

@@ -142,5 +142,20 @@ class TestCrayfishLoad(unittest.TestCase):
     self.assertEqual(o.time(), 0.0)
     self.assertEqual(o.value(1), 9.699999809265137)
 
+  def test_load_hec2d_file_2areas(self):
+    m = crayfish.Mesh(TEST_DIR + "/baldeagle_multi2d.hdf")
+    self.assertEqual(m.dataset_count(), 5)
+
+    self.assertEqual(m.dataset(0).type(), crayfish.DS_Bed)
+    self.assertEqual(m.dataset(1).type(), crayfish.DS_Scalar)
+
+    ds = m.dataset(1)
+    self.assertEqual(ds.output_count(), 7)
+    o = ds.output(5)
+    self.assertEqual(o.time(), 2.5)
+    self.assertEqual(o.value(100), 606.6416015625)
+    self.assertEqual(o.value(700), 655.0142211914062)
+
+
 if __name__ == '__main__':
   unittest.main()

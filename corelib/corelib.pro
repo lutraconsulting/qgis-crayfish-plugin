@@ -107,6 +107,8 @@ HEADERS += crayfish.h \
     frmts/crayfish_mesh_2dm.h \
     frmts/crayfish_hdf5.h
 
+INCLUDEPATH += $$PWD
+
 DESTDIR = $$PWD/../plugin
 
 unix {

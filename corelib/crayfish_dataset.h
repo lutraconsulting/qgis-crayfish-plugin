@@ -69,9 +69,13 @@ struct DataSet
 
     void addOutput(Output* output);
 
-    const Output* output(int outputTime) const;
+    const Output* constOutput(int outputTime) const;
+    const NodeOutput* constNodeOutput(int outputTime) const;
+    const ElementOutput* constElemOutput(int outputTime) const;
 
-    const NodeOutput* nodeOutput(int outputTime) const;
+    Output* output(int outputTime);
+    NodeOutput* nodeOutput(int outputTime);
+    ElementOutput* elemOutput(int outputTime);
 
     void updateZRange();
 

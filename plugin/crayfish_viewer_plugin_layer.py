@@ -107,7 +107,11 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         self.config = {
           'mesh'  : False,
-          'm_color' : (0,0,0,128)  # black with 50% transparency
+          'm_border_color' : (0,0,0,128),  # black with 50% transparency
+          'm_fill_color' : (221,236,240,125),  # blue-ish with 50% transparency
+          'm_fill_enabled' : False,
+          'm_label_elem' : False,
+          'm_border_width': 1 # 1px
         }
 
         self.lockCurrent = True
@@ -359,9 +363,31 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             meshRendering = qstring2bool(meshElem.attribute("enabled"))
             if meshRendering is not None:
                 self.config["mesh"] = meshRendering
-            meshColor = qstring2rgb(meshElem.attribute("color"))
-            if meshColor is not None:
-                self.config["m_color"] = meshColor
+
+            if meshElem.hasAttribute("border-color"):
+                meshBorderColor = qstring2rgb(meshElem.attribute("border-color"))
+                if meshBorderColor is not None:
+                    self.config["m_border_color"] = meshBorderColor
+
+            if meshElem.hasAttribute("border-width"):
+                meshBorderWidth = qstring2int(meshElem.attribute("border-width"))
+                if meshBorderWidth is not None:
+                    self.config["m_border_width"] = meshBorderWidth
+
+            if meshElem.hasAttribute("fill-color"):
+                meshFillColor = qstring2rgb(meshElem.attribute("fill-color"))
+                if meshFillColor is not None:
+                    self.config["m_fill_color"] = meshFillColor
+
+            if meshElem.hasAttribute("label-elements-enabled"):
+                meshElemLabel = qstring2bool(meshElem.attribute("label-elements-enabled"))
+                if meshElemLabel is not None:
+                    self.config["m_label_elem"] = meshElemLabel
+
+            if meshElem.hasAttribute("fill-enabled"):
+                meshFillEnabled = qstring2bool(meshElem.attribute("fill-enabled"))
+                if meshFillEnabled is not None:
+                    self.config["m_fill_enabled"] = meshFillEnabled
 
         return True
 
@@ -380,7 +406,11 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         element.setAttribute("display-vector", str(self.vector_ds_index))
         meshElem = doc.createElement("render-mesh")
         meshElem.setAttribute("enabled", "1" if self.config["mesh"] else "0")
-        meshElem.setAttribute("color", rgb2string(self.config["m_color"]))
+        meshElem.setAttribute("border-color", rgb2string(self.config["m_border_color"]))
+        meshElem.setAttribute("border-width", int2string(self.config["m_border_width"]))
+        meshElem.setAttribute("fill-color", rgb2string(self.config["m_fill_color"]))
+        meshElem.setAttribute("label-elements-enabled", "1" if self.config["m_label_elem"] else "0")
+        meshElem.setAttribute("fill-enabled", "1" if self.config["m_fill_enabled"] else "0")
         element.appendChild(meshElem)
 
         for i in range(self.mesh.dataset_count()):

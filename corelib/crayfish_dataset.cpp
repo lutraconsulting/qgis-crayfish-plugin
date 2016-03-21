@@ -61,7 +61,7 @@ void DataSet::addOutput(Output* output)
 }
 
 
-const Output* DataSet::output(int outputTime) const
+const Output* DataSet::constOutput(int outputTime) const
 {
   if (outputTime < 0 || outputTime >= (int)outputs.size())
     return 0;
@@ -69,12 +69,50 @@ const Output* DataSet::output(int outputTime) const
   return outputs.at(outputTime);
 }
 
-const NodeOutput* DataSet::nodeOutput(int outputTime) const
+const NodeOutput* DataSet::constNodeOutput(int outputTime) const
 {
-  if (const Output* o = output(outputTime))
+  if (const Output* o = constOutput(outputTime))
   {
     if (o->type() == Output::TypeNode)
       return static_cast<const NodeOutput*>(o);
+  }
+  return 0;
+}
+
+const ElementOutput* DataSet::constElemOutput(int outputTime) const
+{
+  if (const Output* o = constOutput(outputTime))
+  {
+    if (o->type() == Output::TypeElement)
+      return static_cast<const ElementOutput*>(o);
+  }
+  return 0;
+}
+
+Output* DataSet::output(int outputTime)
+{
+  if (outputTime < 0 || outputTime >= (int)outputs.size())
+    return 0;
+
+  return outputs.at(outputTime);
+}
+
+NodeOutput* DataSet::nodeOutput(int outputTime)
+{
+  if (Output* o = output(outputTime))
+  {
+    if (o->type() == Output::TypeNode)
+      return static_cast<NodeOutput*>(o);
+  }
+  return 0;
+}
+
+ElementOutput* DataSet::elemOutput(int outputTime)
+{
+  if (Output* o = output(outputTime))
+  {
+    if (o->type() == Output::TypeElement)
+      return static_cast<ElementOutput*>(o);
   }
   return 0;
 }
@@ -86,7 +124,7 @@ void DataSet::updateZRange()
   for(int i = 0; i < outputCount(); i++)
   {
     float outputZMin, outputZMax;
-    output(i)->getRange(outputZMin, outputZMax);
+    constOutput(i)->getRange(outputZMin, outputZMax);
     mZMin = qMin(outputZMin, mZMin);
     mZMax = qMax(outputZMax, mZMax);
   }
