@@ -65,6 +65,7 @@ bool ENP_physicalToLogical(const QPolygonF& pX, QPointF pP, QVector<double>& lam
         double cotNext = ENP_contangent(pP, pX[i], pX[next]);
         double len2 = QVector2D(pX[i] - pP).lengthSquared();
         lam[i] = (cotPrev + cotNext) / len2;
+        weightSum += lam[i];
 
         ++prev;
         if (prev == pX.size()) prev = 0;

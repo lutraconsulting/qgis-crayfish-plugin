@@ -169,7 +169,7 @@ static void readUnsteadyFaceResults(Mesh* mesh, const QString fileName, const Hd
             ElementOutput* tos = new ElementOutput;
             tos->init(nElems, false);
             tos->time = times[tidx];
-            std::fill(tos->values.begin(),tos->values.end(),-9999);
+            std::fill(tos->values.begin(),tos->values.end(),-9999.0f);
             dsd->addOutput(tos);
         }
 
@@ -308,7 +308,7 @@ static void setProjection(Mesh* mesh, HdfFile hdfFile) {
         QString proj_wkt = openHdfAttribute(hdfFile, "Projection");
         mesh->setSourceCrsFromWKT(proj_wkt);
     }
-    catch (LoadStatus::Error error) { /* projection not set */}
+    catch (LoadStatus::Error) { /* projection not set */}
 }
 
 static Mesh* parseMesh(HdfGroup gGeom2DFlowAreas, QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames)

@@ -57,7 +57,7 @@ static const int CT_TIMEUNITS = 250;
 #define EXIT_WITH_ERROR(error)       {  if (status) status->mLastError = (error); return Mesh::DataSets(); }
 
 static NodeOutput* _readTimestep(float t, bool isVector, bool hasStatus, QTextStream& stream, int nodeCount, int elemCount, QVector<int>& nodeIDToIndex);
-static ElementOutput* _readTimestampElementCentered(float t, bool isVector, bool hasStatus, QTextStream& stream, int elemCount);
+static ElementOutput* _readTimestampElementCentered(float t, bool isVector, QTextStream& stream, int elemCount);
 
 
 Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status)
@@ -389,16 +389,16 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
     }
     else if (cardType == "TS" && items.count() >= (oldFormat ? 2 : 3))
     {
-      bool hasStatus = (oldFormat ? false : items[1].toInt());
       float t = items[oldFormat ? 1 : 2].toFloat();
 
       if (elementCentered)
       {
-        ElementOutput* o = _readTimestampElementCentered(t, isVector, hasStatus, stream, elemCount);
+        ElementOutput* o = _readTimestampElementCentered(t, isVector, stream, elemCount);
         ds->addOutput(o);
       }
       else
       {
+        bool hasStatus = (oldFormat ? false : items[1].toInt());
         NodeOutput* o = _readTimestep(t, isVector, hasStatus, stream, nodeCount, elemCount, nodeIDToIndex);
         ds->addOutput(o);
       }
@@ -484,7 +484,7 @@ static NodeOutput* _readTimestep(float t, bool isVector, bool hasStatus, QTextSt
 }
 
 
-static ElementOutput* _readTimestampElementCentered(float t, bool isVector, bool hasStatus, QTextStream& stream, int elemCount)
+static ElementOutput* _readTimestampElementCentered(float t, bool isVector, QTextStream& stream, int elemCount)
 {
   ElementOutput* o = new ElementOutput;
   o->init(elemCount, isVector);
