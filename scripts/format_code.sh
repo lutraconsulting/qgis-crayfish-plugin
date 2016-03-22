@@ -13,7 +13,7 @@ set -e
 ##### PYTHON
 
 cd ../plugin
-PYFILES=$(find . -type f -name "*.py" --max-depth=1)
+PYFILES=$(find . -maxdepth 1 -type f -name "*.py" )
 for i in $PYFILES; do
     echo "$i"
     autopep8 --in-place --ignore=E261,E265,E402,E501 "$i"
@@ -25,7 +25,7 @@ CFILES=$(find . -type f \( -name "*.cpp" -or -name "*.hpp" -or -name "*.h" -or -
 
 for i in ../**/*.cpp; do
     echo "$i"
-    astyle --style=google --convert-tabs --indent=spaces=2 --preserve-date --suffix=none "$i"
+    astyle --style=java --convert-tabs --indent=spaces=2 --preserve-date --suffix=none "$i"
 done
 
 cd ../scripts
