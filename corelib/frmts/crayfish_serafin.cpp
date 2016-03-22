@@ -309,7 +309,7 @@ static void populateScaleForVector(NodeOutput* tos, int nPoints){
    // there are no scalar data associated with vectors, so
    // assign vector length as scalar data at least
    // see #134
-   for (uint idx=0; idx<nPoints; ++idx)
+   for (int idx=0; idx<nPoints; ++idx)
    {
        if (is_nodata(tos->valuesV[idx].x) ||
            is_nodata(tos->valuesV[idx].y))
@@ -325,7 +325,7 @@ static void populateScaleForVector(NodeOutput* tos, int nPoints){
 static void activateElements(Mesh* mesh, NodeOutput* tos, int nElem){
    // Activate only elements that do all node's outputs with some data
    char* active = tos->active.data();
-   for (uint idx=0; idx<nElem; ++idx)
+   for (int idx=0; idx<nElem; ++idx)
    {
        Element elem = mesh->elements().at(idx);
 

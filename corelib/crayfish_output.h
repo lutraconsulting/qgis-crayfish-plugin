@@ -75,7 +75,7 @@ public:
 
 
 //! Results stored in nodes of the mesh
-struct NodeOutput : public Output
+class NodeOutput : public Output
 {
 public:
 

@@ -169,7 +169,7 @@ static void readUnsteadyFaceResults(Mesh* mesh, const QString fileName, const Hd
             ElementOutput* tos = new ElementOutput;
             tos->init(nElems, false);
             tos->time = times[tidx];
-            std::fill(tos->values.begin(),tos->values.end(),-9999);
+            std::fill(tos->values.begin(),tos->values.end(),-9999.0f);
             dsd->addOutput(tos);
         }
 
@@ -308,7 +308,7 @@ static void setProjection(Mesh* mesh, HdfFile hdfFile) {
         QString proj_wkt = openHdfAttribute(hdfFile, "Projection");
         mesh->setSourceCrsFromWKT(proj_wkt);
     }
-    catch (LoadStatus::Error error) { /* projection not set */}
+    catch (LoadStatus::Error) { /* projection not set */}
 }
 
 static Mesh* parseMesh(HdfGroup gGeom2DFlowAreas, QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames)
@@ -347,7 +347,7 @@ static Mesh* parseMesh(HdfGroup gGeom2DFlowAreas, QVector<int>& areaElemStartInd
         {
             int eIdx = areaElemStartIndex[nArea] + e;
             elements[eIdx].setId(eIdx);
-            uint idx[maxFaces];
+            QVector<uint> idx(maxFaces);
             int nValidVertexes = maxFaces;
             for (int fi=0; fi<maxFaces; ++fi)
             {
@@ -363,26 +363,26 @@ static Mesh* parseMesh(HdfGroup gGeom2DFlowAreas, QVector<int>& areaElemStartInd
 
             if (nValidVertexes == 2) { // Line
                 elements[eIdx].setEType(Element::E2L);
-                elements[eIdx].setP(idx);
+                elements[eIdx].setP(idx.data());
             } else if (nValidVertexes == 3) { // TRIANGLE
                 elements[eIdx].setEType(Element::E3T);
-                elements[eIdx].setP(idx);
+                elements[eIdx].setP(idx.data());
             }
             else if (nValidVertexes == 4) { // RECTANGLE
                 elements[eIdx].setEType(Element::E4Q);
-                elements[eIdx].setP(idx);
+                elements[eIdx].setP(idx.data());
 
                 // It seems that some polygons with 4 vertexes
                 // are triangles. In this case the E4Q elements
                 // are not properly working
                 if (! E4Q_isValid(elements[eIdx], nodes.data())) {
                     elements[eIdx].setEType(Element::ENP, nValidVertexes);
-                    elements[eIdx].setP(idx);
+                    elements[eIdx].setP(idx.data());
                 }
             }
             else {
                 elements[eIdx].setEType(Element::ENP, nValidVertexes);
-                elements[eIdx].setP(idx);
+                elements[eIdx].setP(idx.data());
             }
         }
     }

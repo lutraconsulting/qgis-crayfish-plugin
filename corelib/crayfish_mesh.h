@@ -87,7 +87,7 @@ protected:
 
 };
 
-class ValueAccessor;
+struct ValueAccessor;
 
 /** Adds data + functionality for reprojection, identification, support for rendering */
 class Mesh : public BasicMesh
