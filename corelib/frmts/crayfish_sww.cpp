@@ -117,7 +117,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
 
   Mesh::Nodes nodes(nPoints);
   Node* nodesPtr = nodes.data();
-  for (int i = 0; i < nPoints; ++i, ++nodesPtr)
+  for (size_t i = 0; i < nPoints; ++i, ++nodesPtr)
   {
     nodesPtr->setId(i);
     nodesPtr->x = px[i] + xLLcorner;
@@ -161,14 +161,14 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
     o->init(nPoints, nVolumes, false);
     o->time = 0.0;
     memset(o->active.data(), 1, nVolumes); // All cells active
-    for (int i = 0; i < nPoints; ++i)
+    for (size_t i = 0; i < nPoints; ++i)
       o->values[i] = pz[i];
     elevationOutputs << o;
   }
   else if (zDims == 2)
   {
     // newer SWW format: elevation may change over time
-    for (int t = 0; t < nTimesteps; ++t)
+    for (size_t t = 0; t < nTimesteps; ++t)
     {
       NodeOutput* toe = new NodeOutput;
       toe->init(nPoints, nVolumes, false);
@@ -192,7 +192,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
   Mesh::Elements elements(nVolumes);
   Element* elementsPtr = elements.data();
 
-  for (int i = 0; i < nVolumes; ++i, ++elementsPtr)
+  for (size_t i = 0; i < nVolumes; ++i, ++elementsPtr)
   {
     elementsPtr->setId(i);
     elementsPtr->setEType(Element::E3T);
@@ -233,7 +233,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
   dsd->setName("Depth");
   dsd->setIsTimeVarying(true);
 
-  for (int t = 0; t < nTimesteps; ++t)
+  for (size_t t = 0; t < nTimesteps; ++t)
   {
     const NodeOutput* elevO = bedDs->isTimeVarying() ? bedDs->nodeOutput(t) : bedDs->nodeOutput(0);
     const float* elev = elevO->values.constData();
@@ -257,11 +257,11 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
     tod->init(nPoints, nVolumes, false);
     tod->time = tos->time;
     float* depths = tod->values.data();
-    for (int j = 0; j < nPoints; ++j)
+    for (size_t j = 0; j < nPoints; ++j)
       depths[j] = values[j] - elev[j];
 
     // determine which elements are active (wet)
-    for (int elemidx = 0; elemidx < nVolumes; ++elemidx)
+    for (size_t elemidx = 0; elemidx < nVolumes; ++elemidx)
     {
       const Element& elem = mesh->elements()[elemidx];
       float v0 = depths[elem.p(0)];
@@ -290,7 +290,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
     mds->setIsTimeVarying(true);
 
     QVector<float> valuesX(nPoints), valuesY(nPoints);
-    for (int t = 0; t < nTimesteps; ++t)
+    for (size_t t = 0; t < nTimesteps; ++t)
     {
       NodeOutput* mto = new NodeOutput;
       mto->init(nPoints, nVolumes, true);
@@ -309,7 +309,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
 
       NodeOutput::float2D* mtoValuesV = mto->valuesV.data();
       float* mtoValues = mto->values.data();
-      for (int i = 0; i < nPoints; ++i)
+      for (size_t i = 0; i < nPoints; ++i)
       {
         mtoValuesV[i].x = valuesX[i];
         mtoValuesV[i].y = valuesY[i];
