@@ -106,6 +106,18 @@ Mesh::~Mesh()
   mProjBBoxes = 0;
 }
 
+DataSet* Mesh::dataSet(const QString& name)
+{
+    DataSets sets = dataSets();
+    foreach (DataSet* ds, sets)
+    {
+        if (ds->name() == name)
+        {
+            return ds;
+        }
+    }
+    return 0;
+}
 
 BBox Mesh::computeMeshExtent(bool projected)
 {

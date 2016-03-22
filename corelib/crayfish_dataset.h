@@ -46,13 +46,15 @@ struct DataSet
     DataSet(const QString& fileName);
     ~DataSet();
 
+    static QString sanitizeName(const QString& name);
+
     //! mesh to which this dataset is associated
     const Mesh* mesh() const { return mMesh; }
     void setMesh(const Mesh* m) { mMesh = m; }
 
     QString fileName() const { return mFileName; }
 
-    void setName(const QString& name) { mName = name; }
+    void setName(const QString& name);
     QString name() const { return mName; }
 
     enum Type

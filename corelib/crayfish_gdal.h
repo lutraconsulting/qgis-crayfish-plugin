@@ -113,7 +113,6 @@ private:
     void addDatasets();
     void createMesh();
     void parseRasterBands();
-    void sanitizeBandName(QString& band_name);
 
     const QString mFileName;
     const QString mDriverName; /* GDAL driver name */
