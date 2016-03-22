@@ -41,8 +41,9 @@ class ElementOutput;
  * DataSet represents one sub-layer of the plugin layer.
  * One mesh may have several DataSet instances attached.
  */
-struct DataSet
+class DataSet
 {
+public:
     DataSet(const QString& fileName);
     ~DataSet();
 

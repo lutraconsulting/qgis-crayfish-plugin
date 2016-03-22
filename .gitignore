@@ -7,7 +7,14 @@ build-*
 *.o
 *.obj
 Makefile
+Makefile.*
 *.aux.xml
 *.orig
 *~
 nbproject*
+corelib/release
+corelib/debug
+crayfish-lib-*.zip
+plugin/crayfish.dll
+plugin/crayfish.exp
+plugin/crayfish.lib
