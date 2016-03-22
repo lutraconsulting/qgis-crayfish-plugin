@@ -150,7 +150,6 @@ Mesh* Crayfish::loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
       // Right now we just store node IDs here - we will convert them to node indices afterwards
       for (int i = 0; i < 3; ++i)
         elem.setP(i, chunks[i+2].toInt());
-      elem.setP(3, -1); // only three points
 
       elemIndex++;
     }
