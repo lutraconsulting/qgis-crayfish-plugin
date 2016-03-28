@@ -28,10 +28,14 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 
-from . import vector_options_dialog
-from . import mesh_options_dialog
+from .. import crayfish
+from ..plot import CrayfishPlotWidget
+from .vector_options_dialog import CrayfishViewerVectorOptionsDialog
+from .mesh_options_dialog import CrayfishViewerMeshOptionsDialog
 from .render_settings import CrayfishViewerRenderSettings
 from .utils import load_ui, initColorButton, initColorRampComboBox, name2ramp, time_to_string
+from .dataset_view import DataSetModel
+from .colormap_dialog import CrayfishColorMapDialog
 
 uiDialog, qtBaseClass = load_ui('crayfish_viewer_dock_widget')
 
@@ -109,7 +113,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
             self.vectorPropsDialog.close()
 
         rs = CrayfishViewerRenderSettings( self.currentDataSet() )
-        self.vectorPropsDialog = crayfish_viewer_vector_options_dialog.CrayfishViewerVectorOptionsDialog(self.iface, rs, self.redrawCurrentLayer, self)
+        self.vectorPropsDialog = CrayfishViewerVectorOptionsDialog(self.iface, rs, self.redrawCurrentLayer, self)
         self.vectorPropsDialog.show()
 
 
@@ -144,7 +148,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
             self.meshPropsDialog.close()
 
         if self.currentCrayfishLayer():
-            self.meshPropsDialog = crayfish_viewer_mesh_options_dialog.CrayfishViewerMeshOptionsDialog(self.currentCrayfishLayer(), self.redrawCurrentLayer, self)
+            self.meshPropsDialog = CrayfishViewerMeshOptionsDialog(self.currentCrayfishLayer(), self.redrawCurrentLayer, self)
             self.meshPropsDialog.show()
 
     def contourCustomRangeToggled(self, on):
@@ -215,7 +219,6 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         l.currentDataSetChanged.emit()  # let others know (e.g. plot widget)
 
         if l.lockCurrent:
-            from .. import crayfish
             l.contour_ds_index = l.current_ds_index
             l.vector_ds_index = l.current_ds_index if dataSet.type() == crayfish.DataSet.Vector else -1
 
@@ -266,8 +269,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         self.updateDisplayVector()
 
         # Disable the vector options if we are looking at a scalar dataset
-        from ..crayfish import DS_Vector
-        self.displayVectorsCheckBox.setEnabled(dataSet.type() == DS_Vector)
+        self.displayVectorsCheckBox.setEnabled(dataSet.type() == crayfish.DS_Vector)
 
         self.iface.legendInterface().refreshLayerSymbology(l)
 
@@ -383,8 +385,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         textValue = str( '(%.3f)' % bedValue )
 
         dataSet = l.currentDataSet()
-        from ..crayfish import DS_Bed
-        if dataSet.type() != DS_Bed:
+        if dataSet.type() != crayfish.DS_Bed:
             # We're looking at an actual dataset rather than just the bed level
             dsValue = l.mesh.value(l.currentOutput(), xCoord, yCoord)
             if dsValue != nullValue:
@@ -412,7 +413,6 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         datasets = []
         for i,d in enumerate(l.mesh.datasets()):
             datasets.append( (d.name(), d.type()) )
-        from .dataset_view import DataSetModel
         self.treeDataSets.setModel(DataSetModel(datasets, l.ds_user_names))
         self.treeDataSets.selectionModel().currentRowChanged.connect(self.dataSetChanged)
         self.treeDataSets.model().setActiveContourIndex(l.contour_ds_index)
@@ -465,7 +465,6 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         ds = self.currentDataSet()
         colormap = ds.custom["c_advancedColorMap"]
 
-        from .colormap_dialog import CrayfishColorMapDialog
         zmin, zmax = ds.value_range()
         self.advancedColorMapDialog = CrayfishColorMapDialog(colormap, zmin, zmax, lambda: self.updateColorMapAndRedraw(ds), self)
         self.advancedColorMapDialog.show()
@@ -549,7 +548,6 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
 
     def plot(self):
         if self.plot_dock_widget is None:
-            from ..plot import CrayfishPlotWidget
             self.plot_dock_widget = QDockWidget("Crayfish Plot")
             self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_widget)
             w = CrayfishPlotWidget(self.currentCrayfishLayer(), self.plot_dock_widget)

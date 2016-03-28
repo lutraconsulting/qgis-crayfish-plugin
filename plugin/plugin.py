@@ -32,6 +32,10 @@ from PyQt4.QtGui import *
 from qgis.core import *
 
 from . import resources
+from . import crayfish
+from .data_items import CrayfishDataItemProvider
+from .plugin_layer import CrayfishViewerPluginLayer
+from .plugin_layer_type import CrayfishViewerPluginLayerType
 from .gui.dock import CrayfishViewerDock
 from .gui.about_dialog import CrayfishAboutDialog
 from .gui.export_config_dialog import CrayfishExportConfigDialog
@@ -90,7 +94,6 @@ class CrayfishPlugin:
         self.menu.addAction(self.actionExportAnimation)
 
         # Register plugin layer type
-        from .plugin_layer_type import CrayfishViewerPluginLayerType
         self.lt = CrayfishViewerPluginLayerType()
         QgsPluginLayerRegistry.instance().addPluginLayerType(self.lt)
 
@@ -114,7 +117,6 @@ class CrayfishPlugin:
         # Register data items provider (if possible - since 2.10)
         self.dataItemsProvider = None
         if 'QgsDataItemProvider' in globals():
-          from .data_items import CrayfishDataItemProvider
           self.dataItemsProvider = CrayfishDataItemProvider()
           QgsDataItemProviderRegistry.instance().addProvider(self.dataItemsProvider)
 
@@ -165,7 +167,6 @@ class CrayfishPlugin:
         self.iface.pluginMenu().removeAction(self.menu.menuAction())
 
         # Unregister plugin layer type
-        from .plugin_layer import CrayfishViewerPluginLayer
         QgsPluginLayerRegistry.instance().removePluginLayerType(CrayfishViewerPluginLayer.LAYER_TYPE)
 
         # Unregister data item provider
@@ -346,7 +347,6 @@ class CrayfishPlugin:
             QApplication.restoreOverrideCursor()
         except ValueError:
             QApplication.restoreOverrideCursor()
-            from . import crayfish
             err = crayfish.last_load_status()[0]
             # reuse from showMeshLoadError
             err_msgs = {
@@ -435,7 +435,6 @@ class CrayfishPlugin:
         return None
 
     def addLayer(self, twoDMFileName):
-        from .plugin_layer import CrayfishViewerPluginLayer
         layer = CrayfishViewerPluginLayer(twoDMFileName)
         if not layer.isValid():
             layer.showMeshLoadError(twoDMFileName)
@@ -444,7 +443,6 @@ class CrayfishPlugin:
         # Add to layer registry
         QgsMapLayerRegistry.instance().addMapLayer(layer)
 
-        from . import crayfish
         warn = crayfish.last_load_status()[1]
         if warn == crayfish.Warn_UnsupportedElement:
                 # Unsupported element seen

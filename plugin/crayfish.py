@@ -29,9 +29,7 @@ import os
 import platform
 import weakref
 
-this_dir = os.path.dirname(os.path.realpath(__file__))
-libname = "crayfish.dll" if platform.system() == "Windows" else "libcrayfish.so.1"
-lib=ctypes.cdll.LoadLibrary(os.path.join(this_dir, libname))
+lib = None  # initialized on demand
 
 Err_None, Err_NotEnoughMemory, \
   Err_FileNotFound, Err_UnknownFormat, \
@@ -54,46 +52,59 @@ class Element(ctypes.Structure):
   def __repr__(self):
     return "<Element ID %d type: %d  pts: %s>" % (self.id, self.type, str(list(self.p)))
 
-lib.CF_Mesh_nodeAt.restype = ctypes.POINTER(Node)
-lib.CF_Mesh_elementAt.restype = ctypes.POINTER(Element)
-lib.CF_LoadMesh.restype = ctypes.c_void_p
-lib.CF_LoadMesh.argtypes = [ctypes.c_char_p]
-lib.CF_Mesh_loadDataSet.restype = ctypes.c_bool
-lib.CF_Mesh_loadDataSet.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-lib.CF_Mesh_dataSetAt.restype = ctypes.c_void_p
-lib.CF_Mesh_sourceCrs.restype = ctypes.c_char_p
-lib.CF_Mesh_destinationCrs.restype = ctypes.c_char_p
-lib.CF_DS_name.restype = ctypes.c_char_p
-lib.CF_DS_fileName.restype = ctypes.c_char_p
-lib.CF_DS_outputAt.restype = ctypes.c_void_p
-lib.CF_DS_mesh.restype = ctypes.c_void_p
-lib.CF_O_dataSet.restype = ctypes.c_void_p
-lib.CF_O_time.restype = ctypes.c_float
-lib.CF_O_valueAt.restype = ctypes.c_float
-lib.CF_O_statusAt.restype = ctypes.c_char
-lib.CF_CM_create.restype = ctypes.c_void_p
-lib.CF_CM_createDefault.restype = ctypes.c_void_p
-lib.CF_CM_itemValue.restype = ctypes.c_double
-lib.CF_CM_itemLabel.restype = ctypes.c_char_p
-lib.CF_CM_value.argtypes = [ctypes.c_void_p, ctypes.c_double]
-lib.CF_CM_value.restype = ctypes.c_uint
-lib.CF_CM_itemColor.restype = ctypes.c_uint
-lib.CF_Mesh_valueAt.restype = ctypes.c_double
-lib.CF_Mesh_valueAt.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_double, ctypes.c_double]
-lib.CF_R_create.restype = ctypes.c_void_p
-lib.CF_R_create.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
-lib.CF_R_destroy.argtypes = [ ctypes.c_void_p ]
-lib.CF_R_draw.argtypes = [ ctypes.c_void_p ]
-lib.CF_RC_create.restype = ctypes.c_void_p
-lib.CF_RC_destroy.argtypes = [ ctypes.c_void_p ]
-lib.CF_RC_setView.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double]
-lib.CF_RC_setOutputMesh.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
-lib.CF_RC_setOutputContour.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
-lib.CF_RC_setOutputVector.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
-lib.CF_RC_setParam.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p]
-lib.CF_RC_getParam.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p]
-lib.CF_V_create.restype = ctypes.c_void_p
-lib.CF_V_toDouble.restype = ctypes.c_double
+
+def load_library():
+    global lib
+
+    if lib is not None:
+        return  # already loaded
+
+    this_dir = os.path.dirname(os.path.realpath(__file__))
+    libname = "crayfish.dll" if platform.system() == "Windows" else "libcrayfish.so.1"
+
+    lib = ctypes.cdll.LoadLibrary(os.path.join(this_dir, libname))
+
+    lib.CF_Mesh_nodeAt.restype = ctypes.POINTER(Node)
+    lib.CF_Mesh_elementAt.restype = ctypes.POINTER(Element)
+    lib.CF_LoadMesh.restype = ctypes.c_void_p
+    lib.CF_LoadMesh.argtypes = [ctypes.c_char_p]
+    lib.CF_Mesh_loadDataSet.restype = ctypes.c_bool
+    lib.CF_Mesh_loadDataSet.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    lib.CF_Mesh_dataSetAt.restype = ctypes.c_void_p
+    lib.CF_Mesh_sourceCrs.restype = ctypes.c_char_p
+    lib.CF_Mesh_destinationCrs.restype = ctypes.c_char_p
+    lib.CF_DS_name.restype = ctypes.c_char_p
+    lib.CF_DS_fileName.restype = ctypes.c_char_p
+    lib.CF_DS_outputAt.restype = ctypes.c_void_p
+    lib.CF_DS_mesh.restype = ctypes.c_void_p
+    lib.CF_O_dataSet.restype = ctypes.c_void_p
+    lib.CF_O_time.restype = ctypes.c_float
+    lib.CF_O_valueAt.restype = ctypes.c_float
+    lib.CF_O_statusAt.restype = ctypes.c_char
+    lib.CF_CM_create.restype = ctypes.c_void_p
+    lib.CF_CM_createDefault.restype = ctypes.c_void_p
+    lib.CF_CM_itemValue.restype = ctypes.c_double
+    lib.CF_CM_itemLabel.restype = ctypes.c_char_p
+    lib.CF_CM_value.argtypes = [ctypes.c_void_p, ctypes.c_double]
+    lib.CF_CM_value.restype = ctypes.c_uint
+    lib.CF_CM_itemColor.restype = ctypes.c_uint
+    lib.CF_Mesh_valueAt.restype = ctypes.c_double
+    lib.CF_Mesh_valueAt.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_double, ctypes.c_double]
+    lib.CF_R_create.restype = ctypes.c_void_p
+    lib.CF_R_create.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    lib.CF_R_destroy.argtypes = [ ctypes.c_void_p ]
+    lib.CF_R_draw.argtypes = [ ctypes.c_void_p ]
+    lib.CF_RC_create.restype = ctypes.c_void_p
+    lib.CF_RC_destroy.argtypes = [ ctypes.c_void_p ]
+    lib.CF_RC_setView.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double]
+    lib.CF_RC_setOutputMesh.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    lib.CF_RC_setOutputContour.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    lib.CF_RC_setOutputVector.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    lib.CF_RC_setParam.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p]
+    lib.CF_RC_getParam.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p]
+    lib.CF_V_create.restype = ctypes.c_void_p
+    lib.CF_V_toDouble.restype = ctypes.c_double
+
 
 class Mesh:
 
@@ -105,6 +116,7 @@ class Mesh:
       return Mesh.handles[handle]()
 
   def __init__(self, path):
+    load_library()  # make sure the library is loaded
     self.lib = lib
     handle = self.lib.CF_LoadMesh(path)
     if handle is None:
@@ -194,6 +206,7 @@ class DataSet(object):
     return DataSet.handles[handle]()
 
   def __init__(self, handle):
+    load_library()  # make sure the library is loaded
     self.lib = lib
     if handle is None:
       raise ValueError(handle)
@@ -263,6 +276,7 @@ class Output(object):
     return Output.handles[handle]()
 
   def __init__(self, handle):
+    load_library()  # make sure the library is loaded
     self.lib = lib
     if handle is None:
       raise ValueError(handle)
@@ -323,6 +337,7 @@ class Output(object):
 class Value(object):
 
   def __init__(self, value=None):
+    load_library()  # make sure the library is loaded
     self.lib = lib
     self.handle = ctypes.c_void_p( self.lib.CF_V_create() )
     if isinstance(value, int):
@@ -365,6 +380,7 @@ class Value(object):
 class RendererConfig(object):
 
   def __init__(self, mesh=None, size=None, ll=None, mupp=None):
+    load_library()  # make sure the library is loaded
     self.lib = lib
     self.handle = ctypes.c_void_p(self.lib.CF_RC_create())
     if mesh:
@@ -406,6 +422,7 @@ class RendererConfig(object):
 class Renderer(object):
 
   def __init__(self, config, img):
+    load_library()  # make sure the library is loaded
     self.lib = lib
     import sip
     self.handle = ctypes.c_void_p(self.lib.CF_R_create(config.handle, sip.unwrapinstance(img)))
@@ -444,6 +461,7 @@ class ColorMap(object):
 
   class Item(object):
     def __init__(self, cm, index):
+      load_library()  # make sure the library is loaded
       self.lib = lib
       self.cm = cm
       self.index = index
@@ -465,6 +483,7 @@ class ColorMap(object):
       return "Item(%f, %s, '%s')" % (self.value, str(self.color), self.label)
 
   def __init__(self, vmin=None, vmax=None):
+    load_library()  # make sure the library is loaded
     self.lib = lib
     if vmin is not None and vmax is not None:
       h = self.lib.CF_CM_createDefault(ctypes.c_double(vmin), ctypes.c_double(vmax))
@@ -561,7 +580,9 @@ class ColorMap(object):
 
 
 def last_load_status():
+  load_library()  # make sure the library is loaded
   return lib.CF_LastLoadError(), lib.CF_LastLoadWarning()
 
 def version():
+  load_library()  # make sure the library is loaded
   return lib.CF_Version()
