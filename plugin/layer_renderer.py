@@ -29,7 +29,7 @@ from PyQt4.QtGui import *
 from qgis.core import *
 from qgis.utils import iface
 
-from . import crayfish
+from .core import Renderer, RendererConfig
 
 
 class CrayfishViewerPluginLayerRenderer(QgsMapLayerRenderer):
@@ -67,7 +67,7 @@ class CrayfishViewerPluginLayerRenderer(QgsMapLayerRenderer):
         self.extent = extent
 
     def _create_rconfig(self):
-        rconfig = crayfish.RendererConfig()
+        rconfig = RendererConfig()
         rconfig.set_output_mesh(self.layer.mesh)
 
         dsC = self.layer.currentContourDataSet()
@@ -114,7 +114,7 @@ class CrayfishViewerPluginLayerRenderer(QgsMapLayerRenderer):
         img = QImage(self.width, self.height, QImage.Format_ARGB32)
         img.fill(0)
 
-        r = crayfish.Renderer(self.rconfig, img)
+        r = Renderer(self.rconfig, img)
         r.draw()
 
         # img now contains the render of the crayfish layer, merge it

@@ -28,7 +28,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 
-from .. import crayfish
+from ..core import DataSet, DS_Bed, DS_Vector
 from ..plot import CrayfishPlotWidget
 from .vector_options_dialog import CrayfishViewerVectorOptionsDialog
 from .mesh_options_dialog import CrayfishViewerMeshOptionsDialog
@@ -220,7 +220,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
 
         if l.lockCurrent:
             l.contour_ds_index = l.current_ds_index
-            l.vector_ds_index = l.current_ds_index if dataSet.type() == crayfish.DataSet.Vector else -1
+            l.vector_ds_index = l.current_ds_index if dataSet.type() == DataSet.Vector else -1
 
         # repopulate the time control combo
         self.cboTime.blockSignals(True) # make sure that currentIndexChanged(int) will not be emitted
@@ -269,7 +269,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         self.updateDisplayVector()
 
         # Disable the vector options if we are looking at a scalar dataset
-        self.displayVectorsCheckBox.setEnabled(dataSet.type() == crayfish.DS_Vector)
+        self.displayVectorsCheckBox.setEnabled(dataSet.type() == DS_Vector)
 
         self.iface.legendInterface().refreshLayerSymbology(l)
 
@@ -385,7 +385,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         textValue = str( '(%.3f)' % bedValue )
 
         dataSet = l.currentDataSet()
-        if dataSet.type() != crayfish.DS_Bed:
+        if dataSet.type() != DS_Bed:
             # We're looking at an actual dataset rather than just the bed level
             dsValue = l.mesh.value(l.currentOutput(), xCoord, yCoord)
             if dsValue != nullValue:

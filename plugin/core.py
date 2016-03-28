@@ -31,12 +31,15 @@ import weakref
 
 lib = None  # initialized on demand
 
-Err_None, Err_NotEnoughMemory, \
-  Err_FileNotFound, Err_UnknownFormat, \
-  Err_IncompatibleMesh = range(5)
-Warn_None, Warn_UnsupportedElement, \
-  Warn_InvalidElements, Warn_ElementWithInvalidNode, \
-  Warn_ElementNotUnique, Warn_NodeNotUnique = range(6)
+class Err(object):
+    NoError, NotEnoughMemory, \
+    FileNotFound, UnknownFormat, \
+    IncompatibleMesh = range(5)
+
+class Warn(object):
+    NoWarning, UnsupportedElement, \
+    InvalidElements, ElementWithInvalidNode, \
+    ElementNotUnique, NodeNotUnique = range(6)
 
 DS_Bed, DS_Scalar, DS_Vector = range(3)
 
@@ -583,6 +586,6 @@ def last_load_status():
   load_library()  # make sure the library is loaded
   return lib.CF_LastLoadError(), lib.CF_LastLoadWarning()
 
-def version():
+def library_version():
   load_library()  # make sure the library is loaded
   return lib.CF_Version()

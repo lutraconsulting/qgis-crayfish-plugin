@@ -32,7 +32,7 @@ from PyQt4.QtGui import *
 from qgis.core import *
 
 from . import resources
-from . import crayfish
+from .core import Err, Warn, last_load_status
 from .data_items import CrayfishDataItemProvider
 from .plugin_layer import CrayfishViewerPluginLayer
 from .plugin_layer_type import CrayfishViewerPluginLayerType
@@ -347,13 +347,13 @@ class CrayfishPlugin:
             QApplication.restoreOverrideCursor()
         except ValueError:
             QApplication.restoreOverrideCursor()
-            err = crayfish.last_load_status()[0]
+            err = last_load_status()[0]
             # reuse from showMeshLoadError
             err_msgs = {
-              crayfish.Err_NotEnoughMemory : 'Not enough memory',
-              crayfish.Err_FileNotFound : 'Unable to read the file - missing file or no read access',
-              crayfish.Err_UnknownFormat : 'File format not recognized',
-              crayfish.Err_IncompatibleMesh : 'Mesh is not compatible'
+              Err.NotEnoughMemory : 'Not enough memory',
+              Err.FileNotFound : 'Unable to read the file - missing file or no read access',
+              Err.UnknownFormat : 'File format not recognized',
+              Err.IncompatibleMesh : 'Mesh is not compatible'
             }
             msg = "Failed to load the data file"
             if err in err_msgs:
@@ -443,11 +443,11 @@ class CrayfishPlugin:
         # Add to layer registry
         QgsMapLayerRegistry.instance().addMapLayer(layer)
 
-        warn = crayfish.last_load_status()[1]
-        if warn == crayfish.Warn_UnsupportedElement:
+        warn = last_load_status()[1]
+        if warn == Warn.UnsupportedElement:
                 # Unsupported element seen
                 qgis_message_bar.pushMessage("Crayfish", "The mesh contains elements that are unsupported at this time. The following types of elements will be ignored for the time being: E2L, E3L, E6T, E8Q, E9Q", level=QgsMessageBar.WARNING)
-        elif warn == crayfish.Warn_InvalidElements:
+        elif warn == Warn.InvalidElements:
                 qgis_message_bar.pushMessage("Crayfish", "The mesh contains some invalid elements, they will not be rendered.", level=QgsMessageBar.WARNING)
 
         return layer

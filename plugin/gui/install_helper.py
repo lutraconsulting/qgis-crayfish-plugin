@@ -34,7 +34,7 @@ import zipfile
 from PyQt4.QtCore import QSettings, Qt
 from PyQt4.QtGui import QCursor, QMessageBox, qApp
 
-from .. import crayfish
+from ..core import load_library, library_version
 
 # Base URL for downloading of prepared binaries
 downloadBaseUrl = 'http://www.lutraconsulting.co.uk/'
@@ -82,8 +82,8 @@ def ensure_library_installed(parent_widget=None):
                 return False
 
     try:
-        crayfish.load_library()
-        assert crayfish.version() == plugin_version()
+        load_library()
+        assert library_version() == plugin_version()
         return True   # everything's good - we are done here!
     except (OSError, AssertionError):
         pass  # ok we have a problem (no library or an old one)
@@ -138,7 +138,7 @@ def ensure_library_installed(parent_widget=None):
         return False
 
     # now try again
-    crayfish.load_library()
+    load_library()
     QMessageBox.information(parent_widget, 'Succeeded', "Download and installation successful." )
     return True
 

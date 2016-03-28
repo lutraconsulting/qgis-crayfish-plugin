@@ -31,7 +31,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtWebKit import *
 from qgis.core import *
 
-from ..install_helper import plugin_version_str
+from .install_helper import plugin_version_str
 from .utils import load_ui
 
 uiDialog, qtBaseClass = load_ui('crayfish_about_dialog_widget')

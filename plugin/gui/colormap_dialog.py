@@ -30,7 +30,7 @@ from PyQt4.QtGui import *
 from qgis.core import QgsApplication, QgsStyleV2
 
 from .utils import load_ui, initColorRampComboBox, name2ramp
-from ..crayfish import ColorMap, qcolor2rgb, rgb2qcolor
+from ..core import ColorMap, qcolor2rgb, rgb2qcolor
 
 uiDialog, qtBaseClass = load_ui('crayfish_colormap_dialog')
 

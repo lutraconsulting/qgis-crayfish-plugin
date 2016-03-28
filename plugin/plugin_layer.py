@@ -34,7 +34,7 @@ from qgis.utils import iface
 
 from .gui.utils import QgsMessageBar, qgis_message_bar, defaultColorRamp
 from .layer_renderer import CrayfishViewerPluginLayerRenderer
-from . import crayfish
+from .core import Err, last_load_status, Mesh, ColorMap, DataSet
 
 
 def qstring2int(s):
@@ -156,7 +156,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
     def loadMesh(self, meshFileName):
         meshFileName = unicode(meshFileName)
         try:
-            self.mesh = crayfish.Mesh(meshFileName)
+            self.mesh = Mesh(meshFileName)
             self.setValid(True)
         except ValueError:
             self.setValid(False)
@@ -189,12 +189,12 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
 
     def showMeshLoadError(self, twoDMFileName):
-        e = crayfish.last_load_status()[0]
-        if e == crayfish.Err_NotEnoughMemory:
+        e = last_load_status()[0]
+        if e == Err.NotEnoughMemory:
           qgis_message_bar.pushMessage("Crayfish", "Not enough memory to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
-        elif e == crayfish.Err_FileNotFound:
+        elif e == Err.FileNotFound:
           qgis_message_bar.pushMessage("Crayfish", "Failed to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
-        elif e == crayfish.Err_UnknownFormat:
+        elif e == Err.UnknownFormat:
           qgis_message_bar.pushMessage("Crayfish", "Mesh file format not recognized (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
         # TODO register other errors
 
@@ -284,7 +284,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           "c_basicName" : "[default]",
           "c_basicRamp" : defaultColorRamp(),
           "c_alpha" : 255,
-          "c_advancedColorMap" : crayfish.ColorMap(minZ, maxZ)
+          "c_advancedColorMap" : ColorMap(minZ, maxZ)
         }
         self.updateColorMap(ds)  # make sure to apply the settings to form a color map
 
@@ -416,7 +416,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
         for i in range(self.mesh.dataset_count()):
             ds = self.mesh.dataset(i)
-            if ds.type() == crayfish.DataSet.Bed:
+            if ds.type() == DataSet.Bed:
                 dsElem = doc.createElement("bed")
             else:
                 dsElem = doc.createElement("dat")
@@ -469,7 +469,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             self.updateColorMap(ds)
 
         # vector options (if applicable)
-        if ds.type() == crayfish.DataSet.Vector:
+        if ds.type() == DataSet.Vector:
             vectElem = elem.firstChildElement("render-vector")
             method = qstring2int(vectElem.attribute("method"))
             if method is not None:
@@ -535,7 +535,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         contElem.appendChild(advElem)
 
         # vector options (if applicable)
-        if ds.type() == crayfish.DataSet.Vector:
+        if ds.type() == DataSet.Vector:
           vectElem = doc.createElement("render-vector")
           vectElem.setAttribute("method", ds.config["v_shaft_length_method"])
           vectElem.setAttribute("shaft-length-min", str(ds.config["v_shaft_length_min"]))
@@ -559,8 +559,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         cmElem = elem.firstChildElement("colormap")
         if cmElem.isNull():
             return
-        cm = crayfish.ColorMap()
-        cm.method = crayfish.ColorMap.Discrete if cmElem.attribute("method") == "discrete" else crayfish.ColorMap.Linear
+        cm = ColorMap()
+        cm.method = ColorMap.Discrete if cmElem.attribute("method") == "discrete" else ColorMap.Linear
         cm.clip = (cmElem.attribute("clip-low")  == "1", cmElem.attribute("clip-high") == "1")
         itemElems = cmElem.elementsByTagName("item")
         items = []
@@ -577,7 +577,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
     def writeColorMapXml(self, cm, parentElem, doc):
 
         elem = doc.createElement("colormap")
-        elem.setAttribute("method", "discrete" if cm.method == crayfish.ColorMap.Discrete else "linear")
+        elem.setAttribute("method", "discrete" if cm.method == ColorMap.Discrete else "linear")
         elem.setAttribute("clip-low",  "1" if cm.clip[0] else "0")
         elem.setAttribute("clip-high", "1" if cm.clip[1] else "0")
         for item in cm.items():
@@ -650,7 +650,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
           vv = zMin + v*(zMax-zMin)
           items.append( (vv,[c.red(),c.green(),c.blue()], '%.3f' % vv) )
 
-        cm = crayfish.ColorMap()
+        cm = ColorMap()
         cm.set_items(items)
 
         return cm
@@ -743,8 +743,8 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
 
     def print_handles(self):
         print "------" #, self.mesh, self.currentDataSet()
-        print crayfish.Mesh.handles
-        print crayfish.DataSet.handles
+        print Mesh.handles
+        print DataSet.handles
 
     def isDataSetLoaded(self, filename):
         for d in self.mesh.datasets():
