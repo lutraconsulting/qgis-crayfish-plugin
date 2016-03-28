@@ -28,7 +28,8 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 
-from crayfish_ui_loader import load_ui
+from .utils import load_ui
+
 uiDialog, qtBaseClass = load_ui('crayfish_viewer_vector_options_dialog_widget')
 
 def float_safe(txt):

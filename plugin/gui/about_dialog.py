@@ -24,17 +24,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import os
+
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.QtWebKit import *
 from qgis.core import *
 
+from ..install_helper import plugin_version_str
+from .utils import load_ui
 
-from crayfish_install_helper import plugin_version_str
-
-import os
-
-from crayfish_ui_loader import load_ui
 uiDialog, qtBaseClass = load_ui('crayfish_about_dialog_widget')
 
 class CrayfishAboutDialog(qtBaseClass, uiDialog):

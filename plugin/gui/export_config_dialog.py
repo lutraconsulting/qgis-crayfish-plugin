@@ -27,7 +27,8 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from crayfish_ui_loader import load_ui
+from .utils import load_ui
+
 uiDialog, qtBaseClass = load_ui('crayfish_export_config_dialog')
 
 class CrayfishExportConfigDialog(qtBaseClass, uiDialog):

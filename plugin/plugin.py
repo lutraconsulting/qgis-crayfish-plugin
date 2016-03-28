@@ -24,26 +24,21 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import os
+import sys
+
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
-from crayfish_gui_utils import QgsMessageBar, qgis_message_bar
 
-import resources
-
-from crayfish_viewer_dock import CrayfishViewerDock
-
-#from crayfish_viewer_plugin_layer import *
-#from crayfish_viewer_plugin_layer_type import *
-import crayfish_about_dialog
-import crayfish_export_config_dialog
-import crayfish_install_helper
-import crayfish_animation_dialog
-
-from illuvis import upload_dialog
-
-import os
-import sys
+from . import resources
+from .gui.dock import CrayfishViewerDock
+from .gui.about_dialog import CrayfishAboutDialog
+from .gui.export_config_dialog import CrayfishExportConfigDialog
+from .gui.animation_dialog import CrayfishAnimationDialog
+from .gui.install_helper import ensure_library_installed
+from .gui.utils import QgsMessageBar, qgis_message_bar
+from .illuvis import upload_dialog
 
 
 class CrayfishPlugin:
@@ -70,7 +65,7 @@ class CrayfishPlugin:
         self.menu.addAction(self.aboutAction)
         self.menu.addAction(self.uploadAction)
 
-        if not crayfish_install_helper.ensure_library_installed():
+        if not ensure_library_installed():
           return
 
         self.crayfishViewerLibFound = True
@@ -95,7 +90,7 @@ class CrayfishPlugin:
         self.menu.addAction(self.actionExportAnimation)
 
         # Register plugin layer type
-        from crayfish_viewer_plugin_layer_type import CrayfishViewerPluginLayerType
+        from .plugin_layer_type import CrayfishViewerPluginLayerType
         self.lt = CrayfishViewerPluginLayerType()
         QgsPluginLayerRegistry.instance().addPluginLayerType(self.lt)
 
@@ -119,7 +114,7 @@ class CrayfishPlugin:
         # Register data items provider (if possible - since 2.10)
         self.dataItemsProvider = None
         if 'QgsDataItemProvider' in globals():
-          from crayfish_data_items import CrayfishDataItemProvider
+          from .data_items import CrayfishDataItemProvider
           self.dataItemsProvider = CrayfishDataItemProvider()
           QgsDataItemProviderRegistry.instance().addProvider(self.dataItemsProvider)
 
@@ -170,7 +165,7 @@ class CrayfishPlugin:
         self.iface.pluginMenu().removeAction(self.menu.menuAction())
 
         # Unregister plugin layer type
-        from crayfish_viewer_plugin_layer import CrayfishViewerPluginLayer
+        from .plugin_layer import CrayfishViewerPluginLayer
         QgsPluginLayerRegistry.instance().removePluginLayerType(CrayfishViewerPluginLayer.LAYER_TYPE)
 
         # Unregister data item provider
@@ -351,7 +346,7 @@ class CrayfishPlugin:
             QApplication.restoreOverrideCursor()
         except ValueError:
             QApplication.restoreOverrideCursor()
-            import crayfish
+            from . import crayfish
             err = crayfish.last_load_status()[0]
             # reuse from showMeshLoadError
             err_msgs = {
@@ -405,7 +400,7 @@ class CrayfishPlugin:
 
 
     def about(self):
-        d = crayfish_about_dialog.CrayfishAboutDialog(self.iface)
+        d = CrayfishAboutDialog(self.iface)
         d.show()
         res = d.exec_()
 
@@ -440,7 +435,7 @@ class CrayfishPlugin:
         return None
 
     def addLayer(self, twoDMFileName):
-        from crayfish_viewer_plugin_layer import CrayfishViewerPluginLayer
+        from .plugin_layer import CrayfishViewerPluginLayer
         layer = CrayfishViewerPluginLayer(twoDMFileName)
         if not layer.isValid():
             layer.showMeshLoadError(twoDMFileName)
@@ -449,7 +444,7 @@ class CrayfishPlugin:
         # Add to layer registry
         QgsMapLayerRegistry.instance().addMapLayer(layer)
 
-        import crayfish
+        from . import crayfish
         warn = crayfish.last_load_status()[1]
         if warn == crayfish.Warn_UnsupportedElement:
                 # Unsupported element seen
@@ -496,7 +491,7 @@ class CrayfishPlugin:
         else:
           crsWkt = layer.crs().toWkt()  # no OTF reprojection
 
-        dlgConfig = crayfish_export_config_dialog.CrayfishExportConfigDialog()
+        dlgConfig = CrayfishExportConfigDialog()
         if not dlgConfig.exec_():
             return
         dlgConfig.saveSettings()
@@ -533,5 +528,5 @@ class CrayfishPlugin:
             QMessageBox.warning(None, "Crayfish", "Please use time-varying dataset for animation export")
             return
 
-        dlg = crayfish_animation_dialog.CrayfishAnimationDialog(self.iface)
+        dlg = CrayfishAnimationDialog(self.iface)
         dlg.exec_()

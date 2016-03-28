@@ -24,19 +24,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from qgis.core import *
-
 import platform
 import os
 import shutil
 import tempfile
 
-from crayfish_animation import animation, images_to_video
-from crayfish_gui_utils import timeToString
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+from qgis.core import *
 
-from crayfish_ui_loader import load_ui
+from ..animation import animation, images_to_video
+from .utils import load_ui, time_to_string
+
 uiDialog, qtBaseClass = load_ui('crayfish_animation_dialog_widget')
 
 # http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
@@ -103,7 +102,7 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
         cbo.clear()
         if ds.time_varying():
             for output in ds.outputs():
-                cbo.addItem(timeToString(output.time()), output.time())
+                cbo.addItem(time_to_string(output.time()), output.time())
 
 
     def browseOutput(self):

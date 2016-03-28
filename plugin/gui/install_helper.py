@@ -41,7 +41,7 @@ downloadBaseUrl = 'http://www.lutraconsulting.co.uk/'
 
 def plugin_version_str():
     cfg = ConfigParser.ConfigParser()
-    cfg.read(os.path.join(os.path.dirname(__file__),'metadata.txt'))
+    cfg.read(os.path.join(os.path.dirname(__file__), '..', 'metadata.txt'))
     return cfg.get('general', 'version')
 
 def plugin_version():
@@ -80,7 +80,7 @@ def ensure_library_installed(parent_widget=None):
                 return False
 
     try:
-        import crayfish
+        from .. import crayfish
         assert crayfish.version() == plugin_version()
         return True   # everything's good - we are done here!
     except (OSError, AssertionError):
@@ -136,7 +136,7 @@ def ensure_library_installed(parent_widget=None):
         return False
 
     # now try again
-    import crayfish
+    from .. import crayfish
     QMessageBox.information(parent_widget, 'Succeeded', "Download and installation successful." )
     return True
 

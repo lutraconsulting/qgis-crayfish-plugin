@@ -28,10 +28,10 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 
-from crayfish_ui_loader import load_ui
+from .utils import load_ui, initColorButton
+
 uiDialog, qtBaseClass = load_ui('crayfish_viewer_mesh_options_dialog_widget')
 
-from crayfish_gui_utils import initColorButton
 
 class CrayfishViewerMeshOptionsDialog(qtBaseClass, uiDialog):
 

@@ -58,11 +58,14 @@ except ImportError:
   qgis_message_bar = QgsMessageBar()
 
 
+import os
+
 import qgis.core
 import qgis.gui
 
 from PyQt4.QtCore import QSize, QVariant, SIGNAL
 from PyQt4.QtGui import QComboBox, QIcon, QPixmap, QColor, QColorDialog
+from PyQt4 import uic
 
 
 if not hasattr(qgis.gui, "QgsColorRampComboBox"):
@@ -162,9 +165,16 @@ def qv2string(v):
 
 
 
-def timeToString(hours):
+def time_to_string(hours):
 
     seconds = round(hours * 3600.0, 2)
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
     return "%02d:%02d:%05.2f" % (h, m, s)
+
+
+def load_ui(name):
+    ui_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                          '..', 'ui',
+                          name + '.ui')
+    return uic.loadUiType(ui_file)

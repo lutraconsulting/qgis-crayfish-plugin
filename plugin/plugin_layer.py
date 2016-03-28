@@ -24,20 +24,17 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from qgis.core import *
-from crayfish_gui_utils import QgsMessageBar, qgis_message_bar, defaultColorRamp
-from qgis.utils import iface
-
-from crayfish_layer_renderer import CrayfishViewerPluginLayerRenderer
-
-
-import crayfish
-
 import os
 import glob
 
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+from qgis.core import *
+from qgis.utils import iface
+
+from .gui.utils import QgsMessageBar, qgis_message_bar, defaultColorRamp
+from .layer_renderer import CrayfishViewerPluginLayerRenderer
+from . import crayfish
 
 
 def qstring2int(s):

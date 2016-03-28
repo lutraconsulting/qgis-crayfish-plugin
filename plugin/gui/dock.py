@@ -28,12 +28,11 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 
-import crayfish_viewer_vector_options_dialog
-import crayfish_viewer_mesh_options_dialog
-from crayfish_viewer_render_settings import CrayfishViewerRenderSettings
+from . import vector_options_dialog
+from . import mesh_options_dialog
+from .render_settings import CrayfishViewerRenderSettings
+from .utils import load_ui, initColorButton, initColorRampComboBox, name2ramp, time_to_string
 
-from crayfish_gui_utils import initColorButton, initColorRampComboBox, name2ramp, timeToString
-from crayfish_ui_loader import load_ui
 uiDialog, qtBaseClass = load_ui('crayfish_viewer_dock_widget')
 
 class CrayfishViewerDock(qtBaseClass, uiDialog):
@@ -216,7 +215,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         l.currentDataSetChanged.emit()  # let others know (e.g. plot widget)
 
         if l.lockCurrent:
-            import crayfish
+            from .. import crayfish
             l.contour_ds_index = l.current_ds_index
             l.vector_ds_index = l.current_ds_index if dataSet.type() == crayfish.DataSet.Vector else -1
 
@@ -225,7 +224,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         self.cboTime.clear()
         if dataSet.time_varying():
             for output in dataSet.outputs():
-                self.cboTime.addItem(timeToString(output.time()))
+                self.cboTime.addItem(time_to_string(output.time()))
         self.cboTime.blockSignals(False)
 
         self.sliderTime.setMaximum(dataSet.output_count()-1)
@@ -267,7 +266,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         self.updateDisplayVector()
 
         # Disable the vector options if we are looking at a scalar dataset
-        from crayfish import DS_Vector
+        from ..crayfish import DS_Vector
         self.displayVectorsCheckBox.setEnabled(dataSet.type() == DS_Vector)
 
         self.iface.legendInterface().refreshLayerSymbology(l)
@@ -384,7 +383,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         textValue = str( '(%.3f)' % bedValue )
 
         dataSet = l.currentDataSet()
-        from crayfish import DS_Bed
+        from ..crayfish import DS_Bed
         if dataSet.type() != DS_Bed:
             # We're looking at an actual dataset rather than just the bed level
             dsValue = l.mesh.value(l.currentOutput(), xCoord, yCoord)
@@ -413,7 +412,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         datasets = []
         for i,d in enumerate(l.mesh.datasets()):
             datasets.append( (d.name(), d.type()) )
-        from crayfish_viewer_dataset_view import DataSetModel
+        from .dataset_view import DataSetModel
         self.treeDataSets.setModel(DataSetModel(datasets, l.ds_user_names))
         self.treeDataSets.selectionModel().currentRowChanged.connect(self.dataSetChanged)
         self.treeDataSets.model().setActiveContourIndex(l.contour_ds_index)
@@ -466,7 +465,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         ds = self.currentDataSet()
         colormap = ds.custom["c_advancedColorMap"]
 
-        from crayfish_colormap_dialog import CrayfishColorMapDialog
+        from .colormap_dialog import CrayfishColorMapDialog
         zmin, zmax = ds.value_range()
         self.advancedColorMapDialog = CrayfishColorMapDialog(colormap, zmin, zmax, lambda: self.updateColorMapAndRedraw(ds), self)
         self.advancedColorMapDialog.show()
@@ -550,7 +549,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
 
     def plot(self):
         if self.plot_dock_widget is None:
-            from crayfish_plot import CrayfishPlotWidget
+            from ..plot import CrayfishPlotWidget
             self.plot_dock_widget = QDockWidget("Crayfish Plot")
             self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_widget)
             w = CrayfishPlotWidget(self.currentCrayfishLayer(), self.plot_dock_widget)

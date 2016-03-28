@@ -32,7 +32,7 @@ from qgis.core import *
 from qgis.gui import *
 from qgis.utils import iface
 
-from .crayfish_plot_map_layer_widget import MapLayersWidget
+from .plot_map_layer_widget import MapLayersWidget
 
 
 class PickGeometryTool(QgsMapTool):

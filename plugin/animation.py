@@ -34,7 +34,7 @@ from PyQt4.QtXml import QDomDocument
 
 from qgis.core import *
 
-from crayfish_gui_utils import timeToString
+from .gui.utils import time_to_string
 
 
 def animation(cfg, progress_fn=None):
@@ -112,7 +112,7 @@ def composition_set_time(c, time, frmt=0):
     timeItem = c.getComposerItemById("time")
     if timeItem is not None:
         if frmt == 0: # hh:mm:ss
-            txt = timeToString(time)
+            txt = time_to_string(time)
         else:  # hh.hhh
             txt = "%06.3f" % time
         timeItem.setText(txt)

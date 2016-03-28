@@ -419,7 +419,7 @@ by clicking the icons next to dataset names.</string>
   <customwidget>
    <class>DataSetView</class>
    <extends>QTreeView</extends>
-   <header>crayfish.crayfish_viewer_dataset_view</header>
+   <header>crayfish.gui.dataset_view</header>
   </customwidget>
  </customwidgets>
  <tabstops>

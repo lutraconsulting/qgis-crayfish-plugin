@@ -27,7 +27,7 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from .crayfish_gui_utils import timeToString
+from .utils import time_to_string
 
 
 class OutputsMenu(QMenu):
@@ -71,7 +71,7 @@ class OutputsMenu(QMenu):
             return
 
         for output in ds.outputs():
-            a = self.addAction(timeToString(output.time()))
+            a = self.addAction(time_to_string(output.time()))
             a.output = output
             a.setCheckable(True)
             a.triggered.connect(self.on_action)
@@ -118,7 +118,7 @@ class OutputsWidget(QToolButton):
         if len(lst) == 0:
             self.setText("Time: [current]")
         elif len(lst) == 1:
-            self.setText("Time: " + timeToString(lst[0].time()))
+            self.setText("Time: " + time_to_string(lst[0].time()))
         else:
             self.setText("Time: [multiple]")
 

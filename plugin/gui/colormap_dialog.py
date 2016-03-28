@@ -29,12 +29,11 @@ from PyQt4.QtGui import *
 
 from qgis.core import QgsApplication, QgsStyleV2
 
-from crayfish_ui_loader import load_ui
+from .utils import load_ui, initColorRampComboBox, name2ramp
+from ..crayfish import ColorMap, qcolor2rgb, rgb2qcolor
+
 uiDialog, qtBaseClass = load_ui('crayfish_colormap_dialog')
 
-from crayfish import ColorMap, qcolor2rgb, rgb2qcolor
-
-from crayfish_gui_utils import initColorRampComboBox, name2ramp
 
 class ValueDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):

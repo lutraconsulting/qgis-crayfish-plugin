@@ -27,8 +27,8 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+from .utils import load_ui
 
-from crayfish_ui_loader import load_ui
 uiDialog, qtBaseClass = load_ui('crayfish_animation_layout_item_props')
 
 class AnimationLayoutItemProps(qtBaseClass, uiDialog):

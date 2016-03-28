@@ -429,7 +429,7 @@
   <customwidget>
    <class>AnimationLayoutItemProps</class>
    <extends>QWidget</extends>
-   <header>crayfish.crayfish_animation_layout_item_props</header>
+   <header>crayfish.gui.animation_layout_item_props</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

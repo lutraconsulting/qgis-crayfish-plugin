@@ -30,7 +30,8 @@ from PyQt4.QtGui import *
 from qgis.core import QgsCoordinateReferenceSystem
 from qgis.gui import QgsGenericProjectionSelector
 
-from crayfish_ui_loader import load_ui
+from .utils import load_ui
+
 uiDialog, qtBaseClass = load_ui('crayfish_viewer_plugin_layer_props_dialog')
 
 

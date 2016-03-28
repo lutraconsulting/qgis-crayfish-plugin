@@ -28,7 +28,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 from qgis.core import QgsMapLayer, QgsMapLayerRegistry, QgsPluginLayer
-#from .crayfish_viewer_plugin_layer import CrayfishViewerPluginLayer
+
 
 class CrayfishLayerMenu(QMenu):
 

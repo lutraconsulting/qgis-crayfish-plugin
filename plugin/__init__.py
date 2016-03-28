@@ -25,5 +25,5 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 def classFactory(iface):
-    from crayfish_plugin import CrayfishPlugin
+    from .plugin import CrayfishPlugin
     return CrayfishPlugin(iface)

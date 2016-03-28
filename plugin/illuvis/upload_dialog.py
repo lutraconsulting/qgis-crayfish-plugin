@@ -36,7 +36,7 @@ import new_overlay_dialog
 import new_scenario_dialog
 import new_event_dialog
 
-from ..crayfish_gui_utils import timeToString
+from ..gui.utils import time_to_string
 
 import os
 import tempfile
@@ -157,7 +157,7 @@ class UploadDialog(QDialog, Ui_Dialog):
             name = self.layer.name() + " / " + ds.name()
             if ds.time_varying():
               output = self.layer.currentOutputForDataset(ds)
-              name += " @ " + timeToString(output.time())
+              name += " @ " + time_to_string(output.time())
             self.fromCurrentRadioButton.setText("From current layer: " + name)
         else:
             self.fromFileRadioButton.setChecked(True)

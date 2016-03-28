@@ -24,21 +24,21 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
 import math
 
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import iface
-import pyqtgraph
 
-from .crayfish_gui_utils import timeToString
-from .crayfish_plot_cf_layer_widget import CrayfishLayerWidget
-from .crayfish_plot_line_geometry_widget import LineGeometryPickerWidget
-from .crayfish_plot_point_geometry_widget import PointGeometryPickerWidget
-from .crayfish_plot_output_widget import OutputsWidget
-from .crayfish_plot_dataset_widget import DatasetsWidget
+from . import pyqtgraph
+from .gui.utils import time_to_string
+from .gui.plot_cf_layer_widget import CrayfishLayerWidget
+from .gui.plot_line_geometry_widget import LineGeometryPickerWidget
+from .gui.plot_point_geometry_widget import PointGeometryPickerWidget
+from .gui.plot_output_widget import OutputsWidget
+from .gui.plot_dataset_widget import DatasetsWidget
 
 pyqtgraph.setConfigOption('background', 'w')
 pyqtgraph.setConfigOption('foreground', 'k')
@@ -376,7 +376,7 @@ class CrayfishPlotWidget(QWidget):
 
             clr = colors[i % len(colors)]
             pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
-            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=timeToString(output.time()))
+            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=time_to_string(output.time()))
 
         rb = QgsRubberBand(iface.mapCanvas(), QGis.Line)
         rb.setColor(colors[0])
