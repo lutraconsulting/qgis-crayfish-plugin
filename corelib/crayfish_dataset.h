@@ -55,7 +55,7 @@ public:
 
     QString fileName() const { return mFileName; }
 
-    void setName(const QString& name);
+    void setName(const QString& name, bool sanitize = true);
     QString name() const { return mName; }
 
     enum Type

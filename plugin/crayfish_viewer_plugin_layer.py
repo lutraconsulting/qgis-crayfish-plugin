@@ -328,6 +328,10 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
             else:
                 # project file before names started to be used - assuming just one dataset per file
                 ds = self.mesh.dataset(self.mesh.dataset_count()-1)
+
+            if ds is None:
+                continue  # skip this one
+
             self.readDataSetXml(ds, datElem)
 
             dsUserName = datElem.attribute("user-name")

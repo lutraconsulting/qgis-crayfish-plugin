@@ -54,8 +54,8 @@ QString DataSet::sanitizeName(const QString& name) {
     return nm.replace(QRegExp("\\[.+\\/.+\\]"), "").replace("/", "");
 }
 
-void DataSet::setName(const QString& name) {
-    mName = sanitizeName(name);
+void DataSet::setName(const QString& name, bool sanitize) {
+    mName = sanitize ? sanitizeName(name) : name;
 }
 
 void DataSet::addOutput(Output* output)

@@ -141,7 +141,7 @@ static DataSet* readXmdfGroupAsDataSet(const HdfGroup& g, const QString& datFile
 
     DataSet* ds = new DataSet(datFileName);
     ds->setIsTimeVarying(true);
-    ds->setName(name);
+    ds->setName(name, false);  // name may contain slashes intentionally - do not sanitize
     ds->setType(isVector ? DataSet::Vector : DataSet::Scalar);
 
     for (int i = 0; i < nTimeSteps; ++i)
