@@ -78,12 +78,11 @@ def timeseries_plot_data(ds, geometry):
 
     return x, y
 
-def cross_section_plot_data(output, geometry):
+def cross_section_plot_data(output, geometry, resolution=1.):
     """ return array with tuples defining X,Y points for plot """
 
     mesh = output.dataset().mesh()
     offset = 0
-    step = 1
     length = geometry.length()
     x,y = [], []
 
@@ -96,7 +95,7 @@ def cross_section_plot_data(output, geometry):
         x.append(offset)
         y.append(value)
 
-        offset += step
+        offset += resolution
 
     # let's make sure we include also the last point
     last_pt = geometry.asPolyline()[-1]
@@ -182,6 +181,12 @@ class CrayfishPlotWidget(QWidget):
         self.btn_output = OutputsWidget(self.layer)
         self.btn_output.outputs_changed.connect(self.on_outputs_changed)
 
+        self.btn_options = QToolButton()
+        self.btn_options.setAutoRaise(True)
+        self.btn_options.setToolTip("Plot Options")
+        self.btn_options.setIcon(QgsApplication.getThemeIcon( "/mActionOptions.svg" ))
+        self.btn_options.clicked.connect(self.on_options_clicked)
+
         self.markers = []      # for points
         self.rubberbands = []  # for lines
 
@@ -198,6 +203,7 @@ class CrayfishPlotWidget(QWidget):
         hl.addWidget(self.point_picker)
         hl.addWidget(self.line_picker)
         hl.addStretch()
+        hl.addWidget(self.btn_options)
 
         l = QVBoxLayout()
         l.addLayout(hl)
@@ -357,9 +363,12 @@ class CrayfishPlotWidget(QWidget):
 
         self.plot.legend.setVisible(len(outputs) > 1)
 
+        s = QSettings()
+        plot_resolution = s.value('/crayfish/cross_section_resolution', 1., type=float)
+
         for i, output in enumerate(outputs):
 
-            x,y = cross_section_plot_data(output, geometry)
+            x,y = cross_section_plot_data(output, geometry, plot_resolution)
 
             valid_plot = not all(map(math.isnan, y))
             if not valid_plot:
@@ -374,3 +383,17 @@ class CrayfishPlotWidget(QWidget):
         rb.setWidth(2)
         rb.setToGeometry(geometry, None)
         self.rubberbands.append(rb)
+
+    def on_options_clicked(self):
+
+        s = QSettings()
+        value = s.value('/crayfish/cross_section_resolution', 1., type=float)
+
+        value, res = QInputDialog.getDouble(None, 'Plot Options', 'Cross-section plot resolution [map units]',
+                                            value, 0.000001, 1000000, 6)
+        if not res:
+            return
+
+        s.setValue('/crayfish/cross_section_resolution', value)
+
+        self.refresh_plot()
