@@ -90,18 +90,18 @@ def ensure_library_installed(parent_widget=None):
 
     # The crayfishviewer binary cannot be found
     reply = QMessageBox.question(parent_widget,
-          'Crayfish Viewer Library Not Found',
-          "Crayfish Viewer depends on a platform specific compiled library "
+          'Crayfish Library Not Found',
+          "Crayfish depends on a platform specific compiled library "
           "which was not found. Would you like to attempt to automatically "
           "download and install one from the developer's website?",
           QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
     if reply != QMessageBox.Yes:
         # User did not want to download
         QMessageBox.critical(parent_widget,
-          'No Crayfish Viewer Library',
-          "Crayfish Viewer relies on the Crayfish Viewer library.  Either "
+          'No Crayfish Library',
+          "Crayfish relies on the Crayfish library.  Either "
           "download a library for your platform or download the source code "
-          "from GitHub and build the library yourself.  Crayfish Viewer will "
+          "from GitHub and build the library yourself.  Crayfish will "
           "now be disabled.")
         return False
 
@@ -134,7 +134,7 @@ def ensure_library_installed(parent_widget=None):
         QMessageBox.information(parent_widget,
           'Restart Required',
           "QGIS needs to be restarted in order to complete an update to the Crayfish "
-          "Viewer Library.  Please restart QGIS.")
+          "Library.  Please restart QGIS.")
         return False
 
     # now try again

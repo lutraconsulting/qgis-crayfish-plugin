@@ -34,9 +34,9 @@ from qgis.core import *
 from . import resources
 from .core import Err, Warn, last_load_status
 from .data_items import CrayfishDataItemProvider
-from .plugin_layer import CrayfishViewerPluginLayer
-from .plugin_layer_type import CrayfishViewerPluginLayerType
-from .gui.dock import CrayfishViewerDock
+from .plugin_layer import CrayfishPluginLayer
+from .plugin_layer_type import CrayfishPluginLayerType
+from .gui.dock import CrayfishDock
 from .gui.about_dialog import CrayfishAboutDialog
 from .gui.export_config_dialog import CrayfishExportConfigDialog
 from .gui.animation_dialog import CrayfishAnimationDialog
@@ -52,7 +52,7 @@ class CrayfishPlugin:
         self.iface = iface
         self.dock = None
         self.lr = QgsMapLayerRegistry.instance()
-        self.crayfishViewerLibFound = False
+        self.crayfishLibFound = False
 
     def initGui(self):
 
@@ -72,7 +72,7 @@ class CrayfishPlugin:
         if not ensure_library_installed():
           return
 
-        self.crayfishViewerLibFound = True
+        self.crayfishLibFound = True
 
         # Create action that will load a layer to view
         self.action = QAction(QIcon(":/plugins/crayfish/crayfish_viewer_add_layer.png"), "Add Crayfish Layer", self.iface.mainWindow())
@@ -94,7 +94,7 @@ class CrayfishPlugin:
         self.menu.addAction(self.actionExportAnimation)
 
         # Register plugin layer type
-        self.lt = CrayfishViewerPluginLayerType()
+        self.lt = CrayfishPluginLayerType()
         QgsPluginLayerRegistry.instance().addPluginLayerType(self.lt)
 
         # Register actions for context menu
@@ -108,7 +108,7 @@ class CrayfishPlugin:
         QObject.connect(self.lr, SIGNAL("layerWasAdded(QgsMapLayer*)"), self.layerWasAdded)
 
         # Create the dock widget
-        self.dock = CrayfishViewerDock(self.iface)
+        self.dock = CrayfishDock(self.iface)
         self.iface.addDockWidget( Qt.LeftDockWidgetArea, self.dock )
         self.dock.hide()   # do not show the dock by default
         QObject.connect(self.dock, SIGNAL("visibilityChanged(bool)"), self.dockVisibilityChanged)
@@ -148,7 +148,7 @@ class CrayfishPlugin:
         self.menu.removeAction(self.aboutAction)
         self.menu.removeAction(self.uploadAction)
 
-        if not self.crayfishViewerLibFound:
+        if not self.crayfishLibFound:
             self.iface.pluginMenu().removeAction(self.menu.menuAction())
             return
 
@@ -167,7 +167,7 @@ class CrayfishPlugin:
         self.iface.pluginMenu().removeAction(self.menu.menuAction())
 
         # Unregister plugin layer type
-        QgsPluginLayerRegistry.instance().removePluginLayerType(CrayfishViewerPluginLayer.LAYER_TYPE)
+        QgsPluginLayerRegistry.instance().removePluginLayerType(CrayfishPluginLayer.LAYER_TYPE)
 
         # Unregister data item provider
         if self.dataItemsProvider is not None:
@@ -435,7 +435,7 @@ class CrayfishPlugin:
         return None
 
     def addLayer(self, twoDMFileName):
-        layer = CrayfishViewerPluginLayer(twoDMFileName)
+        layer = CrayfishPluginLayer(twoDMFileName)
         if not layer.isValid():
             layer.showMeshLoadError(twoDMFileName)
             return None

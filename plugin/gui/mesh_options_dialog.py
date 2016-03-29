@@ -33,7 +33,7 @@ from .utils import load_ui, initColorButton
 uiDialog, qtBaseClass = load_ui('crayfish_viewer_mesh_options_dialog_widget')
 
 
-class CrayfishViewerMeshOptionsDialog(qtBaseClass, uiDialog):
+class CrayfishMeshOptionsDialog(qtBaseClass, uiDialog):
 
     def __init__(self, layer, redrawFunction, parent=None):
         qtBaseClass.__init__(self)

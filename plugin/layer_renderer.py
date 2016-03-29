@@ -32,7 +32,7 @@ from qgis.utils import iface
 from .core import Renderer, RendererConfig
 
 
-class CrayfishViewerPluginLayerRenderer(QgsMapLayerRenderer):
+class CrayfishPluginLayerRenderer(QgsMapLayerRenderer):
     def __init__(self, layer, rendererContext):
 
         QgsMapLayerRenderer.__init__(self, layer.id())

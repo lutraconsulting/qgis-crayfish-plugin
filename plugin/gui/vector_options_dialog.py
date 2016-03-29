@@ -40,7 +40,7 @@ def float_safe(txt):
         return 0.
 
 
-class CrayfishViewerVectorOptionsDialog(qtBaseClass, uiDialog):
+class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
 
     def __init__(self, iface, renderSettings, redrawFunction, parent=None):
         qtBaseClass.__init__(self)

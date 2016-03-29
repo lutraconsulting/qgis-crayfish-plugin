@@ -35,7 +35,7 @@ from .utils import load_ui
 uiDialog, qtBaseClass = load_ui('crayfish_viewer_plugin_layer_props_dialog')
 
 
-class CrayfishViewerPluginPropsDialog(qtBaseClass, uiDialog):
+class CrayfishPluginPropsDialog(qtBaseClass, uiDialog):
     def __init__(self, layer):
         qtBaseClass.__init__(self)
         uiDialog.__init__(self)

@@ -33,7 +33,7 @@ from qgis.core import *
 from qgis.utils import iface
 
 from .gui.utils import QgsMessageBar, qgis_message_bar, defaultColorRamp
-from .layer_renderer import CrayfishViewerPluginLayerRenderer
+from .layer_renderer import CrayfishPluginLayerRenderer
 from .core import Err, last_load_status, Mesh, ColorMap, DataSet
 
 
@@ -92,7 +92,7 @@ def gradientColorRampStop(ramp, i):
     else:  # QGIS 2.0 returns list of structures
       return (stops[i].offset, stops[i].color)
 
-class CrayfishViewerPluginLayer(QgsPluginLayer):
+class CrayfishPluginLayer(QgsPluginLayer):
 
     LAYER_TYPE="crayfish_viewer"
 
@@ -100,7 +100,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
     currentOutputTimeChanged = pyqtSignal()
 
     def __init__(self, meshFileName=None):
-        QgsPluginLayer.__init__(self, CrayfishViewerPluginLayer.LAYER_TYPE, "Crayfish Viewer plugin layer")
+        QgsPluginLayer.__init__(self, CrayfishPluginLayer.LAYER_TYPE, "Crayfish plugin layer")
 
         self.config = {
           'mesh'  : False,
@@ -398,7 +398,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         element = node.toElement();
         # write plugin layer type to project (essential to be read from project)
         element.setAttribute("type", "plugin")
-        element.setAttribute("name", CrayfishViewerPluginLayer.LAYER_TYPE)
+        element.setAttribute("name", CrayfishPluginLayer.LAYER_TYPE)
         element.setAttribute("meshfile", prj.writePath(self.twoDMFileName))
         element.setAttribute("current-dataset", self.current_ds_index)
         element.setAttribute("current-output-time", str(self.current_output_time))
@@ -656,7 +656,7 @@ class CrayfishViewerPluginLayer(QgsPluginLayer):
         return cm
 
     def createMapRenderer(self, rendererContext):
-        self.renderer = CrayfishViewerPluginLayerRenderer(self, rendererContext)
+        self.renderer = CrayfishPluginLayerRenderer(self, rendererContext)
         return self.renderer
 
     def identify(self, pt):

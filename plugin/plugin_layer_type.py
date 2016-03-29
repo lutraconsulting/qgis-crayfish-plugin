@@ -28,21 +28,21 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 
-from .plugin_layer import CrayfishViewerPluginLayer
-from .gui.plugin_layer_props_dialog import CrayfishViewerPluginPropsDialog
+from .plugin_layer import CrayfishPluginLayer
+from .gui.plugin_layer_props_dialog import CrayfishPluginPropsDialog
 
-class CrayfishViewerPluginLayerType(QgsPluginLayerType):
+class CrayfishPluginLayerType(QgsPluginLayerType):
 
     def __init__(self):
-        QgsPluginLayerType.__init__(self, CrayfishViewerPluginLayer.LAYER_TYPE)
+        QgsPluginLayerType.__init__(self, CrayfishPluginLayer.LAYER_TYPE)
 
     def createLayer(self, uri=None):
         if uri:
-            return CrayfishViewerPluginLayer(uri)
+            return CrayfishPluginLayer(uri)
         else:
-            return CrayfishViewerPluginLayer()
+            return CrayfishPluginLayer()
 
     def showLayerProperties(self, layer):
-        dlg = CrayfishViewerPluginPropsDialog(layer)
+        dlg = CrayfishPluginPropsDialog(layer)
         dlg.exec_()
         return True

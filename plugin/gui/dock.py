@@ -30,16 +30,16 @@ from qgis.core import *
 
 from ..core import DataSet, DS_Bed, DS_Vector
 from ..plot import CrayfishPlotWidget
-from .vector_options_dialog import CrayfishViewerVectorOptionsDialog
-from .mesh_options_dialog import CrayfishViewerMeshOptionsDialog
-from .render_settings import CrayfishViewerRenderSettings
+from .vector_options_dialog import CrayfishVectorOptionsDialog
+from .mesh_options_dialog import CrayfishMeshOptionsDialog
+from .render_settings import CrayfishRenderSettings
 from .utils import load_ui, initColorButton, initColorRampComboBox, name2ramp, time_to_string
 from .dataset_view import DataSetModel
 from .colormap_dialog import CrayfishColorMapDialog
 
 uiDialog, qtBaseClass = load_ui('crayfish_viewer_dock_widget')
 
-class CrayfishViewerDock(qtBaseClass, uiDialog):
+class CrayfishDock(qtBaseClass, uiDialog):
 
     def __init__(self, iface):
 
@@ -112,8 +112,8 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
         if self.vectorPropsDialog is not None:
             self.vectorPropsDialog.close()
 
-        rs = CrayfishViewerRenderSettings( self.currentDataSet() )
-        self.vectorPropsDialog = CrayfishViewerVectorOptionsDialog(self.iface, rs, self.redrawCurrentLayer, self)
+        rs = CrayfishRenderSettings( self.currentDataSet() )
+        self.vectorPropsDialog = CrayfishVectorOptionsDialog(self.iface, rs, self.redrawCurrentLayer, self)
         self.vectorPropsDialog.show()
 
 
@@ -148,7 +148,7 @@ class CrayfishViewerDock(qtBaseClass, uiDialog):
             self.meshPropsDialog.close()
 
         if self.currentCrayfishLayer():
-            self.meshPropsDialog = CrayfishViewerMeshOptionsDialog(self.currentCrayfishLayer(), self.redrawCurrentLayer, self)
+            self.meshPropsDialog = CrayfishMeshOptionsDialog(self.currentCrayfishLayer(), self.redrawCurrentLayer, self)
             self.meshPropsDialog.show()
 
     def contourCustomRangeToggled(self, on):
