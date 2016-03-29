@@ -29,7 +29,7 @@ from PyQt4.QtGui import *
 from qgis.core import *
 
 from ..core import DataSet, DS_Bed, DS_Vector
-from ..plot import CrayfishPlotWidget
+from .plot_widget import CrayfishPlotWidget
 from .vector_options_dialog import CrayfishVectorOptionsDialog
 from .mesh_options_dialog import CrayfishMeshOptionsDialog
 from .render_settings import CrayfishRenderSettings
