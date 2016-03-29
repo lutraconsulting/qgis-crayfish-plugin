@@ -62,6 +62,10 @@ class Element(ctypes.Structure):
 
 
 def load_library():
+    """ Load the supporting Crayfish C++ library.
+    Does nothing if the library has been loaded already.
+    Raises an exception if loading fails. """
+
     global lib
 
     if lib is not None:
@@ -115,6 +119,9 @@ def load_library():
 
 
 class Mesh:
+  """ Mesh class is the central data structure in Crayfish. It defines
+  structure of the mesh (nodes and elements) and it keeps track of any associated
+  data with the mesh (organized into datasets). """
 
   # keeps dictionary of handles to known Mesh instances (as weak references)
   handles = {}
@@ -204,6 +211,10 @@ class Mesh:
 
 
 class DataSet(object):
+  """ Datasets store data associated with mesh. One dataset represents
+  one quantity that might be either constant or varying in time. Data
+  are organized into 'outputs' - each dataset contains one or more of those,
+  each output represents the quantity at a particular timestep. """
 
   handles = {}
 
@@ -272,6 +283,16 @@ class DataSet(object):
 
 
 class Output(object):
+  """ Output class represents data of a quantity at one timestep. There
+  are two kinds of outputs based on which part of mesh they refer to:
+  Node outputs have one value for each node, while element outputs have
+  one value for each element. For one dataset, all outputs are of the same
+  type, most commonly they are node outputs.
+
+  Additionally, outputs may carry information about status of elements,
+  whether they are active or not in the timestep they represent. Inactive
+  elements are not rendered.
+  """
 
   handles = {}
 
@@ -343,8 +364,13 @@ class Output(object):
 
 
 class Value(object):
+  """ Value class represents a variant value and is used internally
+  for communication with the underlying Crayfish library.
+
+  Supported object types: int, float, RGB tuple, RGBA tuple, ColorMap, None."""
 
   def __init__(self, value=None):
+    """ Create an instance from given Python object """
     load_library()  # make sure the library is loaded
     self.lib = lib
     self.handle = ctypes.c_void_p( self.lib.CF_V_create() )
@@ -363,6 +389,7 @@ class Value(object):
       raise ValueError("unknown type of value")
 
   def value(self):
+    """ retrieve value as a native Python object """
     t = self.lib.CF_V_type(self.handle)
     if t == 0:
       return None
@@ -386,6 +413,12 @@ class Value(object):
 
 
 class RendererConfig(object):
+  """ Configuration for rendering of data on a mesh. The key pieces of configuration
+  are the view definition (image size in pixels and map extent), reference to mesh
+  and reference to outputs that should be drawn as contours and/or vectors.
+
+  Further configuration options are specified as parameters (keys are strings,
+  values are of various types, see Value class). """
 
   def __init__(self, mesh=None, size=None, ll=None, mupp=None):
     load_library()  # make sure the library is loaded
@@ -428,6 +461,8 @@ class RendererConfig(object):
 
 
 class Renderer(object):
+  """ The renderer object that draws the resulting map image
+  to the passed QImage according to the renderer configuration. """
 
   def __init__(self, config, img):
     load_library()  # make sure the library is loaded
@@ -464,6 +499,8 @@ def qcolor2rgb(c):
 
 
 class ColorMap(object):
+  """ This object keeps track of a color map consisting of multiple colors
+  assigned to specific numeric values and labels. """
 
   class Item(object):
     def __init__(self, cm, index):
@@ -584,9 +621,12 @@ class ColorMap(object):
 
 
 def last_load_status():
+  """ Return extended status of a recent loading operation:
+  a tuple (error, warning) that refer to values in Err and Warn classes """
   load_library()  # make sure the library is loaded
   return lib.CF_LastLoadError(), lib.CF_LastLoadWarning()
 
 def library_version():
+  """ Return version of the underlying C++ library (as a number) """
   load_library()  # make sure the library is loaded
   return lib.CF_Version()
