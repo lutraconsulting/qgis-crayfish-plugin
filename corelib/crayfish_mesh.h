@@ -160,5 +160,6 @@ protected:
   BBox mProjExtent;
 };
 
+BBox computeExtent(const Node* nodes, int size);
 
 #endif // CRAYFISH_MESH_H

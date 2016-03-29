@@ -102,13 +102,13 @@ private:
     typedef QHash<QString, timestep_map > data_hash; //Data Type, TIME (sorted), [X, Y]
 
     void openFile();
-    void initElements(Mesh::Elements& elements);
-    void initNodes(Mesh::Nodes& nodes);
+    void initElements(Mesh::Nodes& nodes, Mesh::Elements& elements, bool is_longitude_shifted);
+    bool initNodes(Mesh::Nodes& nodes); //returns is_longitude_shifted
     void parseParameters();
     metadata_hash parseMetadata(GDALRasterBandH gdalBand);
     void populateScaleForVector(NodeOutput* tos);
     void addDataToOutput(GDALRasterBandH raster_band, NodeOutput* tos, bool is_vector, bool is_x);
-    void addSrcProj();
+    bool addSrcProj();
     void activateElements(NodeOutput* tos);
     void addDatasets();
     void createMesh();

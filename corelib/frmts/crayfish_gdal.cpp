@@ -93,7 +93,7 @@ void CrayfishGDALReader::openFile() {
    if( mHDataset == NULL ) throw LoadStatus::Err_UnknownFormat;
 }
 
-void CrayfishGDALReader::initNodes(Mesh::Nodes& nodes) {
+bool CrayfishGDALReader::initNodes(Mesh::Nodes& nodes) {
    Node* nodesPtr = nodes.data();
    for (uint y = 0; y < mYSize; ++y)
    {
@@ -104,22 +104,66 @@ void CrayfishGDALReader::initNodes(Mesh::Nodes& nodes) {
            nodesPtr->y = mGT[3] + (x+0.5)*mGT[4] + (y+0.5)*mGT[5];
        }
    }
+
+   BBox extent = computeExtent(nodes.constData(), nodes.size());
+   bool is_longitude_shifted = (extent.minX>=0.0f) &&
+                              (extent.minY>=-90.0f) &&
+                              (extent.maxX<=360.0f) &&
+                              (extent.maxY<=90.0f);
+   if (is_longitude_shifted)  {
+       for (int n=0; n<nodes.size(); ++n)
+       {
+           if (nodes[n].x>180.0f) {
+               nodes[n].x -= 360.0f;
+           }
+       }
+   }
+
+   return is_longitude_shifted;
 }
 
-void CrayfishGDALReader::initElements(Mesh::Elements& elements) {
+void CrayfishGDALReader::initElements(Mesh::Nodes& nodes, Mesh::Elements& elements, bool is_longitude_shifted) {
    Element* elementsPtr = elements.data();
+   int reconnected = 0;
+   int eid = 0;
    for (uint y = 0; y < mYSize-1; ++y)
    {
-       for (uint x = 0; x < mXSize-1; ++x, ++elementsPtr)
+       for (uint x = 0; x < mXSize-1; ++x)
        {
-           elementsPtr->setId(x + mXSize*y);
+           if (is_longitude_shifted &&
+                   (nodes[x + mXSize*y].x > 0.0f) &&
+                   (nodes[x + 1 + mXSize*y].x < 0.0f))
+               // omit border element
+           {
+               --reconnected;
+               continue;
+           }
+
+           if (is_longitude_shifted && (x==0))
+           {
+               // create extra elements around prime meridian
+               elementsPtr->setId(eid++);
+               elementsPtr->setEType(Element::E4Q);
+               elementsPtr->setP(1, mXSize*(y + 1));
+               elementsPtr->setP(2, mXSize*y);
+               elementsPtr->setP(3, mXSize - 1 + mXSize*y);
+               elementsPtr->setP(0, mXSize - 1 + mXSize*(y + 1));
+               ++reconnected;
+               ++elementsPtr;
+           }
+
+           // other elements
+           elementsPtr->setId(eid++);
            elementsPtr->setEType(Element::E4Q);
            elementsPtr->setP(1, x + 1 + mXSize*(y + 1));
            elementsPtr->setP(2, x + 1 + mXSize*y);
            elementsPtr->setP(3, x + mXSize*y);
            elementsPtr->setP(0, x + mXSize*(y + 1));
+           ++elementsPtr;
        }
    }
+   //make sure we have discarded same amount of elements that we have added
+   Q_ASSERT(reconnected == 0);
 }
 
 float CrayfishGDALReader::parseMetadataTime(const QString& time_s)
@@ -338,20 +382,27 @@ void CrayfishGDALReader::addDatasets()
 
 void CrayfishGDALReader::createMesh() {
    Mesh::Nodes nodes(mNPoints);
-   initNodes(nodes);
+   bool is_longitude_shifted = initNodes(nodes);
 
    Mesh::Elements elements(mNVolumes);
-   initElements(elements);
+   initElements(nodes, elements, is_longitude_shifted);
 
    mMesh = new Mesh(nodes, elements);
+   bool proj_added = addSrcProj();
+   if ((!proj_added) && is_longitude_shifted) {
+       QString wgs84("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
+       mMesh->setSourceCrs(wgs84);
+   }
 }
 
-void CrayfishGDALReader::addSrcProj() {
+bool CrayfishGDALReader::addSrcProj() {
    char* proj = const_cast<char*> (GDALGetProjectionRef( mHDataset ));
    if( proj != NULL ) {
        QString proj_wkt(proj);
        mMesh->setSourceCrsFromWKT(proj_wkt);
+       return true;
    }
+   return false;
 }
 
 Mesh* CrayfishGDALReader::load(LoadStatus* status)
@@ -375,7 +426,6 @@ Mesh* CrayfishGDALReader::load(LoadStatus* status)
 
        // Create mMesh
        createMesh();
-       addSrcProj();
 
        // Parse bands
        parseRasterBands();
