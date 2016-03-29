@@ -27,3 +27,5 @@
 def classFactory(iface):
     from .plugin import CrayfishPlugin
     return CrayfishPlugin(iface)
+
+from core import *

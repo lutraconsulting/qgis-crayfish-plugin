@@ -45,5 +45,5 @@ else:
 os.system('python install.py' + extra_install_args)
 
 print("Installing plugin...")
-os.chdir('../plugin')
+os.chdir('../crayfish')
 os.system('python install.py' + extra_install_args)

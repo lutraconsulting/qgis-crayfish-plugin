@@ -49,7 +49,7 @@ if len(sys.argv) > 1:
       print("  -pkg      Create .zip package for distribution instead of installation")
       sys.exit(0)
 
-build_file_cpp = os.path.join("..", "plugin", file_cpp)
+build_file_cpp = os.path.join("..", "crayfish", file_cpp)
 
 if pkg:
   zipfilename = "crayfish-lib-%s.zip" % version

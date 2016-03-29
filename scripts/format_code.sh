@@ -12,7 +12,7 @@ set -e
 
 ##### PYTHON
 
-cd ../plugin
+cd ../crayfish
 PYFILES=$(find . -maxdepth 1 -type f -name "*.py" )
 for i in $PYFILES; do
     echo "$i"

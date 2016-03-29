@@ -109,7 +109,7 @@ HEADERS += crayfish.h \
 
 INCLUDEPATH += $$PWD
 
-DESTDIR = $$PWD/../plugin
+DESTDIR = $$PWD/../crayfish
 
 unix {
   QMAKE_CXXFLAGS += -Wall -Wextra # -Wconversion

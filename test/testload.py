@@ -1,6 +1,6 @@
 
 import sys
-sys.path.append('../plugin')
+sys.path.append('..')
 import crayfish
 import unittest
 import os

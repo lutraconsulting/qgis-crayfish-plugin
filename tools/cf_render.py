@@ -1,7 +1,7 @@
 
 import sys
 from PyQt4.QtGui import QImage
-sys.path.append('../plugin')
+sys.path.append('..')
 import crayfish
 
 if len(sys.argv) != 5:
