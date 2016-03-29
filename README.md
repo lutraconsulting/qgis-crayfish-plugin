@@ -1,7 +1,7 @@
 Crayfish (QGIS plugin)
 ======================
 
-<img align="right" src="https://raw.githubusercontent.com/lutraconsulting/qgis-crayfish-plugin/master/plugin/crayfish_128px.png">
+<img align="right" src="https://raw.githubusercontent.com/lutraconsulting/qgis-crayfish-plugin/master/crayfish/crayfish_128px.png">
 
 The Crayfish Plugin for QGIS aspires to be a complete set of pre and post-processing tools for hydraulic modellers
 using TUFLOW, BASEMENT, AnuGA, ISIS 2D and other packages.
