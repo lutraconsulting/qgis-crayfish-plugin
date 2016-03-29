@@ -31,6 +31,7 @@ import os
 import shutil
 import platform
 import glob
+import zipfile
 
 pkg = False
 
@@ -65,7 +66,6 @@ for entry in os.walk('pyqtgraph'):
     install_files.append(os.path.join(entry[0], file_entry))
 
 if pkg:
-  import zipfile
   with zipfile.ZipFile(os.path.join("..","crayfish-%s.zip" % version), "w", zipfile.ZIP_DEFLATED) as z:
     for filename in install_files:
       z.write(filename, "crayfish/"+filename)

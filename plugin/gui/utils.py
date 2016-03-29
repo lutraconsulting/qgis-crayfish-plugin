@@ -24,6 +24,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import os
+
+import qgis.core
+import qgis.gui
+
+from PyQt4.QtCore import QSize, QVariant, SIGNAL
+from PyQt4.QtGui import QComboBox, QIcon, QPixmap, QColor, QColorDialog
+from PyQt4 import uic
 
 
 try:
@@ -56,16 +64,6 @@ except ImportError:
       self.msgbox[level](None, title, message)
 
   qgis_message_bar = QgsMessageBar()
-
-
-import os
-
-import qgis.core
-import qgis.gui
-
-from PyQt4.QtCore import QSize, QVariant, SIGNAL
-from PyQt4.QtGui import QComboBox, QIcon, QPixmap, QColor, QColorDialog
-from PyQt4 import uic
 
 
 if not hasattr(qgis.gui, "QgsColorRampComboBox"):

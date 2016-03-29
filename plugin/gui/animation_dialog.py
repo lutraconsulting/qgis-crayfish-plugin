@@ -35,6 +35,7 @@ from qgis.core import *
 
 from ..animation import animation, images_to_video
 from .utils import load_ui, time_to_string
+from .install_helper import downloadFfmpeg
 
 uiDialog, qtBaseClass = load_ui('crayfish_animation_dialog_widget')
 
@@ -172,7 +173,6 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
             if reply != QMessageBox.Yes:
                 return
 
-            from crayfish_install_helper import downloadFfmpeg
             ffmpeg_bin = downloadFfmpeg(self)
             if not ffmpeg_bin:
                 return

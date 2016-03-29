@@ -29,6 +29,11 @@ import os
 import platform
 import weakref
 
+import sip
+from PyQt4.QtGui import QColor
+from PyQt4.QtGui import QPixmap, QPainter, QColor
+from PyQt4.QtCore import Qt
+
 lib = None  # initialized on demand
 
 class Err(object):
@@ -427,7 +432,6 @@ class Renderer(object):
   def __init__(self, config, img):
     load_library()  # make sure the library is loaded
     self.lib = lib
-    import sip
     self.handle = ctypes.c_void_p(self.lib.CF_R_create(config.handle, sip.unwrapinstance(img)))
 
   def __del__(self):
@@ -452,7 +456,6 @@ def rgb2uint(val):
 
 def rgb2qcolor(val):
   """ (r,g,b,a) -> QColor """
-  from PyQt4.QtGui import QColor
   return QColor(val[0],val[1],val[2],val[3])
 
 def qcolor2rgb(c):
@@ -564,8 +567,6 @@ class ColorMap(object):
     return uint2rgb(self.lib.CF_CM_value(self.handle, v))
 
   def previewPixmap(self, size, vMin, vMax):
-    from PyQt4.QtGui import QPixmap, QPainter, QColor
-    from PyQt4.QtCore import Qt
     pix = QPixmap(size)
     pix.fill(Qt.white)
     p = QPainter(pix)
