@@ -3,7 +3,7 @@ Crayfish (QGIS plugin)
 
 <img align="right" src="https://raw.githubusercontent.com/lutraconsulting/qgis-crayfish-plugin/master/crayfish/crayfish_128px.png">
 
-The Crayfish Plugin is visualiser for temporal structured/unstructured grids in QGIS.
+The Crayfish Plugin is a visualiser for temporal structured/unstructured grids in QGIS.
 
 You can use Crayfish to load the following file formats in QGIS:
 
