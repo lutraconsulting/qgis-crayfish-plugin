@@ -26,11 +26,12 @@
 
 from PyQt4.QtGui import QColor
 
-from . import pyqtgraph
+from . import pyqtgraph as pg
+from .pyqtgraph.exporters import ImageExporter
 
-pyqtgraph.setConfigOption('background', 'w')
-pyqtgraph.setConfigOption('foreground', 'k')
-pyqtgraph.setConfigOption('antialias', True)
+pg.setConfigOption('background', 'w')
+pg.setConfigOption('foreground', 'k')
+pg.setConfigOption('antialias', True)
 
 # copied over from qgscolorscheme.cpp
 # we can't really use the colors directly as they are - we do not want
@@ -95,3 +96,18 @@ def cross_section_plot_data(output, geometry, resolution=1.):
     y.append(last_value)
 
     return x, y
+
+
+def show_plot(*args, **kwargs):
+    """ Open a new window with a plot and return the plot widget.
+    Just a wrapper around pyqtgraph's plot() method """
+    return pg.plot(*args, **kwargs)
+
+
+def export_plot(plt, filename, width=None, height=None):
+    """ Export an existing plot to an image and save with given filename.
+    Optionally, image width and height in pixels can be specified. """
+    e = ImageExporter(plt.plotItem)
+    if width is not None: e.parameters()['width'] = width
+    if height is not None: e.parameters()['height'] = height
+    e.export(filename)
