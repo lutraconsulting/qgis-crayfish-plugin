@@ -107,9 +107,10 @@ bool CrayfishGDALReader::initNodes(Mesh::Nodes& nodes) {
 
    BBox extent = computeExtent(nodes.constData(), nodes.size());
    bool is_longitude_shifted = (extent.minX>=0.0f) &&
-                              (extent.minY>=-90.0f) &&
-                              (extent.maxX<=360.0f) &&
-                              (extent.maxY<=90.0f);
+                               (extent.minY>=-90.0f) &&
+                               (extent.maxX<=360.0f) &&
+                               (extent.maxX>180.0f) &&
+                               (extent.maxY<=90.0f);
    if (is_longitude_shifted)  {
        for (int n=0; n<nodes.size(); ++n)
        {
