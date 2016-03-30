@@ -8,12 +8,13 @@ The Crayfish Plugin is visualiser for temporal structured/unstructured grids in 
 You can use Crayfish to load the following file formats in QGIS:
 
 
-- [NetCDF](https://en.wikipedia.org/wiki/NetCDF): Examples can be found [here](http://apps.ecmwf.int/datasets/data/interim-full-daily/levtype=sfc/)
-- [GRIB](https://en.wikipedia.org/wiki/GRIB): Examples can be found [here](http://apps.ecmwf.int/datasets/data/interim-full-daily/levtype=sfc/)
+- [NetCDF](https://en.wikipedia.org/wiki/NetCDF): Generic format for scientific data. Examples can be found [here](http://apps.ecmwf.int/datasets/data/interim-full-daily/levtype=sfc/)
+- [GRIB](https://en.wikipedia.org/wiki/GRIB): Format commonly used in meteorology. Examples can be found [here](http://apps.ecmwf.int/datasets/data/interim-full-daily/levtype=sfc/)
 - [XMDF](https://en.wikipedia.org/wiki/XMDF): As an example, hydraulic outputs from TUFLOW modelling package
-- [HDF5](https://en.wikipedia.org/wiki/Hierarchical_Data_Format): e.g. Hec RAS 2D output files
--  [DAT](http://www.xmswiki.com/wiki/SMS:ASCII_Dataset_Files_*.dat): e.g. outputs of the BASEMENT hydrodynamic modelling package
--  [Selafin files](http://www.gdal.org/drv_selafin.html) e.g. outputs of the TELEMAC 2D hydrodynamic modelling package
+- [SWW](http://anuga.anu.edu.au/): Outputs of the ANUGA modelling package
+- [DAT](http://www.xmswiki.com/wiki/SMS:ASCII_Dataset_Files_*.dat): Outputs of various hydrodynamic modelling packages (e.g. BASEMENT, HYDRO_AS-2D)
+- [HEC-RAS](http://www.hec.usace.army.mil/software/hec-ras/): Outputs of the HEC-RAS modelling package
+- [Serafin files](http://www.gdal.org/drv_selafin.html): Outputs of the TELEMAC 2D hydrodynamic modelling package
 
 <img src="https://travis-ci.org/lutraconsulting/qgis-crayfish-plugin.svg?branch=master">
 
