@@ -121,11 +121,15 @@ DataSet* Mesh::dataSet(const QString& name)
 
 BBox Mesh::computeMeshExtent(bool projected)
 {
+  const Node* nodes = projected ? projectedNodes() : mNodes.constData();
+  return computeExtent(nodes, mNodes.count());
+}
+
+BBox computeExtent(const Node* nodes, int size)
+{
   BBox b;
 
-  const Node* nodes = projected ? projectedNodes() : mNodes.constData();
-
-  if (mNodes.count() == 0)
+  if (size == 0)
     return b;
 
   b.minX = nodes[0].x;
@@ -133,7 +137,7 @@ BBox Mesh::computeMeshExtent(bool projected)
   b.minY = nodes[0].y;
   b.maxY = nodes[0].y;
 
-  for (int i = 0; i < mNodes.count(); i++)
+  for (int i = 0; i < size; i++)
   {
     const Node& n = nodes[i];
     if(n.x > b.maxX) b.maxX = n.x;

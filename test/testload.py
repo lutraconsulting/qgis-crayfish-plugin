@@ -30,6 +30,23 @@ class TestCrayfishLoad(unittest.TestCase):
     with self.assertRaises(ValueError):
       m.dataset(1)
 
+  def test_e4q_with_reprojection(self):
+    m = crayfish.Mesh(TEST_DIR + "/e4q.2dm")
+    self.assertTrue(m is not None)
+    self.assertEqual(m.node_count(), 4)
+    self.assertEqual(m.element_count(), 1)
+    self.assertEqual(m.dataset_count(), 1)
+    self.assertEqual(m.dataset(0).type(), crayfish.DS_Bed)
+    o = m.dataset(0).output(0)
+    val = m.value(o, -2, 0.5)
+    self.assertEqual(val, 0.5)
+
+    # reproject to see if the interpolation works in OTF too!
+    m.set_source_crs("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+    m.set_destination_crs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs") #Web Mercator
+    val = m.value(o, -221164, 26333)
+    self.assertEqual(val, 0.49337500748505414)
+
   def test_load_missing_data_file(self):
     m = crayfish.Mesh(TEST_DIR + "/quad_and_triangle.2dm")
     with self.assertRaises(ValueError):
