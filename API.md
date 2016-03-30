@@ -89,3 +89,54 @@ Each layer also keeps track of its currently selected dataset and current time:
 layer.currentDataSet()   # returns DataSet instance
 layer.currentOutput()    # returns Output instance at current time of current dataset
 ```
+
+## Extracting Data for Plots
+
+Crayfish has support for two types of plots:
+
+* **Time series plot** of dataset values at a certain point on map over all timesteps of a given dataset
+* **Cross-section plot** of output values (at one timestep) sampled from given linestring geometry
+
+To extract data for time series plot:
+
+```python
+import crayfish.plot
+
+point_geometry = QgsGeometry.fromPoint(QgsPoint(1020,1001))
+x, y = crayfish.plot.timeseries_plot_data(mesh.dataset(1), point_geometry)
+```
+
+The returned variables ```x``` and ```y``` are arrays of the same length (equal to dataset's number of timesteps) with data for X/Y plot.
+
+To extract data for cross-section plot:
+
+```python
+import crayfish.plot
+
+line_geometry = QgsGeometry.fromPolyline([QgsPoint(1000,1005), QgsPoint(1028,1005)])
+x, y = crayfish.plot.cross_section_plot_data(mesh.dataset(1).output(0), line_geometry, 0.5)
+```
+
+The function ```cross_section_plot_data``` returns ```x``` and ```y``` just like ```timeseries_plot_data``` does. In addition, it has third optional argument ```resolution``` that defines distance between samples from the input geometry in map units (the default value is ```1```).
+
+Additionally, there is ```show_plot``` convenience function to open a new window with data visualized on X/Y plot.
+
+```python
+crayfish.plot.show_plot(x, y)
+```
+
+Crayfish internally uses [PyQtGraph](http://www.pyqtgraph.org/documentation/index.html) module for display of graphs. Users may import the module an make use of it themselves (please see PyQtGraph documentation to learn more).
+
+```python
+import crayfish.pyqtgraph as pg
+```
+
+## Examples
+
+There are several examples within the Crayfish plugin code that demonstrate data loading and plotting functionality, including writing of CSV files and export of plot images. They can be run from QGIS python console just by using one of the following imports:
+
+```python
+import crayfish.examples.plot_timeseries_simple
+import crayfish.examples.plot_cross_section_simple
+import crayfish.examples.plot_cross_section_multiple_datasets
+```
