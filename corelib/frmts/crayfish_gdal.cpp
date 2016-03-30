@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QHash>
 #include <QVector>
 #include <QRegExp>
+#include <math.h>
 
 static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
 
@@ -106,7 +107,9 @@ bool CrayfishGDALReader::initNodes(Mesh::Nodes& nodes) {
    }
 
    BBox extent = computeExtent(nodes.constData(), nodes.size());
+   // we want to detect situation when there is whole earth represented in dataset
    bool is_longitude_shifted = (extent.minX>=0.0f) &&
+                               (fabs(extent.minX + extent.maxX - 360.0f) < 1.0f) &&
                                (extent.minY>=-90.0f) &&
                                (extent.maxX<=360.0f) &&
                                (extent.maxX>180.0f) &&
