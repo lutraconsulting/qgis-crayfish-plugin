@@ -549,6 +549,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
     def plot(self):
         if self.plot_dock_widget is None:
             self.plot_dock_widget = QDockWidget("Crayfish Plot")
+            self.plot_dock_widget.setObjectName("CrayfishPlotDock")
             self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_widget)
             w = CrayfishPlotWidget(self.currentCrayfishLayer(), self.plot_dock_widget)
             self.plot_dock_widget.setWidget(w)
