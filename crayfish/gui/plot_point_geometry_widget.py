@@ -42,13 +42,20 @@ class PickGeometryTool(QgsMapTool):
     def __init__(self, canvas):
         QgsMapTool.__init__(self, canvas)
 
+    def _mapPoint(self, e):
+        """ for compatibility with QGIS < 2.10 """
+        if hasattr(e, 'mapPoint'):
+            return e.mapPoint()
+        else:
+            return self.canvas().mapSettings().mapToPixel().toMapCoordinates(e.pos())
+
     def canvasMoveEvent(self, e):
         #if e.button() == Qt.LeftButton:
-        self.picked.emit(e.mapPoint(), False, False)
+        self.picked.emit(self._mapPoint(e), False, False)
 
     def canvasPressEvent(self, e):
         if e.button() == Qt.LeftButton:
-            self.picked.emit(e.mapPoint(), True, e.modifiers() & Qt.ControlModifier)
+            self.picked.emit(self._mapPoint(e), True, e.modifiers() & Qt.ControlModifier)
 
     def canvasReleaseEvent(self, e):
         pass
