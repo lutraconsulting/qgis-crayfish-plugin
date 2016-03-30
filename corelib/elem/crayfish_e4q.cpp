@@ -69,17 +69,50 @@ void E4Q_mapLogicalToPhysical(const E4Qtmp& e4q, double Lx, double Ly, double& P
   Py = e4q.b[0] + e4q.b[1]*Lx + e4q.b[2]*Ly + e4q.b[3]*Lx*Ly;
 }
 
+static inline double iszero(double val)
+{
+    return fabs(val) < 10e-5;
+}
+
 bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx, double& Ly)
 {
   const double* a = e4q.a;
   const double* b = e4q.b;
+
+  if (iszero(a[3])) {
+    if (iszero(a[2])) {
+        if (iszero(a[1])) {
+            return false;
+        } else {
+            Lx = (x - a[0])/a[1];
+            float denom = b[2] + b[3]*Lx;
+            if (iszero(denom)) {
+                return false;
+            } else {
+                Ly = (y - b[0] - b[1]*Lx) / denom;
+                return true;
+            }
+        }
+    } else {
+        if (iszero(a[1])) {
+            Ly = (x - a[0])/a[2];
+            float denom = b[1] + b[3]*Ly;
+            if (iszero(denom)) {
+                return false;
+            } else {
+                Lx = (y - b[0] - b[2]*Ly) / denom;
+                return true;
+            }
+        }
+    }
+  }
 
   // compute quadratic equation
   double aa = a[3]*b[2] - a[2]*b[3];
   double bb = a[3]*b[0] -a[0]*b[3] + a[1]*b[2] - a[2]*b[1] + x*b[3] - y*a[3];
   double cc = a[1]*b[0] -a[0]*b[1] + x*b[1] - y*a[1];
 
-  if (aa == 0)
+  if (iszero(aa))
     Ly = -cc / bb;  // linear equation
   else
   {
@@ -90,10 +123,22 @@ bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx,
   }
 
   float denom = (a[1]+a[3]*Ly);
-  if (denom == 0)
-      return false;
-
-  Lx = (x-a[0]-a[2]*Ly) / denom;
+  if (iszero(denom)) {
+    if (iszero(a[3])) {
+        return false;
+    } else {
+        Ly = -a[1]/a[3];
+        denom = (b[1] + b[3]*Ly);
+        if (iszero(denom)) {
+            return false;
+        } else {
+            Lx = (y-b[0]-b[2]*Ly) / denom;
+        }
+    }
+  } else
+  {
+    Lx = (x-a[0]-a[2]*Ly) / denom;
+  }
   return true;
 }
 
