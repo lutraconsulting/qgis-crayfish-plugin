@@ -148,10 +148,10 @@ void CrayfishGDALReader::initElements(Mesh::Nodes& nodes, Mesh::Elements& elemen
                // create extra elements around prime meridian
                elementsPtr->setId(eid++);
                elementsPtr->setEType(Element::E4Q);
-               elementsPtr->setP(1, mXSize*(y + 1));
-               elementsPtr->setP(2, mXSize*y);
-               elementsPtr->setP(3, mXSize - 1 + mXSize*y);
-               elementsPtr->setP(0, mXSize - 1 + mXSize*(y + 1));
+               elementsPtr->setP(0, mXSize*(y + 1));
+               elementsPtr->setP(3, mXSize*y);
+               elementsPtr->setP(2, mXSize - 1 + mXSize*y);
+               elementsPtr->setP(1, mXSize - 1 + mXSize*(y + 1));
                ++reconnected;
                ++elementsPtr;
            }
@@ -159,10 +159,10 @@ void CrayfishGDALReader::initElements(Mesh::Nodes& nodes, Mesh::Elements& elemen
            // other elements
            elementsPtr->setId(eid++);
            elementsPtr->setEType(Element::E4Q);
-           elementsPtr->setP(1, x + 1 + mXSize*(y + 1));
-           elementsPtr->setP(2, x + 1 + mXSize*y);
-           elementsPtr->setP(3, x + mXSize*y);
-           elementsPtr->setP(0, x + mXSize*(y + 1));
+           elementsPtr->setP(0, x + 1 + mXSize*(y + 1));
+           elementsPtr->setP(3, x + 1 + mXSize*y);
+           elementsPtr->setP(2, x + mXSize*y);
+           elementsPtr->setP(1, x + mXSize*(y + 1));
            ++elementsPtr;
        }
    }
