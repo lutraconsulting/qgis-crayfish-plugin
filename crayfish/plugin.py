@@ -33,7 +33,6 @@ from qgis.core import *
 
 from . import resources
 from .core import Err, Warn, last_load_status
-from .data_items import CrayfishDataItemProvider
 from .plugin_layer import CrayfishPluginLayer
 from .plugin_layer_type import CrayfishPluginLayerType
 from .gui.dock import CrayfishDock
@@ -43,6 +42,8 @@ from .gui.animation_dialog import CrayfishAnimationDialog
 from .gui.install_helper import ensure_library_installed
 from .gui.utils import QgsMessageBar, qgis_message_bar
 from .illuvis import upload_dialog
+if 'QgsDataItemProvider' in globals():  # from QGIS 2.10
+    from .data_items import CrayfishDataItemProvider
 
 
 class CrayfishPlugin:

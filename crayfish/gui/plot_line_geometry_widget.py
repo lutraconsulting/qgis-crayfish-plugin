@@ -44,17 +44,24 @@ class PickGeometryTool(QgsMapTool):
         self.points = []
         self.capturing = False
 
+    def _mapPoint(self, e):
+        """ for compatibility with QGIS < 2.10 """
+        if hasattr(e, 'mapPoint'):
+            return e.mapPoint()
+        else:
+            return self.canvas().mapSettings().mapToPixel().toMapCoordinates(e.pos())
+
     def canvasMoveEvent(self, e):
 
         if not self.capturing:
             return
 
-        self.picked.emit(self.points + [e.mapPoint()], False)
+        self.picked.emit(self.points + [self._mapPoint(e)], False)
 
     def canvasPressEvent(self, e):
         if e.button() == Qt.LeftButton:
             self.capturing = True
-            self.points.append(e.mapPoint())
+            self.points.append(self._mapPoint(e))
             self.picked.emit(self.points, False)
         if e.button() == Qt.RightButton:
             self.picked.emit(self.points, True)

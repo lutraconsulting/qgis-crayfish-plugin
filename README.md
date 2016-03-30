@@ -3,8 +3,18 @@ Crayfish (QGIS plugin)
 
 <img align="right" src="https://raw.githubusercontent.com/lutraconsulting/qgis-crayfish-plugin/master/crayfish/crayfish_128px.png">
 
-The Crayfish Plugin for QGIS aspires to be a complete set of pre and post-processing tools for hydraulic modellers
-using TUFLOW, BASEMENT, AnuGA, ISIS 2D and other packages.
+The Crayfish Plugin is visualiser for temporal structured/unstructured grids in QGIS.
+
+You can use Crayfish to load the following file formats in QGIS:
+
+
+- [NetCDF](https://en.wikipedia.org/wiki/NetCDF): Generic format for scientific data. Examples can be found [here](http://apps.ecmwf.int/datasets/data/interim-full-daily/levtype=sfc/)
+- [GRIB](https://en.wikipedia.org/wiki/GRIB): Format commonly used in meteorology. Examples can be found [here](http://apps.ecmwf.int/datasets/data/interim-full-daily/levtype=sfc/)
+- [XMDF](https://en.wikipedia.org/wiki/XMDF): As an example, hydraulic outputs from TUFLOW modelling package
+- [SWW](http://anuga.anu.edu.au/): Outputs of the ANUGA modelling package
+- [DAT](http://www.xmswiki.com/wiki/SMS:ASCII_Dataset_Files_*.dat): Outputs of various hydrodynamic modelling packages (e.g. BASEMENT, HYDRO_AS-2D)
+- [HEC-RAS](http://www.hec.usace.army.mil/software/hec-ras/): Outputs of the HEC-RAS modelling package
+- [Serafin files](http://www.gdal.org/drv_selafin.html): Outputs of the TELEMAC 2D hydrodynamic modelling package
 
 <img src="https://travis-ci.org/lutraconsulting/qgis-crayfish-plugin.svg?branch=master">
 

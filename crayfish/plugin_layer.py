@@ -247,7 +247,6 @@ class CrayfishPluginLayer(QgsPluginLayer):
 
     def initCustomValues(self, ds):
         """ set defaults for data source """
-        print "INIT CUSTOM ", ds
         self.cached_ds.add(ds)
 
         # make child datasets (maximums) share the configuration with parent

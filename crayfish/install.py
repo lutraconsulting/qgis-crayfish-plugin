@@ -56,14 +56,18 @@ install_files += glob.glob("gui/*.py")
 install_files += glob.glob("illuvis/*.py")
 install_files += glob.glob("doc/*")
 install_files += glob.glob("ui/*")
+install_files += glob.glob("examples/*")
 install_files.remove("install.py")  # exclude this file!
-install_dirs = ['illuvis', 'doc', 'ui', 'gui']
+install_dirs = ['illuvis', 'doc', 'ui', 'gui', 'examples']
 
 # add pyqtgraph
 for entry in os.walk('pyqtgraph'):
   install_dirs.append(entry[0])
   for file_entry in entry[2]:
     install_files.append(os.path.join(entry[0], file_entry))
+
+# remove .pyc
+install_files = [ filename for filename in install_files if not filename.endswith('.pyc') ]
 
 if pkg:
   with zipfile.ZipFile(os.path.join("..","crayfish-%s.zip" % version), "w", zipfile.ZIP_DEFLATED) as z:
