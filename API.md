@@ -131,6 +131,51 @@ Crayfish internally uses [PyQtGraph](http://www.pyqtgraph.org/documentation/inde
 import crayfish.pyqtgraph as pg
 ```
 
+## Using Geometries from Layers
+
+In the code examples above we have shown how to use a manually constructed point or linestring geometry (```QgsGeometry``` objects).
+It is often useful to use geometries from an existing vector layer instead of specifying coordinates in the code.
+First we will need a reference to ```QgsVectorLayer``` object. Here is how to open a shapefile:
+
+```python
+layer = QgsVectorLayer("/data/my_points.shp", "Points", "ogr")
+
+if not layer.isValid():
+    print "Failed to load layer!"
+```
+
+The first argument of ```QgsVectorLayer``` constructor is the path, the second one is layer name (any name would do), and the last
+one being provider name (```ogr``` stands for GDAL/OGR library used for loading of a variety of file formats).
+See [Loading Layers](http://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/loadlayer.html) for more details.
+
+Other option to get a reference to a layer is to use a layer from QGIS environment. There are several ways to do that,
+the easiest is to get currently selected layer:
+
+```python
+from qgis.utils import iface
+layer = iface.activeLayer()
+```
+
+Once we have a reference to a vector layer, we can fetch its features that contain attributes and geometries.
+This is how to access geometry from feature with ID 123:
+
+```python
+feature = layer.getFeatures(QgsFeatureRequest(123)).next()
+geometry = feature.geometry()
+```
+
+The returned geometry object is of type ```QgsGeometry``` which is consumed by Crayfish plot functions mentioned above.
+A geometry object may contain any type of geometry - a point, linestring, polygon or even a collection of them,
+so make sure to use a layer with correct geometry type.
+
+To get all geometries of a layer, the following code may be used to get a list of ```QgsGeometry``` objects:
+
+```python
+geometries = []
+for feature in layer.getFeatures():
+    geometries.append(QgsGeometry(feature.geometry()))
+```
+
 ## Examples
 
 There are several examples within the Crayfish plugin code that demonstrate data loading and plotting functionality, including writing of CSV files and export of plot images. They can be run from QGIS python console just by using one of the following imports:
