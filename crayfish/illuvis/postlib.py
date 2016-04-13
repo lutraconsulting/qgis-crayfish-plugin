@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # postlib - A collection of functions to facilitate (http) posting
-# Copyright (C) 2014 Lutra Consulting
+# Copyright (C) 2016 Lutra Consulting
 
 # info at lutraconsulting dot co dot uk
 # Lutra Consulting

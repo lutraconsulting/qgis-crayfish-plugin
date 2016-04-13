@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # illuvis - Tools for the effective communication of flood risk
-# Copyright (C) 2014 Lutra Consulting
+# Copyright (C) 2016 Lutra Consulting
 
 # info at lutraconsulting dot co dot uk
 # Lutra Consulting

@@ -1,6 +1,6 @@
 /*
 Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
-Copyright (C) 2015 Lutra Consulting
+Copyright (C) 2016 Lutra Consulting
 
 info at lutraconsulting dot co dot uk
 Lutra Consulting
