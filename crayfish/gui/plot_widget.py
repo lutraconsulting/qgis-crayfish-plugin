@@ -127,6 +127,13 @@ class CrayfishPlotWidget(QWidget):
         self.plot.showGrid(x=True, y=True)
         self.plot.addLegend()
 
+        self.label_not_time_varying = QLabel("Current dataset is not time-varying.")
+        self.label_not_time_varying.setAlignment(Qt.AlignCenter)
+
+        self.stack_layout = QStackedLayout()
+        self.stack_layout.addWidget(self.gw)
+        self.stack_layout.addWidget(self.label_not_time_varying)
+
         hl = QHBoxLayout()
         hl.addWidget(self.btn_layer)
         hl.addWidget(self.btn_plot_type)
@@ -139,7 +146,7 @@ class CrayfishPlotWidget(QWidget):
 
         l = QVBoxLayout()
         l.addLayout(hl)
-        l.addWidget(self.gw)
+        l.addLayout(self.stack_layout)
         self.setLayout(l)
 
         # init GUI
@@ -187,6 +194,13 @@ class CrayfishPlotWidget(QWidget):
 
         self.refresh_plot()
 
+    def current_dataset(self):
+        datasets = self.btn_dataset.datasets
+        if len(datasets) == 0:
+          return self.layer.currentDataSet()
+        else:
+          return datasets[0]
+
 
     def on_geometries_changed(self):
         self.refresh_plot()
@@ -204,6 +218,13 @@ class CrayfishPlotWidget(QWidget):
 
     def refresh_plot(self):
         plot_type = self.btn_plot_type.plot_type
+
+        ds = self.current_dataset()
+        if plot_type == PlotTypeWidget.PLOT_TIME and ds and not ds.time_varying():
+            self.stack_layout.setCurrentWidget(self.label_not_time_varying)
+        else:
+            self.stack_layout.setCurrentWidget(self.gw)
+
         if plot_type == PlotTypeWidget.PLOT_TIME:
             self.refresh_timeseries_plot()
         elif plot_type == PlotTypeWidget.PLOT_CROSS_SECTION:
@@ -251,11 +272,7 @@ class CrayfishPlotWidget(QWidget):
 
     def add_timeseries_plot(self, geom_pt, clr):
 
-        datasets = self.btn_dataset.datasets
-        if len(datasets) == 0:
-          ds = self.layer.currentDataSet()
-        else:
-          ds = datasets[0]
+        ds = self.current_dataset()
 
         x, y = timeseries_plot_data(ds, geom_pt)
         self.plot.getAxis('left').setLabel(ds.name())
@@ -281,11 +298,7 @@ class CrayfishPlotWidget(QWidget):
         if len(geometry.asPolyline()) == 0:
             return  # not a linestring?
 
-        datasets = self.btn_dataset.datasets
-        if len(datasets) == 0:
-          ds = self.layer.currentDataSet()
-        else:
-          ds = datasets[0]
+        ds = self.current_dataset()
 
         self.plot.getAxis('left').setLabel(ds.name())
 
