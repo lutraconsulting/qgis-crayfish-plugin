@@ -550,9 +550,13 @@ class CrayfishDock(qtBaseClass, uiDialog):
         if self.plot_dock_widget is None:
             self.plot_dock_widget = QDockWidget("Crayfish Plot")
             self.plot_dock_widget.setObjectName("CrayfishPlotDock")
+            close_event = lambda event: self.btnPlot.setChecked(False) and QDockWidget.closeEvent(self.plot_dock_widget, event)
+            self.plot_dock_widget.closeEvent = close_event
             self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_widget)
             w = CrayfishPlotWidget(self.currentCrayfishLayer(), self.plot_dock_widget)
             self.plot_dock_widget.setWidget(w)
         else:
             self.plot_dock_widget.widget().set_layer(self.currentCrayfishLayer())
             self.plot_dock_widget.setVisible(not self.plot_dock_widget.isVisible())
+
+        self.btnPlot.setChecked(self.plot_dock_widget.isVisible())

@@ -85,6 +85,8 @@ class CrayfishPlugin:
         self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
         QObject.connect(self.actionExportAnimation, SIGNAL("triggered()"), self.exportAnimation)
 
+        self.actionPlot = QAction(QgsApplication.getThemeIcon("/histogram.png"), "Plot", self.iface.mainWindow())
+
         # Add toolbar button and menu item
         layerTB = self.iface.layerToolBar()
         layerTB.insertAction(self.iface.actionAddPgLayer(), self.action)
@@ -93,6 +95,7 @@ class CrayfishPlugin:
         self.menu.addAction(self.action)
         self.menu.addAction(self.actionExportGrid)
         self.menu.addAction(self.actionExportAnimation)
+        self.menu.addAction(self.actionPlot)
 
         # Register plugin layer type
         self.lt = CrayfishPluginLayerType()
@@ -114,6 +117,8 @@ class CrayfishPlugin:
         self.dock.hide()   # do not show the dock by default
         QObject.connect(self.dock, SIGNAL("visibilityChanged(bool)"), self.dockVisibilityChanged)
         self.dock.treeDataSets.setCustomActions([self.actionExportGrid, self.uploadAction, self.actionExportAnimation])
+
+        self.actionPlot.triggered.connect(self.dock.plot)
 
         # Register data items provider (if possible - since 2.10)
         self.dataItemsProvider = None
