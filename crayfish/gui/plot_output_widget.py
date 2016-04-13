@@ -48,9 +48,11 @@ class OutputsMenu(QMenu):
         if self.layer is not None:
             self.layer.currentOutputTimeChanged.disconnect(self.on_current_output_time_changed)
 
-        layer.currentOutputTimeChanged.connect(self.on_current_output_time_changed)
+        if layer is not None:
+            layer.currentOutputTimeChanged.connect(self.on_current_output_time_changed)
 
-        self.populate_actions(layer.currentDataSet())
+        self.populate_actions(layer.currentDataSet() if layer is not None else None)
+        self.layer = layer
 
     def set_dataset(self, ds):
         self.populate_actions(ds)
@@ -59,14 +61,15 @@ class OutputsMenu(QMenu):
 
         # populate timesteps
         self.clear()
+
+        if ds is None:
+            return
+
         self.action_current = self.addAction("[current]")
         self.action_current.setCheckable(True)
         self.action_current.setChecked(True)
         self.action_current.triggered.connect(self.on_action_current)
         self.addSeparator()
-
-        if ds is None:
-            return
 
         for output in ds.outputs():
             a = self.addAction(time_to_string(output.time()))
