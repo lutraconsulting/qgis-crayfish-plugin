@@ -32,19 +32,20 @@ class DatasetsMenu(QMenu):
 
     datasets_changed = pyqtSignal(list)
 
-    def __init__(self, layer, parent=None):
+    def __init__(self, parent=None):
         QMenu.__init__(self, parent)
 
         self.layer = None
         self.action_current = None
-
-        self.populate_actions(layer)
 
 
     def populate_actions(self, layer):
 
         self.layer = layer
         self.clear()
+
+        if layer is None:
+            return
 
         self.action_current = self.addAction("[current]")
         self.action_current.setCheckable(True)
@@ -89,13 +90,13 @@ class DatasetsWidget(QToolButton):
 
     datasets_changed = pyqtSignal(list)
 
-    def __init__(self, layer, parent=None):
+    def __init__(self, parent=None):
         QToolButton.__init__(self, parent)
 
         self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.setIcon(QIcon(QPixmap(":/plugins/crayfish/icon_contours.png")))
 
-        self.menu_datasets = DatasetsMenu(layer)
+        self.menu_datasets = DatasetsMenu()
 
         self.setPopupMode(QToolButton.InstantPopup)
         self.setMenu(self.menu_datasets)

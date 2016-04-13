@@ -63,8 +63,10 @@ class CrayfishLayerWidget(QToolButton):
 
     layer_changed = pyqtSignal(QgsMapLayer)
 
-    def __init__(self, layer, parent=None):
+    def __init__(self, parent=None):
         QToolButton.__init__(self, parent)
+
+        self.layer = None
 
         self.menu_layers = CrayfishLayerMenu()
 
@@ -72,11 +74,17 @@ class CrayfishLayerWidget(QToolButton):
         self.setMenu(self.menu_layers)
         self.menu_layers.picked_layer.connect(self.on_picked_layer)
 
-        self.on_picked_layer(layer)
+        QgsMapLayerRegistry.instance().layersWillBeRemoved.connect(self.layers_will_be_removed)
 
     def set_layer(self, layer):
         self.on_picked_layer(layer)
 
     def on_picked_layer(self, layer):
-        self.setText("Layer: " + layer.name())
+        layer_name = layer.name() if layer is not None else "(none)"
+        self.setText("Layer: " + layer_name)
         self.layer_changed.emit(layer)
+        self.layer = layer
+
+    def layers_will_be_removed(self, lst):
+        if self.layer and self.layer.id() in lst:
+            self.set_layer(None)

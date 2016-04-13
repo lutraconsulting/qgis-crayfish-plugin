@@ -553,7 +553,8 @@ class CrayfishDock(qtBaseClass, uiDialog):
             close_event = lambda event: self.btnPlot.setChecked(False) and QDockWidget.closeEvent(self.plot_dock_widget, event)
             self.plot_dock_widget.closeEvent = close_event
             self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_widget)
-            w = CrayfishPlotWidget(self.currentCrayfishLayer(), self.plot_dock_widget)
+            w = CrayfishPlotWidget(self.plot_dock_widget)
+            w.set_layer(self.currentCrayfishLayer())
             self.plot_dock_widget.setWidget(w)
         else:
             self.plot_dock_widget.widget().set_layer(self.currentCrayfishLayer())

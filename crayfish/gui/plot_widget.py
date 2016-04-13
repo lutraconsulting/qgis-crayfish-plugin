@@ -90,15 +90,15 @@ class PlotTypeWidget(QToolButton):
 
 class CrayfishPlotWidget(QWidget):
 
-    def __init__(self, layer, parent=None):
+    def __init__(self, parent=None):
         QWidget.__init__(self, parent)
 
-        self.layer = layer
+        self.layer = None
 
-        self.btn_layer = CrayfishLayerWidget(self.layer)
+        self.btn_layer = CrayfishLayerWidget()
         self.btn_layer.layer_changed.connect(self.on_layer_changed)
 
-        self.btn_dataset = DatasetsWidget(self.layer)
+        self.btn_dataset = DatasetsWidget()
         self.btn_dataset.datasets_changed.connect(self.on_datasets_changed)
 
         self.btn_plot_type = PlotTypeWidget()
@@ -110,7 +110,7 @@ class CrayfishPlotWidget(QWidget):
         self.line_picker = LineGeometryPickerWidget()
         self.line_picker.geometries_changed.connect(self.on_geometries_changed)
 
-        self.btn_output = OutputsWidget(self.layer)
+        self.btn_output = OutputsWidget()
         self.btn_output.outputs_changed.connect(self.on_outputs_changed)
 
         self.btn_options = QToolButton()
@@ -130,9 +130,13 @@ class CrayfishPlotWidget(QWidget):
         self.label_not_time_varying = QLabel("Current dataset is not time-varying.")
         self.label_not_time_varying.setAlignment(Qt.AlignCenter)
 
+        self.label_no_layer = QLabel("No Crayfish layer is selected.")
+        self.label_no_layer.setAlignment(Qt.AlignCenter)
+
         self.stack_layout = QStackedLayout()
         self.stack_layout.addWidget(self.gw)
         self.stack_layout.addWidget(self.label_not_time_varying)
+        self.stack_layout.addWidget(self.label_no_layer)
 
         hl = QHBoxLayout()
         hl.addWidget(self.btn_layer)
@@ -152,9 +156,6 @@ class CrayfishPlotWidget(QWidget):
         # init GUI
         self.on_plot_type_changed(self.btn_plot_type.plot_type)
         self.on_datasets_changed(self.btn_dataset.datasets)
-
-        # make picking from map (for time series) default
-        self.point_picker.picker_clicked()
 
 
     def hideEvent(self, e):
@@ -188,7 +189,7 @@ class CrayfishPlotWidget(QWidget):
 
     def on_datasets_changed(self, lst):
         if len(lst) == 0:
-            self.btn_output.set_dataset(self.layer.currentDataSet())
+            self.btn_output.set_dataset(self.layer.currentDataSet() if self.layer is not None else None)
         elif len(lst) == 1:
             self.btn_output.set_dataset(lst[0])
 
@@ -197,7 +198,7 @@ class CrayfishPlotWidget(QWidget):
     def current_dataset(self):
         datasets = self.btn_dataset.datasets
         if len(datasets) == 0:
-          return self.layer.currentDataSet()
+          return self.layer.currentDataSet() if self.layer is not None else None
         else:
           return datasets[0]
 
@@ -219,12 +220,18 @@ class CrayfishPlotWidget(QWidget):
     def refresh_plot(self):
         plot_type = self.btn_plot_type.plot_type
 
+        if self.layer is None:
+            self.stack_layout.setCurrentWidget(self.label_no_layer)
+            return
+
         ds = self.current_dataset()
         if plot_type == PlotTypeWidget.PLOT_TIME and ds and not ds.time_varying():
             self.stack_layout.setCurrentWidget(self.label_not_time_varying)
-        else:
-            self.stack_layout.setCurrentWidget(self.gw)
+            return
 
+        self.stack_layout.setCurrentWidget(self.gw)
+
+        self.clear_plot()
         if plot_type == PlotTypeWidget.PLOT_TIME:
             self.refresh_timeseries_plot()
         elif plot_type == PlotTypeWidget.PLOT_CROSS_SECTION:
@@ -253,7 +260,6 @@ class CrayfishPlotWidget(QWidget):
 
 
     def refresh_timeseries_plot(self):
-        self.clear_plot()
         self.plot.getAxis('bottom').setLabel('Time [h]')
         # re-add curves
         for i, geometry in enumerate(self.point_picker.geometries):
@@ -287,7 +293,6 @@ class CrayfishPlotWidget(QWidget):
 
 
     def refresh_cross_section_plot(self):
-        self.clear_plot()
         self.plot.getAxis('bottom').setLabel('Station [m]')
 
         if len(self.line_picker.geometries) == 0:

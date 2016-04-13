@@ -34,13 +34,11 @@ class OutputsMenu(QMenu):
 
     outputs_changed = pyqtSignal(list)
 
-    def __init__(self, layer, parent=None):
+    def __init__(self, parent=None):
         QMenu.__init__(self, parent)
 
         self.layer = None
         self.set_dataset(None)
-
-        self.set_layer(layer)
 
     def set_layer(self, layer):
 
@@ -102,10 +100,10 @@ class OutputsWidget(QToolButton):
 
     outputs_changed = pyqtSignal(list)
 
-    def __init__(self, layer, parent=None):
+    def __init__(self, parent=None):
         QToolButton.__init__(self, parent)
 
-        self.menu_outputs = OutputsMenu(layer)
+        self.menu_outputs = OutputsMenu()
 
         self.setPopupMode(QToolButton.InstantPopup)
         self.setMenu(self.menu_outputs)
