@@ -26,9 +26,15 @@
 
 import os
 
+from PyQt4.QtGui import QIcon
 from qgis.core import *
 
 class CrayfishDataItemProvider(QgsDataItemProvider):
+
+  # TODO: .nc cannot be loaded simply from browser as is because it loads multiple layers
+  extensions = [".2dm", ".sww", ".grib", ".grib1", ".grib2", ".bin", ".grb", ".hdf", ".slf"]
+
+  icon = QIcon(":/plugins/crayfish/crayfish.png")
 
   def name(self):
     return "Crayfish"
@@ -37,10 +43,17 @@ class CrayfishDataItemProvider(QgsDataItemProvider):
     return 1 # QgsDataProvider.File
 
   def createDataItem(self, path, parentItem):
-    if not (path.endswith(".2dm") or path.endswith(".sww")):
+    if not self._supported_extension(path):
       return None
 
     base = os.path.basename(path)
     item = QgsLayerItem(parentItem, base, path, path, QgsLayerItem.Plugin, "crayfish_viewer")
     item.setState(QgsDataItem.Populated) # make it non-expandable
+    item.setIcon(self.icon)
     return item
+
+  def _supported_extension(self, path):
+    for ext in self.extensions:
+      if path.endswith(ext):
+        return True
+    return False
