@@ -49,6 +49,7 @@ to user's QGIS python plugin directory (`~/.qgis2/python/plugins/crayfish`):
 
 ```bash
 cd qgis-crayfish-plugin
+export QT_SELECT=qt4
 ./install.py
 ```
 
