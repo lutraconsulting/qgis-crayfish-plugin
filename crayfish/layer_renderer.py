@@ -37,15 +37,14 @@ class CrayfishPluginLayerRenderer(QgsMapLayerRenderer):
 
         QgsMapLayerRenderer.__init__(self, layer.id())
 
-        self.layer = layer
         self.rendererContext = rendererContext
 
         # Now extract all relevant information from the layer settings for rendering
         self._calculate_extent()
-        self._create_rconfig()
+        self._create_rconfig(layer)
 
         # And notify corelib to reproject if needed
-        self._set_destination_crs()
+        self._set_destination_crs(layer)
 
     def _calculate_extent(self):
         mapToPixel = self.rendererContext.mapToPixel()
@@ -66,35 +65,35 @@ class CrayfishPluginLayerRenderer(QgsMapLayerRenderer):
         self.height = (bottomright.y() - topleft.y())
         self.extent = extent
 
-    def _create_rconfig(self):
+    def _create_rconfig(self, layer):
         rconfig = RendererConfig()
-        rconfig.set_output_mesh(self.layer.mesh)
+        rconfig.set_output_mesh(layer.mesh)
 
-        dsC = self.layer.currentContourDataSet()
+        dsC = layer.currentContourDataSet()
         if dsC:
-          rconfig.set_output_contour(self.layer.currentContourOutput())
+          rconfig.set_output_contour(layer.currentContourOutput())
           for k,v in dsC.config.iteritems():
             if k.startswith("c_"):
               rconfig[k] = v
 
-        dsV = self.layer.currentVectorDataSet()
+        dsV = layer.currentVectorDataSet()
         if dsV:
-          rconfig.set_output_vector(self.layer.currentVectorOutput())
+          rconfig.set_output_vector(layer.currentVectorOutput())
           for k,v in dsV.config.iteritems():
             if k.startswith("v_"):
               rconfig[k] = v
 
-        for k,v in self.layer.config.iteritems():
+        for k,v in layer.config.iteritems():
           rconfig[k] = v
 
         rconfig.set_view((int(self.width),int(self.height)), (self.extent.xMinimum(), self.extent.yMinimum()), self.pixelSize)
         self.rconfig = rconfig
 
-    def _set_destination_crs(self):
+    def _set_destination_crs(self, layer):
         # Set in main thread, so the mesh projection arrays
         # are populated correctly before used for example by identify tools
         ct = self.rendererContext.coordinateTransform()
-        self.layer.mesh.set_destination_crs(ct.destCRS().toProj4() if ct else None)
+        layer.mesh.set_destination_crs(ct.destCRS().toProj4() if ct else None)
 
     def _print_debug_info(self):
             print '\n'
