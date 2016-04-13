@@ -3,13 +3,13 @@
 name=Crayfish
 qgisMinimumVersion=2.0
 qgisMaximumVersion=2.99
-description=A collection of tools for TUFLOW and other hydraulic
-    modelling packages
+description=Visualiser for temporal structured/unstructured grids in QGIS
 ; category=Raster ; Did not know what my available choices where
 version=2.2.0
 author=Lutra Consulting
 email=info@lutraconsulting.co.uk
-about=The Crayfish plugin aspires to be a complete set of post-processing tools to support numerical modelling within QGIS. With Crayfish, users can load time varying mesh into QGIS. Currently, Crayfish supports a number of hydraulic modelling software packages which output results to XMDF, SMS DAT, GRIB, HEC2D, netCDF, Serafin and SWW. Examples of the software packages are: TUFLOW, AnuGA, BASEMENT, ISIS 2D, HEC-RAS 2D, TELEMAC and Hydro_AS 2D. Crayfish loads and renders results directly rather than converting them to GIS formats before viewing. This allows users to flick quickly through the various output steps in the result files and to create animations.
+about=The Crayfish plugin aspires to be a time explorer for various grid and vector datasets within QGIS. With Crayfish, users can load time varying mesh into QGIS. Currently, Crayfish supports a number of hydraulic modelling software packages which output results to XMDF, SMS DAT, GRIB, HEC2D, netCDF, Serafin and SWW. Examples of the software packages are: TUFLOW, AnuGA, BASEMENT, ISIS 2D, HEC-RAS 2D, TELEMAC and Hydro_AS 2D. Crayfish loads and renders results directly rather than converting them to GIS formats before viewing. This allows users to flick quickly through the various output steps in the result files and to create animations.
+
 ; end of mandatory metadata
 
 ; start of optional metadata
@@ -17,7 +17,12 @@ changelog=2.2 - New Features:
  - Support for GRIB result files (.grib, .bin, .grib1, .grib2, .grb)
  - Support for HEC-RAS 2D result files (.hdf)
  - Support for netCDF result files (.nc)
- - Support for Selafin (TELEMAC 2D) result files (.slf)
+ - Support for Serafin (TELEMAC 2D) result files (.slf)
+ - Plotting of time series and cross sections
+ - Element centered data in addition to node centered data
+ - New mesh rendering options
+ - New vector rendering options
+ - User defined labels in legend
  <p>2.1.3 - Bug fixes:
  - Export of animations fixes
  - AnuGA file format support fixes
@@ -99,7 +104,7 @@ changelog=2.2 - New Features:
  <p>0.1 - Initial release
 
 ; tags are in comma separated value format, spaces are allowed
-tags=hydraulic,hydraulic modelling,flood,analysis,animation,results viewer,tuflow,sms,flow,river,channel
+tags=hydraulic,hydraulic modelling,flood,analysis,animation,results viewer,flow,river,channel,mesh,netcdf,anuga,grib,serafin,telemac,hecras,tuflow,sms
 
 homepage=http://www.lutraconsulting.co.uk/resources/crayfish
 tracker=https://github.com/lutraconsulting/qgis-crayfish-plugin/issues

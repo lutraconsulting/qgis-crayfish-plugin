@@ -46,7 +46,7 @@ class CrayfishAboutDialog(qtBaseClass, uiDialog):
         self.setupUi(self)
         self.iface = iface
 
-        doc_dir = os.path.join(os.path.dirname(__file__), "doc")
+        doc_dir = os.path.join(os.path.dirname(__file__), "..", "doc")
         self.about_page = os.path.join(doc_dir, "about.html")
         self.news_page = os.path.join(doc_dir, "news.html")
 
