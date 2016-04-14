@@ -24,7 +24,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import ConfigParser
 import os
 import platform
 import time
@@ -34,33 +33,13 @@ import zipfile
 from PyQt4.QtCore import QSettings, Qt
 from PyQt4.QtGui import QCursor, QMessageBox, qApp
 
-from ..core import load_library, library_version
+from ..core import load_library, VersionError, plugin_version_str, libpath
 
 # Base URL for downloading of prepared binaries
 downloadBaseUrl = 'http://www.lutraconsulting.co.uk/'
 #downloadBaseUrl = 'http://localhost:8000/'  # for testing
 
 destFolder = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-
-
-def plugin_version_str():
-    cfg = ConfigParser.ConfigParser()
-    cfg.read(os.path.join(os.path.dirname(__file__), '..', 'metadata.txt'))
-    return cfg.get('general', 'version')
-
-def plugin_version():
-    ver_lst = plugin_version_str().split('.')
-    ver = 0
-    if len(ver_lst) >= 1:
-        ver_major = int(ver_lst[0])
-        ver |= ver_major << 16
-    if len(ver_lst) >= 2:
-        ver_minor = int(ver_lst[1])
-        ver |= ver_minor << 8
-    if len(ver_lst) == 3:
-        ver_bugfix = int(ver_lst[2])
-        ver |= ver_bugfix
-    return ver
 
 
 crayfish_zipfile = 'crayfish-lib-%s.zip' % plugin_version_str()
@@ -72,8 +51,7 @@ def ensure_library_installed(parent_widget=None):
     restartRequired = False
 
     platformVersion = platform.system()
-    if platformVersion == 'Windows':
-        while not extractBinPackageAfterRestart():
+    while not extractBinPackageAfterRestart():
             reply = QMessageBox.critical(parent_widget,
               'Crayfish Installation Issue',
               "Crayfish plugin is unable to replace previous version of library. "
@@ -83,12 +61,15 @@ def ensure_library_installed(parent_widget=None):
             if reply != QMessageBox.Retry:
                 return False
 
+    version_error = False  # to see if there is already existing incompatible version
+
     try:
         load_library()
-        assert library_version() == plugin_version()
         return True   # everything's good - we are done here!
-    except (OSError, AssertionError):
-        pass  # ok we have a problem (no library or an old one)
+    except VersionError:
+        version_error = True  # we have a problem - incompatible version
+    except OSError:
+        pass  # ok we have a problem (no library or it failed to load - e.g. 32/64bit mismatch)
 
     # The crayfishviewer binary cannot be found
     reply = QMessageBox.question(parent_widget,
@@ -115,7 +96,7 @@ def ensure_library_installed(parent_widget=None):
 
     # Download it
     try:
-        filename = os.path.join(os.path.dirname(__file__), crayfish_zipfile)
+        filename = os.path.join(destFolder, crayfish_zipfile)
         downloadBinPackage(packageUrl, filename)
     except IOError, err:
         QMessageBox.critical(parent_widget,
@@ -131,17 +112,25 @@ def ensure_library_installed(parent_widget=None):
     if platformVersion == 'Windows':
         downloadExtraLibs(parent_widget)
 
+    success_msg = "Download and installation successful."
+    restart_msg = "QGIS needs to be restarted in order to complete " + \
+            "an update to the Crayfish Library.  Please restart QGIS."
+
+    # do not rewrite the library - it is already loaded and it would cause havoc
+    if version_error:
+        addExtractLibraryMarker()
+        QMessageBox.information(parent_widget, 'Download complete', success_msg + "\n\n" + restart_msg)
+        return False
+
     # try to extract the downloaded file - may require a restart if the files exist already
     if not extractBinPackage(filename):
-        QMessageBox.information(parent_widget,
-          'Restart Required',
-          "QGIS needs to be restarted in order to complete an update to the Crayfish "
-          "Library.  Please restart QGIS.")
+        QMessageBox.information(parent_widget, 'Download complete', success_msg + "\n\n" + restart_msg)
         return False
+
+    QMessageBox.information(parent_widget, 'Download complete', success_msg)
 
     # now try again
     load_library()
-    QMessageBox.information(parent_widget, 'Succeeded', "Download and installation successful." )
     return True
 
 
@@ -181,11 +170,13 @@ def extractBinPackage(destinationFileName):
         z.close()
         return True
     except IOError:
-        tmpF = open( os.path.join(destFolder, 'EXTRACT_DLL'), 'w' )
-        tmpF.write(' ')
-        tmpF.close()
+        addExtractLibraryMarker()
         return False
 
+def addExtractLibraryMarker():
+    tmpF = open( os.path.join(destFolder, 'EXTRACT_DLL'), 'w' )
+    tmpF.write(' ')
+    tmpF.close()
 
 def extractBinPackageAfterRestart():
     # Windows users may have opted to download a pre-compiled lib
@@ -197,13 +188,12 @@ def extractBinPackageAfterRestart():
         return True
 
     stillExists = True
-    dllFileName = os.path.join(destFolder, 'crayfish.dll')
     for retryCount in range(3):
         try:
-            os.unlink( dllFileName )
+            os.unlink(libpath)
             stillExists = False
             break
-        except WindowsError:
+        except OSError:
             time.sleep(3)
 
     if stillExists:

@@ -24,6 +24,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import ConfigParser
 import ctypes
 import os
 import platform
@@ -35,6 +36,9 @@ from PyQt4.QtGui import QPixmap, QPainter, QColor
 from PyQt4.QtCore import Qt
 
 lib = None  # initialized on demand
+
+libname = "crayfish.dll" if platform.system() == "Windows" else "libcrayfish.so.1"
+libpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), libname)
 
 class Err(object):
     NoError, NotEnoughMemory, \
@@ -61,20 +65,30 @@ class Element(ctypes.Structure):
     return "<Element ID %d type: %d  pts: %s>" % (self.id, self.type, str(list(self.p)))
 
 
+class VersionError(Exception):
+    """ Exception to be thrown on mismatch of C++/Python code versions """
+    def __init__(self, library_ver, plugin_ver):
+        self.library_ver = library_ver
+        self.plugin_ver = plugin_ver
+
+
 def load_library():
     """ Load the supporting Crayfish C++ library.
     Does nothing if the library has been loaded already.
     Raises an exception if loading fails. """
 
-    global lib
+    global lib, libpath
 
     if lib is not None:
         return  # already loaded
 
-    this_dir = os.path.dirname(os.path.realpath(__file__))
-    libname = "crayfish.dll" if platform.system() == "Windows" else "libcrayfish.so.1"
+    lib = ctypes.cdll.LoadLibrary(libpath)
 
-    lib = ctypes.cdll.LoadLibrary(os.path.join(this_dir, libname))
+    library_ver = library_version()
+    plugin_ver = plugin_version()
+    if library_ver != plugin_ver:
+        lib = None
+        raise VersionError(library_ver, plugin_ver)
 
     lib.CF_Mesh_nodeAt.restype = ctypes.POINTER(Node)
     lib.CF_Mesh_elementAt.restype = ctypes.POINTER(Element)
@@ -347,7 +361,7 @@ class Output(object):
     else:
       count = self.dataset().mesh().element_count()
 
-    for index in xrange(node_count):
+    for index in xrange(count):
       yield self.value_vector(index)
 
   def status(self, index):
@@ -627,6 +641,32 @@ def last_load_status():
   return lib.CF_LastLoadError(), lib.CF_LastLoadWarning()
 
 def library_version():
-  """ Return version of the underlying C++ library (as a number) """
-  load_library()  # make sure the library is loaded
+  """ Return version of the underlying C++ library as a number.
+  It should be the same as what plugin_version() returns.
+  Format: 0xXYZ for version X.Y.Z """
+  if lib is None:
+      return None
   return lib.CF_Version()
+
+def plugin_version_str():
+    """ Return version of Python plugin from metadata as a string """
+    cfg = ConfigParser.ConfigParser()
+    cfg.read(os.path.join(os.path.dirname(__file__), 'metadata.txt'))
+    return cfg.get('general', 'version')
+
+def plugin_version():
+    """ Return version of Python plugin from metadata as a number.
+    It should be the same as what library_version() returns.
+    Format: 0xXYZ for version X.Y.Z """
+    ver_lst = plugin_version_str().split('.')
+    ver = 0
+    if len(ver_lst) >= 1:
+        ver_major = int(ver_lst[0])
+        ver |= ver_major << 16
+    if len(ver_lst) >= 2:
+        ver_minor = int(ver_lst[1])
+        ver |= ver_minor << 8
+    if len(ver_lst) == 3:
+        ver_bugfix = int(ver_lst[2])
+        ver |= ver_bugfix
+    return ver
