@@ -40,6 +40,8 @@ from ..core import load_library, library_version
 downloadBaseUrl = 'http://www.lutraconsulting.co.uk/'
 #downloadBaseUrl = 'http://localhost:8000/'  # for testing
 
+destFolder = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+
 
 def plugin_version_str():
     cfg = ConfigParser.ConfigParser()
@@ -173,7 +175,6 @@ def extractBinPackage(destinationFileName):
         If they already exist, the operation will fail because they are already loaded into Python.
         In such case we just keep a marker file 'EXTRACT_DLL' and extract it on the next run
     """
-    destFolder = os.path.dirname(__file__)
     try:
         z = zipfile.ZipFile(destinationFileName)
         z.extractall(destFolder)
@@ -191,7 +192,6 @@ def extractBinPackageAfterRestart():
     # In this case, if they already had the DLL loaded (they have
     # just uypdated) - they will need to restart QGIS to be able to
     # delete the old DLL
-    destFolder = os.path.dirname(__file__)
     updateLibraryIndicator = os.path.join(destFolder, 'EXTRACT_DLL')
     if not os.path.isfile(updateLibraryIndicator):
         return True
@@ -247,7 +247,6 @@ def downloadExtraLibs(parent_widget=None):
 
 def downloadFfmpeg(parent_widget=None):
 
-    destFolder = os.path.dirname(__file__)
     ffmpegZip = 'ffmpeg-20150505-git-6ef3426-win32-static.zip'
     ffmpegZipPath = os.path.join(destFolder, ffmpegZip)
     ffmpegUrl = downloadBaseUrl+'resources/crayfish/viewer/binaries/Windows/extra/'+ffmpegZip
