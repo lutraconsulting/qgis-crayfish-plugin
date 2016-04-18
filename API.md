@@ -183,5 +183,6 @@ There are several examples within the Crayfish plugin code that demonstrate data
 ```python
 import crayfish.examples.plot_timeseries_simple
 import crayfish.examples.plot_cross_section_simple
+import crayfish.examples.plot_cross_section_from_layer
 import crayfish.examples.plot_cross_section_multiple_datasets
 ```
