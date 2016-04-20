@@ -41,7 +41,7 @@ sudo apt-get install build-essential libqt4-dev qt4-qmake libgdal-dev libhdf5-de
 For Red Hat/Cent OS/Fedora, the following command will install the required packages:
 
 ```bash
-sudo dnf install gcc-c++ make qt-devel gdal-libs-devel hdf5-devel netcdf-devel proj-devel git
+sudo dnf install gcc-c++ make qt-devel gdal-libs hdf5-devel netcdf-devel proj-devel git
 ```
 
 If all these packages are installed you can clone the crayfish plugin using the command:
