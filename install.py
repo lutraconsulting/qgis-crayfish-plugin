@@ -42,8 +42,10 @@ if platform.system() == "Windows":
     res = os.system('nmake')
     if res != 0: raise Exception("nmake command failed!")
 else:
-    res = os.system('qmake')
-    if res != 0: raise Exception("qmake command failed!")
+    # Handle the Fedora case (suffixed -qt4).
+    res1 = os.system('qmake')
+    res2 = os.system('qmake-qt4')
+    if res1 != 0 and res2 != 0: raise Exception("qmake command failed!")
     res = os.system('make')
     if res != 0: raise Exception("make command failed!")
 res = os.system('python install.py' + extra_install_args)

@@ -38,7 +38,13 @@ On Debian/Ubuntu you need to install the following packages:
 sudo apt-get install build-essential libqt4-dev qt4-qmake libgdal-dev libhdf5-dev libnetcdf-dev libproj-dev git
 ```
 
-If all this packages are installed you can clone the crayfish plugin using the command:
+For Red Hat/Cent OS/Fedora, the following command will install the required packages:
+
+```bash
+sudo dnf install gcc-c++ make qt-devel gdal-libs hdf5-devel netcdf-devel proj-devel git
+```
+
+If all these packages are installed you can clone the crayfish plugin using the command:
 
 ```bash
 git clone https://github.com/lutraconsulting/qgis-crayfish-plugin.git
