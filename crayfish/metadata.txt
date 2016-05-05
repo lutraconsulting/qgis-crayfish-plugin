@@ -13,7 +13,9 @@ about=The Crayfish plugin aspires to be a time explorer for various grid and vec
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=2.2 - New Features:
+changelog=2.3 - New Features & Bug Fixes:
+ - Max values for HEC-RAS 2D result files
+ <p>2.2 - New Features:
  - Support for GRIB result files (.grib, .bin, .grib1, .grib2, .grb)
  - Support for HEC-RAS 2D result files (.hdf)
  - Support for netCDF result files (.nc)
