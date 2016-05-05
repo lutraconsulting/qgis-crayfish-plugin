@@ -7,7 +7,7 @@ cache: apt
 
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install build-essential python python-sip python-qt4 libqt4-dev qt4-qmake libgdal-dev libhdf5-serial-dev libproj-dev
+  - sudo apt-get install build-essential python python-sip python-qt4 python-numpy libqt4-dev qt4-qmake libgdal-dev libhdf5-serial-dev libproj-dev
 
 install:
   - cd corelib
