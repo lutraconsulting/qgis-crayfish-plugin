@@ -97,13 +97,26 @@ static ElementOutput* getOutput(DataSet* dataset, const int time)
     return eo;
 }
 
-static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const HdfGroup& gGeom2DFlowAreas, const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames)
+static HdfGroup get2DFlowAreasGroup(const HdfFile& hdfFile, const QString loc) {
+    HdfGroup gResults = openHdfGroup(hdfFile, "Results");
+    HdfGroup gUnsteady = openHdfGroup(gResults, "Unsteady");
+    HdfGroup gOutput = openHdfGroup(gUnsteady, "Output");
+    HdfGroup gOBlocks = openHdfGroup(gOutput, "Output Blocks");
+    HdfGroup gBaseO = openHdfGroup(gOBlocks, "Base Output");
+    HdfGroup gSummary = openHdfGroup(gBaseO, loc);
+    HdfGroup g2DFlowRes = openHdfGroup(gSummary, "2D Flow Areas");
+    return g2DFlowRes;
+}
+
+static ElementOutput* readSummaryElementOutput(Mesh* mesh, const QString fileName, const HdfGroup& rootGroup,
+                                              const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames,
+                                              const QString datasetName, DataSet::Type datasetType, const QString hdfDatasetName)
 {
     int nElems = mesh->elements().size();
 
     DataSet* dsd = new DataSet(fileName);
-    dsd->setName("Bed Elevation");
-    dsd->setType(DataSet::Bed);
+    dsd->setName(datasetName);
+    dsd->setType(datasetType);
 
     ElementOutput* tos = new ElementOutput;
     tos->init(nElems, false);
@@ -114,9 +127,9 @@ static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const
         int nAreaElements = areaElemStartIndex[nArea + 1] - areaElemStartIndex[nArea];
 
         QString flowAreaName = flowAreaNames[nArea];
-        HdfGroup gArea = openHdfGroup(gGeom2DFlowAreas, flowAreaName);
+        HdfGroup gArea = openHdfGroup(rootGroup, flowAreaName);
 
-        HdfDataset dsBed = openHdfDataset(gArea, "Cells Minimum Elevation");
+        HdfDataset dsBed = openHdfDataset(gArea, hdfDatasetName);
         QVector<float> elev_vals = dsBed.readArray();
         for (int i = 0; i < nAreaElements; ++i) {
           float val = elev_vals[i];
@@ -136,6 +149,92 @@ static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const
     return tos;
 }
 
+static void readSummaryFaceOutput(Mesh* mesh, const QString fileName, const HdfFile& hdfFile, const HdfGroup& rootGroup, const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames,
+                                  const QString datasetName, DataSet::Type datasetType, const QString hdfDatasetName)
+{
+    int nElems = mesh->elements().size();
+
+    DataSet* dsd = new DataSet(fileName);
+    dsd->setName(datasetName);
+    dsd->setType(datasetType);
+
+    ElementOutput* tos = new ElementOutput;
+    tos->init(nElems, false);
+    tos->time = 0;
+
+    double eps = std::numeric_limits<double>::min();
+
+    for (int nArea=0; nArea < flowAreaNames.size(); ++nArea)
+    {
+        QString flowAreaName = flowAreaNames[nArea];
+
+        HdfGroup gFlowAreaRes = openHdfGroup(rootGroup, flowAreaName);
+        // First read face to node mapping
+        HdfGroup gGeom = openHdfGroup(hdfFile, "Geometry");
+        HdfGroup gGeom2DFlowAreas = openHdfGroup(gGeom, "2D Flow Areas");
+        HdfGroup gArea = openHdfGroup(gGeom2DFlowAreas, flowAreaName);
+        HdfDataset dsFace2Cells = openHdfDataset(gArea, "Faces Cell Indexes");
+
+        QVector<hsize_t> fdims = dsFace2Cells.dims();
+        QVector<int> face2Cells = dsFace2Cells.readArrayInt(); //2x nFaces
+        int nFaces = fdims[0];
+
+        HdfDataset dsVals = openHdfDataset(gFlowAreaRes, hdfDatasetName);
+        QVector<float> vals = dsVals.readArray();
+
+        for (int i = 0; i < nFaces; ++i) {
+            float val = vals[i]; // This is value on face!
+
+            if (val == val && fabs(val) > eps) { //not nan and not 0
+                for (int c = 0; c < 2; ++c) {
+                    int cell_idx = face2Cells[2*i + c] + areaElemStartIndex[nArea];
+                    // Take just maximum
+                    if (tos->values[cell_idx] < val ) {
+                        tos->values[cell_idx] = val;
+                    }
+                }
+            }
+        }
+
+    }
+    dsd->addOutput(tos);
+    dsd->updateZRange();
+    mesh->addDataSet(dsd);
+}
+
+
+static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const HdfGroup& gGeom2DFlowAreas, const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames)
+{
+    return readSummaryElementOutput(mesh, fileName, gGeom2DFlowAreas, areaElemStartIndex, flowAreaNames, "Bed Elevation", DataSet::Bed, "Cells Minimum Elevation");
+}
+
+static void readSummaryElemResults(Mesh* mesh, const QString fileName, const HdfFile& hdfFile, ElementOutput* bed_elevation, const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames)
+{
+    HdfGroup g2DFlowRes = get2DFlowAreasGroup(hdfFile, "Summary Output");
+
+    // each Summary dataset contains 2 rows. One is value and other is time in days corresponding to the value. We ignore the time
+    QStringList datasets;
+    datasets.push_back("Maximum Water Surface");
+
+    foreach(QString dsName, datasets) {
+        readSummaryElementOutput(mesh, fileName, g2DFlowRes, areaElemStartIndex, flowAreaNames, dsName, DataSet::Scalar, dsName);
+    }
+}
+
+static void readSummaryFaceResults(Mesh* mesh, const QString fileName, const HdfFile& hdfFile, const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames)
+{
+    HdfGroup g2DFlowRes = get2DFlowAreasGroup(hdfFile, "Summary Output");
+
+    // each Summary dataset contains 2 rows. One is value and other is time in days corresponding to the value. We ignore the time
+    QStringList datasets;
+    datasets.push_back("Maximum Face Shear Stress");
+    datasets.push_back("Maximum Face Velocity");
+
+    foreach(QString dsName, datasets) {
+        readSummaryFaceOutput(mesh, fileName, hdfFile, g2DFlowRes, areaElemStartIndex, flowAreaNames, dsName, DataSet::Scalar, dsName);
+    }
+}
+
 static void readUnsteadyFaceResults(Mesh* mesh, const QString fileName, const HdfFile& hdfFile, const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames)
 {
     int nElems = mesh->elements().size();
@@ -147,6 +246,8 @@ static void readUnsteadyFaceResults(Mesh* mesh, const QString fileName, const Hd
     HdfGroup gBaseO = openHdfGroup(gOBlocks, "Base Output");
     HdfGroup gUnsteadTS = openHdfGroup(gBaseO, "Unsteady Time Series");
     HdfGroup g2DFlowRes = openHdfGroup(gUnsteadTS, "2D Flow Areas");
+
+    //HdfGroup g2DFlowRes = get2DFlowAreasGroup(hdfFile, "Unsteady Time Series");
 
     HdfDataset dsTimes = openHdfDataset(gUnsteadTS, "Time");
     QVector<float> times = dsTimes.readArray();
@@ -226,6 +327,8 @@ static void readUnsteadyElemResults(Mesh* mesh, const QString fileName, const Hd
     HdfGroup gBaseO = openHdfGroup(gOBlocks, "Base Output");
     HdfGroup gUnsteadTS = openHdfGroup(gBaseO, "Unsteady Time Series");
     HdfGroup g2DFlowRes = openHdfGroup(gUnsteadTS, "2D Flow Areas");
+
+    //HdfGroup g2DFlowRes = get2DFlowAreasGroup(hdfFile, "Unsteady Time Series");
 
     HdfDataset dsTimes = openHdfDataset(gUnsteadTS, "Time");
     QVector<float> times = dsTimes.readArray();
@@ -419,9 +522,11 @@ Mesh* Crayfish::loadHec2D(const QString& fileName, LoadStatus* status)
         ElementOutput* bed_elevation = readBedElevation(mesh, fileName, gGeom2DFlowAreas, areaElemStartIndex, flowAreaNames);
 
         // Element centered Values
+        readSummaryElemResults(mesh, fileName, hdfFile, bed_elevation, areaElemStartIndex, flowAreaNames);
         readUnsteadyElemResults(mesh, fileName, hdfFile, bed_elevation, areaElemStartIndex, flowAreaNames);
 
         // Face centered Values
+        readSummaryFaceResults(mesh, fileName, hdfFile, areaElemStartIndex, flowAreaNames);
         readUnsteadyFaceResults(mesh, fileName, hdfFile, areaElemStartIndex, flowAreaNames);
     }
 
