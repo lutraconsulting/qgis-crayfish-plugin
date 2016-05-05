@@ -7,8 +7,9 @@ cache: apt
 
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install build-essential python python-sip python-qt4 python-numpy libqt4-dev qt4-qmake libgdal-dev libhdf5-serial-dev libproj-dev
-
+  - sudo apt-get install build-essential libqt4-dev qt4-qmake libgdal-dev libhdf5-serial-dev libproj-dev qgis
+  - sudo apt-get install python python-sip python-qt4 python-numpy python-qgis
+  
 install:
   - cd corelib
   - qmake
