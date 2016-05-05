@@ -148,7 +148,7 @@ class TestCrayfishLoad(unittest.TestCase):
 
   def test_load_hec2d_file(self):
     m = crayfish.Mesh(TEST_DIR + "/test.p01.hdf")
-    self.assertEqual(m.dataset_count(), 5)
+    self.assertEqual(m.dataset_count(), 8)
 
     self.assertEqual(m.dataset(0).type(), crayfish.DS_Bed)
     self.assertEqual(m.dataset(1).type(), crayfish.DS_Scalar)
@@ -161,7 +161,7 @@ class TestCrayfishLoad(unittest.TestCase):
 
   def test_load_hec2d_file_2areas(self):
     m = crayfish.Mesh(TEST_DIR + "/baldeagle_multi2d.hdf")
-    self.assertEqual(m.dataset_count(), 5)
+    self.assertEqual(m.dataset_count(), 8)
 
     self.assertEqual(m.dataset(0).type(), crayfish.DS_Bed)
     self.assertEqual(m.dataset(1).type(), crayfish.DS_Scalar)
