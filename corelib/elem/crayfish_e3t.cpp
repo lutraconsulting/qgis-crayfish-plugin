@@ -29,6 +29,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QPointF>
 #include <QVector2D>
 
+static void lam_tol(double& lam)
+{
+    const static double eps = 1e-6;
+    if ((lam < 0.0) && (lam > -eps)) {
+        lam = 0.0;
+    }
+}
+
 bool E3T_physicalToBarycentric(QPointF pA, QPointF pB, QPointF pC, QPointF pP, double& lam1, double& lam2, double& lam3)
 {
   if (pA == pB || pA == pC || pB == pC)
@@ -51,6 +59,11 @@ bool E3T_physicalToBarycentric(QPointF pA, QPointF pB, QPointF pC, QPointF pP, d
   lam1 = (dot11 * dot02 - dot01 * dot12) * invDenom;
   lam2 = (dot00 * dot12 - dot01 * dot02) * invDenom;
   lam3 = 1.0 - lam1 - lam2;
+
+  // Apply some tolerance to lam so we can detect correctly border points
+  lam_tol(lam1);
+  lam_tol(lam2);
+  lam_tol(lam3);
 
   // Return if POI is outside triangle
   if( (lam1 < 0) || (lam2 < 0) || (lam3 < 0) ){

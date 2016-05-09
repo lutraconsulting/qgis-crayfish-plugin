@@ -2,8 +2,11 @@
 import sys
 sys.path.append('..')
 import crayfish
+import crayfish.plot
 import unittest
 import os
+
+from qgis.core import QgsGeometry
 
 TEST_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -173,6 +176,31 @@ class TestCrayfishLoad(unittest.TestCase):
     self.assertEqual(o.value(100), 606.6416015625)
     self.assertEqual(o.value(700), 655.0142211914062)
 
+  def test_value_at_of_two_triangles(self):
+    def test_cross_section(geometry, o, expect, msg):
+        x,y = crayfish.plot.cross_section_plot_data(o, geometry)
+        for xi, yi in zip (x, y):
+            self.assertEqual(str(yi) != "nan", expect, "{} Point {} is {}, expected {}".format(msg, xi, yi, expect))
+
+    m = crayfish.Mesh(TEST_DIR + "/2triangle.2dm")
+    m.load_data(TEST_DIR + "/2triangle_ascii_els_depth.dat")
+    self.assertEqual(m.dataset_count(), 2)
+    ds = m.dataset(1)
+    self.assertEqual(ds.type(), crayfish.DS_Scalar)
+    self.assertEqual(ds.output_count(), 2)
+    o = ds.output(1)
+
+    # geometry on the border of the 2 triagles
+    geometry = QgsGeometry.fromWkt("LINESTRING (1050 2000, 2000 950)")
+    test_cross_section(geometry, o, True, "border")
+
+    # other diagonal
+    geometry = QgsGeometry.fromWkt("LINESTRING (1000 1000, 1950 2050)")
+    test_cross_section(geometry, o, True, "diag")
+
+    # outside
+    geometry = QgsGeometry.fromWkt("LINESTRING (975 1000, 950 1925)")
+    test_cross_section(geometry, o, False, "outside")
 
 if __name__ == '__main__':
   unittest.main()
