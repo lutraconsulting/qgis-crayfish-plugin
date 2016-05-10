@@ -138,13 +138,13 @@ static QVector<int> readFace2Cells(const HdfFile& hdfFile, const QString& flowAr
 
 static void readFaceOutput(Mesh* mesh, const QString fileName, const HdfFile& hdfFile, const HdfGroup& rootGroup,
                            const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames,
-                           const QString datasetName, const QVector<float>& times) {
+                           const QString rawDatasetName, const QString datasetName, const QVector<float>& times) {
 
     int nElems = mesh->elements().size();
     double eps = std::numeric_limits<double>::min();
 
     DataSet* dsd = new DataSet(fileName);
-    dsd->setName(datasetName);
+    dsd->setName(datasetName, false);
     dsd->setType(DataSet::Scalar);
     dsd->setIsTimeVarying(times.size()>1);
 
@@ -165,7 +165,7 @@ static void readFaceOutput(Mesh* mesh, const QString fileName, const HdfFile& hd
         QVector<int> face2Cells = readFace2Cells(hdfFile, flowAreaName, &nFaces);
 
         HdfGroup gFlowAreaRes = openHdfGroup(rootGroup, flowAreaName);
-        HdfDataset dsVals = openHdfDataset(gFlowAreaRes, datasetName);
+        HdfDataset dsVals = openHdfDataset(gFlowAreaRes, rawDatasetName);
         QVector<float> vals = dsVals.readArray();
 
         for (int tidx=0; tidx<times.size(); ++tidx)
@@ -198,22 +198,22 @@ static void readFaceResults(Mesh* mesh, const QString fileName, const HdfFile& h
     HdfGroup flowGroup = get2DFlowAreasGroup(hdfFile, "Unsteady Time Series");
     QVector<float> times = readTimes(hdfFile);
 
-    readFaceOutput(mesh, fileName, hdfFile, flowGroup, areaElemStartIndex, flowAreaNames, "Face Shear Stress", times);
-    readFaceOutput(mesh, fileName, hdfFile, flowGroup, areaElemStartIndex, flowAreaNames, "Face Velocity", times);
+    readFaceOutput(mesh, fileName, hdfFile, flowGroup, areaElemStartIndex, flowAreaNames, "Face Shear Stress", "Face Shear Stress", times);
+    readFaceOutput(mesh, fileName, hdfFile, flowGroup, areaElemStartIndex, flowAreaNames, "Face Velocity", "Face Velocity", times);
 
     // SUMMARY
     flowGroup = get2DFlowAreasGroup(hdfFile, "Summary Output");
     times.clear();
     times.push_back(0.0f);
 
-    readFaceOutput(mesh, fileName, hdfFile, flowGroup, areaElemStartIndex, flowAreaNames, "Maximum Face Shear Stress", times);
-    readFaceOutput(mesh, fileName, hdfFile, flowGroup, areaElemStartIndex, flowAreaNames, "Maximum Face Velocity", times);
+    readFaceOutput(mesh, fileName, hdfFile, flowGroup, areaElemStartIndex, flowAreaNames, "Maximum Face Shear Stress", "Face Shear Stress/Maximums", times);
+    readFaceOutput(mesh, fileName, hdfFile, flowGroup, areaElemStartIndex, flowAreaNames, "Maximum Face Velocity", "Face Velocity/Maximums", times);
 }
 
 
 static ElementOutput* readElemOutput(Mesh* mesh, const QString fileName, const HdfGroup& rootGroup,
                                      const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames,
-                                     const QString datasetName,
+                                     const QString rawDatasetName, const QString datasetName,
                                      const QVector<float>& times,
                                      ElementOutput* bed_elevation = 0)
 {
@@ -223,12 +223,11 @@ static ElementOutput* readElemOutput(Mesh* mesh, const QString fileName, const H
 
     DataSet* dsd = new DataSet(fileName);
     if (is_bed_output) {
-        dsd->setName("Bed Elevation");
         dsd->setType(DataSet::Bed);
     } else {
-        dsd->setName(datasetName);
         dsd->setType(DataSet::Scalar);
     }
+    dsd->setName(datasetName, false);
 
     dsd->setIsTimeVarying(times.size()>1);
     for (int tidx=0; tidx<times.size(); ++tidx)
@@ -245,7 +244,7 @@ static ElementOutput* readElemOutput(Mesh* mesh, const QString fileName, const H
         QString flowAreaName = flowAreaNames[nArea];
         HdfGroup gFlowAreaRes = openHdfGroup(rootGroup, flowAreaName);
 
-        HdfDataset dsVals = openHdfDataset(gFlowAreaRes, datasetName);
+        HdfDataset dsVals = openHdfDataset(gFlowAreaRes, rawDatasetName);
         QVector<float> vals = dsVals.readArray();
 
         for (int tidx=0; tidx<times.size(); ++tidx)
@@ -292,7 +291,7 @@ static ElementOutput* readElemOutput(Mesh* mesh, const QString fileName, const H
 static ElementOutput* readBedElevation(Mesh* mesh, const QString fileName, const HdfGroup& gGeom2DFlowAreas, const QVector<int>& areaElemStartIndex, const QStringList& flowAreaNames)
 {
     QVector<float> times(1, 0.0f);
-    return readElemOutput(mesh, fileName, gGeom2DFlowAreas, areaElemStartIndex, flowAreaNames, "Cells Minimum Elevation", times);
+    return readElemOutput(mesh, fileName, gGeom2DFlowAreas, areaElemStartIndex, flowAreaNames, "Cells Minimum Elevation", "Bed Elevation", times);
 }
 
 static void readElemResults(Mesh* mesh, const QString fileName, const HdfFile& hdfFile, ElementOutput* bed_elevation,
@@ -302,15 +301,15 @@ static void readElemResults(Mesh* mesh, const QString fileName, const HdfFile& h
     HdfGroup flowGroup = get2DFlowAreasGroup(hdfFile, "Unsteady Time Series");
     QVector<float> times = readTimes(hdfFile);
 
-    readElemOutput(mesh, fileName, flowGroup, areaElemStartIndex, flowAreaNames, "Water Surface", times, bed_elevation);
-    readElemOutput(mesh, fileName, flowGroup, areaElemStartIndex, flowAreaNames, "Depth", times, bed_elevation);
+    readElemOutput(mesh, fileName, flowGroup, areaElemStartIndex, flowAreaNames, "Water Surface", "Water Surface", times, bed_elevation);
+    readElemOutput(mesh, fileName, flowGroup, areaElemStartIndex, flowAreaNames, "Depth", "Depth", times, bed_elevation);
 
     // SUMMARY
     flowGroup = get2DFlowAreasGroup(hdfFile, "Summary Output");
     times.clear();
     times.push_back(0.0f);
 
-    readElemOutput(mesh, fileName, flowGroup, areaElemStartIndex, flowAreaNames, "Maximum Water Surface", times, bed_elevation);
+    readElemOutput(mesh, fileName, flowGroup, areaElemStartIndex, flowAreaNames, "Maximum Water Surface", "Water Surface/Maximums", times, bed_elevation);
 }
 
 QStringList read2DFlowAreasNames(HdfGroup gGeom2DFlowAreas) {
