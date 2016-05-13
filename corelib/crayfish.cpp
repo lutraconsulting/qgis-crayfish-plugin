@@ -52,6 +52,9 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
   if (meshFile.endsWith((".slf")))
     return loadSerafin(meshFile, status);
 
+  if (meshFile.endsWith(("BASE.OUT"))) //Flo-2s
+    return loadFlo2D(meshFile, status);
+
   return loadMesh2DM(meshFile, status);
 }
 
