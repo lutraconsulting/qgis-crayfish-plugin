@@ -71,7 +71,7 @@ void E4Q_mapLogicalToPhysical(const E4Qtmp& e4q, double Lx, double Ly, double& P
 
 static inline double iszero(double val)
 {
-    return fabs(val) < 10e-5;
+    return fabs(val) < 1e-4;
 }
 
 bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx, double& Ly)
