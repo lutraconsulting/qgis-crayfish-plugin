@@ -40,30 +40,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <iostream>
 
-static void parseCADPTSFile(const QString& datFileName, Mesh::Nodes& nodes) {
-    QFileInfo fi(datFileName);
-    QString nodesFileName(fi.dir().filePath("CADPTS.DAT"));
-    QFile nodesFile(nodesFileName);
-    if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) throw LoadStatus::Err_FileNotFound;
-    QTextStream nodesStream(&nodesFile);
-
-
-    // CADPTS.DAT - COORDINATES (ELEM NUM, X, Y)
-    while (!nodesStream.atEnd())
-    {
-        QString line = nodesStream.readLine();
-        QStringList lineParts = line.split(" ", QString::SkipEmptyParts);
-        if (lineParts.size() != 3) {
-            throw LoadStatus::Err_UnknownFormat;
-        }
-        Node node;
-        node.setId(lineParts[1].toInt() -1); //numbered from 1
-        node.x = lineParts[1].toFloat();
-        node.y = lineParts[2].toFloat();
-        nodes.append(node);
-    }
-}
-
 // recursive
 // Go in clockwise direction to find faces
 static void getNextIndex(int* myIndex, int* nextDirection, const QVector<QVector<int> >& orientedEdgeGroups) {
@@ -110,6 +86,90 @@ static void createElements(const QVector<QVector<int> >& orientedEdgeGroups, Mes
 
 }
 
+static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
+static void activateElements(NodeOutput* tos, const Mesh* mesh){
+   // Activate only elements that do all node's outputs with some data
+   char* active = tos->active.data();
+
+   for (int idx=0; idx<mesh->elements().size(); ++idx)
+   {
+       Element elem = mesh->elements().at(idx);
+
+       if (is_nodata(tos->values[elem.p(0)]) ||
+           is_nodata(tos->values[elem.p(1)]) ||
+           is_nodata(tos->values[elem.p(2)]) ||
+           is_nodata(tos->values[elem.p(3)]))
+       {
+           active[idx] = 0; //NOT ACTIVE
+       } else {
+           active[idx] = 1; //ACTIVE
+       }
+   }
+}
+static float getFloat(const QString& val) {
+    float valF = val.toFloat();
+    if (is_nodata(valF, 0.0f)) {
+        return -9999.0;
+    } else {
+        return valF;
+    }
+}
+
+static void addOutput(DataSet* ds, NodeOutput* o, const Mesh* mesh) {
+     activateElements(o, mesh);
+     ds->addOutput(o);
+}
+
+static void addStaticDataset(QVector<float>& vals, const QString& name, const DataSet::Type type, const QString& datFileName, Mesh* mesh) {
+    int nelem = mesh->elements().size();
+    int nnodes = mesh->nodes().size();
+
+    NodeOutput* o = new NodeOutput;
+
+    o->init(nnodes, nelem, false);
+    o->time = 0.0;
+    o->values = vals;
+
+    if (type == DataSet::Bed) {
+        memset(o->active.data(), 1, nelem); // All cells active
+    } else {
+        activateElements(o, mesh);
+    }
+
+    DataSet* ds = new DataSet(datFileName);
+    ds->setType(type);
+    ds->setName(name, false);
+    ds->setIsTimeVarying(false);
+    ds->addOutput(o);  // takes ownership of the Output
+    ds->updateZRange();
+    mesh->addDataSet(ds);
+}
+
+
+static void parseCADPTSFile(const QString& datFileName, Mesh::Nodes& nodes) {
+    QFileInfo fi(datFileName);
+    QString nodesFileName(fi.dir().filePath("CADPTS.DAT"));
+    QFile nodesFile(nodesFileName);
+    if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) throw LoadStatus::Err_FileNotFound;
+    QTextStream nodesStream(&nodesFile);
+
+
+    // CADPTS.DAT - COORDINATES (ELEM NUM, X, Y)
+    while (!nodesStream.atEnd())
+    {
+        QString line = nodesStream.readLine();
+        QStringList lineParts = line.split(" ", QString::SkipEmptyParts);
+        if (lineParts.size() != 3) {
+            throw LoadStatus::Err_UnknownFormat;
+        }
+        Node node;
+        node.setId(lineParts[1].toInt() -1); //numbered from 1
+        node.x = lineParts[1].toFloat();
+        node.y = lineParts[2].toFloat();
+        nodes.append(node);
+    }
+}
+
 static QVector<float> parseFPLAINFile(const QString& datFileName, Mesh::Elements& elements) {
     // FPLAIN.DAT - CONNECTIVITY (NODE NUM, NODE N, NODE E, NODE S, NODE W, MANNING-N, BED ELEVATION)
     QFileInfo fi(datFileName);
@@ -141,41 +201,6 @@ static QVector<float> parseFPLAINFile(const QString& datFileName, Mesh::Elements
     createElements(orientedEdgeGroups, elements);
 
     return elevations;
-}
-
-static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
-static void activateElements(NodeOutput* tos, const Mesh* mesh){
-   // Activate only elements that do all node's outputs with some data
-   char* active = tos->active.data();
-
-   for (int idx=0; idx<mesh->elements().size(); ++idx)
-   {
-       Element elem = mesh->elements().at(idx);
-
-       if (is_nodata(tos->values[elem.p(0)]) ||
-           is_nodata(tos->values[elem.p(1)]) ||
-           is_nodata(tos->values[elem.p(2)]) ||
-           is_nodata(tos->values[elem.p(3)]))
-       {
-           active[idx] = 0; //NOT ACTIVE
-       } else {
-           active[idx] = 1; //ACTIVE
-       }
-   }
-}
-
-static float getFloat(const QString& val) {
-    float valF = val.toFloat();
-    if (is_nodata(valF, 0.0f)) {
-        return -9999.0;
-    } else {
-        return valF;
-    }
-}
-
-static void addOutput(DataSet* ds, NodeOutput* o, const Mesh* mesh) {
-     activateElements(o, mesh);
-     ds->addOutput(o);
 }
 
 static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh, const QVector<float>& elevations) {\
@@ -277,30 +302,6 @@ static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh, const QVecto
     mesh->addDataSet(waterLevelDs);
 }
 
-static void addStaticDataset(QVector<float>& vals, const QString& name, const DataSet::Type type, const QString& datFileName, Mesh* mesh) {
-    int nelem = mesh->elements().size();
-    int nnodes = mesh->nodes().size();
-
-    NodeOutput* o = new NodeOutput;
-
-    o->init(nnodes, nelem, false);
-    o->time = 0.0;
-    o->values = vals;
-
-    if (type == DataSet::Bed) {
-        memset(o->active.data(), 1, nelem); // All cells active
-    } else {
-        activateElements(o, mesh);
-    }
-
-    DataSet* ds = new DataSet(datFileName);
-    ds->setType(type);
-    ds->setName(name, false);
-    ds->setIsTimeVarying(false);
-    ds->addOutput(o);  // takes ownership of the Output
-    ds->updateZRange();
-    mesh->addDataSet(ds);
-}
 
 static void parseDEPTHFile(const QString&datFileName, Mesh* mesh, const QVector<float>& elevations) {
     QFileInfo fi(datFileName);
@@ -338,7 +339,68 @@ static void parseDEPTHFile(const QString&datFileName, Mesh* mesh, const QVector<
     }
 
     addStaticDataset(maxDepth, "Depth/Maximums", DataSet::Scalar, datFileName, mesh);
-    addStaticDataset(maxDepth, "Water Level/Maximums", DataSet::Scalar, datFileName, mesh);
+    addStaticDataset(maxWaterLevel, "Water Level/Maximums", DataSet::Scalar, datFileName, mesh);
+}
+
+
+static void parseVELFPVELOCFile(const QString&datFileName, Mesh* mesh) {
+    int nnodes = mesh->nodes().size();
+    QFileInfo fi(datFileName);
+    QVector<float> maxVel(nnodes);
+
+    {
+        QString nodesFileName(fi.dir().filePath("VELFP.OUT"));
+        QFile nodesFile(nodesFileName);
+        if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) throw LoadStatus::Err_FileNotFound;
+        QTextStream nodesStream(&nodesFile);
+        int node_inx = 0;
+
+        // VELFP.OUT - COORDINATES (NODE NUM, X, Y, MAX VEL) - Maximum floodplain flow velocity;
+        while (!nodesStream.atEnd())
+        {
+            if (node_inx == nnodes) throw LoadStatus::Err_IncompatibleMesh;
+
+            QString line = nodesStream.readLine();
+            QStringList lineParts = line.split(" ", QString::SkipEmptyParts);
+            if (lineParts.size() != 4) {
+                throw LoadStatus::Err_UnknownFormat;
+            }
+
+            float val = getFloat(lineParts[3]);
+            maxVel[node_inx] = val;
+
+            node_inx++;
+        }
+    }
+
+    {
+        QString nodesFileName(fi.dir().filePath("VELOC.OUT"));
+        QFile nodesFile(nodesFileName);
+        if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) throw LoadStatus::Err_FileNotFound;
+        QTextStream nodesStream(&nodesFile);
+        int node_inx = 0;
+
+        // VELOC.OUT - COORDINATES (NODE NUM, X, Y, MAX VEL)  - Maximum channel flow velocity
+        while (!nodesStream.atEnd())
+        {
+            if (node_inx == nnodes) throw LoadStatus::Err_IncompatibleMesh;
+
+            QString line = nodesStream.readLine();
+            QStringList lineParts = line.split(" ", QString::SkipEmptyParts);
+            if (lineParts.size() != 4) {
+                throw LoadStatus::Err_UnknownFormat;
+            }
+
+            float val = getFloat(lineParts[3]);
+            if (!is_nodata(val)) { // overwrite value from VELFP if it is not 0
+                maxVel[node_inx] = val;
+            }
+
+            node_inx++;
+        }
+    }
+
+    addStaticDataset(maxVel, "Velocity/Maximums", DataSet::Scalar, datFileName, mesh);
 }
 
 Mesh* Crayfish::loadFlo2D( const QString& datFileName, LoadStatus* status )
@@ -365,8 +427,11 @@ Mesh* Crayfish::loadFlo2D( const QString& datFileName, LoadStatus* status )
         // Create Depth and Velocity datasets Time varying datasets
         parseTIMDEPFile(datFileName, mesh, elevations);
 
-        // Maximum Depth
+        // Maximum Depth and Water Level
         parseDEPTHFile(datFileName, mesh, elevations);
+
+        // Maximum Velocity
+        parseVELFPVELOCFile(datFileName, mesh);
 
     }
 
