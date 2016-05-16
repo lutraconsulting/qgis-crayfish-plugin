@@ -178,7 +178,7 @@ static void addOutput(DataSet* ds, NodeOutput* o, const Mesh* mesh) {
      ds->addOutput(o);
 }
 
-static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh) {\
+static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh, const QVector<float>& elevations) {\
     //TIMDEP.OUT
     // time (separate line)
     // For every node: node number (indexed from 1), depth, velocity, velocity x, velocity y
@@ -199,12 +199,18 @@ static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh) {\
     depthDs->setType(DataSet::Scalar);
     depthDs->setName("Depth");
 
+    DataSet* waterLevelDs = new DataSet(datFileName);
+    waterLevelDs->setType(DataSet::Scalar);
+    waterLevelDs->setName("Water Level");
+
     DataSet* flowDs = new DataSet(datFileName);
     flowDs->setType(DataSet::Vector);
     flowDs->setName("Velocity");
 
     NodeOutput* flowOutput = 0;
     NodeOutput* depthOutput = 0;
+    NodeOutput* waterLevelOutput = 0;
+
 
     while (!in.atEnd())
     {
@@ -216,27 +222,36 @@ static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh) {\
 
             if (depthOutput) addOutput(depthDs, depthOutput, mesh);
             if (flowOutput) addOutput(flowDs, flowOutput, mesh);
+            if (waterLevelOutput) addOutput(waterLevelDs, waterLevelOutput, mesh);
 
             depthOutput = new NodeOutput;
             flowOutput = new NodeOutput;
+            waterLevelOutput = new NodeOutput;
 
             depthOutput->init(nnodes, nelems, false); //scalar
             flowOutput->init(nnodes, nelems, true); //vector
+            waterLevelOutput->init(nnodes, nelems, false); //scalar
 
             depthOutput->time = time;
             flowOutput->time = time;
+            waterLevelOutput->time = time;
 
             node_inx = 0;
 
         } else if (lineParts.size() == 5) {
             // new node for time
-            if (!depthOutput || !flowOutput) throw LoadStatus::Err_UnknownFormat;
+            if (!depthOutput || !flowOutput || !waterLevelOutput) throw LoadStatus::Err_UnknownFormat;
             if (node_inx == nnodes) throw LoadStatus::Err_IncompatibleMesh;
 
-            depthOutput->values[node_inx] = getFloat(lineParts[1]);
             flowOutput->values[node_inx] = getFloat(lineParts[2]);
             flowOutput->valuesV[node_inx].x = getFloat(lineParts[3]);
             flowOutput->valuesV[node_inx].y = getFloat(lineParts[4]);
+
+            float depth = getFloat(lineParts[1]);
+            depthOutput->values[node_inx] = depth;
+
+            if (!is_nodata(depth)) depth += elevations[node_inx];
+            waterLevelOutput->values[node_inx] = depth;
 
             node_inx ++;
 
@@ -247,15 +262,19 @@ static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh) {\
 
     if (depthOutput) addOutput(depthDs, depthOutput, mesh);
     if (flowOutput) addOutput(flowDs, flowOutput, mesh);
+    if (waterLevelOutput) addOutput(waterLevelDs, waterLevelOutput, mesh);
 
     depthDs->setIsTimeVarying(ntimes>1);
     flowDs->setIsTimeVarying(ntimes>1);
+    waterLevelDs->setIsTimeVarying(ntimes>1);
 
     depthDs->updateZRange();
     flowDs->updateZRange();
+    waterLevelDs->updateZRange();
 
     mesh->addDataSet(depthDs);
     mesh->addDataSet(flowDs);
+    mesh->addDataSet(waterLevelDs);
 }
 
 static void addStaticDataset(QVector<float>& vals, const QString& name, const DataSet::Type type, const QString& datFileName, Mesh* mesh) {
@@ -283,7 +302,7 @@ static void addStaticDataset(QVector<float>& vals, const QString& name, const Da
     mesh->addDataSet(ds);
 }
 
-static void parseDEPTHFile(const QString&datFileName, Mesh* mesh) {
+static void parseDEPTHFile(const QString&datFileName, Mesh* mesh, const QVector<float>& elevations) {
     QFileInfo fi(datFileName);
     QString nodesFileName(fi.dir().filePath("DEPTH.OUT"));
     QFile nodesFile(nodesFileName);
@@ -292,6 +311,7 @@ static void parseDEPTHFile(const QString&datFileName, Mesh* mesh) {
 
     int nnodes = mesh->nodes().size();
     QVector<float> maxDepth(nnodes);
+    QVector<float> maxWaterLevel(nnodes);
 
     int node_inx = 0;
 
@@ -305,12 +325,20 @@ static void parseDEPTHFile(const QString&datFileName, Mesh* mesh) {
         if (lineParts.size() != 4) {
             throw LoadStatus::Err_UnknownFormat;
         }
-        maxDepth[node_inx] = getFloat(lineParts[3]);
+
+        float val = getFloat(lineParts[3]);
+        maxDepth[node_inx] = val;
+
+        //water level
+        if (!is_nodata(val)) val += elevations[node_inx];
+        maxWaterLevel[node_inx] = val;
+
 
         node_inx++;
     }
 
     addStaticDataset(maxDepth, "Depth/Maximums", DataSet::Scalar, datFileName, mesh);
+    addStaticDataset(maxDepth, "Water Level/Maximums", DataSet::Scalar, datFileName, mesh);
 }
 
 Mesh* Crayfish::loadFlo2D( const QString& datFileName, LoadStatus* status )
@@ -335,10 +363,10 @@ Mesh* Crayfish::loadFlo2D( const QString& datFileName, LoadStatus* status )
         addStaticDataset(elevations, "Bed Elevation", DataSet::Bed, datFileName, mesh);
 
         // Create Depth and Velocity datasets Time varying datasets
-        parseTIMDEPFile(datFileName, mesh);
+        parseTIMDEPFile(datFileName, mesh, elevations);
 
         // Maximum Depth
-        parseDEPTHFile(datFileName, mesh);
+        parseDEPTHFile(datFileName, mesh, elevations);
 
     }
 
