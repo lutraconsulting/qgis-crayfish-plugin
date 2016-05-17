@@ -71,7 +71,7 @@ void E4Q_mapLogicalToPhysical(const E4Qtmp& e4q, double Lx, double Ly, double& P
 
 static inline double iszero(double val)
 {
-    return fabs(val) < 1e-4;
+    return fabs(val) < 1e-30;
 }
 
 bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx, double& Ly)
@@ -85,7 +85,7 @@ bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx,
             return false;
         } else {
             Lx = (x - a[0])/a[1];
-            float denom = b[2] + b[3]*Lx;
+            double denom = b[2] + b[3]*Lx;
             if (iszero(denom)) {
                 return false;
             } else {
@@ -96,7 +96,7 @@ bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx,
     } else {
         if (iszero(a[1])) {
             Ly = (x - a[0])/a[2];
-            float denom = b[1] + b[3]*Ly;
+            double denom = b[1] + b[3]*Ly;
             if (iszero(denom)) {
                 return false;
             } else {
@@ -122,7 +122,7 @@ bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx,
     Ly = (-bb+sqrt(detSq))/(2*aa);
   }
 
-  float denom = (a[1]+a[3]*Ly);
+  double denom = (a[1]+a[3]*Ly);
   if (iszero(denom)) {
     if (iszero(a[3])) {
         return false;
