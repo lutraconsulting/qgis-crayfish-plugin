@@ -34,7 +34,7 @@ class CrayfishDataItemProvider(QgsDataItemProvider):
   # TODO: .nc cannot be loaded simply from browser as is because it loads multiple layers
   extensions = [".2dm", ".sww", ".grib", ".grib1", ".grib2", ".bin", ".grb", ".hdf", ".slf", "BASE.OUT"]
 
-  icon = QIcon(":/plugins/crayfish/crayfish.png")
+  icon = QIcon(":/plugins/crayfish/images/crayfish.png")
 
   def name(self):
     return "Crayfish"

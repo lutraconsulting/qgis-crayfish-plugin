@@ -200,10 +200,10 @@ POS_V, POS_C = 1, 2   # identifiers of positions of icons in the delegate
 class DataSetItemDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         QStyledItemDelegate.__init__(self, parent)
-        self.pix_c  = QPixmap(":/plugins/crayfish/icon_contours.png")
+        self.pix_c  = QPixmap(":/plugins/crayfish/images/icon_contours.png")
         self.pix_c0 = QIcon(self.pix_c).pixmap(self.pix_c.width(),self.pix_c.height(), QIcon.Disabled)
-        self.pix_v = QPixmap(":/plugins/crayfish/icon_vectors.png")
-        self.pix_v0 = QPixmap(":/plugins/crayfish/icon_vectors_disabled.png")
+        self.pix_v = QPixmap(":/plugins/crayfish/images/icon_vectors.png")
+        self.pix_v0 = QPixmap(":/plugins/crayfish/images/icon_vectors_disabled.png")
         #self.pix_v0 = QIcon(self.pix_v).pixmap(self.pix_v.width(),self.pix_v.height(), QIcon.Disabled)
 
     def paint(self, painter, option, index):

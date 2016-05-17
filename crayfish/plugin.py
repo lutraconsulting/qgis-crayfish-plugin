@@ -58,7 +58,7 @@ class CrayfishPlugin:
     def initGui(self):
 
         # Create action that will show the about page
-        self.aboutAction = QAction(QIcon(":/plugins/crayfish/crayfish.png"), "About", self.iface.mainWindow())
+        self.aboutAction = QAction(QIcon(":/plugins/crayfish/images/crayfish.png"), "About", self.iface.mainWindow())
         QObject.connect(self.aboutAction, SIGNAL("triggered()"), self.about)
 
         # Create action for upload
@@ -66,7 +66,7 @@ class CrayfishPlugin:
         QObject.connect(self.uploadAction, SIGNAL("triggered()"), self.upload)
 
         # Add menu items
-        self.menu = self.iface.pluginMenu().addMenu(QIcon(":/plugins/crayfish/crayfish.png"), "Crayfish")
+        self.menu = self.iface.pluginMenu().addMenu(QIcon(":/plugins/crayfish/images/crayfish.png"), "Crayfish")
         self.menu.addAction(self.aboutAction)
         self.menu.addAction(self.uploadAction)
 
@@ -76,13 +76,16 @@ class CrayfishPlugin:
         self.crayfishLibFound = True
 
         # Create action that will load a layer to view
-        self.action = QAction(QIcon(":/plugins/crayfish/crayfish_viewer_add_layer.png"), "Add Crayfish Layer", self.iface.mainWindow())
+        self.action = QAction(QIcon(":/plugins/crayfish/images/crayfish_viewer_add_layer.png"), "Add Crayfish Layer", self.iface.mainWindow())
         QObject.connect(self.action, SIGNAL("triggered()"), self.addCrayfishLayer)
 
-        self.actionExportGrid = QAction(QIcon(":/plugins/crayfish/crayfish_export_raster.png"), "Export to Raster Grid ...", self.iface.mainWindow())
+        self.actionExportGrid = QAction(QIcon(":/plugins/crayfish/images/crayfish_export_raster.png"), "Export to Raster Grid ...", self.iface.mainWindow())
         QObject.connect(self.actionExportGrid, SIGNAL("triggered()"), self.exportGrid)
 
-        self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
+        self.actionExportContours = QAction(QIcon(":/plugins/crayfish/images/contour.png"), "Export Contours ...", self.iface.mainWindow())
+        QObject.connect(self.actionExportContours, SIGNAL("triggered()"), self.exportContours)
+
+        self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/images/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
         QObject.connect(self.actionExportAnimation, SIGNAL("triggered()"), self.exportAnimation)
 
         self.actionPlot = QAction(QgsApplication.getThemeIcon("/histogram.png"), "Plot", self.iface.mainWindow())
@@ -94,6 +97,7 @@ class CrayfishPlugin:
         # Add menu item
         self.menu.addAction(self.action)
         self.menu.addAction(self.actionExportGrid)
+        self.menu.addAction(self.actionExportContours)
         self.menu.addAction(self.actionExportAnimation)
         self.menu.addAction(self.actionPlot)
 
@@ -103,6 +107,7 @@ class CrayfishPlugin:
 
         # Register actions for context menu
         self.iface.legendInterface().addLegendLayerAction(self.actionExportGrid, '', '', QgsMapLayer.PluginLayer, False)
+        self.iface.legendInterface().addLegendLayerAction(self.actionExportContours, '', '', QgsMapLayer.PluginLayer, False)
         self.iface.legendInterface().addLegendLayerAction(self.uploadAction, '', '', QgsMapLayer.PluginLayer, False)
         self.iface.legendInterface().addLegendLayerAction(self.actionExportAnimation, '', '', QgsMapLayer.PluginLayer, False)
 
@@ -116,7 +121,8 @@ class CrayfishPlugin:
         self.iface.addDockWidget( Qt.LeftDockWidgetArea, self.dock )
         self.dock.hide()   # do not show the dock by default
         QObject.connect(self.dock, SIGNAL("visibilityChanged(bool)"), self.dockVisibilityChanged)
-        self.dock.treeDataSets.setCustomActions([self.actionExportGrid, self.uploadAction, self.actionExportAnimation])
+        custom_actions = [self.actionExportGrid, self.actionExportContours, self.uploadAction, self.actionExportAnimation]
+        self.dock.treeDataSets.setCustomActions(custom_actions)
 
         self.actionPlot.triggered.connect(self.dock.plot)
 
@@ -159,6 +165,7 @@ class CrayfishPlugin:
             return
 
         self.iface.legendInterface().removeLegendLayerAction(self.actionExportGrid)
+        self.iface.legendInterface().removeLegendLayerAction(self.actionExportContours)
         self.iface.legendInterface().removeLegendLayerAction(self.uploadAction)
         self.iface.legendInterface().removeLegendLayerAction(self.actionExportAnimation)
 
@@ -168,6 +175,7 @@ class CrayfishPlugin:
         # Remove menu item
         self.menu.removeAction(self.action)
         self.menu.removeAction(self.actionExportGrid)
+        self.menu.removeAction(self.actionExportContours)
         self.menu.removeAction(self.actionExportAnimation)
 
         self.iface.pluginMenu().removeAction(self.menu.menuAction())
@@ -468,6 +476,7 @@ class CrayfishPlugin:
 
         # Add custom legend actions
         self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportGrid, layer)
+        self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportContours, layer)
         self.iface.legendInterface().addLegendLayerActionForLayer(self.uploadAction, layer)
         self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportAnimation, layer)
 
@@ -480,6 +489,9 @@ class CrayfishPlugin:
             # force hidden on startup
             QTimer.singleShot(0, self.dock.hide)
 
+    def exportContours(self):
+        """ export current layer's contours to the vector layer """
+        pass
 
     def exportGrid(self):
         """ export current layer's data to a raster grid """
