@@ -37,7 +37,8 @@ from .plugin_layer import CrayfishPluginLayer
 from .plugin_layer_type import CrayfishPluginLayerType
 from .gui.dock import CrayfishDock
 from .gui.about_dialog import CrayfishAboutDialog
-from .gui.export_config_dialog import CrayfishExportConfigDialog
+from .gui.export_raster_config_dialog import CrayfishExportRasterConfigDialog
+from .gui.export_contours_config_dialog import CrayfishExportContoursConfigDialog
 from .gui.animation_dialog import CrayfishAnimationDialog
 from .gui.install_helper import ensure_library_installed
 from .gui.utils import QgsMessageBar, qgis_message_bar
@@ -489,17 +490,7 @@ class CrayfishPlugin:
             # force hidden on startup
             QTimer.singleShot(0, self.dock.hide)
 
-    def exportContours(self):
-        """ export current layer's contours to the vector layer """
-        pass
-
-    def exportGrid(self):
-        """ export current layer's data to a raster grid """
-        layer = self.dock.currentCrayfishLayer()
-        if not layer:
-            QMessageBox.warning(None, "Crayfish", "Please select a Crayfish layer for export")
-            return
-
+    def crs_wkt(self, layer):
         mc = self.iface.mapCanvas()
         if mc.hasCrsTransformEnabled():
           if hasattr(mc, "mapSettings"):
@@ -508,8 +499,54 @@ class CrayfishPlugin:
             crsWkt = mc.mapRenderer().destinationCrs().toWkt()
         else:
           crsWkt = layer.crs().toWkt()  # no OTF reprojection
+        return crsWkt
 
-        dlgConfig = CrayfishExportConfigDialog()
+    def exportContours(self):
+        """ export current layer's contours to the vector layer """
+        layer = self.dock.currentCrayfishLayer()
+        if not layer:
+            QMessageBox.warning(None, "Crayfish", "Please select a Crayfish layer for export")
+            return
+
+        crsWkt = self.crs_wkt(layer)
+
+        dlgConfig = CrayfishExportContoursConfigDialog()
+        if not dlgConfig.exec_():
+            return
+        dlgConfig.saveSettings()
+
+        filenameSHP = os.path.join(self.lastFolder(), layer.currentDataSet().name() + "_contours.shp")
+        filenameSHP = QFileDialog.getSaveFileName(None, "Export Contours as Shapefile", filenameSHP, "Shapefile (*.shp)")
+        if not filenameSHP:
+            return
+
+        self.setLastFolder(os.path.dirname(filenameSHP))
+
+        try:
+            res = layer.currentOutput().export_contours(dlgConfig.resolution(), dlgConfig.interval(), filenameSHP, crsWkt)
+        except OSError: # delayed loading of GDAL failed (windows only)
+            QMessageBox.critical(None, "Crayfish", "Export failed due to incompatible "
+              "GDAL library - try to upgrade your QGIS installation to a newer version.")
+            return
+        if not res:
+            QMessageBox.critical(None, "Crayfish", "Failed to export contours to shapefile")
+            return
+
+        if dlgConfig.addToCanvas():
+            name = os.path.splitext(os.path.basename(filenameSHP))[0]
+            self.iface.addVectorLayer(filenameSHP, name, "ogr")
+
+
+    def exportGrid(self):
+        """ export current layer's data to a raster grid """
+        layer = self.dock.currentCrayfishLayer()
+        if not layer:
+            QMessageBox.warning(None, "Crayfish", "Please select a Crayfish layer for export")
+            return
+
+        crsWkt = self.crs_wkt(layer)
+
+        dlgConfig = CrayfishExportRasterConfigDialog()
         if not dlgConfig.exec_():
             return
         dlgConfig.saveSettings()

@@ -31,6 +31,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_output.h"
 
 #include <gdal.h>
+#include "ogr_api.h"
+#include "ogr_srs_api.h"
+#include "gdal_alg.h"
 #include <QString>
 #include <QMap>
 #include <QHash>
@@ -40,31 +43,109 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
 
+
+static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const QString& wkt, bool in_memory) {
+    GDALAllRegister();
+    GDALDriverH hDriver = 0;
+
+    if (in_memory) {
+        hDriver = GDALGetDriverByName("GTiff");
+    } else {
+        hDriver = GDALGetDriverByName("MEM");
+    }
+    if (!hDriver)
+      return 0;
+
+    char *papszOptions[] = {"COMPRESS=LZW", NULL};
+    if (in_memory) {
+        papszOptions[0] = NULL;
+    }
+
+    GDALDatasetH hDstDS = GDALCreate( hDriver, outFilename.toAscii().data(), rd->cols(), rd->rows(), 1, GDT_Float32,
+                                      (char**) papszOptions );
+    if (!hDstDS)
+      return 0;
+
+    GDALSetGeoTransform( hDstDS, rd->geoTransform().data() );
+    GDALSetProjection( hDstDS, wkt.toAscii().data() );
+
+    GDALRasterBandH hBand = GDALGetRasterBand( hDstDS, 1 );
+    GDALSetRasterNoDataValue(hBand, -9999);
+    GDALRasterIO( hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
+                  rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
+    return hDstDS;
+}
+
 bool CrayfishGDAL::writeGeoTIFF(const QString& outFilename, RawData* rd, const QString& wkt)
 {
-  GDALAllRegister();
+  GDALDatasetH hDstDS = rasterDataset(outFilename, rd, wkt, false);
 
-  GDALDriverH hDriver = GDALGetDriverByName("GTiff");
-  if (!hDriver)
+  if (!hDstDS) {
     return false;
-
-  const char *papszOptions[] = { "COMPRESS=LZW", NULL };
-  GDALDatasetH hDstDS = GDALCreate( hDriver, outFilename.toAscii().data(), rd->cols(), rd->rows(), 1, GDT_Float32,
-                       (char**) papszOptions );
-  if (!hDstDS)
-    return false;
-
-  GDALSetGeoTransform( hDstDS, rd->geoTransform().data() );
-  GDALSetProjection( hDstDS, wkt.toAscii().data() );
-
-  GDALRasterBandH hBand = GDALGetRasterBand( hDstDS, 1 );
-  GDALSetRasterNoDataValue(hBand, -999);
-  GDALRasterIO( hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
-                rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
-
-  GDALClose( hDstDS );
-  return true;
+  } else {
+    GDALClose( hDstDS );
+    return true;
+  }
 }
+
+bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt)
+{
+    QString tmpRasterName(outFilename + ".tmp");
+    GDALDatasetH hRasterDS = rasterDataset(tmpRasterName, rd, wkt, false);
+    if (!hRasterDS) {
+        return false;
+    }
+    GDALRasterBandH hBand = GDALGetRasterBand( hRasterDS, 1 );
+
+    /*****/
+
+    OGRSFDriverH hDriver = OGRGetDriverByName("ESRI Shapefile");
+    if (!hDriver)
+      return false;
+
+    OGRDataSourceH hDS = OGR_Dr_CreateDataSource( hDriver, outFilename.toAscii().data(), NULL );
+    if (!hDS)
+      return false;
+
+    OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
+    char * wkt_s = wkt.toAscii().data();
+    OSRImportFromWkt(hSRS, ( char ** ) &wkt_s);
+
+    OGRLayerH hLayer = OGR_DS_CreateLayer( hDS, "contours", hSRS, wkbLineString, NULL );
+    if (!hLayer)
+        return false;
+
+
+    OGRFieldDefnH hFld = OGR_Fld_Create( "ID", OFTInteger );
+    OGR_Fld_SetWidth( hFld, 8 );
+    OGR_L_CreateField( hLayer, hFld, FALSE );
+    OGR_Fld_Destroy( hFld );
+
+    QString elev_attr ("elev"); // TODO to arguments
+    hFld = OGR_Fld_Create(elev_attr.toAscii().data(), OFTReal );
+    OGR_Fld_SetWidth( hFld, 12 );
+    OGR_Fld_SetPrecision( hFld, 3 );
+    OGR_L_CreateField( hLayer, hFld, FALSE );
+    OGR_Fld_Destroy( hFld );
+
+    int nFixedLevelCount = 0; // TODO to arguments
+    double adfFixedLevels[100]; // TODO to arguments
+    double dfNoData = -9999;
+
+    GDALContourGenerate( hBand, interval, 0,
+                         nFixedLevelCount, adfFixedLevels,
+                         -9999, dfNoData, hLayer,
+                         OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), "ID" ),
+                         OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), elev_attr.toAscii().data() ),
+                         NULL, //progress callback
+                         NULL //progress data
+                 );
+
+    GDALClose( hRasterDS );
+    GDALClose( hDS );
+    return true;
+}
+
 
 /******************************************************************************************************/
 void CrayfishGDALReader::parseParameters() {

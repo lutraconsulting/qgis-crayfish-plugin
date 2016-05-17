@@ -373,6 +373,9 @@ class Output(object):
   def export_grid(self, mupp, outFilename, proj4wkt):
     return self.lib.CF_ExportGrid(self.handle, ctypes.c_double(mupp), ctypes.c_char_p(outFilename), ctypes.c_char_p(proj4wkt))
 
+  def export_contours(self, mupp, interval, outFilename, proj4wkt):
+    return self.lib.CF_ExportContours(self.handle, ctypes.c_double(mupp), ctypes.c_double(interval), ctypes.c_char_p(outFilename), ctypes.c_char_p(proj4wkt))
+
   def __repr__(self):
     return "<Output time:%f>" % self.time()
 

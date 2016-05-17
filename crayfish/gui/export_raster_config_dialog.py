@@ -29,9 +29,9 @@ from PyQt4.QtGui import *
 
 from .utils import load_ui
 
-uiDialog, qtBaseClass = load_ui('crayfish_export_config_dialog')
+uiDialog, qtBaseClass = load_ui('crayfish_export_raster_config_dialog')
 
-class CrayfishExportConfigDialog(qtBaseClass, uiDialog):
+class CrayfishExportRasterConfigDialog(qtBaseClass, uiDialog):
     def __init__(self, parent=None):
         qtBaseClass.__init__(self)
         uiDialog.__init__(self, parent)
@@ -39,13 +39,13 @@ class CrayfishExportConfigDialog(qtBaseClass, uiDialog):
         self.setupUi(self)
 
         s = QSettings()
-        self.spinResolution.setValue( float(s.value("crayfish/exportResolution", 10)) )
-        self.chkAddToCanvas.setChecked( int(s.value("crayfish/exportAddToCanvas", 1)) )
+        self.spinResolution.setValue( float(s.value("crayfish/exportRasterResolution", 10)) )
+        self.chkAddToCanvas.setChecked( int(s.value("crayfish/exportRasterAddToCanvas", 1)) )
 
     def saveSettings(self):
         s = QSettings()
-        s.setValue("crayfish/exportResolution", self.resolution())
-        s.setValue("crayfish/exportAddToCanvas", 1 if self.addToCanvas() else 0)
+        s.setValue("crayfish/exportRasterResolution", self.resolution())
+        s.setValue("crayfish/exportRasterAddToCanvas", 1 if self.addToCanvas() else 0)
 
     def resolution(self):
         return self.spinResolution.value()
