@@ -215,7 +215,7 @@ class CrayfishPlugin:
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(),
                                                  'Open Crayfish Dat File',
                                                  self.lastFolder(),
-                                                 "Results Files DAT, SOL, XMDF, GRIB, HEC2D, netCDF, Serafin, HEC 2D (*.dat *.sol *.xmdf *.sww *.grb *.bin *.grib *.grib1 *.grib2 *.hdf *.nc *.hdf *.slf);;2DM Mesh Files (*.2dm);;Flo-2D(*BASE.OUT)")
+                                                 "Results Files DAT, SOL, XMDF, GRIB, HEC2D, netCDF, Serafin, HEC 2D, Flo-2D (*.dat *.sol *.xmdf *.sww *.grb *.bin *.grib *.grib1 *.grib2 *.hdf *.nc *.hdf *.slf *BASE.OUT);;2DM Mesh Files (*.2dm)")
         inFileName = unicode(inFileName)
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel
             return
@@ -429,7 +429,6 @@ class CrayfishPlugin:
 
 
     def have2DM(self, fileName):
-
         layers = self.getCrayfishLayers()
         for layer in layers:
             if layer.twoDMFileName == fileName:
