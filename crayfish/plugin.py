@@ -515,7 +515,7 @@ class CrayfishPlugin:
             return
         dlgConfig.saveSettings()
 
-        filenameSHP = os.path.join(self.lastFolder(), layer.currentDataSet().name() + "_contours.shp")
+        filenameSHP = os.path.join(self.lastFolder(), layer.currentDataSet().name() + ".shp")
         filenameSHP = QFileDialog.getSaveFileName(None, "Export Contours as Shapefile", filenameSHP, "Shapefile (*.shp)")
         if not filenameSHP:
             return
@@ -523,7 +523,13 @@ class CrayfishPlugin:
         self.setLastFolder(os.path.dirname(filenameSHP))
 
         try:
-            res = layer.currentOutput().export_contours(dlgConfig.resolution(), dlgConfig.interval(), filenameSHP, crsWkt)
+            res = layer.currentOutput().export_contours(dlgConfig.resolution(),
+                                                        dlgConfig.interval(),
+                                                        filenameSHP,
+                                                        crsWkt,
+                                                        dlgConfig.useLines(),
+                                                        dlgConfig.useFixedLevels())
+
         except OSError: # delayed loading of GDAL failed (windows only)
             QMessageBox.critical(None, "Crayfish", "Export failed due to incompatible "
               "GDAL library - try to upgrade your QGIS installation to a newer version.")

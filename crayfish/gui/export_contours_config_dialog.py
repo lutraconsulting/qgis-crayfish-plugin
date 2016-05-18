@@ -42,13 +42,37 @@ class CrayfishExportContoursConfigDialog(qtBaseClass, uiDialog):
         self.spinResolution.setValue( float(s.value("crayfish/exportContoursResolution", 10)) )
         self.spinContourInterval.setValue( float(s.value("crayfish/exportContoursInterval", 3)) )
         self.chkAddToCanvas.setChecked( int(s.value("crayfish/exportContoursAddToCanvas", 1)) )
+        self.fixedLevelsRadio.setChecked( int(s.value("crayfish/exportContoursFixedLevels", 1)) == 1 )
+        self.itervalRadio.setChecked( int(s.value("crayfish/exportContoursFixedLevels", 1)) == 0 )
+        self.spinContourInterval.setEnabled( int(s.value("crayfish/exportContoursFixedLevels", 1)) == 0 )
+        self.useLinesRadio.setChecked( int(s.value("crayfish/exportContoursUseLines", 1)) == 0 )
+        self.usePolygonsRadio.setChecked( int(s.value("crayfish/exportContoursUseLines", 1)) == 1 )
 
+        self.fixedLevelsRadio.toggled.connect(self._fixed_level_selected)
+        self.itervalRadio.toggled.connect(self._interval_selected)
+
+    def _fixed_level_selected(self, toggled):
+        if toggled:
+            self.itervalRadio.blockSignals(True)
+            self.itervalRadio.setChecked(False)
+            self.spinContourInterval.setEnabled(False)
+            self.itervalRadio.blockSignals(False)
+
+    def _interval_selected(self, toggled):
+        if toggled:
+            self.fixedLevelsRadio.blockSignals(True)
+            self.fixedLevelsRadio.setChecked(False)
+            self.fixedLevelsRadio.blockSignals(False)
+
+            self.spinContourInterval.setEnabled(True)
 
     def saveSettings(self):
         s = QSettings()
         s.setValue("crayfish/exportContoursResolution", self.resolution())
         s.setValue("crayfish/exportContoursInterval", self.interval())
         s.setValue("crayfish/exportContoursAddToCanvas", 1 if self.addToCanvas() else 0)
+        s.setValue("crayfish/exportContoursFixedLevels", 1 if self.useFixedLevels() else 0)
+        s.setValue("crayfish/exportContoursUseLines", 1 if self.useLines() else 0)
 
     def resolution(self):
         return self.spinResolution.value()
@@ -58,4 +82,12 @@ class CrayfishExportContoursConfigDialog(qtBaseClass, uiDialog):
 
     def interval(self):
         return self.spinContourInterval.value()
-    
+
+    def useLines(self):
+        return self.useLinesRadio.isChecked()
+
+    def useAreas(self):
+        return not self.useLines()
+
+    def useFixedLevels(self):
+        return self.fixedLevelsRadio.isChecked()

@@ -62,7 +62,7 @@ CF_EXPORT int CF_LastLoadError();
 CF_EXPORT int CF_LastLoadWarning();
 
 CF_EXPORT int CF_ExportGrid(OutputH output, double mupp, const char* outputFilename, const char* projWkt);
-CF_EXPORT int CF_ExportContours(OutputH output, double mupp, double interval, const char* outputFilename, const char* projWkt);
+CF_EXPORT int CF_ExportContours(OutputH output, double mupp, double interval, const char* outputFilename, const char* projWkt, bool useLines, bool useColorMap);
 
 // Mesh functions
 

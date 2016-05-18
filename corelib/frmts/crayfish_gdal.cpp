@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "ogr_api.h"
 #include "ogr_srs_api.h"
 #include "gdal_alg.h"
+#include <QFile>
 #include <QString>
 #include <QMap>
 #include <QHash>
@@ -49,9 +50,9 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
     GDALDriverH hDriver = 0;
 
     if (in_memory) {
-        hDriver = GDALGetDriverByName("GTiff");
-    } else {
         hDriver = GDALGetDriverByName("MEM");
+    } else {
+        hDriver = GDALGetDriverByName("GTiff");
     }
     if (!hDriver)
       return 0;
@@ -70,7 +71,7 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
     GDALSetProjection( hDstDS, wkt.toAscii().data() );
 
     GDALRasterBandH hBand = GDALGetRasterBand( hDstDS, 1 );
-    GDALSetRasterNoDataValue(hBand, -9999);
+    GDALSetRasterNoDataValue(hBand, -999);
     GDALRasterIO( hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
                   rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
     return hDstDS;
@@ -88,10 +89,14 @@ bool CrayfishGDAL::writeGeoTIFF(const QString& outFilename, RawData* rd, const Q
   }
 }
 
-bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt)
+static
+
+bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, bool useLines, bool useColorMap)
 {
+    /*** 1) Create Raster ***/
+
     QString tmpRasterName(outFilename + ".tmp");
-    GDALDatasetH hRasterDS = rasterDataset(tmpRasterName, rd, wkt, false);
+    GDALDatasetH hRasterDS = rasterDataset(tmpRasterName, rd, wkt, true);
     if (!hRasterDS) {
         return false;
     }
@@ -102,6 +107,14 @@ bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval,
     OGRSFDriverH hDriver = OGRGetDriverByName("ESRI Shapefile");
     if (!hDriver)
       return false;
+
+    /* delete the file if exists, OGR_Dr_CreateDataSource cannot overwrite the existing file */
+    {
+        QFile file(outFilename);
+        if (file.exists()) {
+            file.remove();
+        }
+    }
 
     OGRDataSourceH hDS = OGR_Dr_CreateDataSource( hDriver, outFilename.toAscii().data(), NULL );
     if (!hDS)
@@ -130,15 +143,20 @@ bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval,
 
     int nFixedLevelCount = 0; // TODO to arguments
     double adfFixedLevels[100]; // TODO to arguments
-    double dfNoData = -9999;
+    double dfNoData = -999;
 
-    GDALContourGenerate( hBand, interval, 0,
-                         nFixedLevelCount, adfFixedLevels,
-                         -9999, dfNoData, hLayer,
+    GDALContourGenerate( hBand,
+                         interval, //dfContourInterval
+                         0, //dfContourBase (dfOffset?)
+                         nFixedLevelCount, //nFixedLevelCount
+                         adfFixedLevels, //padfFixedLevels
+                         TRUE, //bUseNoData
+                         dfNoData, //dfNoDataValue
+                         hLayer,
                          OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), "ID" ),
                          OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), elev_attr.toAscii().data() ),
-                         NULL, //progress callback
-                         NULL //progress data
+                         NULL, //pfnProgress
+                         NULL //pProgressArg
                  );
 
     GDALClose( hRasterDS );
