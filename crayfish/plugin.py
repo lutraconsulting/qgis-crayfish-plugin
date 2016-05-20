@@ -522,13 +522,21 @@ class CrayfishPlugin:
 
         self.setLastFolder(os.path.dirname(filenameSHP))
 
+        # mutually exclusive options
+        if dlgConfig.useFixedLevels():
+            colorMap = layer.colorMap()
+            interval = -1
+        else:
+            colorMap = None
+            interval = dlgConfig.interval()
+
         try:
             res = layer.currentOutput().export_contours(dlgConfig.resolution(),
-                                                        dlgConfig.interval(),
+                                                        interval,
                                                         filenameSHP,
                                                         crsWkt,
                                                         dlgConfig.useLines(),
-                                                        dlgConfig.useFixedLevels())
+                                                        colorMap)
 
         except OSError: # delayed loading of GDAL failed (windows only)
             QMessageBox.critical(None, "Crayfish", "Export failed due to incompatible "

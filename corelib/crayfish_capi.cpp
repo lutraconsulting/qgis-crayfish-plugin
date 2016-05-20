@@ -70,9 +70,9 @@ int CF_ExportGrid(OutputH output, double mupp, const char* outputFilename, const
   return Crayfish::exportRawDataToTIF(output, mupp, QString::fromUtf8(outputFilename), QString::fromUtf8(projWkt));
 }
 
-int CF_ExportContours(OutputH output, double mupp, double interval, const char* outputFilename, const char* projWkt, bool useLines, bool useColorMap)
+int CF_ExportContours(OutputH output, double mupp, double interval, const char* outputFilename, const char* projWkt, bool useLines, ColorMapH cm)
 {
-  return Crayfish::exportContoursToSHP(output, mupp, interval, QString::fromUtf8(outputFilename), QString::fromUtf8(projWkt), useLines, useColorMap);
+  return Crayfish::exportContoursToSHP(output, mupp, interval, QString::fromUtf8(outputFilename), QString::fromUtf8(projWkt), useLines, (ColorMap*) cm);
 }
 
 int CF_Mesh_nodeCount(MeshH mesh)

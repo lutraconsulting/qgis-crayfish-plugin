@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>288</width>
-    <height>245</height>
+    <width>292</width>
+    <height>274</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -76,38 +76,38 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
-       <widget class="QWidget" name="widget" native="true">
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <property name="margin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QRadioButton" name="itervalRadio">
-           <property name="text">
-            <string>Interval between contour lines</string>
-           </property>
-           <property name="autoExclusive">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QDoubleSpinBox" name="spinContourInterval">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="minimum">
-            <double>0.250000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>9999.989999999999782</double>
-           </property>
-           <property name="value">
-            <double>2.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-        </layout>
+       <widget class="QRadioButton" name="itervalRadio">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Interval between contour lines</string>
+        </property>
+        <property name="autoExclusive">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QDoubleSpinBox" name="spinContourInterval">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimum">
+         <double>0.250000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>9999.989999999999782</double>
+        </property>
+        <property name="value">
+         <double>2.000000000000000</double>
+        </property>
        </widget>
       </item>
       <item>
@@ -119,7 +119,7 @@
          <bool>true</bool>
         </property>
         <property name="autoExclusive">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -130,7 +130,7 @@
     <widget class="QGroupBox" name="contoursTypeGroup">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QRadioButton" name="useLinesRadio">
+       <widget class="QRadioButton" name="useAreasRadio">
         <property name="text">
          <string>Areas</string>
         </property>
@@ -140,7 +140,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QRadioButton" name="usePolygonsRadio">
+       <widget class="QRadioButton" name="useLinesRadio">
         <property name="text">
          <string>Lines</string>
         </property>

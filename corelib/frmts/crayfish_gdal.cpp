@@ -44,12 +44,71 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
 
+#define CONTOURS_LAYER_NAME "contours"
+#define CONTOURS_ATTR_NAME "CVAL"
+
+static QVector<double>  generateClassification(const RawData* rd, double interval, ColorMap* cm ) {
+    Q_ASSERT((interval > 0) || cm);
+    QVector<double> classes;
+    if (cm) {
+        // from colormap
+        for (int i=0; i<cm->items.size(); ++i) {
+            classes.push_back(cm->items[i].value);
+        }
+    } else {
+        // interval
+        double minv = 1e100;
+        double maxv = -1e100;
+
+        for (int i=0; i<rd->size(); ++i) {
+            double val =rd->dataAt(i);
+            if (val != -999) {
+                if (val < minv) minv = val;
+                if (val > maxv) maxv = val;
+            }
+        }
+
+        for (int i=minv; i<maxv; i=i+interval) {
+            classes.push_back(i);
+        }
+    }
+    return classes;
+}
+
+static void classifyRawData(RawData* rd, QVector<double>& classes) {
+    Q_ASSERT(rd);
+
+    float* d = rd->data();
+
+    //////////// FILL INTO CLASSES
+    for (int i=0; i<rd->size(); ++i) {
+        if (d[i] != -999) {
+            // find class
+            bool found = false;
+            for (int j=0; j<classes.size(); j++) {
+                double val = classes[i];
+                if (d[i]>val) {
+                    d[i] = val;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                d[i] = -999;
+            }
+        }
+    }
+}
 
 static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const QString& wkt, bool in_memory) {
+    QString outName(outFilename);
+
     GDALAllRegister();
     GDALDriverH hDriver = 0;
 
     if (in_memory) {
+        outName += "_raster_memory.tmp";
         hDriver = GDALGetDriverByName("MEM");
     } else {
         hDriver = GDALGetDriverByName("GTiff");
@@ -62,7 +121,7 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
         papszOptions[0] = NULL;
     }
 
-    GDALDatasetH hDstDS = GDALCreate( hDriver, outFilename.toAscii().data(), rd->cols(), rd->rows(), 1, GDT_Float32,
+    GDALDatasetH hDstDS = GDALCreate( hDriver, outName.toAscii().data(), rd->cols(), rd->rows(), 1, GDT_Float32,
                                       (char**) papszOptions );
     if (!hDstDS)
       return 0;
@@ -77,6 +136,79 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
     return hDstDS;
 }
 
+static GDALDatasetH vectorDataset(const QString& outFilename, const QString& wkt, OGRwkbGeometryType wktGeometryType) {
+    OGRSFDriverH hDriver = OGRGetDriverByName("ESRI Shapefile");
+
+    /* delete the file if exists, OGR_Dr_CreateDataSource cannot overwrite the existing file */
+    {
+        QFile file(outFilename);
+        if (file.exists()) {
+            file.remove();
+        }
+    }
+
+    if (!hDriver)
+      return 0;
+
+    OGRDataSourceH hDS = OGR_Dr_CreateDataSource( hDriver, outFilename.toAscii().data(), NULL );
+    if (!hDS)
+      return 0;
+
+    OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
+    char * wkt_s = wkt.toAscii().data();
+    OSRImportFromWkt(hSRS, ( char ** ) &wkt_s);
+
+    OGRLayerH hLayer = OGR_DS_CreateLayer( hDS, CONTOURS_LAYER_NAME, hSRS, wktGeometryType, NULL );
+    if (!hLayer) {
+        GDALClose( hDS );
+        return 0;
+    }
+
+    OGRFieldDefnH hFld = OGR_Fld_Create( "ID", OFTInteger );
+    OGR_Fld_SetWidth( hFld, 8 );
+    OGR_L_CreateField( hLayer, hFld, FALSE );
+    OGR_Fld_Destroy( hFld );
+
+    hFld = OGR_Fld_Create(CONTOURS_ATTR_NAME, OFTReal );
+    OGR_Fld_SetWidth( hFld, 12 );
+    OGR_Fld_SetPrecision( hFld, 3 );
+    OGR_L_CreateField( hLayer, hFld, FALSE );
+    OGR_Fld_Destroy( hFld );
+
+    return hDS;
+}
+
+static bool contourLinesDataset(OGRLayerH hLayer, GDALRasterBandH hBand, QVector<double>& classes) {
+    CPLErr err = GDALContourGenerate(
+                hBand,
+                0, //dfContourInterval
+                0, //dfContourBase
+                classes.size(), //nFixedLevelCount
+                classes.data(), //padfFixedLevels
+                TRUE, //bUseNoData
+                -999, //dfNoDataValue
+                hLayer,
+                OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), "ID" ),
+                OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), CONTOURS_ATTR_NAME ),
+                NULL, //pfnProgress
+                NULL //pProgressArg
+                );
+    return err == CPLE_None;
+}
+
+static bool contourPolynomsDataset(OGRLayerH hLayer, GDALRasterBandH hBand) {
+    CPLErr err = GDALPolygonize(
+                         hBand,
+                         NULL, // hMaskBand
+                         hLayer,
+                         OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), CONTOURS_ATTR_NAME ),
+                         NULL,
+                         NULL, //pfnProgress
+                         NULL //pProgressArg
+                 );
+    return err == CPLE_None;
+}
+
 bool CrayfishGDAL::writeGeoTIFF(const QString& outFilename, RawData* rd, const QString& wkt)
 {
   GDALDatasetH hDstDS = rasterDataset(outFilename, rd, wkt, false);
@@ -89,79 +221,49 @@ bool CrayfishGDAL::writeGeoTIFF(const QString& outFilename, RawData* rd, const Q
   }
 }
 
-static
-
-bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, bool useLines, bool useColorMap)
+bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, bool useLines, ColorMap* cm)
 {
-    /*** 1) Create Raster ***/
+    bool res = false;
 
-    QString tmpRasterName(outFilename + ".tmp");
-    GDALDatasetH hRasterDS = rasterDataset(tmpRasterName, rd, wkt, true);
+    QVector<double> classes = generateClassification(rd, interval, cm);
+
+    /*** 1) Create Raster ***/
+    if (!useLines)
+        classifyRawData(rd, classes);
+
+    GDALDatasetH hRasterDS = rasterDataset(outFilename, rd, wkt, true);
     if (!hRasterDS) {
         return false;
     }
     GDALRasterBandH hBand = GDALGetRasterBand( hRasterDS, 1 );
-
-    /*****/
-
-    OGRSFDriverH hDriver = OGRGetDriverByName("ESRI Shapefile");
-    if (!hDriver)
-      return false;
-
-    /* delete the file if exists, OGR_Dr_CreateDataSource cannot overwrite the existing file */
-    {
-        QFile file(outFilename);
-        if (file.exists()) {
-            file.remove();
-        }
+    if (!hBand) {
+        GDALClose( hRasterDS );
+        return false;
     }
 
-    OGRDataSourceH hDS = OGR_Dr_CreateDataSource( hDriver, outFilename.toAscii().data(), NULL );
-    if (!hDS)
-      return false;
-
-    OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
-    char * wkt_s = wkt.toAscii().data();
-    OSRImportFromWkt(hSRS, ( char ** ) &wkt_s);
-
-    OGRLayerH hLayer = OGR_DS_CreateLayer( hDS, "contours", hSRS, wkbLineString, NULL );
-    if (!hLayer)
+    GDALDatasetH hVectorDS = vectorDataset(outFilename, wkt, useLines ? wkbLineString:wkbPolygon);
+    if (!hVectorDS) {
+        GDALClose( hRasterDS );
         return false;
+    }
+    OGRLayerH hLayer = OGR_DS_GetLayer( hVectorDS, 0);
+    if (!hLayer) {
+        GDALClose( hRasterDS );
+        GDALClose( hVectorDS );
+        return false;
+    }
 
-
-    OGRFieldDefnH hFld = OGR_Fld_Create( "ID", OFTInteger );
-    OGR_Fld_SetWidth( hFld, 8 );
-    OGR_L_CreateField( hLayer, hFld, FALSE );
-    OGR_Fld_Destroy( hFld );
-
-    QString elev_attr ("elev"); // TODO to arguments
-    hFld = OGR_Fld_Create(elev_attr.toAscii().data(), OFTReal );
-    OGR_Fld_SetWidth( hFld, 12 );
-    OGR_Fld_SetPrecision( hFld, 3 );
-    OGR_L_CreateField( hLayer, hFld, FALSE );
-    OGR_Fld_Destroy( hFld );
-
-    int nFixedLevelCount = 0; // TODO to arguments
-    double adfFixedLevels[100]; // TODO to arguments
-    double dfNoData = -999;
-
-    GDALContourGenerate( hBand,
-                         interval, //dfContourInterval
-                         0, //dfContourBase (dfOffset?)
-                         nFixedLevelCount, //nFixedLevelCount
-                         adfFixedLevels, //padfFixedLevels
-                         TRUE, //bUseNoData
-                         dfNoData, //dfNoDataValue
-                         hLayer,
-                         OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), "ID" ),
-                         OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), elev_attr.toAscii().data() ),
-                         NULL, //pfnProgress
-                         NULL //pProgressArg
-                 );
+    if (useLines) {
+        /*** Export Contour Lines ***/
+        res = contourLinesDataset(hLayer, hBand, classes);
+    } else {
+        /*** Export Contour Areas ***/
+        res = contourPolynomsDataset(hLayer, hBand);
+    }
 
     GDALClose( hRasterDS );
-    GDALClose( hDS );
-    return true;
+    GDALClose( hVectorDS );
+    return res;
 }
 
 

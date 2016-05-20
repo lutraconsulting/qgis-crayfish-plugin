@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QString>
 
 #include "crayfish_mesh.h"
+#include "crayfish_colormap.h"
 
 //class Mesh;
 class DataSet;
@@ -77,7 +78,7 @@ public:
   static Mesh::DataSets loadDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);
 
   static bool exportRawDataToTIF(const Output* output, double mupp, const QString& outFilename, const QString& projWkt);
-  static bool exportContoursToSHP(const Output* output, double mupp, double interval, const QString& outFilename, const QString& projWkt, bool useLines, bool useColorMap);
+  static bool exportContoursToSHP(const Output* output, double mupp, double interval, const QString& outFilename, const QString& projWkt, bool useLines, ColorMap* cm);
 
 protected:
   static Mesh* loadSWW(const QString& fileName, LoadStatus* status = 0);

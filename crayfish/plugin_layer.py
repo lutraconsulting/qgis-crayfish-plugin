@@ -617,6 +617,12 @@ class CrayfishPluginLayer(QgsPluginLayer):
 
         iface.legendInterface().refreshLayerSymbology(self)
 
+    def colorMap(self, ds=None):
+        #TODO not sure if it belongs to this class
+        if not ds:
+            ds = self.currentDataSet()
+        return ds.config["c_colormap"]
+    
 
     def _colorMapBasic(self, ds):
 
