@@ -43,6 +43,8 @@ from .gui.animation_dialog import CrayfishAnimationDialog
 from .gui.install_helper import ensure_library_installed
 from .gui.utils import QgsMessageBar, qgis_message_bar
 from .illuvis import upload_dialog
+from .styles import style_with_black_lines, classified_style_from_colormap, classified_style_from_interval
+
 if 'QgsDataItemProvider' in globals():  # from QGIS 2.10
     from .data_items import CrayfishDataItemProvider
 
@@ -522,21 +524,13 @@ class CrayfishPlugin:
 
         self.setLastFolder(os.path.dirname(filenameSHP))
 
-        # mutually exclusive options
-        if dlgConfig.useFixedLevels():
-            colorMap = layer.colorMap()
-            interval = -1
-        else:
-            colorMap = None
-            interval = dlgConfig.interval()
-
         try:
             res = layer.currentOutput().export_contours(dlgConfig.resolution(),
-                                                        interval,
+                                                        None if dlgConfig.useFixedLevels() else dlgConfig.interval(),
                                                         filenameSHP,
                                                         crsWkt,
                                                         dlgConfig.useLines(),
-                                                        colorMap)
+                                                        layer.colorMap() if dlgConfig.useFixedLevels() else None)
 
         except OSError: # delayed loading of GDAL failed (windows only)
             QMessageBox.critical(None, "Crayfish", "Export failed due to incompatible "
@@ -548,8 +542,14 @@ class CrayfishPlugin:
 
         if dlgConfig.addToCanvas():
             name = os.path.splitext(os.path.basename(filenameSHP))[0]
-            self.iface.addVectorLayer(filenameSHP, name, "ogr")
-
+            canvas_layer = self.iface.addVectorLayer(filenameSHP, name, "ogr")
+            if dlgConfig.useLines():
+               style_with_black_lines(canvas_layer)
+            else:
+                if dlgConfig.useFixedLevels():
+                    classified_style_from_colormap(canvas_layer, layer.colorMap())
+                else:
+                    classified_style_from_interval(canvas_layer, layer.colorMap())
 
     def exportGrid(self):
         """ export current layer's data to a raster grid """

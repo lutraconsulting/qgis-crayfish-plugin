@@ -38,9 +38,6 @@ class CrayfishExportContoursConfigDialog(qtBaseClass, uiDialog):
 
         self.setupUi(self)
 
-        self.itervalRadio.toggled.connect(self._interval_selected)
-        self.useAreasRadio.toggled.connect(self._use_areas_selected)
-
         s = QSettings()
         self.spinResolution.setValue( float(s.value("crayfish/exportContoursResolution", 10)) )
         self.spinContourInterval.setValue( float(s.value("crayfish/exportContoursInterval", 3)) )
@@ -48,14 +45,6 @@ class CrayfishExportContoursConfigDialog(qtBaseClass, uiDialog):
         self.fixedLevelsRadio.setChecked( int(s.value("crayfish/exportContoursFixedLevels", 1)))
         self.useLinesRadio.setChecked( int(s.value("crayfish/exportContoursUseLines", 1)))
 
-
-    def _use_areas_selected(self, toggled):
-         self.itervalRadio.setEnabled(not toggled)
-         if toggled:
-             self.fixedLevelsRadio.setChecked(True)
-
-    def _interval_selected(self, toggled):
-        self.spinContourInterval.setEnabled(toggled)
 
     def saveSettings(self):
         s = QSettings()

@@ -48,7 +48,7 @@ static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::n
 #define CONTOURS_ATTR_NAME "CVAL"
 
 static QVector<double>  generateClassification(const RawData* rd, double interval, ColorMap* cm ) {
-    Q_ASSERT((interval > 0) || cm);
+    Q_ASSERT((interval > 1e-5) || cm);
     QVector<double> classes;
     if (cm) {
         // from colormap
@@ -68,8 +68,10 @@ static QVector<double>  generateClassification(const RawData* rd, double interva
             }
         }
 
-        for (int i=minv; i<maxv; i=i+interval) {
-            classes.push_back(i);
+        double val = minv;
+        while (val < maxv) {
+            classes.push_back(val);
+            val += interval;
         }
     }
     return classes;
@@ -77,25 +79,27 @@ static QVector<double>  generateClassification(const RawData* rd, double interva
 
 static void classifyRawData(RawData* rd, QVector<double>& classes) {
     Q_ASSERT(rd);
+    Q_ASSERT(classes.size() > 1);
 
     float* d = rd->data();
 
     //////////// FILL INTO CLASSES
     for (int i=0; i<rd->size(); ++i) {
         if (d[i] != -999) {
-            // find class
-            bool found = false;
-            for (int j=0; j<classes.size(); j++) {
-                double val = classes[i];
-                if (d[i]>val) {
-                    d[i] = val;
-                    found = true;
-                    break;
-                }
-            }
 
-            if (!found) {
-                d[i] = -999;
+            if (d[i] > classes[classes.size() - 1]) {
+                d[i] = classes[classes.size() - 1];
+            }
+            else if (d[i] < classes[0]) {
+                d[i] = classes[0];
+            } else {
+                for (int j=classes.size() - 1; j>=0; j--) {
+                    double val = classes[j];
+                    if (d[i]>val) {
+                        d[i] = val;
+                        break;
+                    }
+                }
             }
         }
     }
@@ -121,7 +125,11 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
         papszOptions[0] = NULL;
     }
 
-    GDALDatasetH hDstDS = GDALCreate( hDriver, outName.toAscii().data(), rd->cols(), rd->rows(), 1, GDT_Float32,
+    GDALDatasetH hDstDS = GDALCreate( hDriver,
+                                      outName.toAscii().data(),
+                                      rd->cols(),
+                                      rd->rows(), 2, // data band and mask band
+                                      GDT_Float32,
                                       (char**) papszOptions );
     if (!hDstDS)
       return 0;
@@ -133,6 +141,11 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
     GDALSetRasterNoDataValue(hBand, -999);
     GDALRasterIO( hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
                   rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
+
+    GDALRasterBandH hMaskBand = GDALGetRasterBand( hDstDS, 2 );
+    GDALRasterIO( hMaskBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
+                  rd->mask(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
+
     return hDstDS;
 }
 
@@ -164,12 +177,7 @@ static GDALDatasetH vectorDataset(const QString& outFilename, const QString& wkt
         return 0;
     }
 
-    OGRFieldDefnH hFld = OGR_Fld_Create( "ID", OFTInteger );
-    OGR_Fld_SetWidth( hFld, 8 );
-    OGR_L_CreateField( hLayer, hFld, FALSE );
-    OGR_Fld_Destroy( hFld );
-
-    hFld = OGR_Fld_Create(CONTOURS_ATTR_NAME, OFTReal );
+    OGRFieldDefnH hFld = OGR_Fld_Create(CONTOURS_ATTR_NAME, OFTReal );
     OGR_Fld_SetWidth( hFld, 12 );
     OGR_Fld_SetPrecision( hFld, 3 );
     OGR_L_CreateField( hLayer, hFld, FALSE );
@@ -188,7 +196,7 @@ static bool contourLinesDataset(OGRLayerH hLayer, GDALRasterBandH hBand, QVector
                 TRUE, //bUseNoData
                 -999, //dfNoDataValue
                 hLayer,
-                OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), "ID" ),
+                -1,
                 OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), CONTOURS_ATTR_NAME ),
                 NULL, //pfnProgress
                 NULL //pProgressArg
@@ -196,10 +204,10 @@ static bool contourLinesDataset(OGRLayerH hLayer, GDALRasterBandH hBand, QVector
     return err == CPLE_None;
 }
 
-static bool contourPolynomsDataset(OGRLayerH hLayer, GDALRasterBandH hBand) {
+static bool contourPolynomsDataset(OGRLayerH hLayer, GDALRasterBandH hBand, GDALRasterBandH hMaskBand) {
     CPLErr err = GDALPolygonize(
                          hBand,
-                         NULL, // hMaskBand
+                         hMaskBand,
                          hLayer,
                          OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), CONTOURS_ATTR_NAME ),
                          NULL,
@@ -258,7 +266,13 @@ bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval,
         res = contourLinesDataset(hLayer, hBand, classes);
     } else {
         /*** Export Contour Areas ***/
-        res = contourPolynomsDataset(hLayer, hBand);
+        GDALRasterBandH hMaskBand = GDALGetRasterBand( hRasterDS, 2 );
+        if (!hMaskBand) {
+            GDALClose( hRasterDS );
+            GDALClose( hVectorDS );
+            return false;
+        }
+        res = contourPolynomsDataset(hLayer, hBand, hMaskBand);
     }
 
     GDALClose( hRasterDS );

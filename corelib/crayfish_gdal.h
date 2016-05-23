@@ -45,11 +45,13 @@ class NodeOutput;
 class RawData
 {
 public:
-  RawData(int c, int r, QVector<double> g): mCols(c), mRows(r), mData(new float[r*c]), mGeo(g)
+  RawData(int c, int r, QVector<double> g): mCols(c), mRows(r), mData(new float[r*c]), mDataMask(new float[r*c]), mGeo(g)
   {
     int size = r*c;
-    for (int i = 0; i < size; ++i)
+    for (int i = 0; i < size; ++i) {
       mData[i] = -999; // nodata value
+      mDataMask[i] = 0; // off
+    }
   }
   ~RawData() { delete [] mData; }
 
@@ -58,13 +60,16 @@ public:
   int rows() const { return mRows; }
   QVector<double> geoTransform() const { return mGeo; }
   float* data() const { return mData; }
+  float* mask() const { return mDataMask; }
   float* scanLine(int row) const { Q_ASSERT(row >= 0 && row < mRows); return mData+row*mCols; }
+  float* scanMaskLine(int row) const { Q_ASSERT(row >= 0 && row < mRows); return mDataMask+row*mCols; }
   float dataAt(int index) const { return mData[index]; }
 
 private:
   int mCols;
   int mRows;
   float* mData;
+  float* mDataMask;
   QVector<double> mGeo;  // georef data (2x3 matrix): xp = a0 + x*a1 + y*a2    yp = a3 + x*a4 + y*a5
 
   Q_DISABLE_COPY(RawData)

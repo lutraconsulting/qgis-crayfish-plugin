@@ -376,9 +376,9 @@ class Output(object):
   def export_contours(self, mupp, interval, outFilename, proj4wkt, useLines, colorMap):
     if colorMap != None:
         cm_h = colorMap.handle
-        int_h = None
+        int_h = ctypes.c_double(-1.0)
     elif interval != None:
-        cm_h = None
+        cm_h = 0
         int_h = ctypes.c_double(interval)
     else:
         # should never happen

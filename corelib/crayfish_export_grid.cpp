@@ -65,12 +65,16 @@ static void exportRawDataElements(Element::Type elemType, const Output* output, 
     for (int j=topLim; j<=bottomLim; j++)
     {
       float* line = rd->scanLine(j);
+      float* maskLine = rd->scanMaskLine(j);
+
       for (int k=leftLim; k<=rightLim; k++)
       {
         Q_ASSERT(k >= 0 && k < rd->cols());
         QPointF p = xform.pixelToReal(k, j);
-        if( mesh->valueAt(i, p.x(), p.y(), &val, output) )
+        if( mesh->valueAt(i, p.x(), p.y(), &val, output) ) {
             line[k] = val; // The supplied point was inside the element
+            maskLine[k] = 1; //on
+        }
       }
     }
   }
