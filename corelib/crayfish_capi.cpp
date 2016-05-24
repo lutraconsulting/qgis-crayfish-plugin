@@ -210,6 +210,11 @@ void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y)
   }
 }
 
+void CF_O_Range(OutputH o, float* zMin, float* zMax) {
+    Q_ASSERT(zMin && zMax && o);
+    o->getRange(*zMin, *zMax);
+}
+
 char CF_O_statusAt(OutputH o, int index)
 {
   return static_cast<const NodeOutput*>(o)->isActive(index);

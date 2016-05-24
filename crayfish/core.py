@@ -341,6 +341,11 @@ class Output(object):
   def value(self, index):
     return self.lib.CF_O_valueAt(self.handle, index)
 
+  def z_range(self):
+    zMin, zMax = ctypes.c_float(), ctypes.c_float()
+    self.lib.CF_O_Range(self.handle, ctypes.byref(zMin), ctypes.byref(zMax))
+    return zMin.value, zMax.value
+
   def value_vector(self, index):
     x,y = ctypes.c_float(), ctypes.c_float()
     self.lib.CF_O_valueVectorAt(self.handle, index, ctypes.byref(x), ctypes.byref(y))

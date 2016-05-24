@@ -43,6 +43,12 @@ def style_with_black_lines(layer):
     symbol.setColor(QColor(0, 0, 0))
 
 def classified_style_from_colormap(layer, cm):
+    def gen_cl(color, val, label):
+        sym = QgsFillSymbolV2.createSimple({})
+        sym.setColor(QColor(*color))
+        cat = QgsRendererCategoryV2(val, sym, label)
+        return cat
+
     assert(cm and layer)
 
     last_index = cm.item_count() - 1
@@ -53,13 +59,8 @@ def classified_style_from_colormap(layer, cm):
         item = cm.item(i)
         prev_item = cm.item(i-1)
         label = prev_item.label + " - " + item.label
-
         val = round(prev_item.value) # for some reason values are rounded to int
-
-        sym = QgsFillSymbolV2.createSimple({})
-        sym.setColor(QColor(*item.color))
-        cat = QgsRendererCategoryV2(val, sym, label)
-        cl.append(cat)
+        cl.append(gen_cl(item.color, val, label))
 
     renderer = QgsCategorizedSymbolRendererV2("CVAL", cl)
     layer.setRendererV2(renderer)
@@ -73,6 +74,12 @@ def classified_style_from_interval(layer, cm):
         else:
            ramp_val = (prev_item - first_cm.value) / (last_cm.value - first_cm.value)
         return ramp_val
+
+    def gen_cl(ramp, val, ramp_val, label):
+        sym = QgsFillSymbolV2.createSimple({})
+        sym.setColor(ramp.color(ramp_val))
+        cat = QgsRendererCategoryV2(val, sym, label)
+        return cat
 
     assert(layer)
     last_index = cm.item_count() - 1
@@ -92,10 +99,12 @@ def classified_style_from_interval(layer, cm):
         label = str(item) + " - " + str(prev_item)
         ramp_val = ramp_value(first_cm, last_cm, prev_item)
         val = round(prev_item) # for some reason values are rounded to int
-        sym = QgsFillSymbolV2.createSimple({})
-        sym.setColor(ramp.color(ramp_val))
-        cat = QgsRendererCategoryV2(val, sym, label)
-        cl.append(cat)
+        cl.append(gen_cl(ramp, val, ramp_val, label))
+
+    last_item = vals[-1]
+    ramp_val = ramp_value(first_cm, last_cm, last_item)
+    cl.append(gen_cl(ramp, round(last_item), ramp_val, str(last_item)))
+
 
     renderer = QgsCategorizedSymbolRendererV2("CVAL", cl)
     layer.setRendererV2(renderer)

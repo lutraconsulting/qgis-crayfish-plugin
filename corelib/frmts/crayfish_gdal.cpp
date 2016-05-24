@@ -130,7 +130,8 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
     GDALDatasetH hDstDS = GDALCreate( hDriver,
                                       outName.toAscii().data(),
                                       rd->cols(),
-                                      rd->rows(), nbands, // data band and mask band
+                                      rd->rows(),
+                                      nbands, // data band and mask band
                                       GDT_Float32,
                                       (char**) papszOptions );
     if (!hDstDS)
@@ -155,6 +156,8 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
 
 static GDALDatasetH vectorDataset(const QString& outFilename, const QString& wkt, OGRwkbGeometryType wktGeometryType) {
     OGRSFDriverH hDriver = OGRGetDriverByName("ESRI Shapefile");
+    if (!hDriver)
+      return 0;
 
     /* delete the file if exists, OGR_Dr_CreateDataSource cannot overwrite the existing file */
     {
@@ -163,9 +166,6 @@ static GDALDatasetH vectorDataset(const QString& outFilename, const QString& wkt
             file.remove();
         }
     }
-
-    if (!hDriver)
-      return 0;
 
     OGRDataSourceH hDS = OGR_Dr_CreateDataSource( hDriver, outFilename.toAscii().data(), NULL );
     if (!hDS)
@@ -200,7 +200,7 @@ static bool contourLinesDataset(OGRLayerH hLayer, GDALRasterBandH hBand, QVector
                 TRUE, //bUseNoData
                 -999, //dfNoDataValue
                 hLayer,
-                -1,
+                -1, // ID attribute index
                 OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), CONTOURS_ATTR_NAME ),
                 NULL, //pfnProgress
                 NULL //pProgressArg
@@ -214,7 +214,7 @@ static bool contourPolynomsDataset(OGRLayerH hLayer, GDALRasterBandH hBand, GDAL
                          hMaskBand,
                          hLayer,
                          OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), CONTOURS_ATTR_NAME ),
-                         NULL,
+                         NULL, //options
                          NULL, //pfnProgress
                          NULL //pProgressArg
                  );
@@ -253,6 +253,7 @@ bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval,
         return false;
     }
 
+    /*** 2) Create Vector ***/
     GDALDatasetH hVectorDS = vectorDataset(outFilename, wkt, useLines ? wkbLineString:wkbPolygon);
     if (!hVectorDS) {
         GDALClose( hRasterDS );
@@ -265,6 +266,7 @@ bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval,
         return false;
     }
 
+    /*** 3) Export ***/
     if (useLines) {
         /*** Export Contour Lines ***/
         res = contourLinesDataset(hLayer, hBand, classes);
