@@ -45,31 +45,32 @@ class NodeOutput;
 class RawData
 {
 public:
-  RawData(int c, int r, QVector<double> g): mCols(c), mRows(r), mData(new float[r*c]), mDataMask(new float[r*c]), mGeo(g)
+  RawData(int c, int r, QVector<double> g): mCols(c), mRows(r), mData(new float[r*c]), mGeo(g)
   {
     int size = r*c;
-    for (int i = 0; i < size; ++i) {
-      mData[i] = -999; // nodata value
-      mDataMask[i] = 0; // off
-    }
+    for (int i = 0; i < size; ++i)
+      mData[i] = -999.0f; // nodata value
   }
   ~RawData() { delete [] mData; }
 
-  int size() const {return mRows*mCols;}
+  int size() const { return mRows*mCols; }
   int cols() const { return mCols; }
   int rows() const { return mRows; }
   QVector<double> geoTransform() const { return mGeo; }
   float* data() const { return mData; }
-  float* mask() const { return mDataMask; }
   float* scanLine(int row) const { Q_ASSERT(row >= 0 && row < mRows); return mData+row*mCols; }
-  float* scanMaskLine(int row) const { Q_ASSERT(row >= 0 && row < mRows); return mDataMask+row*mCols; }
   float dataAt(int index) const { return mData[index]; }
+  QVector<float> mask() const {
+      QVector<float> dataMask(size(), 0.0f);
+      for (int i=0; i<size(); i++)
+          if (dataAt(i) != -999.0f) dataMask[i] = 1.0f;
+      return dataMask;
+  }
 
 private:
   int mCols;
   int mRows;
   float* mData;
-  float* mDataMask;
   QVector<double> mGeo;  // georef data (2x3 matrix): xp = a0 + x*a1 + y*a2    yp = a3 + x*a4 + y*a5
 
   Q_DISABLE_COPY(RawData)

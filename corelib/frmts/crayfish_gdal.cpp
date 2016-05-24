@@ -120,7 +120,7 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
     if (!hDriver)
       return 0;
 
-    char *papszOptions[] = {"COMPRESS=LZW", NULL};
+    const char *papszOptions[] = {"COMPRESS=LZW", NULL};
     if (in_memory) {
         papszOptions[0] = NULL;
     }
@@ -146,8 +146,9 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
 
     if (add_mask_band) {
         GDALRasterBandH hMaskBand = GDALGetRasterBand( hDstDS, 2 );
+        QVector<float> mask = rd->mask();
         GDALRasterIO( hMaskBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
-                      rd->mask(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
+                      mask.data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
     }
     return hDstDS;
 }
