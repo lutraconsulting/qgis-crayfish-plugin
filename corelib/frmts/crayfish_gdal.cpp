@@ -105,7 +105,7 @@ static void classifyRawData(RawData* rd, QVector<double>& classes) {
     }
 }
 
-static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const QString& wkt, bool in_memory) {
+static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const QString& wkt, bool in_memory=false, bool add_mask_band=false) {
     QString outName(outFilename);
 
     GDALAllRegister();
@@ -125,10 +125,12 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
         papszOptions[0] = NULL;
     }
 
+    int nbands = add_mask_band ? 2 : 1;
+
     GDALDatasetH hDstDS = GDALCreate( hDriver,
                                       outName.toAscii().data(),
                                       rd->cols(),
-                                      rd->rows(), 2, // data band and mask band
+                                      rd->rows(), nbands, // data band and mask band
                                       GDT_Float32,
                                       (char**) papszOptions );
     if (!hDstDS)
@@ -142,10 +144,11 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
     GDALRasterIO( hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
                   rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
 
-    GDALRasterBandH hMaskBand = GDALGetRasterBand( hDstDS, 2 );
-    GDALRasterIO( hMaskBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
-                  rd->mask(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
-
+    if (add_mask_band) {
+        GDALRasterBandH hMaskBand = GDALGetRasterBand( hDstDS, 2 );
+        GDALRasterIO( hMaskBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
+                      rd->mask(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
+    }
     return hDstDS;
 }
 
@@ -239,7 +242,7 @@ bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval,
     if (!useLines)
         classifyRawData(rd, classes);
 
-    GDALDatasetH hRasterDS = rasterDataset(outFilename, rd, wkt, true);
+    GDALDatasetH hRasterDS = rasterDataset(outFilename, rd, wkt, true, !useLines);
     if (!hRasterDS) {
         return false;
     }

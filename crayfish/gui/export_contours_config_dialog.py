@@ -43,6 +43,7 @@ class CrayfishExportContoursConfigDialog(qtBaseClass, uiDialog):
         self.spinContourInterval.setValue( float(s.value("crayfish/exportContoursInterval", 3)) )
         self.chkAddToCanvas.setChecked( int(s.value("crayfish/exportContoursAddToCanvas", 1)) )
         self.fixedLevelsRadio.setChecked( int(s.value("crayfish/exportContoursFixedLevels", 1)))
+        self.itervalRadio.setChecked( int(s.value("crayfish/exportContoursFixedLevels", 1)) == 0 )
         self.useLinesRadio.setChecked( int(s.value("crayfish/exportContoursUseLines", 1)))
 
 
