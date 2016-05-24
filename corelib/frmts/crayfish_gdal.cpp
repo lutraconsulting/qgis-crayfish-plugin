@@ -253,6 +253,7 @@ void CrayfishGDALReader::parseRasterBands() {
        }
    }
 
+   if (mBands.empty()) throw LoadStatus::Err_InvalidData;
 }
 
 void CrayfishGDALReader::populateScaleForVector(NodeOutput* tos){
