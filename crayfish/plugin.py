@@ -54,6 +54,7 @@ class CrayfishPlugin:
         self.dock = None
         self.lr = QgsMapLayerRegistry.instance()
         self.crayfishLibFound = False
+        self.processing_provider = None
 
     def initGui(self):
 
@@ -126,8 +127,14 @@ class CrayfishPlugin:
           self.dataItemsProvider = CrayfishDataItemProvider()
           QgsDataItemProviderRegistry.instance().addProvider(self.dataItemsProvider)
 
-
-
+        # Processing toolbox
+        try:
+            from processing.core.Processing import Processing
+            from .algs import CrayfishProcessingProvider
+            self.processing_provider = CrayfishProcessingProvider()
+            Processing.addProvider(self.processing_provider, updateList=True)
+        except ImportError:
+            pass
 
     def layersRemoved(self, layers):
         for layer in layers:
@@ -184,6 +191,14 @@ class CrayfishPlugin:
         QObject.disconnect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)
         QObject.disconnect(self.lr, SIGNAL("layerWillBeRemoved(QString)"), self.layerRemoved)
         QObject.disconnect(self.lr, SIGNAL("layerWasAdded(QgsMapLayer*)"), self.layerWasAdded)
+
+        # Remove processing integration
+        try:
+            from processing.core.Processing import Processing
+            Processing.removeProvider(self.processing_provider)
+        except ImportError:
+            pass
+        self.processing_provider = None
 
     def lastFolder(self):
 
