@@ -28,8 +28,9 @@ from PyQt4.QtGui import *
 
 from processing.core.AlgorithmProvider import AlgorithmProvider
 from processing.core.ProcessingConfig import Setting, ProcessingConfig
-from .cf_info import InfoAlgorithm
 
+from .cf_info import InfoAlgorithm
+from .cf_export_elems import ExportMeshElemsAlgorithm
 
 class CrayfishProcessingProvider(AlgorithmProvider):
 
@@ -42,7 +43,9 @@ class CrayfishProcessingProvider(AlgorithmProvider):
         self.activate = False
 
         # Load algorithms
-        self.alglist = [InfoAlgorithm()]
+        self.alglist = [InfoAlgorithm(),
+                        ExportMeshElemsAlgorithm()]
+
         for alg in self.alglist:
             alg.provider = self
 

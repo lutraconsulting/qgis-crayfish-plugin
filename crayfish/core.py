@@ -59,10 +59,17 @@ class Node(ctypes.Structure):
     return "<Node ID %d (%f,%f)>" % (self.id, self.x, self.y)
 
 class Element(ctypes.Structure):
+  Undefined, ENP, E4Q, E3T, E2L = range(5)  # element types
+
   _fields_ = [("id", ctypes.c_int), ("type", ctypes.c_int), ("p", ctypes.c_int * 4)]
 
   def __repr__(self):
     return "<Element ID %d type: %d  pts: %s>" % (self.id, self.type, str(list(self.p)))
+
+  def e_type(self):
+    return self.lib.CF_E_type(self.handle)
+
+  def node_count():
 
 
 class VersionError(Exception):
