@@ -1,5 +1,5 @@
 from PyQt4.QtCore import QSettings, QVariant
-from qgis.core import QgsVectorFileWriter, QgsField
+from qgis.core import QgsVectorFileWriter, QgsField, QgsFields
 
 from qgis.core import QgsApplication, QgsVectorLayer, QgsPoint, QgsGeometry, QgsFeature, QGis
 
@@ -13,7 +13,15 @@ from .cf_error import CrayfishProccessingAlgorithmError
 
 def n2pt(node_index, mesh):
   n = mesh.node(node_index)
-  return QgsPoint(n.x, n.y)
+  return QgsPoint(n.x(), n.y())
+
+def geom(elem, mesh):
+    ring = []
+    for ni in elem.node_indexes():
+        ring.append(n2pt(ni, mesh))
+    ring.append(n2pt(elem.node_index(0), mesh))
+    geometry = QgsGeometry.fromPolygon([ring])
+    return geometry
 
 class ExportMeshElemsAlgorithm(GeoAlgorithm):
     IN_CF_MESH = 'CF_MESH'
@@ -32,23 +40,21 @@ class ExportMeshElemsAlgorithm(GeoAlgorithm):
         except ValueError:
             raise CrayfishProccessingAlgorithmError("Unable to load mesh")
 
-
-        fields = [QgsField("elem_id", QVariant.Int)]
+        fld = QgsField("elem_id", QVariant.Int)
+        fields = QgsFields()
+        fields.append(fld)
         geomType = QGis.WKBPolygon
-        writer = self.getOutputFromName(self.OUT_CF_SHP).getVectorWriter(fields, geomType, None)
-
+        writer = self.getOutputFromName(self.OUT_CF_SHP).getVectorWriter(fields.toList(), geomType, None)
 
         for elem in m.elements():
-            print elem.id
-            ring = []
-            ring.append(n2pt(elem.p[0], m))
-            ring.append(n2pt(elem.p[1], m))
-            ring.append(n2pt(elem.p[2], m))
-            if elem.type != 2:
-                ring.append(n2pt(elem.p[3], m))
-            ring.append(n2pt(elem.p[0], m))
-            f = QgsFeature()
-            f.setFields(fields)
-            f.setGeometry(QgsGeometry.fromPolygon([ring]))
-            f[0] = elem.id
-            writer.addFeature(f)
+            nelements = 0
+            if elem.is_valid(): #at least 2 nodes
+                f = QgsFeature()
+                f.setFields(fields)
+                f.setGeometry(geom(elem, m))
+                f[0] = elem.e_id()
+                if f.isValid():
+                    writer.addFeature(f)
+                    nelements += 1
+
+        print("{}/{} elements".format(nelements, m.element_count()))

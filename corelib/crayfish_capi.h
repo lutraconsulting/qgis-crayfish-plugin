@@ -63,6 +63,18 @@ CF_EXPORT int CF_LastLoadWarning();
 
 CF_EXPORT int CF_ExportGrid(OutputH output, double mupp, const char* outputFilename, const char* projWkt);
 
+// Element functions
+CF_EXPORT int CF_E_nodeCount(ElementH elem);
+CF_EXPORT int CF_E_nodeIndexAt(ElementH elem, int index);
+CF_EXPORT int CF_E_id(ElementH elem);
+CF_EXPORT int CF_E_type(ElementH elem);
+
+// Node functions
+CF_EXPORT int CF_N_id(NodeH node);
+CF_EXPORT double CF_N_x(NodeH node);
+CF_EXPORT double CF_N_y(NodeH node);
+
+
 // Mesh functions
 
 CF_EXPORT int CF_Mesh_nodeCount(MeshH mesh);

@@ -124,6 +124,36 @@ int CF_DS_type(DataSetH ds)
   return ds->type();
 }
 
+int CF_E_nodeCount(ElementH elem) {
+    return elem->nodeCount();
+}
+
+int CF_E_nodeIndexAt(ElementH elem, int index){
+    if (index < 0 || index >= elem->nodeCount())
+      return 0;
+
+    return elem->p(index);
+}
+
+int CF_E_id(ElementH elem){
+    return elem->id();
+}
+
+int CF_E_type(ElementH elem){
+    return elem->eType();
+}
+
+int CF_N_id(NodeH node){
+    return node->id();
+}
+
+double CF_N_x(NodeH node){
+    return node->x;
+}
+
+double CF_N_y(NodeH node){
+    return node->y;
+}
 
 // helper to return string data - without having to deal with memory too much.
 // returned pointer is valid only next call. also not thread-safe.
