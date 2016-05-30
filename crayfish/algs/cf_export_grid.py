@@ -1,18 +1,65 @@
+# -*- coding: utf-8 -*-
 
-import sys
-sys.path.append('..')
-import crayfish
+# Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
+# Copyright (C) 2016 Lutra Consulting
 
-if len(sys.argv) != 3:
-  print "Syntax: %s <2dm file> <output TIF>" % sys.argv[0]
-  sys.exit(1)
+# info at lutraconsulting dot co dot uk
+# Lutra Consulting
+# 23 Chestnut Close
+# Burgess Hill
+# West Sussex
+# RH15 8HN
 
-try:
-  m = crayfish.Mesh(sys.argv[1])
-except ValueError:
-  print "Failed to load mesh in %s" % sys.argv[1]
-  sys.exit(1)
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
 
-print "Exporting..."
-m.dataset(0).output(0).export_grid(1, sys.argv[2], "")
-print "done."
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+from PyQt4.QtCore import QSettings, QVariant
+from qgis.core import QgsVectorFileWriter, QgsField, QgsFields
+
+from qgis.core import QgsApplication, QgsVectorLayer, QgsPoint, QgsGeometry, QgsFeature, QGis
+
+from processing.core.GeoAlgorithm import GeoAlgorithm
+from processing.core.parameters import ParameterFile, ParameterVector, ParameterNumber, ParameterCrs
+from processing.core.outputs import OutputRaster
+from processing.tools import dataobjects, vector
+
+from .cf_alg import CfGeoAlgorithm
+from .cf_error import CrayfishProccessingAlgorithmError
+
+class ExportMeshGridAlgorithm(CfGeoAlgorithm):
+    IN_CF_MESH = 'CF_MESH'
+    IN_CF_MUPP = 'CF_MUPP'
+    IN_CF_CRS = 'CF_CRS'
+    OUT_CF_TIF = "CF_TIF"
+
+    def defineCharacteristics(self):
+        self.name, self.i18n_name = self.trAlgorithm('Export grid')
+        self.group, self.i18n_group = self.trAlgorithm('Mesh analysis')
+        self.addParameter(ParameterFile(self.IN_CF_MESH, self.tr('Crayfish Mesh'), optional=False))
+        self.addParameter(ParameterNumber(self.IN_CF_MUPP, self.tr('Grid resolution'), optional=True, default=1))
+        self.addParameter(ParameterCrs(self.IN_CF_CRS, self.tr('CRS'), optional=True, default=""))
+        self.addOutput(OutputRaster(self.OUT_CF_TIF, self.tr('Mesh grid')))
+
+    def processAlgorithm(self, progress):
+        m = self.get_mesh(self.IN_CF_MESH)
+        o = self.get_bed_elevation(m)
+
+        outf = self.getOutputValue(self.OUT_CF_TIF)
+        mupp = self.getParameterValue(self.IN_CF_MUPP)
+        crs = self.getParameterValue(self.IN_CF_CRS)
+
+        res = o.export_grid(mupp, outf, crs)
+        if not res:
+            raise CrayfishProccessingAlgorithmError("Unable to export grid")

@@ -1,15 +1,41 @@
+# -*- coding: utf-8 -*-
+
+# Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
+# Copyright (C) 2016 Lutra Consulting
+
+# info at lutraconsulting dot co dot uk
+# Lutra Consulting
+# 23 Chestnut Close
+# Burgess Hill
+# West Sussex
+# RH15 8HN
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
 from PyQt4.QtCore import QSettings, QVariant
 from qgis.core import QgsVectorFileWriter, QgsField, QgsFields
 
 from qgis.core import QgsApplication, QgsVectorLayer, QgsPoint, QgsGeometry, QgsFeature, QGis
 
-from processing.core.GeoAlgorithm import GeoAlgorithm
+
 from processing.core.parameters import ParameterFile, ParameterVector
 from processing.core.outputs import OutputVector
 from processing.tools import dataobjects, vector
 
-from ..core import Mesh
-from .cf_error import CrayfishProccessingAlgorithmError
+from .cf_alg import CfGeoAlgorithm
 
 def n2pt(node_index, mesh):
   n = mesh.node(node_index)
@@ -23,7 +49,7 @@ def geom(elem, mesh):
     geometry = QgsGeometry.fromPolygon([ring])
     return geometry
 
-class ExportMeshElemsAlgorithm(GeoAlgorithm):
+class ExportMeshElemsAlgorithm(CfGeoAlgorithm):
     IN_CF_MESH = 'CF_MESH'
     OUT_CF_SHP = "CF_SHP"
 
@@ -34,11 +60,7 @@ class ExportMeshElemsAlgorithm(GeoAlgorithm):
         self.addOutput(OutputVector(self.OUT_CF_SHP, self.tr('Shapefile of elements')))
 
     def processAlgorithm(self, progress):
-        inFile = self.getParameterValue(self.IN_CF_MESH)
-        try:
-            m = Mesh(inFile)
-        except ValueError:
-            raise CrayfishProccessingAlgorithmError("Unable to load mesh")
+        m = self.get_mesh(self.IN_CF_MESH)
 
         fld = QgsField("elem_id", QVariant.Int)
         fields = QgsFields()
@@ -47,13 +69,9 @@ class ExportMeshElemsAlgorithm(GeoAlgorithm):
         writer = self.getOutputFromName(self.OUT_CF_SHP).getVectorWriter(fields.toList(), geomType, None)
 
         for elem in m.elements():
-            nelements = 0
             if elem.is_valid(): #at least 2 nodes
                 f = QgsFeature()
                 f.setFields(fields)
                 f.setGeometry(geom(elem, m))
                 f[0] = elem.e_id()
                 writer.addFeature(f)
-                nelements += 1
-
-        print("{}/{} elements".format(nelements, m.element_count()))
