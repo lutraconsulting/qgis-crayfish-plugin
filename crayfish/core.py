@@ -151,7 +151,7 @@ class Node:
     return self.lib.CF_N_id(self.handle)
 
   def __repr__(self):
-    return "<Node ID %d (%f,%f)>" % (self.id, self.x, self.y)
+    return "<Node ID %d (%f,%f)>" % (self.n_id(), self.x(), self.y())
 
 
 class Element:

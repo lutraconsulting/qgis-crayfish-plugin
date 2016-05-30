@@ -53,8 +53,7 @@ class ExportMeshElemsAlgorithm(GeoAlgorithm):
                 f.setFields(fields)
                 f.setGeometry(geom(elem, m))
                 f[0] = elem.e_id()
-                if f.isValid():
-                    writer.addFeature(f)
-                    nelements += 1
+                writer.addFeature(f)
+                nelements += 1
 
         print("{}/{} elements".format(nelements, m.element_count()))
