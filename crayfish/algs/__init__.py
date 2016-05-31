@@ -31,6 +31,7 @@ from processing.core.AlgorithmProvider import AlgorithmProvider
 from .cf_info import InfoAlgorithm
 from .cf_export_elems import ExportMeshElemsAlgorithm
 from .cf_export_grid import ExportMeshGridAlgorithm
+from .cf_export_nodes import ExportMeshNodesAlgorithm
 
 class CrayfishProcessingProvider(AlgorithmProvider):
 
@@ -43,7 +44,8 @@ class CrayfishProcessingProvider(AlgorithmProvider):
         # Load algorithms
         self.alglist = [InfoAlgorithm(),
                         ExportMeshElemsAlgorithm(),
-                        ExportMeshGridAlgorithm()]
+                        ExportMeshGridAlgorithm(),
+                        ExportMeshNodesAlgorithm()]
 
         for alg in self.alglist:
             alg.provider = self
