@@ -28,6 +28,7 @@ from ..core import DataSet, Mesh
 from .cf_error import CrayfishProccessingAlgorithmError
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from PyQt4.QtCore import QCoreApplication
+from PyQt4.QtGui import QIcon
 
 
 class CfGeoAlgorithm(GeoAlgorithm):
@@ -50,6 +51,9 @@ class CfGeoAlgorithm(GeoAlgorithm):
             raise CrayfishProccessingAlgorithmError("Dataset 0 is not bed elevation")
 
         return o
+
+    def getIcon(self):
+        return QIcon(":/plugins/crayfish/images/crayfish.png")
 
 
 def trAlgorithm(self, string, context=''):

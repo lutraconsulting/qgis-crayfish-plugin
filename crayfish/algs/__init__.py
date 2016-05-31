@@ -65,7 +65,7 @@ class CrayfishProcessingProvider(AlgorithmProvider):
         return 'Crayfish algorithms'
 
     def getIcon(self):
-        return QIcon(":/plugins/crayfish/crayfish.png")
+        return QIcon(":/plugins/crayfish/images/crayfish.png")
 
     def _loadAlgorithms(self):
         self.algs = self.alglist
