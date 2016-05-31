@@ -39,8 +39,8 @@ class InfoAlgorithm(CfGeoAlgorithm):
     OUTPUT_NNODE = "CRAYFISH_NNODES"
 
     def defineCharacteristics(self):
-        self.name, self.i18n_name = self.trAlgorithm('Get information about crayfish mesh')
-        self.group, self.i18n_group = self.trAlgorithm('Mesh analysis')
+        self.name, self.i18n_name = self.trAlgorithm('Mesh statistics')
+        self.group, self.i18n_group = self.trAlgorithm('Mesh and Bed Elevation')
         self.addParameter(ParameterFile(self.CF_LAYER, self.tr('Crayfish layer'), optional=False))
         self.addOutput(OutputNumber(self.OUTPUT_NELEM, self.tr('Number of elements')))
         self.addOutput(OutputNumber(self.OUTPUT_NNODE, self.tr('Number of nodes')))

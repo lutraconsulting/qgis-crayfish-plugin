@@ -46,7 +46,7 @@ class ExportMeshGridAlgorithm(CfGeoAlgorithm):
 
     def defineCharacteristics(self):
         self.name, self.i18n_name = self.trAlgorithm('Export grid')
-        self.group, self.i18n_group = self.trAlgorithm('Mesh analysis')
+        self.group, self.i18n_group = self.trAlgorithm('Mesh and Bed Elevation')
         self.addParameter(ParameterFile(self.IN_CF_MESH, self.tr('Crayfish Mesh'), optional=False))
         self.addParameter(ParameterNumber(self.IN_CF_MUPP, self.tr('Grid resolution'), optional=True, default=1))
         self.addParameter(ParameterCrs(self.IN_CF_CRS, self.tr('CRS'), optional=True, default=""))

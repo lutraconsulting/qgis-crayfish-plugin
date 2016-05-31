@@ -43,7 +43,7 @@ class ExportMeshNodesAlgorithm(CfGeoAlgorithm):
 
     def defineCharacteristics(self):
         self.name, self.i18n_name = self.trAlgorithm('Export mesh nodes')
-        self.group, self.i18n_group = self.trAlgorithm('Mesh analysis')
+        self.group, self.i18n_group = self.trAlgorithm('Mesh and Bed Elevation')
         self.addParameter(ParameterFile(self.IN_CF_MESH, self.tr('Crayfish Mesh'), optional=False))
         self.addOutput(OutputVector(self.OUT_CF_SHP, self.tr('Shapefile of node points')))
 
