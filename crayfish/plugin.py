@@ -143,7 +143,7 @@ class CrayfishPlugin:
             self.processing_provider = CrayfishProcessingProvider()
             Processing.addProvider(self.processing_provider, updateList=True)
         except ImportError:
-            raise # TODO change to pass
+            pass
 
     def layersRemoved(self, layers):
         for layer in layers:
