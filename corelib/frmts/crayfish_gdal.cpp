@@ -71,7 +71,7 @@ void CrayfishGDALReader::parseParameters() {
    mNBands = GDALGetRasterCount( mHDataset );
    if (mNBands == 0) throw LoadStatus::Err_InvalidData;
 
-   if( GDALGetGeoTransform( mHDataset, mGT ) != CE_None ) throw LoadStatus::Err_InvalidData;
+   GDALGetGeoTransform( mHDataset, mGT ); // in case of error it returns Identid
 
    mXSize = GDALGetRasterXSize( mHDataset ); //raster width in pixels
    if (mXSize == 0) throw LoadStatus::Err_InvalidData;
@@ -189,7 +189,7 @@ CrayfishGDALReader::metadata_hash CrayfishGDALReader::parseMetadata(GDALRasterBa
             QString metadata_pair = GDALmetadata[j]; //KEY = VALUE
             QStringList metadata = metadata_pair.split("=");
             if (metadata.length() > 1) {
-                QString key = metadata.takeFirst();
+                QString key = metadata.takeFirst().toLower();
                 QString value = metadata.join("=");
                 meta[key] = value;
             }

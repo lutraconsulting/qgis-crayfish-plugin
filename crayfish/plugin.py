@@ -266,18 +266,19 @@ class CrayfishPlugin:
             if (not temp_raster.isValid()) and (len(temp_raster.subLayers()) > 1):
                 data_sources_to_add = temp_raster.subLayers()
 
+        added_layers = 0
         for data_source in data_sources_to_add:
             layerWith2dm = self.getLayerWith2DM(data_source)
 
             if layerWith2dm:
                 # This 2dm has already been added
                 qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
-                return False
+                continue
 
-            if not self.addLayer(data_source):
-                return False # addLayer() reports errors/warnings
+            if self.addLayer(data_source): # addLayer() reports errors/warnings
+                added_layers += 1
 
-        return True # success
+        return added_layers > 0 # success
 
     def loadMeshForFile(self, inFileName):
 
