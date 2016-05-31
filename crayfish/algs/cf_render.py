@@ -24,21 +24,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
-from PyQt4.QtCore import QSettings, QVariant
-from PyQt4.QtGui import QImage
-from qgis.core import QgsVectorFileWriter, QgsField, QgsFields
-
-from qgis.core import QgsApplication, QgsVectorLayer, QgsPoint, QgsGeometry, QgsFeature, QGis
-
-from processing.core.GeoAlgorithm import GeoAlgorithm
-from processing.core.parameters import ParameterFile, ParameterVector, ParameterNumber, ParameterCrs
-from processing.core.outputs import OutputFile
-from processing.tools import dataobjects, vector
-
-from .cf_alg import CfGeoAlgorithm
-from .cf_error import CrayfishProccessingAlgorithmError
 from ..core import RendererConfig, Renderer
+from .cf_alg import CfGeoAlgorithm
+from PyQt4.QtGui import QImage
+from processing.core.outputs import OutputFile
+from processing.core.parameters import ParameterFile, ParameterNumber
 
 class RenderMeshBedElevationAlgorithm(CfGeoAlgorithm):
     IN_CF_MESH = 'CF_MESH'
@@ -64,19 +54,19 @@ class RenderMeshBedElevationAlgorithm(CfGeoAlgorithm):
         size = (w, h)
 
         extent = m.extent()
-        muppx = (extent[2]-extent[0])/size[0]
-        muppy = (extent[3]-extent[1])/size[1]
-        mupp = max(muppx,muppy)
-        cx = (extent[2]+extent[0])/2
-        cy = (extent[3]+extent[1])/2
-        ll = (cx - (size[0]/2)*mupp, cy - (size[1]/2)*mupp)
+        muppx = (extent[2] - extent[0]) / size[0]
+        muppy = (extent[3] - extent[1]) / size[1]
+        mupp = max(muppx, muppy)
+        cx = (extent[2] + extent[0]) / 2
+        cy = (extent[3] + extent[1]) / 2
+        ll = (cx - (size[0] / 2) * mupp, cy - (size[1] / 2) * mupp)
 
         rconfig = RendererConfig()
         rconfig.set_view(size, ll, mupp)
         rconfig.set_output_mesh(m)
         rconfig.set_output_contour(o)
 
-        img = QImage(size[0],size[1], QImage.Format_ARGB32)
+        img = QImage(size[0], size[1], QImage.Format_ARGB32)
 
         r = Renderer(rconfig, img)
         r.draw()

@@ -25,17 +25,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-from PyQt4.QtCore import QSettings, QVariant
-from qgis.core import QgsVectorFileWriter, QgsField, QgsFields
-
-from qgis.core import QgsApplication, QgsVectorLayer, QgsPoint, QgsGeometry, QgsFeature, QGis
-
-
-from processing.core.parameters import ParameterFile, ParameterVector
-from processing.core.outputs import OutputVector
-from processing.tools import dataobjects, vector
-
 from .cf_alg import CfGeoAlgorithm
+from PyQt4.QtCore import QVariant
+from processing.core.outputs import OutputVector
+from processing.core.parameters import ParameterFile
+from qgis.core import QgsField, QgsFields
+from qgis.core import QgsPoint, QgsGeometry, QgsFeature, QGis
 
 def n2pt(node_index, mesh):
   n = mesh.node(node_index)
@@ -69,7 +64,7 @@ class ExportMeshElemsAlgorithm(CfGeoAlgorithm):
         writer = self.getOutputFromName(self.OUT_CF_SHP).getVectorWriter(fields.toList(), geomType, None)
 
         for elem in m.elements():
-            if elem.is_valid(): #at least 2 nodes
+            if elem.is_valid():    # at least 2 nodes
                 f = QgsFeature()
                 f.setFields(fields)
                 f.setGeometry(geom(elem, m))

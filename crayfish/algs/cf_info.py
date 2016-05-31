@@ -24,14 +24,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt4.QtCore import QSettings
-from qgis.core import QgsVectorFileWriter
-
-from processing.core.parameters import ParameterFile
-from processing.core.outputs import OutputNumber
-from processing.tools import dataobjects, vector
-
 from .cf_alg import CfGeoAlgorithm
+from processing.core.outputs import OutputNumber
+from processing.core.parameters import ParameterFile
+
 
 class InfoAlgorithm(CfGeoAlgorithm):
     CF_LAYER = 'CRAYFISH_INPUT_LAYER'
@@ -50,7 +46,5 @@ class InfoAlgorithm(CfGeoAlgorithm):
 
         nelem = self.getOutputValue(self.OUTPUT_NELEM)
         nnode = self.getOutputValue(self.OUTPUT_NNODE)
-        nelem = cf_mesh.element_count()
-        nnode = cf_mesh.node_count()
-
-
+        nelem = m.element_count()
+        nnode = m.node_count()

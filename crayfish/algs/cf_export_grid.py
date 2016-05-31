@@ -24,19 +24,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
-from PyQt4.QtCore import QSettings, QVariant
-from qgis.core import QgsVectorFileWriter, QgsField, QgsFields
-
-from qgis.core import QgsApplication, QgsVectorLayer, QgsPoint, QgsGeometry, QgsFeature, QGis
-
-from processing.core.GeoAlgorithm import GeoAlgorithm
-from processing.core.parameters import ParameterFile, ParameterVector, ParameterNumber, ParameterCrs
-from processing.core.outputs import OutputRaster
-from processing.tools import dataobjects, vector
-
 from .cf_alg import CfGeoAlgorithm
 from .cf_error import CrayfishProccessingAlgorithmError
+from processing.core.outputs import OutputRaster
+from processing.core.parameters import ParameterFile, ParameterNumber, ParameterCrs
 
 class ExportMeshGridAlgorithm(CfGeoAlgorithm):
     IN_CF_MESH = 'CF_MESH'

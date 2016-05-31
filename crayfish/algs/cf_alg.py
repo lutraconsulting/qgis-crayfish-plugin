@@ -24,9 +24,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from processing.core.GeoAlgorithm import GeoAlgorithm
-from .cf_error import CrayfishProccessingAlgorithmError
 from ..core import DataSet, Mesh
+from .cf_error import CrayfishProccessingAlgorithmError
+from processing.core.GeoAlgorithm import GeoAlgorithm
 
 
 class CfGeoAlgorithm(GeoAlgorithm):
@@ -40,8 +40,8 @@ class CfGeoAlgorithm(GeoAlgorithm):
 
     def get_bed_elevation(self, mesh):
         try:
-             d = mesh.dataset(0)
-             o = d.output(0)
+            d = mesh.dataset(0)
+            o = d.output(0)
         except IndexError:
             raise CrayfishProccessingAlgorithmError("Missing bed elevation")
 
