@@ -208,7 +208,7 @@ static bool contourLinesDataset(OGRLayerH hLayer, GDALRasterBandH hBand, QVector
     return err == CPLE_None;
 }
 
-static bool contourPolynomsDataset(OGRLayerH hLayer, GDALRasterBandH hBand, GDALRasterBandH hMaskBand) {
+static bool contourPolygonsDataset(OGRLayerH hLayer, GDALRasterBandH hBand, GDALRasterBandH hMaskBand) {
     CPLErr err = GDALPolygonize(
                          hBand,
                          hMaskBand,
@@ -278,7 +278,7 @@ bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval,
             GDALClose( hVectorDS );
             return false;
         }
-        res = contourPolynomsDataset(hLayer, hBand, hMaskBand);
+        res = contourPolygonsDataset(hLayer, hBand, hMaskBand);
     }
 
     GDALClose( hRasterDS );

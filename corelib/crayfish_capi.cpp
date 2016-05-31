@@ -240,7 +240,7 @@ void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y)
   }
 }
 
-void CF_O_Range(OutputH o, float* zMin, float* zMax) {
+void CF_O_range(OutputH o, float* zMin, float* zMax) {
     Q_ASSERT(zMin && zMax && o);
     o->getRange(*zMin, *zMax);
 }

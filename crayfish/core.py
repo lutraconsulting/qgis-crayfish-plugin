@@ -412,7 +412,7 @@ class Output(object):
 
   def z_range(self):
     zMin, zMax = ctypes.c_float(), ctypes.c_float()
-    self.lib.CF_O_Range(self.handle, ctypes.byref(zMin), ctypes.byref(zMax))
+    self.lib.CF_O_range(self.handle, ctypes.byref(zMin), ctypes.byref(zMax))
     return zMin.value, zMax.value
 
   def value_vector(self, index):
@@ -456,7 +456,7 @@ class Output(object):
         int_h = ctypes.c_double(interval)
     else:
         # should never happen
-        assert(True)
+        assert(False)
 
     return self.lib.CF_ExportContours(self.handle,
                                       ctypes.c_double(mupp),

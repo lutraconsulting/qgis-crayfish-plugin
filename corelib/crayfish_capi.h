@@ -119,7 +119,7 @@ CF_EXPORT float CF_O_valueAt(OutputH o, int index);
 CF_EXPORT void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y);
 CF_EXPORT char CF_O_statusAt(OutputH o, int index);
 CF_EXPORT DataSetH CF_O_dataSet(OutputH o);
-CF_EXPORT void CF_O_Range(OutputH o, float* zMin, float* zMax);
+CF_EXPORT void CF_O_range(OutputH o, float* zMin, float* zMax);
 
 // Renderer Config functions
 CF_EXPORT RendererConfigH CF_RC_create();
