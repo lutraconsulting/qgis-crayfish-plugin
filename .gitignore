@@ -6,6 +6,9 @@ build-*
 *.pyc
 *.o
 *.obj
+*.dll
+*.exp
+*.lib
 Makefile
 Makefile.*
 *.aux.xml
