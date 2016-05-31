@@ -113,7 +113,7 @@ tags=hydraulic,hydraulic modelling,flood,analysis,animation,results viewer,flow,
 homepage=http://www.lutraconsulting.co.uk/resources/crayfish
 tracker=https://github.com/lutraconsulting/qgis-crayfish-plugin/issues
 repository=https://github.com/lutraconsulting/qgis-crayfish-plugin
-icon=crayfish_128px.png
+icon=images/crayfish_128px.png
 
 ; experimental flag
 experimental=False

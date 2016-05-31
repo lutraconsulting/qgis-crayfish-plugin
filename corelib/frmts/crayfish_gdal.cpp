@@ -31,6 +31,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_output.h"
 
 #include <gdal.h>
+#include "ogr_api.h"
+#include "ogr_srs_api.h"
+#include "gdal_alg.h"
+#include <QFile>
 #include <QString>
 #include <QMap>
 #include <QHash>
@@ -40,31 +44,248 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
 
+#define CONTOURS_LAYER_NAME "contours"
+#define CONTOURS_ATTR_NAME "CVAL"
+
+static QVector<double>  generateClassification(const RawData* rd, double interval, ColorMap* cm ) {
+    Q_ASSERT((interval > 1e-5) || cm);
+    QVector<double> classes;
+    if (cm) {
+        // from colormap
+        for (int i=0; i<cm->items.size(); ++i) {
+            classes.push_back(cm->items[i].value);
+        }
+    } else {
+        // interval
+        double minv = 1e100;
+        double maxv = -1e100;
+
+        for (int i=0; i<rd->size(); ++i) {
+            double val =rd->dataAt(i);
+            if (val != -999) {
+                if (val < minv) minv = val;
+                if (val > maxv) maxv = val;
+            }
+        }
+
+        double val = minv;
+        while (val < maxv) {
+            classes.push_back(val);
+            val += interval;
+        }
+    }
+    return classes;
+}
+
+static void classifyRawData(RawData* rd, QVector<double>& classes) {
+    Q_ASSERT(rd);
+    Q_ASSERT(classes.size() > 1);
+
+    float* d = rd->data();
+
+    //////////// FILL INTO CLASSES
+    for (int i=0; i<rd->size(); ++i) {
+        if (d[i] != -999) {
+
+            if (d[i] > classes[classes.size() - 1]) {
+                d[i] = classes[classes.size() - 1];
+            }
+            else if (d[i] < classes[0]) {
+                d[i] = classes[0];
+            } else {
+                for (int j=classes.size() - 1; j>=0; j--) {
+                    double val = classes[j];
+                    if (d[i]>val) {
+                        d[i] = val;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const QString& wkt, bool in_memory=false, bool add_mask_band=false) {
+    QString outName(outFilename);
+
+    GDALAllRegister();
+    GDALDriverH hDriver = 0;
+
+    if (in_memory) {
+        outName += "_raster_memory.tmp";
+        hDriver = GDALGetDriverByName("MEM");
+    } else {
+        hDriver = GDALGetDriverByName("GTiff");
+    }
+    if (!hDriver)
+      return 0;
+
+    const char *papszOptions[] = {"COMPRESS=LZW", NULL};
+    if (in_memory) {
+        papszOptions[0] = NULL;
+    }
+
+    int nbands = add_mask_band ? 2 : 1;
+
+    GDALDatasetH hDstDS = GDALCreate( hDriver,
+                                      outName.toAscii().data(),
+                                      rd->cols(),
+                                      rd->rows(),
+                                      nbands, // data band and mask band
+                                      GDT_Float32,
+                                      (char**) papszOptions );
+    if (!hDstDS)
+      return 0;
+
+    GDALSetGeoTransform( hDstDS, rd->geoTransform().data() );
+    GDALSetProjection( hDstDS, wkt.toAscii().data() );
+
+    GDALRasterBandH hBand = GDALGetRasterBand( hDstDS, 1 );
+    GDALSetRasterNoDataValue(hBand, -999);
+    GDALRasterIO( hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
+                  rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
+
+    if (add_mask_band) {
+        GDALRasterBandH hMaskBand = GDALGetRasterBand( hDstDS, 2 );
+        QVector<float> mask = rd->mask();
+        GDALRasterIO( hMaskBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
+                      mask.data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
+    }
+    return hDstDS;
+}
+
+static GDALDatasetH vectorDataset(const QString& outFilename, const QString& wkt, OGRwkbGeometryType wktGeometryType) {
+    OGRSFDriverH hDriver = OGRGetDriverByName("ESRI Shapefile");
+    if (!hDriver)
+      return 0;
+
+    /* delete the file if exists, OGR_Dr_CreateDataSource cannot overwrite the existing file */
+    {
+        QFile file(outFilename);
+        if (file.exists()) {
+            file.remove();
+        }
+    }
+
+    OGRDataSourceH hDS = OGR_Dr_CreateDataSource( hDriver, outFilename.toAscii().data(), NULL );
+    if (!hDS)
+      return 0;
+
+    OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
+    char * wkt_s = wkt.toAscii().data();
+    OSRImportFromWkt(hSRS, ( char ** ) &wkt_s);
+
+    OGRLayerH hLayer = OGR_DS_CreateLayer( hDS, CONTOURS_LAYER_NAME, hSRS, wktGeometryType, NULL );
+    if (!hLayer) {
+        GDALClose( hDS );
+        return 0;
+    }
+
+    OGRFieldDefnH hFld = OGR_Fld_Create(CONTOURS_ATTR_NAME, OFTReal );
+    OGR_Fld_SetWidth( hFld, 12 );
+    OGR_Fld_SetPrecision( hFld, 3 );
+    OGR_L_CreateField( hLayer, hFld, FALSE );
+    OGR_Fld_Destroy( hFld );
+
+    return hDS;
+}
+
+static bool contourLinesDataset(OGRLayerH hLayer, GDALRasterBandH hBand, QVector<double>& classes) {
+    CPLErr err = GDALContourGenerate(
+                hBand,
+                0, //dfContourInterval
+                0, //dfContourBase
+                classes.size(), //nFixedLevelCount
+                classes.data(), //padfFixedLevels
+                TRUE, //bUseNoData
+                -999, //dfNoDataValue
+                hLayer,
+                -1, // ID attribute index
+                OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), CONTOURS_ATTR_NAME ),
+                NULL, //pfnProgress
+                NULL //pProgressArg
+                );
+    return err == CPLE_None;
+}
+
+static bool contourPolynomsDataset(OGRLayerH hLayer, GDALRasterBandH hBand, GDALRasterBandH hMaskBand) {
+    CPLErr err = GDALPolygonize(
+                         hBand,
+                         hMaskBand,
+                         hLayer,
+                         OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), CONTOURS_ATTR_NAME ),
+                         NULL, //options
+                         NULL, //pfnProgress
+                         NULL //pProgressArg
+                 );
+    return err == CPLE_None;
+}
+
 bool CrayfishGDAL::writeGeoTIFF(const QString& outFilename, RawData* rd, const QString& wkt)
 {
-  GDALAllRegister();
+  GDALDatasetH hDstDS = rasterDataset(outFilename, rd, wkt, false);
 
-  GDALDriverH hDriver = GDALGetDriverByName("GTiff");
-  if (!hDriver)
+  if (!hDstDS) {
     return false;
-
-  const char *papszOptions[] = { "COMPRESS=LZW", NULL };
-  GDALDatasetH hDstDS = GDALCreate( hDriver, outFilename.toAscii().data(), rd->cols(), rd->rows(), 1, GDT_Float32,
-                       (char**) papszOptions );
-  if (!hDstDS)
-    return false;
-
-  GDALSetGeoTransform( hDstDS, rd->geoTransform().data() );
-  GDALSetProjection( hDstDS, wkt.toAscii().data() );
-
-  GDALRasterBandH hBand = GDALGetRasterBand( hDstDS, 1 );
-  GDALSetRasterNoDataValue(hBand, -999);
-  GDALRasterIO( hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
-                rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
-
-  GDALClose( hDstDS );
-  return true;
+  } else {
+    GDALClose( hDstDS );
+    return true;
+  }
 }
+
+bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, bool useLines, ColorMap* cm)
+{
+    bool res = false;
+
+    QVector<double> classes = generateClassification(rd, interval, cm);
+
+    /*** 1) Create Raster ***/
+    if (!useLines)
+        classifyRawData(rd, classes);
+
+    GDALDatasetH hRasterDS = rasterDataset(outFilename, rd, wkt, true, !useLines);
+    if (!hRasterDS) {
+        return false;
+    }
+    GDALRasterBandH hBand = GDALGetRasterBand( hRasterDS, 1 );
+    if (!hBand) {
+        GDALClose( hRasterDS );
+        return false;
+    }
+
+    /*** 2) Create Vector ***/
+    GDALDatasetH hVectorDS = vectorDataset(outFilename, wkt, useLines ? wkbLineString:wkbPolygon);
+    if (!hVectorDS) {
+        GDALClose( hRasterDS );
+        return false;
+    }
+    OGRLayerH hLayer = OGR_DS_GetLayer( hVectorDS, 0);
+    if (!hLayer) {
+        GDALClose( hRasterDS );
+        GDALClose( hVectorDS );
+        return false;
+    }
+
+    /*** 3) Export ***/
+    if (useLines) {
+        /*** Export Contour Lines ***/
+        res = contourLinesDataset(hLayer, hBand, classes);
+    } else {
+        /*** Export Contour Areas ***/
+        GDALRasterBandH hMaskBand = GDALGetRasterBand( hRasterDS, 2 );
+        if (!hMaskBand) {
+            GDALClose( hRasterDS );
+            GDALClose( hVectorDS );
+            return false;
+        }
+        res = contourPolynomsDataset(hLayer, hBand, hMaskBand);
+    }
+
+    GDALClose( hRasterDS );
+    GDALClose( hVectorDS );
+    return res;
+}
+
 
 /******************************************************************************************************/
 void CrayfishGDALReader::parseParameters() {

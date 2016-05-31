@@ -70,6 +70,10 @@ int CF_ExportGrid(OutputH output, double mupp, const char* outputFilename, const
   return Crayfish::exportRawDataToTIF(output, mupp, QString::fromUtf8(outputFilename), QString::fromUtf8(projWkt));
 }
 
+int CF_ExportContours(OutputH output, double mupp, double interval, const char* outputFilename, const char* projWkt, bool useLines, ColorMapH cm)
+{
+  return Crayfish::exportContoursToSHP(output, mupp, interval, QString::fromUtf8(outputFilename), QString::fromUtf8(projWkt), useLines, (ColorMap*) cm);
+}
 
 int CF_Mesh_nodeCount(MeshH mesh)
 {
@@ -204,6 +208,11 @@ void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y)
     *x = elO->valuesV[index].x;
     *y = elO->valuesV[index].y;
   }
+}
+
+void CF_O_Range(OutputH o, float* zMin, float* zMax) {
+    Q_ASSERT(zMin && zMax && o);
+    o->getRange(*zMin, *zMax);
 }
 
 char CF_O_statusAt(OutputH o, int index)
