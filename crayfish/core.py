@@ -43,7 +43,8 @@ libpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), libname)
 class Err(object):
     NoError, NotEnoughMemory, \
     FileNotFound, UnknownFormat, \
-    IncompatibleMesh = range(5)
+    IncompatibleMesh, InvalidData, \
+    MissingDriver = range(7)
 
 class Warn(object):
     NoWarning, UnsupportedElement, \
