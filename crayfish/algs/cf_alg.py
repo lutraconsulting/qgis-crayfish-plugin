@@ -27,6 +27,7 @@
 from ..core import DataSet, Mesh
 from .cf_error import CrayfishProccessingAlgorithmError
 from processing.core.GeoAlgorithm import GeoAlgorithm
+from PyQt4.QtCore import QCoreApplication
 
 
 class CfGeoAlgorithm(GeoAlgorithm):
@@ -49,3 +50,14 @@ class CfGeoAlgorithm(GeoAlgorithm):
             raise CrayfishProccessingAlgorithmError("Dataset 0 is not bed elevation")
 
         return o
+
+
+def trAlgorithm(self, string, context=''):
+    """Implementation of GeoAlgorithm.trAlgorithm() for older versions of QGIS (e.g. 2.8)"""
+    if context == '':
+        context = self.__class__.__name__
+    return string, QCoreApplication.translate(context, string)
+
+# patch our derived class
+if not hasattr(CfGeoAlgorithm, "trAlgorithm"):
+    setattr(CfGeoAlgorithm, "trAlgorithm", trAlgorithm)

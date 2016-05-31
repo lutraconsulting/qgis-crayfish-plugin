@@ -40,8 +40,8 @@ class RenderMeshBedElevationAlgorithm(CfGeoAlgorithm):
         self.name, self.i18n_name = self.trAlgorithm('Render Bed Elevation')
         self.group, self.i18n_group = self.trAlgorithm('Mesh and Bed Elevation')
         self.addParameter(ParameterFile(self.IN_CF_MESH, self.tr('Crayfish Mesh'), optional=False))
-        self.addParameter(ParameterNumber(self.IN_CF_W, self.tr('Width'), optional=True, default=800))
-        self.addParameter(ParameterNumber(self.IN_CF_H, self.tr('Height'), optional=True, default=600))
+        self.addParameter(ParameterNumber(self.IN_CF_W, self.tr('Width'), default=800))
+        self.addParameter(ParameterNumber(self.IN_CF_H, self.tr('Height'), default=600))
         self.addOutput(OutputFile(self.OUT_CF_IMG, self.tr('Rendered Image')))
 
     def processAlgorithm(self, progress):
