@@ -67,6 +67,7 @@ class RenderMeshBedElevationAlgorithm(CfGeoAlgorithm):
         rconfig.set_output_contour(o)
 
         img = QImage(size[0], size[1], QImage.Format_ARGB32)
+        img.fill(0)
 
         r = Renderer(rconfig, img)
         r.draw()
