@@ -43,18 +43,18 @@ protected:
     bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
        metadata_hash::const_iterator iter;
 
-       iter = metadata.find("GRIB_COMMENT");
+       iter = metadata.find("grib_comment");
        if (iter == metadata.end()) return true; //FAILURE
        band_name = iter.value();
 
        if (mRefTime == std::numeric_limits<float>::min())
        {
-           iter = metadata.find("GRIB_REF_TIME");
+           iter = metadata.find("grib_ref_time");
            if (iter == metadata.end()) return true; //FAILURE
            mRefTime = parseMetadataTime(iter.value());
        }
 
-       iter = metadata.find("GRIB_VALID_TIME");
+       iter = metadata.find("grib_valid_time");
        if (iter == metadata.end()) return true; //FAILURE
        float valid_time = parseMetadataTime(iter.value());
        *time = (valid_time - mRefTime) / 3600.0; // input times are always in seconds UTC, we need them back in hours
