@@ -21,3 +21,4 @@ crayfish-lib-*.zip
 plugin/crayfish.dll
 plugin/crayfish.exp
 plugin/crayfish.lib
+*.zip
