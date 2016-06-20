@@ -65,6 +65,7 @@ static void exportRawDataElements(Element::Type elemType, const Output* output, 
     for (int j=topLim; j<=bottomLim; j++)
     {
       float* line = rd->scanLine(j);
+
       for (int k=leftLim; k<=rightLim; k++)
       {
         Q_ASSERT(k >= 0 && k < rd->cols());
@@ -133,6 +134,20 @@ bool Crayfish::exportRawDataToTIF(const Output* output, double mupp, const QStri
     return false;
 
   bool res = CrayfishGDAL::writeGeoTIFF(outFilename, rd, projWkt);
+  delete rd;
+
+  return res;
+}
+
+bool Crayfish::exportContoursToSHP(const Output* output, double mupp, double interval, const QString& outFilename, const QString& projWkt, bool useLines, ColorMap* cm)
+{
+
+
+  RawData* rd = exportRawData(output, mupp);
+  if (!rd)
+    return false;
+
+  bool res = CrayfishGDAL::writeContoursSHP(outFilename, interval, rd, projWkt, useLines, cm);
   delete rd;
 
   return res;

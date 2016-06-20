@@ -30,6 +30,7 @@ from PyQt4.QtGui import *
 from qgis.core import QgsCoordinateReferenceSystem
 from qgis.gui import QgsGenericProjectionSelector
 
+from ..core import Element
 from .utils import load_ui
 
 uiDialog, qtBaseClass = load_ui('crayfish_viewer_plugin_layer_props_dialog')
@@ -45,26 +46,18 @@ class CrayfishPluginPropsDialog(qtBaseClass, uiDialog):
         self.window().setWindowTitle('Layer Properties - %s' % (self.layer.name()))
 
         self.crs = self.layer.crs()
-
         m = self.layer.mesh
-        ec4, ec3, ecx = 0, 0, 0
-        for e in m.elements():
-          if e.type == 1:
-            ec4 += 1
-          elif e.type == 2:
-            ec3 += 1
-          else:
-            ecx += 1
 
         html = '''<b>Mesh file:</b><br>%s<p>
           <table>
           <tr><td width="50%%">Nodes</td><td align="right"><b>%d</b></td>
           </tr><tr><td>&nbsp;</td></tr>
           <tr><td>Elements</td><td align="right"><b>%d</b></td></tr>
-          <tr><td>&nbsp;&nbsp;&nbsp;&nbsp;E4Q</td><td align="right">%d</td></tr>
-          <tr><td>&nbsp;&nbsp;&nbsp;&nbsp;E3T</td><td align="right">%d</td></tr>
-          <tr><td>&nbsp;&nbsp;&nbsp;&nbsp;Unknown</td><td align="right">%d</td></tr>
-          </table>''' % (self.layer.twoDMFileName, m.node_count(), m.element_count(), ec4, ec3, ecx)
+        ''' % (self.layer.twoDMFileName, m.node_count(), m.element_count())
+        for etype, count in m.element_per_type_count().iteritems():
+          html += '''<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;%s</td><td align="right">%d</td></tr>''' % (Element.ETYPE_NAME[etype], count)
+        html += '''</table>'''
+
         self.editMetadata.setReadOnly(True)
         self.editMetadata.setHtml(html)
 

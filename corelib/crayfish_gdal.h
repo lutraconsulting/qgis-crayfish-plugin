@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QHash>
 
 #include "crayfish_mesh.h"
+#include "crayfish_colormap.h"
 
 struct LoadStatus;
 class NodeOutput;
@@ -48,16 +49,23 @@ public:
   {
     int size = r*c;
     for (int i = 0; i < size; ++i)
-      mData[i] = -999; // nodata value
+      mData[i] = -999.0f; // nodata value
   }
   ~RawData() { delete [] mData; }
 
+  int size() const { return mRows*mCols; }
   int cols() const { return mCols; }
   int rows() const { return mRows; }
   QVector<double> geoTransform() const { return mGeo; }
   float* data() const { return mData; }
   float* scanLine(int row) const { Q_ASSERT(row >= 0 && row < mRows); return mData+row*mCols; }
   float dataAt(int index) const { return mData[index]; }
+  QVector<float> mask() const {
+      QVector<float> dataMask(size(), 0.0f);
+      for (int i=0; i<size(); i++)
+          if (dataAt(i) != -999.0f) dataMask[i] = 1.0f;
+      return dataMask;
+  }
 
 private:
   int mCols;
@@ -72,6 +80,7 @@ class CrayfishGDAL
 {
 public:
   static bool writeGeoTIFF(const QString& outFilename, RawData* rd, const QString& wkt);
+  static bool writeContoursSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, bool useLines, ColorMap* cm);
 };
 
 /******************************************************************************************************/

@@ -89,7 +89,8 @@ SOURCES += crayfish.cpp \
     frmts/crayfish_sww.cpp \
     frmts/crayfish_serafin.cpp \
     frmts/crayfish_netcdf.cpp \
-    frmts/crayfish_mesh_2dm.cpp
+    frmts/crayfish_mesh_2dm.cpp \
+    frmts/crayfish_flo2d.cpp
 
 HEADERS += crayfish.h \
     crayfish_colormap.h \

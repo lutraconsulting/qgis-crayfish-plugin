@@ -63,6 +63,19 @@ CF_EXPORT int CF_LastLoadWarning();
 
 CF_EXPORT int CF_ExportGrid(OutputH output, double mupp, const char* outputFilename, const char* projWkt);
 
+CF_EXPORT int CF_ExportContours(OutputH output, double mupp, double interval, const char* outputFilename, const char* projWkt, bool useLines, ColorMapH cm);
+
+// Element functions
+CF_EXPORT int CF_E_nodeCount(ElementH elem);
+CF_EXPORT int CF_E_nodeIndexAt(ElementH elem, int index);
+CF_EXPORT int CF_E_id(ElementH elem);
+CF_EXPORT int CF_E_type(ElementH elem);
+
+// Node functions
+CF_EXPORT int CF_N_id(NodeH node);
+CF_EXPORT double CF_N_x(NodeH node);
+CF_EXPORT double CF_N_y(NodeH node);
+
 // Mesh functions
 
 CF_EXPORT int CF_Mesh_nodeCount(MeshH mesh);
@@ -106,6 +119,7 @@ CF_EXPORT float CF_O_valueAt(OutputH o, int index);
 CF_EXPORT void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y);
 CF_EXPORT char CF_O_statusAt(OutputH o, int index);
 CF_EXPORT DataSetH CF_O_dataSet(OutputH o);
+CF_EXPORT void CF_O_range(OutputH o, float* zMin, float* zMax);
 
 // Renderer Config functions
 CF_EXPORT RendererConfigH CF_RC_create();

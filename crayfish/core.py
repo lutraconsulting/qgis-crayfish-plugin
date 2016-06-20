@@ -43,7 +43,8 @@ libpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), libname)
 class Err(object):
     NoError, NotEnoughMemory, \
     FileNotFound, UnknownFormat, \
-    IncompatibleMesh = range(5)
+    IncompatibleMesh, InvalidData, \
+    MissingDriver = range(7)
 
 class Warn(object):
     NoWarning, UnsupportedElement, \
@@ -52,25 +53,11 @@ class Warn(object):
 
 DS_Bed, DS_Scalar, DS_Vector = range(3)
 
-class Node(ctypes.Structure):
-  _fields_ = [("id", ctypes.c_int), ("x", ctypes.c_double), ("y", ctypes.c_double)]
-
-  def __repr__(self):
-    return "<Node ID %d (%f,%f)>" % (self.id, self.x, self.y)
-
-class Element(ctypes.Structure):
-  _fields_ = [("id", ctypes.c_int), ("type", ctypes.c_int), ("p", ctypes.c_int * 4)]
-
-  def __repr__(self):
-    return "<Element ID %d type: %d  pts: %s>" % (self.id, self.type, str(list(self.p)))
-
-
 class VersionError(Exception):
     """ Exception to be thrown on mismatch of C++/Python code versions """
     def __init__(self, library_ver, plugin_ver):
         self.library_ver = library_ver
         self.plugin_ver = plugin_ver
-
 
 def load_library():
     """ Load the supporting Crayfish C++ library.
@@ -90,8 +77,8 @@ def load_library():
         lib = None
         raise VersionError(library_ver, plugin_ver)
 
-    lib.CF_Mesh_nodeAt.restype = ctypes.POINTER(Node)
-    lib.CF_Mesh_elementAt.restype = ctypes.POINTER(Element)
+    lib.CF_Mesh_nodeAt.restype = ctypes.c_void_p
+    lib.CF_Mesh_elementAt.restype = ctypes.c_void_p
     lib.CF_LoadMesh.restype = ctypes.c_void_p
     lib.CF_LoadMesh.argtypes = [ctypes.c_char_p]
     lib.CF_Mesh_loadDataSet.restype = ctypes.c_bool
@@ -130,7 +117,94 @@ def load_library():
     lib.CF_RC_getParam.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p]
     lib.CF_V_create.restype = ctypes.c_void_p
     lib.CF_V_toDouble.restype = ctypes.c_double
+    lib.CF_N_x.restype = ctypes.c_double
+    lib.CF_N_y.restype = ctypes.c_double
 
+class Node:
+  handles = {}
+
+  @staticmethod
+  def from_handle(handle):
+    if handle not in Node.handles:
+      return Node(handle)
+    return Node.handles[handle]()
+
+  def __init__(self, handle):
+    load_library()  # make sure the library is loaded
+    self.lib = lib
+    if handle is None:
+      raise ValueError(handle)
+    assert handle not in Node.handles
+    Node.handles[handle] = weakref.ref(self)
+    self.handle = ctypes.c_void_p(handle)
+
+  def __del__(self):
+    if hasattr(self, 'handle'):  # only if initialized to a valid Node
+      del Node.handles[self.handle.value]
+
+  def x(self):
+    return self.lib.CF_N_x(self.handle)
+
+  def y(self):
+    return self.lib.CF_N_y(self.handle)
+
+  def n_id(self):
+    return self.lib.CF_N_id(self.handle)
+
+  def __repr__(self):
+    return "<Node ID %d (%f,%f)>" % (self.n_id(), self.x(), self.y())
+
+
+class Element:
+  handles = {}
+
+  @staticmethod
+  def from_handle(handle):
+    if handle not in Element.handles:
+      return Element(handle)
+    return Element.handles[handle]()
+
+  def __init__(self, handle):
+    load_library()  # make sure the library is loaded
+    self.lib = lib
+    if handle is None:
+      raise ValueError(handle)
+    assert handle not in Element.handles
+    Element.handles[handle] = weakref.ref(self)
+    self.handle = ctypes.c_void_p(handle)
+
+  def __del__(self):
+    if hasattr(self, 'handle'):  # only if initialized to a valid Element
+      del Element.handles[self.handle.value]
+
+  Undefined, ENP, E4Q, E3T, E2L = range(5)  # element types, return of e_type()
+  ETYPE_NAME = { Undefined: "Unknown", ENP: "ENP", E4Q: "E4Q", E3T: "E3T", E2L: "E2L"}
+
+  def __repr__(self):
+    return "<Element ID %d type: %s  pts: %s>" % (self.e_id(), self.e_type_name(), str(list(self.node_indexes())))
+
+  def node_count(self):
+    return self.lib.CF_E_nodeCount(self.handle)
+
+  def node_index(self, index):
+    return self.lib.CF_E_nodeIndexAt(self.handle, index)
+
+  def node_indexes(self):
+    for index in xrange(self.node_count()):
+      yield self.node_index(index)
+
+  def e_id(self):
+    return self.lib.CF_E_id(self.handle)
+
+  def e_type(self):
+    return self.lib.CF_E_type(self.handle)
+
+  def e_type_name(self):
+      etype = self.e_type()
+      return self.ETYPE_NAME.get(etype)
+
+  def is_valid(self):
+    return self.e_type() != Element.Undefined
 
 class Mesh:
   """ Mesh class is the central data structure in Crayfish. It defines
@@ -158,7 +232,7 @@ class Mesh:
     return self.lib.CF_Mesh_nodeCount(self.handle)
 
   def node(self, index):
-    return self.lib.CF_Mesh_nodeAt(self.handle, index).contents
+    return Node.from_handle(self.lib.CF_Mesh_nodeAt(self.handle, index))
 
   def nodes(self):
     for index in xrange(self.node_count()):
@@ -167,8 +241,14 @@ class Mesh:
   def element_count(self):
     return self.lib.CF_Mesh_elementCount(self.handle)
 
+  def element_per_type_count(self):
+    res = {t: 0 for t in Element.ETYPE_NAME.keys()}
+    for e in self.elements():
+      res[e.e_type()] += 1
+    return res
+
   def element(self, index):
-    return self.lib.CF_Mesh_elementAt(self.handle, index).contents
+    return Element.from_handle(self.lib.CF_Mesh_elementAt(self.handle, index))
 
   def elements(self):
     for index in xrange(self.element_count()):
@@ -341,6 +421,11 @@ class Output(object):
   def value(self, index):
     return self.lib.CF_O_valueAt(self.handle, index)
 
+  def z_range(self):
+    zMin, zMax = ctypes.c_float(), ctypes.c_float()
+    self.lib.CF_O_range(self.handle, ctypes.byref(zMin), ctypes.byref(zMax))
+    return zMin.value, zMax.value
+
   def value_vector(self, index):
     x,y = ctypes.c_float(), ctypes.c_float()
     self.lib.CF_O_valueVectorAt(self.handle, index, ctypes.byref(x), ctypes.byref(y))
@@ -372,6 +457,25 @@ class Output(object):
 
   def export_grid(self, mupp, outFilename, proj4wkt):
     return self.lib.CF_ExportGrid(self.handle, ctypes.c_double(mupp), ctypes.c_char_p(outFilename), ctypes.c_char_p(proj4wkt))
+
+  def export_contours(self, mupp, interval, outFilename, proj4wkt, useLines, colorMap):
+    if colorMap != None:
+        cm_h = colorMap.handle
+        int_h = ctypes.c_double(-1.0)
+    elif interval != None:
+        cm_h = 0
+        int_h = ctypes.c_double(interval)
+    else:
+        # should never happen
+        assert(False)
+
+    return self.lib.CF_ExportContours(self.handle,
+                                      ctypes.c_double(mupp),
+                                      int_h,
+                                      ctypes.c_char_p(outFilename),
+                                      ctypes.c_char_p(proj4wkt),
+                                      ctypes.c_bool(useLines),
+                                      cm_h)
 
   def __repr__(self):
     return "<Output time:%f>" % self.time()

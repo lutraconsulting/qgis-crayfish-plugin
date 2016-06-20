@@ -49,7 +49,7 @@ static LoadStatus sLastLoadStatus;
 
 int CF_Version()
 {
-  return 0x020300; // 2.3.0
+  return 0x02025A; // 2.2.90
 }
 
 
@@ -70,6 +70,10 @@ int CF_ExportGrid(OutputH output, double mupp, const char* outputFilename, const
   return Crayfish::exportRawDataToTIF(output, mupp, QString::fromUtf8(outputFilename), QString::fromUtf8(projWkt));
 }
 
+int CF_ExportContours(OutputH output, double mupp, double interval, const char* outputFilename, const char* projWkt, bool useLines, ColorMapH cm)
+{
+  return Crayfish::exportContoursToSHP(output, mupp, interval, QString::fromUtf8(outputFilename), QString::fromUtf8(projWkt), useLines, (ColorMap*) cm);
+}
 
 int CF_Mesh_nodeCount(MeshH mesh)
 {
@@ -124,6 +128,36 @@ int CF_DS_type(DataSetH ds)
   return ds->type();
 }
 
+int CF_E_nodeCount(ElementH elem) {
+    return elem->nodeCount();
+}
+
+int CF_E_nodeIndexAt(ElementH elem, int index){
+    if (index < 0 || index >= elem->nodeCount())
+      return 0;
+
+    return elem->p(index);
+}
+
+int CF_E_id(ElementH elem){
+    return elem->id();
+}
+
+int CF_E_type(ElementH elem){
+    return elem->eType();
+}
+
+int CF_N_id(NodeH node){
+    return node->id();
+}
+
+double CF_N_x(NodeH node){
+    return node->x;
+}
+
+double CF_N_y(NodeH node){
+    return node->y;
+}
 
 // helper to return string data - without having to deal with memory too much.
 // returned pointer is valid only next call. also not thread-safe.
@@ -204,6 +238,11 @@ void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y)
     *x = elO->valuesV[index].x;
     *y = elO->valuesV[index].y;
   }
+}
+
+void CF_O_range(OutputH o, float* zMin, float* zMax) {
+    Q_ASSERT(zMin && zMax && o);
+    o->getRange(*zMin, *zMax);
 }
 
 char CF_O_statusAt(OutputH o, int index)

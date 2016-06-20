@@ -37,11 +37,14 @@ from .plugin_layer import CrayfishPluginLayer
 from .plugin_layer_type import CrayfishPluginLayerType
 from .gui.dock import CrayfishDock
 from .gui.about_dialog import CrayfishAboutDialog
-from .gui.export_config_dialog import CrayfishExportConfigDialog
+from .gui.export_raster_config_dialog import CrayfishExportRasterConfigDialog
+from .gui.export_contours_config_dialog import CrayfishExportContoursConfigDialog
 from .gui.animation_dialog import CrayfishAnimationDialog
 from .gui.install_helper import ensure_library_installed
 from .gui.utils import QgsMessageBar, qgis_message_bar
 from .illuvis import upload_dialog
+from .styles import style_with_black_lines, classified_style_from_colormap, classified_style_from_interval
+
 if 'QgsDataItemProvider' in globals():  # from QGIS 2.10
     from .data_items import CrayfishDataItemProvider
 
@@ -54,11 +57,12 @@ class CrayfishPlugin:
         self.dock = None
         self.lr = QgsMapLayerRegistry.instance()
         self.crayfishLibFound = False
+        self.processing_provider = None
 
     def initGui(self):
 
         # Create action that will show the about page
-        self.aboutAction = QAction(QIcon(":/plugins/crayfish/crayfish.png"), "About", self.iface.mainWindow())
+        self.aboutAction = QAction(QIcon(":/plugins/crayfish/images/crayfish.png"), "About", self.iface.mainWindow())
         QObject.connect(self.aboutAction, SIGNAL("triggered()"), self.about)
 
         # Create action for upload
@@ -66,7 +70,7 @@ class CrayfishPlugin:
         QObject.connect(self.uploadAction, SIGNAL("triggered()"), self.upload)
 
         # Add menu items
-        self.menu = self.iface.pluginMenu().addMenu(QIcon(":/plugins/crayfish/crayfish.png"), "Crayfish")
+        self.menu = self.iface.pluginMenu().addMenu(QIcon(":/plugins/crayfish/images/crayfish.png"), "Crayfish")
         self.menu.addAction(self.aboutAction)
         self.menu.addAction(self.uploadAction)
 
@@ -76,13 +80,16 @@ class CrayfishPlugin:
         self.crayfishLibFound = True
 
         # Create action that will load a layer to view
-        self.action = QAction(QIcon(":/plugins/crayfish/crayfish_viewer_add_layer.png"), "Add Crayfish Layer", self.iface.mainWindow())
+        self.action = QAction(QIcon(":/plugins/crayfish/images/crayfish_viewer_add_layer.png"), "Add Crayfish Layer", self.iface.mainWindow())
         QObject.connect(self.action, SIGNAL("triggered()"), self.addCrayfishLayer)
 
-        self.actionExportGrid = QAction(QIcon(":/plugins/crayfish/crayfish_export_raster.png"), "Export to Raster Grid ...", self.iface.mainWindow())
+        self.actionExportGrid = QAction(QIcon(":/plugins/crayfish/images/crayfish_export_raster.png"), "Export to Raster Grid ...", self.iface.mainWindow())
         QObject.connect(self.actionExportGrid, SIGNAL("triggered()"), self.exportGrid)
 
-        self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
+        self.actionExportContours = QAction(QIcon(":/plugins/crayfish/images/contour.png"), "Export Contours ...", self.iface.mainWindow())
+        QObject.connect(self.actionExportContours, SIGNAL("triggered()"), self.exportContours)
+
+        self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/images/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
         QObject.connect(self.actionExportAnimation, SIGNAL("triggered()"), self.exportAnimation)
 
         self.actionPlot = QAction(QgsApplication.getThemeIcon("/histogram.png"), "Plot", self.iface.mainWindow())
@@ -94,6 +101,7 @@ class CrayfishPlugin:
         # Add menu item
         self.menu.addAction(self.action)
         self.menu.addAction(self.actionExportGrid)
+        self.menu.addAction(self.actionExportContours)
         self.menu.addAction(self.actionExportAnimation)
         self.menu.addAction(self.actionPlot)
 
@@ -103,6 +111,7 @@ class CrayfishPlugin:
 
         # Register actions for context menu
         self.iface.legendInterface().addLegendLayerAction(self.actionExportGrid, '', '', QgsMapLayer.PluginLayer, False)
+        self.iface.legendInterface().addLegendLayerAction(self.actionExportContours, '', '', QgsMapLayer.PluginLayer, False)
         self.iface.legendInterface().addLegendLayerAction(self.uploadAction, '', '', QgsMapLayer.PluginLayer, False)
         self.iface.legendInterface().addLegendLayerAction(self.actionExportAnimation, '', '', QgsMapLayer.PluginLayer, False)
 
@@ -116,7 +125,8 @@ class CrayfishPlugin:
         self.iface.addDockWidget( Qt.LeftDockWidgetArea, self.dock )
         self.dock.hide()   # do not show the dock by default
         QObject.connect(self.dock, SIGNAL("visibilityChanged(bool)"), self.dockVisibilityChanged)
-        self.dock.treeDataSets.setCustomActions([self.actionExportGrid, self.uploadAction, self.actionExportAnimation])
+        custom_actions = [self.actionExportGrid, self.actionExportContours, self.uploadAction, self.actionExportAnimation]
+        self.dock.treeDataSets.setCustomActions(custom_actions)
 
         self.actionPlot.triggered.connect(self.dock.plot)
 
@@ -126,8 +136,14 @@ class CrayfishPlugin:
           self.dataItemsProvider = CrayfishDataItemProvider()
           QgsDataItemProviderRegistry.instance().addProvider(self.dataItemsProvider)
 
-
-
+        # Processing toolbox
+        try:
+            from processing.core.Processing import Processing
+            from .algs import CrayfishProcessingProvider
+            self.processing_provider = CrayfishProcessingProvider()
+            Processing.addProvider(self.processing_provider, updateList=True)
+        except ImportError:
+            pass
 
     def layersRemoved(self, layers):
         for layer in layers:
@@ -159,6 +175,7 @@ class CrayfishPlugin:
             return
 
         self.iface.legendInterface().removeLegendLayerAction(self.actionExportGrid)
+        self.iface.legendInterface().removeLegendLayerAction(self.actionExportContours)
         self.iface.legendInterface().removeLegendLayerAction(self.uploadAction)
         self.iface.legendInterface().removeLegendLayerAction(self.actionExportAnimation)
 
@@ -168,6 +185,7 @@ class CrayfishPlugin:
         # Remove menu item
         self.menu.removeAction(self.action)
         self.menu.removeAction(self.actionExportGrid)
+        self.menu.removeAction(self.actionExportContours)
         self.menu.removeAction(self.actionExportAnimation)
 
         self.iface.pluginMenu().removeAction(self.menu.menuAction())
@@ -184,6 +202,14 @@ class CrayfishPlugin:
         QObject.disconnect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)
         QObject.disconnect(self.lr, SIGNAL("layerWillBeRemoved(QString)"), self.layerRemoved)
         QObject.disconnect(self.lr, SIGNAL("layerWasAdded(QgsMapLayer*)"), self.layerWasAdded)
+
+        # Remove processing integration
+        try:
+            from processing.core.Processing import Processing
+            Processing.removeProvider(self.processing_provider)
+        except ImportError:
+            pass
+        self.processing_provider = None
 
     def lastFolder(self):
 
@@ -215,7 +241,7 @@ class CrayfishPlugin:
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(),
                                                  'Open Crayfish Dat File',
                                                  self.lastFolder(),
-                                                 "Results Files DAT, SOL, XMDF, GRIB, HEC2D, netCDF, Serafin, HEC 2D (*.dat *.sol *.xmdf *.sww *.grb *.bin *.grib *.grib1 *.grib2 *.hdf *.nc *.hdf *.slf);;2DM Mesh Files (*.2dm)")
+                                                 "Results Files DAT, SOL, XMDF, GRIB, HEC2D, netCDF, Serafin, HEC 2D, Flo-2D (*.dat *.sol *.xmdf *.sww *.grb *.bin *.grib *.grib1 *.grib2 *.hdf *.nc *.hdf *.slf *BASE.OUT);;2DM Mesh Files (*.2dm)")
         inFileName = unicode(inFileName)
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel
             return
@@ -232,7 +258,8 @@ class CrayfishPlugin:
             fileType == '.grb' or fileType == '.bin' or fileType == '.grib' or fileType == '.grib1' or fileType == '.grib2' or
             fileType == '.nc' or
             fileType == '.hdf' or
-            fileType == '.slf'):
+            fileType == '.slf' or
+            'BASE.OUT' in inFileName):
             """
                 The user has selected a mesh file...
             """
@@ -242,7 +269,9 @@ class CrayfishPlugin:
             # update GUI
             self.dock.currentLayerChanged()
 
-        elif fileType == '.dat' or fileType == '.sol' or fileType == '.xmdf':
+        elif (fileType == '.dat' or
+              fileType == '.sol' or
+              fileType == '.xmdf'):
             """
                 The user has selected a results-only file...
             """
@@ -263,18 +292,19 @@ class CrayfishPlugin:
             if (not temp_raster.isValid()) and (len(temp_raster.subLayers()) > 1):
                 data_sources_to_add = temp_raster.subLayers()
 
+        added_layers = 0
         for data_source in data_sources_to_add:
             layerWith2dm = self.getLayerWith2DM(data_source)
 
             if layerWith2dm:
                 # This 2dm has already been added
                 qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
-                return False
+                continue
 
-            if not self.addLayer(data_source):
-                return False # addLayer() reports errors/warnings
+            if self.addLayer(data_source): # addLayer() reports errors/warnings
+                added_layers += 1
 
-        return True # success
+        return added_layers > 0 # success
 
     def loadMeshForFile(self, inFileName):
 
@@ -426,7 +456,6 @@ class CrayfishPlugin:
 
 
     def have2DM(self, fileName):
-
         layers = self.getCrayfishLayers()
         for layer in layers:
             if layer.twoDMFileName == fileName:
@@ -466,6 +495,7 @@ class CrayfishPlugin:
 
         # Add custom legend actions
         self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportGrid, layer)
+        self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportContours, layer)
         self.iface.legendInterface().addLegendLayerActionForLayer(self.uploadAction, layer)
         self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportAnimation, layer)
 
@@ -478,14 +508,7 @@ class CrayfishPlugin:
             # force hidden on startup
             QTimer.singleShot(0, self.dock.hide)
 
-
-    def exportGrid(self):
-        """ export current layer's data to a raster grid """
-        layer = self.dock.currentCrayfishLayer()
-        if not layer:
-            QMessageBox.warning(None, "Crayfish", "Please select a Crayfish layer for export")
-            return
-
+    def crs_wkt(self, layer):
         mc = self.iface.mapCanvas()
         if mc.hasCrsTransformEnabled():
           if hasattr(mc, "mapSettings"):
@@ -494,8 +517,66 @@ class CrayfishPlugin:
             crsWkt = mc.mapRenderer().destinationCrs().toWkt()
         else:
           crsWkt = layer.crs().toWkt()  # no OTF reprojection
+        return crsWkt
 
-        dlgConfig = CrayfishExportConfigDialog()
+    def exportContours(self):
+        """ export current layer's contours to the vector layer """
+        layer = self.dock.currentCrayfishLayer()
+        if not layer:
+            QMessageBox.warning(None, "Crayfish", "Please select a Crayfish layer for export")
+            return
+
+        crsWkt = self.crs_wkt(layer)
+
+        dlgConfig = CrayfishExportContoursConfigDialog()
+        if not dlgConfig.exec_():
+            return
+        dlgConfig.saveSettings()
+
+        filenameSHP = os.path.join(self.lastFolder(), layer.currentDataSet().name() + ".shp")
+        filenameSHP = QFileDialog.getSaveFileName(None, "Export Contours as Shapefile", filenameSHP, "Shapefile (*.shp)")
+        if not filenameSHP:
+            return
+
+        self.setLastFolder(os.path.dirname(filenameSHP))
+
+        try:
+            res = layer.currentOutput().export_contours(dlgConfig.resolution(),
+                                                        None if dlgConfig.useFixedLevels() else dlgConfig.interval(),
+                                                        filenameSHP,
+                                                        crsWkt,
+                                                        dlgConfig.useLines(),
+                                                        layer.colorMap() if dlgConfig.useFixedLevels() else None)
+
+        except OSError: # delayed loading of GDAL failed (windows only)
+            QMessageBox.critical(None, "Crayfish", "Export failed due to incompatible "
+              "GDAL library - try to upgrade your QGIS installation to a newer version.")
+            return
+        if not res:
+            QMessageBox.critical(None, "Crayfish", "Failed to export contours to shapefile")
+            return
+
+        if dlgConfig.addToCanvas():
+            name = os.path.splitext(os.path.basename(filenameSHP))[0]
+            canvas_layer = self.iface.addVectorLayer(filenameSHP, name, "ogr")
+            if dlgConfig.useLines():
+               style_with_black_lines(canvas_layer)
+            else:
+                if dlgConfig.useFixedLevels():
+                    classified_style_from_colormap(canvas_layer, layer.colorMap())
+                else:
+                    classified_style_from_interval(canvas_layer, layer.colorMap())
+
+    def exportGrid(self):
+        """ export current layer's data to a raster grid """
+        layer = self.dock.currentCrayfishLayer()
+        if not layer:
+            QMessageBox.warning(None, "Crayfish", "Please select a Crayfish layer for export")
+            return
+
+        crsWkt = self.crs_wkt(layer)
+
+        dlgConfig = CrayfishExportRasterConfigDialog()
         if not dlgConfig.exec_():
             return
         dlgConfig.saveSettings()

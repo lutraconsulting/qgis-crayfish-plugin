@@ -42,19 +42,19 @@ public:
     bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
        metadata_hash::const_iterator iter;
 
-       iter = metadata.find("NETCDF_DIM_time");
+       iter = metadata.find("netcdf_dim_time");
        if (iter == metadata.end()) return true; //FAILURE, skip no-time bands
        *time = parseMetadataTime(iter.value());
 
-       iter = metadata.find("NETCDF_VARNAME");
+       iter = metadata.find("netcdf_varname");
        if (iter == metadata.end()) return true; //FAILURE
        band_name = iter.value();
 
        // Loop throught all additional dimensions but time
        for (iter = metadata.begin(); iter != metadata.end(); ++iter) {
          QString key = iter.key();
-         if (key.contains("NETCDF_DIM_")) {
-             key = key.replace("NETCDF_DIM_", "");
+         if (key.contains("netcdf_dim_")) {
+             key = key.replace("netcdf_dim_", "");
              if (key != "time") {
                 band_name += "_" + key + ":" + iter.value();
              }

@@ -6,6 +6,9 @@ build-*
 *.pyc
 *.o
 *.obj
+*.dll
+*.exp
+*.lib
 Makefile
 Makefile.*
 *.aux.xml
@@ -18,3 +21,4 @@ crayfish-lib-*.zip
 plugin/crayfish.dll
 plugin/crayfish.exp
 plugin/crayfish.lib
+*.zip

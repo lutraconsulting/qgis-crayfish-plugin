@@ -94,7 +94,7 @@ class DatasetsWidget(QToolButton):
         QToolButton.__init__(self, parent)
 
         self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.setIcon(QIcon(QPixmap(":/plugins/crayfish/icon_contours.png")))
+        self.setIcon(QIcon(QPixmap(":/plugins/crayfish/images/icon_contours.png")))
 
         self.menu_datasets = DatasetsMenu()
 

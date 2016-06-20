@@ -196,7 +196,12 @@ class CrayfishPluginLayer(QgsPluginLayer):
           qgis_message_bar.pushMessage("Crayfish", "Failed to open the mesh file (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
         elif e == Err.UnknownFormat:
           qgis_message_bar.pushMessage("Crayfish", "Mesh file format not recognized (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
-        # TODO register other errors
+        elif e == Err.IncompatibleMesh:
+          qgis_message_bar.pushMessage("Crayfish", "Incompatible mesh (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
+        elif e == Err.InvalidData:
+          qgis_message_bar.pushMessage("Crayfish", "Invalid or missing data (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
+        elif e == Err.MissingDriver:
+          qgis_message_bar.pushMessage("Crayfish", "Missing driver (" + twoDMFileName + ").", level=QgsMessageBar.CRITICAL)
 
     def currentDataSet(self):
         return self.mesh.dataset(self.current_ds_index)
@@ -617,6 +622,12 @@ class CrayfishPluginLayer(QgsPluginLayer):
 
         iface.legendInterface().refreshLayerSymbology(self)
 
+    def colorMap(self, ds=None):
+        #TODO not sure if it belongs to this class
+        if not ds:
+            ds = self.currentDataSet()
+        return ds.config["c_colormap"]
+    
 
     def _colorMapBasic(self, ds):
 

@@ -33,6 +33,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 //class Mesh;
 class DataSet;
+class ColorMap;
 
 struct LoadStatus
 {
@@ -77,11 +78,13 @@ public:
   static Mesh::DataSets loadDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);
 
   static bool exportRawDataToTIF(const Output* output, double mupp, const QString& outFilename, const QString& projWkt);
+  static bool exportContoursToSHP(const Output* output, double mupp, double interval, const QString& outFilename, const QString& projWkt, bool useLines, ColorMap* cm);
 
 protected:
   static Mesh* loadSWW(const QString& fileName, LoadStatus* status = 0);
   static Mesh* loadGRIB(const QString& fileName, LoadStatus* status = 0);
   static Mesh* loadMesh2DM(const QString& fileName, LoadStatus* status = 0);
+  static Mesh* loadFlo2D(const QString& fileName, LoadStatus* status = 0);
   static Mesh* loadHec2D(const QString& fileName, LoadStatus* status = 0);
   static Mesh* loadNetCDF(const QString& fileName, LoadStatus* status = 0);
   static Mesh* loadSerafin(const QString& fileName, LoadStatus* status = 0);
