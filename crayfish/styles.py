@@ -49,7 +49,12 @@ def classified_style_from_colormap(layer, cm):
         cat = QgsRendererCategoryV2(val, sym, label)
         return cat
 
+    def closest_val(lst, val):
+        return min(lst, key=lambda x:abs(x-val))
+
     assert(cm and layer)
+    idx = layer.pendingFields().indexFromName("CVAL")
+    vals = layer.uniqueValues(idx)
 
     last_index = cm.item_count() - 1
     assert(last_index > 0) # at least 2 values
@@ -59,7 +64,7 @@ def classified_style_from_colormap(layer, cm):
         item = cm.item(i)
         prev_item = cm.item(i-1)
         label = prev_item.label + " - " + item.label
-        val = round(prev_item.value) # for some reason values are rounded to int
+        val = closest_val(vals, prev_item.value)
         cl.append(gen_cl(item.color, val, label))
 
     renderer = QgsCategorizedSymbolRendererV2("CVAL", cl)
@@ -98,13 +103,11 @@ def classified_style_from_interval(layer, cm):
         prev_item = vals[i-1]
         label = str(item) + " - " + str(prev_item)
         ramp_val = ramp_value(first_cm, last_cm, prev_item)
-        val = round(prev_item) # for some reason values are rounded to int
-        cl.append(gen_cl(ramp, val, ramp_val, label))
+        cl.append(gen_cl(ramp, prev_item, ramp_val, label))
 
     last_item = vals[-1]
     ramp_val = ramp_value(first_cm, last_cm, last_item)
-    cl.append(gen_cl(ramp, round(last_item), ramp_val, str(last_item)))
-
+    cl.append(gen_cl(ramp, last_item, ramp_val, str(last_item)))
 
     renderer = QgsCategorizedSymbolRendererV2("CVAL", cl)
     layer.setRendererV2(renderer)

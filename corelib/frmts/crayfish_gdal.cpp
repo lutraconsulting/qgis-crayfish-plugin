@@ -209,7 +209,7 @@ static bool contourLinesDataset(OGRLayerH hLayer, GDALRasterBandH hBand, QVector
 }
 
 static bool contourPolygonsDataset(OGRLayerH hLayer, GDALRasterBandH hBand, GDALRasterBandH hMaskBand) {
-    CPLErr err = GDALPolygonize(
+    CPLErr err = GDALFPolygonize(
                          hBand,
                          hMaskBand,
                          hLayer,
