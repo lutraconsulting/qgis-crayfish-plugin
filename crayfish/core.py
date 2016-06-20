@@ -178,9 +178,10 @@ class Element:
       del Element.handles[self.handle.value]
 
   Undefined, ENP, E4Q, E3T, E2L = range(5)  # element types, return of e_type()
+  ETYPE_NAME = { Undefined: "Unknown", ENP: "ENP", E4Q: "E4Q", E3T: "E3T", E2L: "E2L"}
 
   def __repr__(self):
-    return "<Element ID %d type: %d  pts: %s>" % (self.e_id(), self.e_type(), str(list(self.node_indexes())))
+    return "<Element ID %d type: %s  pts: %s>" % (self.e_id(), self.e_type_name(), str(list(self.node_indexes())))
 
   def node_count(self):
     return self.lib.CF_E_nodeCount(self.handle)
@@ -197,6 +198,10 @@ class Element:
 
   def e_type(self):
     return self.lib.CF_E_type(self.handle)
+
+  def e_type_name(self):
+      etype = self.e_type()
+      return self.ETYPE_NAME.get(etype)
 
   def is_valid(self):
     return self.e_type() != Element.Undefined
@@ -235,6 +240,12 @@ class Mesh:
 
   def element_count(self):
     return self.lib.CF_Mesh_elementCount(self.handle)
+
+  def element_per_type_count(self):
+    res = {t: 0 for t in Element.ETYPE_NAME.keys()}
+    for e in self.elements():
+      res[e.e_type()] += 1
+    return res
 
   def element(self, index):
     return Element.from_handle(self.lib.CF_Mesh_elementAt(self.handle, index))
