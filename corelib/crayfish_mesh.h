@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 struct BBox;
 struct E4Qtmp;
+struct E4QNormalization;
 class DataSet;
 class ElementOutput;
 class Output;
@@ -148,6 +149,7 @@ protected:
   E4Qtmp* mE4Qtmp;   //!< contains rendering information for quads
   int* mE4QtmpIndex; //!< for conversion from element index to mE4Qtmp indexes
   BBox* mBBoxes; //! bounding boxes of elements (non-projected)
+  E4QNormalization* mE4Qnorm; //! normalization of coordinates
 
   // reprojection support
 

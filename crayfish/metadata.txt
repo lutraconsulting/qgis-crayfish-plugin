@@ -17,6 +17,7 @@ changelog=2.2.90 - New Features & Bug Fixes:
  - Fixes of cross-section plot (NaN values)
  - Max values for HEC-RAS 2D result files
  - Fixes crash when loading netCDF files without time-varying bands
+ - Fix rendering of contours
  <p>2.2 - New Features:
  - Support for GRIB result files (.grib, .bin, .grib1, .grib2, .grb)
  - Support for HEC-RAS 2D result files (.hdf)
