@@ -34,6 +34,7 @@ class TestCrayfishLoad(unittest.TestCase):
       m.dataset(1)
 
   def test_e4q_with_reprojection(self):
+    # reprojected quad mesh issue #143
     m = crayfish.Mesh(TEST_DIR + "/e4q.2dm")
     self.assertTrue(m is not None)
     self.assertEqual(m.node_count(), 4)
@@ -49,6 +50,29 @@ class TestCrayfishLoad(unittest.TestCase):
     m.set_destination_crs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs") #Web Mercator
     val = m.value(o, -221164, 26333)
     self.assertEqual(val, 0.49337500748505414)
+
+  def test_e4q2(self):
+    # mesh with very small elements issue #188
+    m = crayfish.Mesh(TEST_DIR + "/e4q2.2dm")
+    self.assertTrue(m is not None)
+    self.assertEqual(m.node_count(), 6)
+    self.assertEqual(m.element_count(), 2)
+    self.assertEqual(m.dataset_count(), 1)
+    self.assertEqual(m.dataset(0).type(), crayfish.DS_Bed)
+    o = m.dataset(0).output(0)
+
+    x0 = 1.53033321e+002
+    x1 = 1.53033159e+002
+    y0 = -2.68736877e+001
+    y1 = -2.68742438e+001
+
+    # We have 2 elements, lets test that all points on diagonal are not NaN
+    # Do not test edges
+    for i in range(1,10):
+        x = x1 + (x0-x1)*i/10.0
+        y = y0 + (y1-y0)*i/10.0
+        val = m.value(o, x, y)
+        self.assertTrue(val != -9999, msg="{}, {} is -9999".format(x, y))
 
   def test_load_missing_data_file(self):
     m = crayfish.Mesh(TEST_DIR + "/quad_and_triangle.2dm")

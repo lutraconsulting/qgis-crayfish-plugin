@@ -77,11 +77,14 @@ Mesh::Mesh(const BasicMesh::Nodes& nodes, const BasicMesh::Elements& elements)
   , mE4Qtmp(0)
   , mE4QtmpIndex(0)
   , mBBoxes(0)
+  , mE4Qnorm(0)
   , mProjection(false)
   , mProjNodes(0)
   , mProjBBoxes(0)
 {
   mExtent = computeMeshExtent(false);
+
+  mE4Qnorm = new E4QNormalization(mExtent);
   computeTempRendererData();
 }
 
@@ -95,6 +98,9 @@ Mesh::~Mesh()
 
   delete[] mE4Qtmp;
   mE4Qtmp = 0;
+
+  delete mE4Qnorm;
+  mE4Qnorm = 0;
 
   delete [] mE4QtmpIndex;
   mE4QtmpIndex = 0;
@@ -260,7 +266,7 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
     E4Qtmp& e4q = mE4Qtmp[e4qIndex];
 
     double Lx, Ly;
-    if (!E4Q_mapPhysicalToLogical(e4q, x, y, Lx, Ly))
+    if (!E4Q_mapPhysicalToLogical(e4q, x, y, Lx, Ly, *mE4Qnorm))
       return false;
 
     if (Lx < 0 || Ly < 0 || Lx > 1 || Ly > 1)
@@ -368,7 +374,7 @@ bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, dou
     E4Qtmp& e4q = mE4Qtmp[e4qIndex];
 
     double Lx, Ly;
-    if (!E4Q_mapPhysicalToLogical(e4q, x, y, Lx, Ly))
+    if (!E4Q_mapPhysicalToLogical(e4q, x, y, Lx, Ly, *mE4Qnorm))
       return false;
 
     if (Lx < 0 || Ly < 0 || Lx > 1 || Ly > 1)
@@ -502,7 +508,7 @@ void Mesh::computeTempRendererData()
       mE4QtmpIndex[i] = e4qIndex;
       E4Qtmp& e4q = mE4Qtmp[e4qIndex];
 
-      E4Q_computeMapping(elem, e4q, mNodes.constData());
+      E4Q_computeMapping(elem, e4q, mNodes.constData(), *mE4Qnorm);
       e4qIndex++;
     }
   }
@@ -519,13 +525,15 @@ void Mesh::setNoProjection()
   delete [] mProjBBoxes;
   mProjBBoxes = 0;
 
+  mE4Qnorm->init(mExtent);
+
   for (int i = 0; i < mElems.count(); ++i)
   {
     const Element& elem = mElems[i];
     if (elem.eType() == Element::E4Q)
     {
       int e4qIndex = mE4QtmpIndex[i];
-      E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mNodes.constData());
+      E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mNodes.constData(), *mE4Qnorm);
     }
   }
 
@@ -664,6 +672,7 @@ bool Mesh::reprojectMesh()
   pj_free(projDst);
 
   mProjExtent = computeMeshExtent(true);
+  mE4Qnorm->init(mProjExtent);
 
   if (mProjBBoxes == 0)
     mProjBBoxes = new BBox[mElems.count()];
@@ -676,7 +685,7 @@ bool Mesh::reprojectMesh()
     if (elem.eType() == Element::E4Q)
     {
       int e4qIndex = mE4QtmpIndex[i];
-      E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mProjNodes); // update interpolation coefficients
+      E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mProjNodes, *mE4Qnorm); // update interpolation coefficients
     }
   }
 
@@ -706,7 +715,7 @@ void Mesh::elementCentroid(int elemIndex, double& cx, double& cy) const
   {
     int e4qIndex = mE4QtmpIndex[elemIndex];
     E4Qtmp& e4q = mE4Qtmp[e4qIndex];
-    E4Q_centroid(e4q, cx, cy);
+    E4Q_centroid(e4q, cx, cy, *mE4Qnorm);
   }
   else if (e.eType() == Element::E3T)
   {

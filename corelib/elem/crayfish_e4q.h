@@ -42,11 +42,27 @@ struct E4Qtmp
   double a[4], b[4]; //!< coefficients for mapping between physical and logical coords
 };
 
-//! precalculate coefficients for the mapping between logical and physical coordinates
-void E4Q_computeMapping(const Element& elem, E4Qtmp& e4q, const Node* nodes);
+struct E4QNormalization
+{
+  double x0;
+  double y0;
+  double range_x;
+  double range_y;
 
-void E4Q_mapLogicalToPhysical(const E4Qtmp& e4q, double Lx, double Ly, double& Px, double& Py);
-bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx, double& Ly);
+  double normX(double x) const;
+  double realX(double x) const;
+  double normY(double y) const;
+  double realY(double y) const;
+  void init(const BBox& extent);
+  E4QNormalization(): x0(0), y0(0), range_x(1), range_y(1) {}
+  E4QNormalization(const BBox& extent) {init(extent);}
+};
+
+//! precalculate coefficients for the mapping between logical and physical coordinates
+void E4Q_computeMapping(const Element& elem, E4Qtmp& e4q, const Node* nodes, const E4QNormalization& norm);
+
+void E4Q_mapLogicalToPhysical(const E4Qtmp& e4q, double Lx, double Ly, double& Px, double& Py, const E4QNormalization& norm);
+bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx, double& Ly, const E4QNormalization& norm);
 
 //! check whether the quadrilateral is complex (butterfly shape)
 bool E4Q_isComplex(const Element& elem, Node* nodes);
@@ -55,6 +71,6 @@ bool E4Q_isComplex(const Element& elem, Node* nodes);
 bool E4Q_isValid(const Element& elem, Node* nodes);
 
 //! calculate centroid of the quadrilateral
-void E4Q_centroid(const E4Qtmp& e4q, double& cx, double& cy);
+void E4Q_centroid(const E4Qtmp& e4q, double& cx, double& cy, const E4QNormalization &norm);
 
 #endif // CRAYFISH_E4Q_H

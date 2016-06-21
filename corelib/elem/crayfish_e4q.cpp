@@ -28,14 +28,47 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "crayfish_e4q.h"
 
+
+
+
+
+void E4QNormalization::init(const BBox& extent)
+{
+    x0 = extent.minX;
+    y0 = extent.minY;
+    range_x = extent.maxX - extent.minX;
+    range_y = extent.maxY - extent.minY;
+}
+
+double E4QNormalization::normX(double x) const
+{
+    return (x-x0)/range_x;
+}
+
+double E4QNormalization::normY(double y) const
+{
+    return (y-y0)/range_y;
+}
+
+double E4QNormalization::realX(double x) const
+{
+    return x*range_x + x0;
+}
+
+double E4QNormalization::realY(double y) const
+{
+    return y*range_y + y0;
+}
+
 bool E4Q_isValid(const Element& elem, Node* nodes)
 {
     // It may not be valid for several reasons, e.g
     // lines are on line , so it is triangle with 4 vertexes
     E4Qtmp e4q;
-    E4Q_computeMapping(elem, e4q, nodes);
+    E4QNormalization norm;
+    E4Q_computeMapping(elem, e4q, nodes, norm);
     double Lx, Ly;
-    return E4Q_mapPhysicalToLogical(e4q, 0.5, 0.5, Lx, Ly );
+    return E4Q_mapPhysicalToLogical(e4q, 0.5, 0.5, Lx, Ly, norm);
 }
 
 /*
@@ -43,7 +76,7 @@ Physical vs logical mapping of quads:
 http://www.particleincell.com/blog/2012/quad-interpolation/
 */
 
-void E4Q_computeMapping(const Element& elem, E4Qtmp& e4q, const Node* nodes)
+void E4Q_computeMapping(const Element& elem, E4Qtmp& e4q, const Node* nodes, const E4QNormalization& norm)
 {
   Q_ASSERT(elem.eType() == Element::E4Q);
 
@@ -52,32 +85,48 @@ void E4Q_computeMapping(const Element& elem, E4Qtmp& e4q, const Node* nodes)
   const Node& n3 = nodes[elem.p(2)];
   const Node& n4 = nodes[elem.p(3)];
 
-  e4q.a[0] = n1.x;
-  e4q.a[1] = - n1.x + n2.x;
-  e4q.a[2] = - n1.x + n4.x;
-  e4q.a[3] = n1.x - n2.x + n3.x - n4.x;
+  double n1x = norm.normX(n1.x);
+  double n2x = norm.normX(n2.x);
+  double n3x = norm.normX(n3.x);
+  double n4x = norm.normX(n4.x);
 
-  e4q.b[0] = n1.y;
-  e4q.b[1] = - n1.y + n2.y;
-  e4q.b[2] = - n1.y + n4.y;
-  e4q.b[3] = n1.y - n2.y + n3.y - n4.y;
+  double n1y = norm.normY(n1.y);
+  double n2y = norm.normY(n2.y);
+  double n3y = norm.normY(n3.y);
+  double n4y = norm.normY(n4.y);
+
+  e4q.a[0] = n1x;
+  e4q.a[1] = - n1x + n2x;
+  e4q.a[2] = - n1x + n4x;
+  e4q.a[3] = n1x - n2x + n3x - n4x;
+
+  e4q.b[0] = n1y;
+  e4q.b[1] = - n1y + n2y;
+  e4q.b[2] = - n1y + n4y;
+  e4q.b[3] = n1y - n2y + n3y - n4y;
 }
 
-void E4Q_mapLogicalToPhysical(const E4Qtmp& e4q, double Lx, double Ly, double& Px, double& Py)
+void E4Q_mapLogicalToPhysical(const E4Qtmp& e4q, double Lx, double Ly, double& Px, double& Py, const E4QNormalization& norm)
 {
   Px = e4q.a[0] + e4q.a[1]*Lx + e4q.a[2]*Ly + e4q.a[3]*Lx*Ly;
   Py = e4q.b[0] + e4q.b[1]*Lx + e4q.b[2]*Ly + e4q.b[3]*Lx*Ly;
+
+  Px = norm.realX(Px);
+  Py = norm.realY(Py);
 }
 
-static inline double iszero(double val)
+static inline double iszero(double val, double eps=1e-30)
 {
-    return fabs(val) < 10e-5;
+    return fabs(val) < eps;
 }
 
-bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx, double& Ly)
+bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx, double& Ly, const E4QNormalization& norm)
 {
   const double* a = e4q.a;
   const double* b = e4q.b;
+
+  x = norm.normX(x);
+  y = norm.normY(y);
 
   if (iszero(a[3])) {
     if (iszero(a[2])) {
@@ -85,7 +134,7 @@ bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx,
             return false;
         } else {
             Lx = (x - a[0])/a[1];
-            float denom = b[2] + b[3]*Lx;
+            double denom = b[2] + b[3]*Lx;
             if (iszero(denom)) {
                 return false;
             } else {
@@ -96,7 +145,7 @@ bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx,
     } else {
         if (iszero(a[1])) {
             Ly = (x - a[0])/a[2];
-            float denom = b[1] + b[3]*Ly;
+            double denom = b[1] + b[3]*Ly;
             if (iszero(denom)) {
                 return false;
             } else {
@@ -109,8 +158,8 @@ bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx,
 
   // compute quadratic equation
   double aa = a[3]*b[2] - a[2]*b[3];
-  double bb = a[3]*b[0] -a[0]*b[3] + a[1]*b[2] - a[2]*b[1] + x*b[3] - y*a[3];
-  double cc = a[1]*b[0] -a[0]*b[1] + x*b[1] - y*a[1];
+  double bb = a[3]*b[0] - a[0]*b[3] + a[1]*b[2] - a[2]*b[1] + x*b[3] - y*a[3];
+  double cc = a[1]*b[0] - a[0]*b[1] + x*b[1] - y*a[1];
 
   if (iszero(aa))
     Ly = -cc / bb;  // linear equation
@@ -122,7 +171,7 @@ bool E4Q_mapPhysicalToLogical(const E4Qtmp& e4q, double x, double y, double& Lx,
     Ly = (-bb+sqrt(detSq))/(2*aa);
   }
 
-  float denom = (a[1]+a[3]*Ly);
+  double denom = (a[1]+a[3]*Ly);
   if (iszero(denom)) {
     if (iszero(a[3])) {
         return false;
@@ -203,7 +252,7 @@ bool E4Q_isComplex(const Element& elem, Node* nodes)
   return false;
 }
 
-void E4Q_centroid(const E4Qtmp& e4q, double& cx, double& cy)
+void E4Q_centroid(const E4Qtmp& e4q, double& cx, double& cy, const E4QNormalization& norm )
 {
-  E4Q_mapLogicalToPhysical(e4q, 0.5, 0.5, cx, cy);
+  E4Q_mapLogicalToPhysical(e4q, 0.5, 0.5, cx, cy, norm);
 }
