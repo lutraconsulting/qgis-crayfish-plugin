@@ -45,12 +45,24 @@ destFolder = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 crayfish_zipfile = 'crayfish-lib-%s.zip' % plugin_version_str()
 
 
+def findPlatformVersion():
+    platformVersion = platform.system()
+
+    if platformVersion == 'Linux':
+        if (platform.linux_distribution()[0] == 'Ubuntu') and (float(platform.linux_distribution()[1]) >= 15.10):
+            platformVersion = 'xenial'
+
+    if platform.architecture()[0] == '64bit':
+        platformVersion += '64'
+    return platformVersion
+
 def ensure_library_installed(parent_widget=None):
 
     # Try to import the binary library:
     restartRequired = False
 
-    platformVersion = platform.system()
+    platformVersion = findPlatformVersion()
+
     while not extractBinPackageAfterRestart():
             reply = QMessageBox.critical(parent_widget,
               'Crayfish Installation Issue',
@@ -89,8 +101,6 @@ def ensure_library_installed(parent_widget=None):
         return False
 
     # Determine where to extract the files
-    if platform.architecture()[0] == '64bit':
-        platformVersion += '64'
     packageUrl = 'resources/crayfish/viewer/binaries/%s/%s' % (platformVersion, crayfish_zipfile)
     packageUrl = downloadBaseUrl + urllib2.quote(packageUrl)
 
