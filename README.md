@@ -1,7 +1,7 @@
 Crayfish (QGIS plugin)
 ======================
 
-<img align="right" src="https://raw.githubusercontent.com/lutraconsulting/qgis-crayfish-plugin/master/crayfish/crayfish_128px.png">
+<img align="right" src="https://raw.githubusercontent.com/lutraconsulting/qgis-crayfish-plugin/master/crayfish/images/crayfish_128px.png">
 
 The Crayfish Plugin is a visualiser for temporal structured/unstructured grids in QGIS.
 
@@ -79,3 +79,23 @@ For 64-bit version:
 
 
 [crp]: http://www.lutraconsulting.co.uk/resources/crayfish
+
+### Running tests
+
+* Install all dependancies
+```bash
+sudo apt-get install build-essential libqt4-dev qt4-qmake libgdal-dev libhdf5-serial-dev libproj-dev qgis
+sudo apt-get install python python-sip python-qt4 python-numpy python-qgis python-nose
+```
+* Compile crayfish library
+```bash
+cd qgis-crayfish-plugin/corelib
+export QT_SELECT=qt4
+qmake
+make
+```
+* Run tests
+```bash
+cd qgis-crayfish-plugin/test
+nosetests
+```

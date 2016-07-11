@@ -8,11 +8,11 @@ cache: apt
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install build-essential libqt4-dev qt4-qmake libgdal-dev libhdf5-serial-dev libproj-dev qgis
-  - sudo apt-get install python python-sip python-qt4 python-numpy python-qgis
-  
+  - sudo apt-get install python python-sip python-qt4 python-numpy python-qgis python-nose
+
 install:
   - cd corelib
   - qmake
   - make
 
-script: cd ../test && python testload.py
+script: cd ../test && nosetests
