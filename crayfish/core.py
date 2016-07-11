@@ -24,7 +24,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import ConfigParser
 import ctypes
 import os
 import platform
@@ -34,6 +33,8 @@ import sip
 from PyQt4.QtGui import QColor
 from PyQt4.QtGui import QPixmap, QPainter, QColor
 from PyQt4.QtCore import Qt
+
+from buildinfo import plugin_version_str
 
 lib = None  # initialized on demand
 
@@ -751,12 +752,6 @@ def library_version():
   if lib is None:
       return None
   return lib.CF_Version()
-
-def plugin_version_str():
-    """ Return version of Python plugin from metadata as a string """
-    cfg = ConfigParser.ConfigParser()
-    cfg.read(os.path.join(os.path.dirname(__file__), 'metadata.txt'))
-    return cfg.get('general', 'version')
 
 def plugin_version():
     """ Return version of Python plugin from metadata as a number.

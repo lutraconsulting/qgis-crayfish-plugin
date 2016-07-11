@@ -33,17 +33,14 @@ import zipfile
 from PyQt4.QtCore import QSettings, Qt
 from PyQt4.QtGui import QCursor, QMessageBox, qApp
 
-from ..core import load_library, VersionError, plugin_version_str, libpath
+from ..core import load_library, VersionError, libpath
+from ..buildinfo import findPlatformVersion, crayfish_zipfile
 
 # Base URL for downloading of prepared binaries
 downloadBaseUrl = 'http://www.lutraconsulting.co.uk/'
 #downloadBaseUrl = 'http://localhost:8000/'  # for testing
 
 destFolder = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-
-
-crayfish_zipfile = 'crayfish-lib-%s.zip' % plugin_version_str()
-
 
 def findPlatformVersion():
     platformVersion = platform.system()
@@ -101,12 +98,12 @@ def ensure_library_installed(parent_widget=None):
         return False
 
     # Determine where to extract the files
-    packageUrl = 'resources/crayfish/viewer/binaries/%s/%s' % (platformVersion, crayfish_zipfile)
+    packageUrl = 'resources/crayfish/viewer/binaries/%s/%s' % (platformVersion, crayfish_zipfile())
     packageUrl = downloadBaseUrl + urllib2.quote(packageUrl)
 
     # Download it
     try:
-        filename = os.path.join(destFolder, crayfish_zipfile)
+        filename = os.path.join(destFolder, crayfish_zipfile())
         downloadBinPackage(packageUrl, filename)
     except IOError, err:
         QMessageBox.critical(parent_widget,
@@ -209,7 +206,7 @@ def extractBinPackageAfterRestart():
     if stillExists:
         return False
 
-    destinationFileName = os.path.join(destFolder, crayfish_zipfile)
+    destinationFileName = os.path.join(destFolder, crayfish_zipfile())
     z = zipfile.ZipFile(destinationFileName)
     z.extractall(destFolder)
     z.close()
