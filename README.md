@@ -15,6 +15,7 @@ You can use Crayfish to load the following file formats in QGIS:
 - [DAT](http://www.xmswiki.com/wiki/SMS:ASCII_Dataset_Files_*.dat): Outputs of various hydrodynamic modelling packages (e.g. BASEMENT, HYDRO_AS-2D)
 - [HEC-RAS](http://www.hec.usace.army.mil/software/hec-ras/): Outputs of the HEC-RAS modelling package
 - [Serafin files](http://www.gdal.org/drv_selafin.html): Outputs of the TELEMAC 2D hydrodynamic modelling package
+- [FLO-2D](http://www.flo-2d.com/): Outputs of the FLO-2D modelling package
 
 <img src="https://travis-ci.org/lutraconsulting/qgis-crayfish-plugin.svg?branch=master">
 
