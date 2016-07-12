@@ -9,7 +9,7 @@ base_dir = os.path.join(this_dir, os.pardir)
 cr_dir = os.path.join(base_dir, "crayfish")
 sys.path.insert(0, base_dir)
 
-from crayfish.buildinfo import plugin_version_str, findPlatformVersion
+from crayfish.buildinfo import plugin_version_str, findPlatformVersion, crayfish_zipfile
 from install import make_and_install
 
 parser = argparse.ArgumentParser(description="Build and Install Crayfish")
@@ -35,7 +35,7 @@ if not os.path.exists(libzip):
 
 if args.dst:
     src = os.path.join(base_dir, libzip)
-    dst = os.path.join(args.dst, plat, libzip)
+    dst = args.dst + "/" + plat + "/" + libzip
     cmd = 'scp ' + src + " " + dst
     print(cmd)
     os.system(cmd)
