@@ -30,11 +30,11 @@ else:
 
 make_and_install(extra_args)
 
-if not os.path.exists(libzip):
+src = os.path.join(base_dir, libzip)
+if not os.path.exists(src):
     raise Exception("lib zip file not created!")
 
 if args.dst:
-    src = os.path.join(base_dir, libzip)
     dst = args.dst + "/" + plat + "/" + libzip
     cmd = 'scp ' + src + " " + dst
     print(cmd)
