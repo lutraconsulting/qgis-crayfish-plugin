@@ -37,26 +37,29 @@ def run_cmd(cmd, err_msg=None):
             err_msg = "\"{}\" command failed".format(cmd)
         raise Exception(err_msg)
 
-extra_install_args = ""
-if len(sys.argv) == 2 and sys.argv[1].startswith("-pkg="):
-  extra_install_args = " " + sys.argv[1]
+def make_and_install(extra_install_args):
+    print("Installing C++ library...")
+    os.chdir('corelib')
+    if platform.system() == "Windows":
+        run_cmd('qmake -spec win32-msvc2010 "CONFIG+=release"')
+        run_cmd('nmake')
+    else:
+        try:
+            run_cmd('qmake')
+        except Exception:
+            # Handle the Fedora case (suffixed -qt4).
+            run_cmd('qmake-qt4')
 
-print("Installing C++ library...")
-os.chdir('corelib')
-if platform.system() == "Windows":
-    run_cmd('qmake -spec win32-msvc2010 "CONFIG+=release"')
-    run_cmd('nmake')
-else:
-    try:
-        run_cmd('qmake')
-    except Exception:
-        # Handle the Fedora case (suffixed -qt4).
-        run_cmd('qmake-qt4')
+        run_cmd('make')
 
-    run_cmd('make')
+    run_cmd('python install.py' + extra_install_args, err_msg="install of core library failed!")
 
-run_cmd('python install.py' + extra_install_args, err_msg="install of core library failed!")
+    print("Installing plugin...")
+    os.chdir(os.path.join(os.pardir, 'crayfish'))
+    run_cmd('python install.py' + extra_install_args, err_msg="install of python plugin failed!")
 
-print("Installing plugin...")
-os.chdir(os.path.join(os.pardir, 'crayfish'))
-run_cmd('python install.py' + extra_install_args, err_msg="install of python plugin failed!")
+if __name__ == "__main__":
+    extra_install_args = ""
+    if len(sys.argv) == 2 and sys.argv[1].startswith("-pkg="):
+        extra_install_args = " " + sys.argv[1]
+    make_and_install(extra_install_args)
