@@ -42,17 +42,6 @@ downloadBaseUrl = 'http://www.lutraconsulting.co.uk/'
 
 destFolder = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
-def findPlatformVersion():
-    platformVersion = platform.system()
-
-    if platformVersion == 'Linux':
-        if (platform.linux_distribution()[0] == 'Ubuntu') and (float(platform.linux_distribution()[1]) >= 15.10):
-            platformVersion = 'xenial'
-
-    if platform.architecture()[0] == '64bit':
-        platformVersion += '64'
-    return platformVersion
-
 def ensure_library_installed(parent_widget=None):
 
     # Try to import the binary library:

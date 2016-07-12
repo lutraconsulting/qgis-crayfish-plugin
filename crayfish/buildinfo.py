@@ -23,3 +23,11 @@ def findPlatformVersion():
 
 def crayfish_zipfile():
     return 'crayfish-lib-%s.zip' % plugin_version_str()
+
+def crayfish_libname():
+    if platform.system() == "Windows":
+        return "crayfish.dll"
+    elif platform.system() == "Linux":
+        return "libcrayfish.so.1"
+    else:
+        return "libcrayfish.1.0.0.dylib"

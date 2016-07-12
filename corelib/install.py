@@ -31,9 +31,13 @@ import os
 import shutil
 import platform
 
+this_dir = os.path.dirname(os.path.realpath(__file__))
+base_dir = os.path.join(this_dir, os.pardir)
+sys.path.insert(0, base_dir)
+from crayfish.buildinfo import crayfish_libname
+
 pkg = False
-win = platform.system() == 'Windows'
-file_cpp = "crayfish.dll" if win else "libcrayfish.so.1"
+file_cpp = crayfish_libname()
 
 if len(sys.argv) > 1:
   for arg in sys.argv[1:]:

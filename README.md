@@ -79,7 +79,7 @@ For 64-bit version:
 * Install OSGeo4W (64bit) to C:\OSGeo4W64
 * Run scripts\crayfish64.bat to build the crayfish DLL
 
-#### Installing Crayfish on Max-OS
+#### Installing Crayfish on Mac-OS
 
 ```
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"

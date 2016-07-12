@@ -34,11 +34,11 @@ from PyQt4.QtGui import QColor
 from PyQt4.QtGui import QPixmap, QPainter, QColor
 from PyQt4.QtCore import Qt
 
-from buildinfo import plugin_version_str
+from buildinfo import plugin_version_str, crayfish_libname
 
 lib = None  # initialized on demand
 
-libname = "crayfish.dll" if platform.system() == "Windows" else "libcrayfish.so.1"
+libname = crayfish_libname()
 libpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), libname)
 
 class Err(object):
