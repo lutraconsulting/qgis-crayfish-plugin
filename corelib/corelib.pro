@@ -43,7 +43,7 @@ win32 {
   QMAKE_LFLAGS += /DELAYLOAD:gdal111.dll
 }
 
-unix {
+unix:!macx {
   INCLUDEPATH += /usr/include/gdal
   LIBS += -lproj -lgdal -lnetcdf
 
@@ -62,6 +62,11 @@ unix {
     LIBS += -lhdf5_serial
     INCLUDEPATH += /usr/include/hdf5/serial
   }
+}
+
+macx {
+  LIBS += -lproj -lgdal -lnetcdf
+  LIBS += -lhdf5
 }
 
 TARGET = crayfish

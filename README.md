@@ -83,14 +83,14 @@ For 64-bit version:
 
 ```
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-brew install qt
-brew linkapps qt
-brew link qt
+brew install pyqt
 mkdir -p /Users/XXX/Library/Python/2.7/lib/python/site-packages
 echo 'import site; site.addsitedir("/usr/local/lib/python2.7/site-packages")' >> /Users/XXX/Library/Python/2.7/lib/python/site-packages/homebrew.pth
 brew install sip
 brew install homebrew/dupes/make
 brew install gdal
+brew install homebrew/science/hdf5
+brew install homebrew/science/netcdf
 ```
 
 [crp]: http://www.lutraconsulting.co.uk/resources/crayfish
