@@ -1,8 +1,8 @@
+from __future__ import print_function
 import os
 import platform
 import sys
 import argparse
-from __future__ import print_function
 
 this_dir = os.path.dirname(os.path.realpath(__file__))
 base_dir = os.path.join(this_dir, os.pardir)
@@ -37,5 +37,5 @@ if args.dst:
     src = os.path.join(base_dir, libzip)
     dst = os.path.join(args.dst, plat, libzip)
     cmd = 'scp ' + src + " " + dst
-    print(cmd) 
+    print(cmd)
     os.system(cmd)
