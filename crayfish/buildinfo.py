@@ -14,6 +14,8 @@ def findPlatformVersion():
     if platformVersion == 'Linux':
         if (platform.linux_distribution()[0] == 'Ubuntu') and (float(platform.linux_distribution()[1]) >= 15.10):
             platformVersion = 'xenial'
+        elif (platform.linux_distribution()[0] == 'Fedora'):
+            platformVersion = 'fedora'
 
     if platform.architecture()[0] == '64bit':
         platformVersion += '64'

@@ -6,7 +6,7 @@ Crayfish (QGIS plugin)
 The Crayfish Plugin is a visualiser for temporal structured/unstructured grids in QGIS.
 
 You can use Crayfish to load the following file formats in QGIS:
- 
+
 
 - [NetCDF](https://en.wikipedia.org/wiki/NetCDF): Generic format for scientific data. Examples can be found [here](http://apps.ecmwf.int/datasets/data/interim-full-daily/levtype=sfc/)
 - [GRIB](https://en.wikipedia.org/wiki/GRIB): Format commonly used in meteorology. Examples can be found [here](http://apps.ecmwf.int/datasets/data/interim-full-daily/levtype=sfc/)
@@ -23,7 +23,9 @@ You can use Crayfish to load the following file formats in QGIS:
 
 For instructions of how to install and use Crayfish, please refer to the [Crayfish resources page][crp] on our website.
 
-### Installing Crayfish on Linux
+### Installing
+
+#### Installing Crayfish on Linux
 
 For installing Crayfish on Linux you need:
 
@@ -63,7 +65,7 @@ export QT_SELECT=qt4
 Now restart QGIS and you are able to use crayfish plugin on your Linux Computer.
 
 
-### Installing Crayfish on Windows
+#### Installing Crayfish on Windows
 
 For 32-bit version:
 
@@ -77,6 +79,13 @@ For 64-bit version:
 * Install OSGeo4W (64bit) to C:\OSGeo4W64
 * Run scripts\crayfish64.bat to build the crayfish DLL
 
+#### Installing Crayfish on Max-OS
+
+```
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+brew install qt
+brew linkapps qt
+```
 
 [crp]: http://www.lutraconsulting.co.uk/resources/crayfish
 
