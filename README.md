@@ -45,6 +45,7 @@ For Red Hat/Cent OS/Fedora, the following command will install the required pack
 
 ```bash
 sudo dnf install gcc-c++ make qt-devel gdal-libs hdf5-devel netcdf-devel proj-devel git
+sudo dnf install python sip-devel gdal-devel pyqt4
 ```
 
 If all these packages are installed you can clone the crayfish plugin using the command:
