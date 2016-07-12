@@ -36,6 +36,6 @@ if not os.path.exists(src):
 
 if args.dst:
     dst = args.dst + "/" + plat + "/" + libzip
-    cmd = 'scp ' + src + " " + dst
+    cmd = "rsync -v -e ssh " + src + " " + dst
     print(cmd)
     os.system(cmd)
