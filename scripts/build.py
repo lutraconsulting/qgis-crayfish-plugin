@@ -35,14 +35,25 @@ src = os.path.join(base_dir, libzip)
 if not os.path.exists(src):
     raise Exception("lib zip file not created!")
 
-if args.dst and args.host:
+if args.dst:
     dst_dir = args.dst + "/" + plat
-    dst = args.host + ":" + dst_dir + "/" + libzip
 
-    cmd = "ssh " + args.host + " 'mkdir -p " + dst_dir + "'"
+    dst = ""
+    if args.host:
+        dst += args.host + ":"
+    dst += dst_dir + "/" + libzip
+
+    # CREATE DIR
+    cmd = "mkdir -p " + dst_dir
+    if args.host:
+        cmd = "ssh " + args.host + " '" + cmd +"'"
     print(cmd)
     os.system(cmd)
 
-    cmd = "rsync -v -e ssh " + src + " " + dst
-    print(cmd) 
+    # COPY
+    cmd = "rsync -v "
+    if args.host:
+        cmd += "-e ssh "
+    cmd += src + " " + dst
+    print(cmd)
     os.system(cmd)
