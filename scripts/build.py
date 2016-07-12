@@ -37,5 +37,5 @@ if args.dst:
     src = os.path.join(base_dir, libzip)
     dst = os.path.join(args.dst, plat, libzip)
     cmd = 'scp ' + src + " " + dst
-    print(cmd) 
+    print(cmd)
     os.system(cmd)
