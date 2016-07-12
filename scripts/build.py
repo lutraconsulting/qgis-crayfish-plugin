@@ -15,6 +15,7 @@ from install import make_and_install
 parser = argparse.ArgumentParser(description="Build and Install Crayfish")
 parser.add_argument('--pkg', help="Package?", action='store_true', default=False)
 parser.add_argument('--dst', help="Destination folder", default=None)
+parser.add_argument('--host', help="user@host", default=None)
 args = parser.parse_args()
 
 ver = plugin_version_str()
@@ -34,8 +35,14 @@ src = os.path.join(base_dir, libzip)
 if not os.path.exists(src):
     raise Exception("lib zip file not created!")
 
-if args.dst:
-    dst = args.dst + "/" + plat + "/" + libzip
+if args.dst and args.host:
+    dst_dir = args.dst + "/" + plat
+    dst = args.host + ":" + dst_dir + "/" + libzip
+
+    cmd = "ssh " + args.host + " 'mkdir -p " + dst_dir + "'"
+    print(cmd)
+    os.system(cmd)
+
     cmd = "rsync -v -e ssh " + src + " " + dst
     print(cmd)
     os.system(cmd)
