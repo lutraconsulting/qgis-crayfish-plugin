@@ -85,7 +85,7 @@ For 64-bit version:
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 brew install qt
 brew linkapps qt
-```
+``` 
 
 [crp]: http://www.lutraconsulting.co.uk/resources/crayfish
 
