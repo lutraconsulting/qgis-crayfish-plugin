@@ -43,13 +43,16 @@ def make_and_install(extra_install_args):
     if platform.system() == "Windows":
         run_cmd('qmake -spec win32-msvc2010 "CONFIG+=release"')
         run_cmd('nmake')
-    else:
+    elif platform.system() == "Linux":
         try:
             run_cmd('qmake')
         except Exception:
             # Handle the Fedora case (suffixed -qt4).
             run_cmd('qmake-qt4')
 
+        run_cmd('make')
+    else: #OSX
+        run_cmd('qmake -spec macx-g++ "CONFIG+=release"')
         run_cmd('make')
 
     run_cmd('python install.py' + extra_install_args, err_msg="install of core library failed!")
