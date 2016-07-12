@@ -44,5 +44,5 @@ if args.dst and args.host:
     os.system(cmd)
 
     cmd = "rsync -v -e ssh " + src + " " + dst
-    print(cmd)
+    print(cmd) 
     os.system(cmd)
