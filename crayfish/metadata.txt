@@ -12,10 +12,10 @@ about=The Crayfish plugin aspires to be a time explorer for various grid and vec
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=2.3 - New Features & Bug Fixes:
- - Export to area/line contours
- - Support from Flo-2d result files (BASE.OUT)
+changelog=2.3 - New Features:
+ - Support for Flo-2d result files (BASE.OUT)
  - Support for .grb2 GRIB result files
+ - Export to area/line contours
  - Integration of Crayfish tools into the processing toolbox
  - Various bug fixes
  <p>2.2 - New Features:
