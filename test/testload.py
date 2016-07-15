@@ -163,6 +163,16 @@ class TestCrayfishLoad(unittest.TestCase):
     self.assertEqual(o.time(), 5.973333358764648) # forecast 7 days/6hours
     self.assertEqual(o.value(1600), 9.666419982910156)
 
+  def test_load_grib2_data_file(self):
+    m = crayfish.Mesh(TEST_DIR + "/multi_1.ep_10m.hs.201505.grb2")
+    self.assertEqual(m.dataset_count(), 1)
+    ds = m.dataset(0)
+    self.assertEqual(ds.type(), crayfish.DS_Scalar)
+    self.assertEqual(ds.output_count(), 249)
+    o = ds.output(100)
+    self.assertEqual(o.time(), 300.0177917480469)
+    self.assertEqual(o.value(3100), -9999.0)
+
   def test_load_netCFD_data_file(self):
     m = crayfish.Mesh("NETCDF:\"" + TEST_DIR + "/indonesia.nc\":tcc")
     self.assertEqual(m.dataset_count(), 1)
@@ -198,6 +208,19 @@ class TestCrayfishLoad(unittest.TestCase):
     o = ds.output(0)
     self.assertEqual(o.time(), 0.5)
     self.assertEqual(o.value(1), 1.0)
+
+  def test_load_flo2d_file(self):
+    m = crayfish.Mesh(TEST_DIR + "/flo2dpro/BASE.OUT")
+    self.assertEqual(m.dataset_count(), 7)
+
+    self.assertEqual(m.dataset(0).type(), crayfish.DS_Bed)
+    self.assertEqual(m.dataset(1).type(), crayfish.DS_Scalar)
+
+    ds = m.dataset(1)
+    self.assertEqual(ds.output_count(), 4)
+    o = ds.output(2)
+    self.assertEqual(o.time(), 150.0)
+    self.assertEqual(o.value(20), 0.0989999994635582)
 
   def test_load_hec2d_file_2areas(self):
     m = crayfish.Mesh(TEST_DIR + "/baldeagle_multi2d.hdf")
