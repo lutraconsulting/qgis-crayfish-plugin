@@ -206,8 +206,9 @@ static QVector<float> parseFPLAINFile(const QString& datFileName, Mesh::Elements
 static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh, const QVector<float>& elevations) {\
     //TIMDEP.OUT
     // time (separate line)
-    // For every node: node number (indexed from 1), depth, velocity, velocity x, velocity y
-
+    // For every node:
+    // FLO2D: node number (indexed from 1), depth, velocity, velocity x, velocity y
+    // FLO2DPro: node number (indexed from 1), depth, velocity, velocity x, velocity y, water surface elevation
     QFileInfo fi(datFileName);
     QFile inFile(fi.dir().filePath("TIMDEP.OUT"));
     if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text)) throw LoadStatus::Err_FileNotFound;
@@ -263,7 +264,7 @@ static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh, const QVecto
 
             node_inx = 0;
 
-        } else if (lineParts.size() == 5) {
+        } else if ((lineParts.size() == 5) || (lineParts.size() == 6)) {
             // new node for time
             if (!depthOutput || !flowOutput || !waterLevelOutput) throw LoadStatus::Err_UnknownFormat;
             if (node_inx == nnodes) throw LoadStatus::Err_IncompatibleMesh;
