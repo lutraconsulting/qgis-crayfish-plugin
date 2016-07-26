@@ -204,14 +204,15 @@ static QVector<float> parseFPLAINFile(const QString& datFileName, Mesh::Elements
 }
 
 static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh, const QVector<float>& elevations) {\
-    //TIMDEP.OUT
+    // TIMDEP.OUT
+    // this file is optional, so if not present, reading is skipped
     // time (separate line)
     // For every node:
     // FLO2D: node number (indexed from 1), depth, velocity, velocity x, velocity y
     // FLO2DPro: node number (indexed from 1), depth, velocity, velocity x, velocity y, water surface elevation
     QFileInfo fi(datFileName);
     QFile inFile(fi.dir().filePath("TIMDEP.OUT"));
-    if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text)) throw LoadStatus::Err_FileNotFound;
+    if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
     QTextStream in(&inFile);
 
     int nnodes = mesh->nodes().size();
@@ -305,10 +306,11 @@ static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh, const QVecto
 
 
 static void parseDEPTHFile(const QString&datFileName, Mesh* mesh, const QVector<float>& elevations) {
+    // this file is optional, so if not present, reading is skipped
     QFileInfo fi(datFileName);
     QString nodesFileName(fi.dir().filePath("DEPTH.OUT"));
     QFile nodesFile(nodesFileName);
-    if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) throw LoadStatus::Err_FileNotFound;
+    if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
     QTextStream nodesStream(&nodesFile);
 
     int nnodes = mesh->nodes().size();
@@ -345,6 +347,7 @@ static void parseDEPTHFile(const QString&datFileName, Mesh* mesh, const QVector<
 
 
 static void parseVELFPVELOCFile(const QString&datFileName, Mesh* mesh) {
+    // these files are optional, so if not present, reading is skipped
     int nnodes = mesh->nodes().size();
     QFileInfo fi(datFileName);
     QVector<float> maxVel(nnodes);
@@ -352,7 +355,7 @@ static void parseVELFPVELOCFile(const QString&datFileName, Mesh* mesh) {
     {
         QString nodesFileName(fi.dir().filePath("VELFP.OUT"));
         QFile nodesFile(nodesFileName);
-        if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) throw LoadStatus::Err_FileNotFound;
+        if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
         QTextStream nodesStream(&nodesFile);
         int node_inx = 0;
 
@@ -377,7 +380,7 @@ static void parseVELFPVELOCFile(const QString&datFileName, Mesh* mesh) {
     {
         QString nodesFileName(fi.dir().filePath("VELOC.OUT"));
         QFile nodesFile(nodesFileName);
-        if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) throw LoadStatus::Err_FileNotFound;
+        if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
         QTextStream nodesStream(&nodesFile);
         int node_inx = 0;
 
