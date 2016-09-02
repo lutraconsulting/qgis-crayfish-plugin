@@ -40,7 +40,7 @@ from ..buildinfo import findPlatformVersion, crayfish_zipfile
 downloadBaseUrl = 'http://www.lutraconsulting.co.uk/'
 #downloadBaseUrl = 'http://localhost:8000/'  # for testing
 
-destFolder = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+destFolder = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir))
 
 def ensure_library_installed(parent_widget=None):
 
@@ -102,11 +102,6 @@ def ensure_library_installed(parent_widget=None):
           "your own library or how to contact us for assistance.\n\n"
           "(Error: %s)" % str(err))
         return False
-
-    # check whether we need to download GDAL library extra (on older QGIS installs
-    # there is older version than the one required by the compiled binary)
-    if platformVersion == 'Windows':
-        downloadExtraLibs(parent_widget)
 
     success_msg = "Download and installation successful."
     restart_msg = "QGIS needs to be restarted in order to complete " + \
@@ -201,41 +196,12 @@ def extractBinPackageAfterRestart():
     z.close()
     os.unlink(updateLibraryIndicator)
     return True
-
-
-def downloadExtraLibs(parent_widget=None):
-    try:
-        from ctypes import windll
-        x = windll.gdal111
-        return True
-    except WindowsError:
-        pass # ok we need to download the libs
-
-    try:
-        QMessageBox.information(parent_widget,
-          'Download Extra Libraries',
-          "It is necessary to download newer GDAL library - this may take some "
-          "time (~10MB), please wait.")
-        qApp.setOverrideCursor(QCursor(Qt.WaitCursor))
-        gdalFilename = os.path.join(os.path.dirname(__file__), 'gdal111.dll')
-        gdalUrl = downloadBaseUrl+'resources/crayfish/viewer/binaries/Windows/extra/gdal111.dll'
-        downloadBinPackage(gdalUrl, gdalFilename)
-        qApp.restoreOverrideCursor()
-        return True
-    except IOError, err:
-        qApp.restoreOverrideCursor()
-        QMessageBox.critical(parent_widget,
-          'Could Not Download Extra Libraries',
-          "Download of the library failed. Please try again or contact us for "
-          "further assistance.\n\n(Error: %s)" % str(err))
-        return False
-
-
+    
 def downloadFfmpeg(parent_widget=None):
 
     ffmpegZip = 'ffmpeg-20150505-git-6ef3426-win32-static.zip'
     ffmpegZipPath = os.path.join(destFolder, ffmpegZip)
-    ffmpegUrl = downloadBaseUrl+'resources/crayfish/viewer/binaries/Windows/extra/'+ffmpegZip
+    ffmpegUrl = downloadBaseUrl+'resources/crayfish/viewer/binaries/'+findPlatformVersion()+'/extra/'+ffmpegZip
 
     qApp.setOverrideCursor(QCursor(Qt.WaitCursor))
     try:

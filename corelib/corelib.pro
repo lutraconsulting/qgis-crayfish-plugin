@@ -40,7 +40,7 @@ win32 {
   # (e.g. due to older QGIS installation), the loading of Crayfish library will not fail,
   # only export to grid will not be available
   LIBS += DelayImp.lib
-  QMAKE_LFLAGS += /DELAYLOAD:gdal111.dll
+  QMAKE_LFLAGS += /DELAYLOAD:gdal200.dll
 }
 
 unix:!macx {
