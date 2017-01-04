@@ -211,7 +211,7 @@ static int parseXdmfXml(const QString& datFileName, std::vector<snapshot> &snaps
 			}
 			std::string path = snapshotNod->GetText();
 			path.erase(path.begin(), find_if_not(path.begin(), path.end(), [](int c){return isspace(c); }));
-			path.erase(find_if_not(path.rbegin(), path.rend(), [](int c){return isspace(c); }).base(), path.end());
+			path.erase(std::find_if_not(path.rbegin(), path.rend(), [](int c){return isspace(c); }).base(), path.end());
 			snap.paths.push_back(dirName + path);
 		}
 		snaps.push_back(snap);
