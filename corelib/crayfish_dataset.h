@@ -44,7 +44,7 @@ class ElementOutput;
 class DataSet
 {
 public:
-    DataSet(const QString& fileName);
+	DataSet(const QString& fileName);
     ~DataSet();
 
     static QString sanitizeName(const QString& name);
@@ -80,7 +80,7 @@ public:
     NodeOutput* nodeOutput(int outputTime);
     ElementOutput* elemOutput(int outputTime);
 
-    void updateZRange();
+    void updateZRange(int iOutput=-1);
 
     float minZValue() const { return mZMin; }
     float maxZValue() const { return mZMax; }
@@ -88,6 +88,7 @@ public:
     void setIsTimeVarying(bool varying) { mTimeVarying = varying; }
     bool isTimeVarying() const { return mTimeVarying; }
 
+	int index; //! index in the mesh Datasets array
 
 protected:
 

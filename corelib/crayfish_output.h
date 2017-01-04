@@ -32,6 +32,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <math.h>
 #include <limits>
 
+#include "crayfish_mesh.h"
+
 class DataSet;
 
 //! Base class for results for one particular quantity in one timestep
@@ -41,6 +43,8 @@ public:
   Output()
     : dataSet(0)
     , time(-1)
+	, size(0)
+	, index(-1)
   {
   }
 
@@ -71,7 +75,12 @@ public:
 
   const DataSet* dataSet;  //!< dataset to which this data belong
   float time;               //!< time since beginning of simulation (in hours)
+
+  size_t size;
+  int index; //! index in the dataset Outputs array
+
 };
+
 
 
 //! Results stored in nodes of the mesh
@@ -83,6 +92,7 @@ public:
 
   virtual void getRange(float& zMin, float& zMax) const
   {
+    if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index);
     zMin = std::numeric_limits<float>::max();
     zMax = std::numeric_limits<float>::min();
     const float* v = values.constData();
@@ -99,18 +109,32 @@ public:
     }
   }
 
-  virtual bool isActive(int elemIndex) const { return active[elemIndex]; }
+  virtual bool isActive(int elemIndex) const { if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index); return active[elemIndex]; }
 
   void init(int nodeCount, int elemCount, bool isVector)
   {
     active.resize(elemCount);
+	active.squeeze();
     values.resize(nodeCount);
+	values.squeeze();
+	size = elemCount*sizeof(char) + nodeCount*sizeof(float);
     if (isVector)
     {
       valuesV.resize(nodeCount);
+	  size += nodeCount*sizeof(float2D);
+	  valuesV.squeeze();
     }
   }
 
+  inline const QVector<float> &getValues() const { if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index); return values; }
+  inline const QVector<char> &getActive() const { if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index); return active; }
+  inline const QVector<float2D> &getValuesV() const { if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index); return valuesV; }
+
+  inline QVector<float> &getValues() { return values; }
+  inline QVector<char> &getActive() { return active; }
+  inline QVector<float2D> &getValuesV() { return valuesV; }
+
+private:
   QVector<char> active;     //!< array determining which elements are active and therefore if they should be rendered (size = element count)
   QVector<float> values;    //!< array of values per node (size = node count)
   QVector<float2D> valuesV; //!< in case of dataset with vector data - array of X,Y coords - otherwise empty
@@ -127,6 +151,7 @@ public:
 
   virtual void getRange(float& zMin, float& zMax) const
   {
+	if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index);
     zMin = std::numeric_limits<float>::max();
     zMax = std::numeric_limits<float>::min();
     const float* v = values.constData();
@@ -149,12 +174,25 @@ public:
   void init(int elemCount, bool isVector)
   {
     values.resize(elemCount);
-    if (isVector)
-      valuesV.resize(elemCount);
+	values.squeeze();
+	size = elemCount*sizeof(float);
+	if (isVector){
+		valuesV.resize(elemCount);
+		valuesV.squeeze();
+		size += elemCount*sizeof(float2D);
+	}
+
   }
 
-  virtual bool isActive(int elemIndex) const { return values[elemIndex] != -9999.0; }
+  virtual bool isActive(int elemIndex) const { if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index); return values[elemIndex] != -9999.0; }
 
+  inline const QVector<float> &getValues() const { if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index); return values; }
+  inline const QVector<float2D> &getValuesV() const { if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index); return valuesV; }
+
+  inline QVector<float> &getValues() { return values; }
+  inline QVector<float2D> &getValuesV() { return valuesV; }
+
+private:
   QVector<float> values;    //!< array of values per element (size = element count)
   QVector<float2D> valuesV; //!< in case of dataset with vector data - array of X,Y coords - otherwise empty
 };

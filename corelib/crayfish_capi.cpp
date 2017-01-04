@@ -217,9 +217,9 @@ float CF_O_time(OutputH o)
 float CF_O_valueAt(OutputH o, int index)
 {
   if (o->type() == Output::TypeNode)
-    return static_cast<const NodeOutput*>(o)->values[index];
+    return static_cast<const NodeOutput*>(o)->getValues()[index];
   else if (o->type() == Output::TypeElement)
-    return static_cast<const ElementOutput*>(o)->values[index];
+    return static_cast<const ElementOutput*>(o)->getValues()[index];
   else
     return 0;
 }
@@ -229,14 +229,14 @@ void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y)
   if (o->type() == Output::TypeNode)
   {
     const NodeOutput* nodeO = static_cast<const NodeOutput*>(o);
-    *x = nodeO->valuesV[index].x;
-    *y = nodeO->valuesV[index].y;
+    *x = nodeO->getValuesV()[index].x;
+    *y = nodeO->getValuesV()[index].y;
   }
   else
   {
     const ElementOutput* elO = static_cast<const ElementOutput*>(o);
-    *x = elO->valuesV[index].x;
-    *y = elO->valuesV[index].y;
+    *x = elO->getValuesV()[index].x;
+    *y = elO->getValuesV()[index].y;
   }
 }
 

@@ -41,7 +41,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define DEG2RAD   (3.14159265358979323846 / 180)
 #define RAD2DEG   (180 / 3.14159265358979323846)
 
-
+void outputUpdater::checkMem(const Output *addedOutput)
+{
+	size += addedOutput->size;
+	allocatedOutputs.push(addedOutput);
+	while (size > maxSize){
+		const Output *toRemove = allocatedOutputs.front();
+		size -= toRemove->size;
+		if (toRemove->type() == toRemove->TypeNode)
+			const_cast<NodeOutput*>(static_cast<const NodeOutput*> (toRemove))->init(0, 0, true);
+		else
+			const_cast<ElementOutput*>(static_cast<const ElementOutput*> (toRemove))->init(0, true);
+		allocatedOutputs.pop();
+	}
+}
 
 BasicMesh::BasicMesh(const Mesh::Nodes& nodes, const Mesh::Elements& elements)
   : mNodes(nodes)
@@ -86,6 +99,7 @@ Mesh::Mesh(const BasicMesh::Nodes& nodes, const BasicMesh::Elements& elements)
 
   mE4Qnorm = new E4QNormalization(mExtent);
   computeTempRendererData();
+  updater = NULL;
 }
 
 
@@ -110,6 +124,8 @@ Mesh::~Mesh()
 
   delete[] mProjBBoxes;
   mProjBBoxes = 0;
+
+  if (updater) delete updater;
 }
 
 DataSet* Mesh::dataSet(const QString& name)
@@ -224,13 +240,13 @@ bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const O
   if (output->type() == Output::TypeNode)
   {
     const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
-    ScalarValueAccessor accessor(nodeOutput->values.constData());
+    ScalarValueAccessor accessor(nodeOutput->getValues().constData());
     return interpolate(elementIndex, x, y, value, nodeOutput, &accessor);
   }
   else
   {
     const ElementOutput* elemOutput = static_cast<const ElementOutput*>(output);
-    ScalarValueAccessor accessor(elemOutput->values.constData());
+    ScalarValueAccessor accessor(elemOutput->getValues().constData());
     return interpolateElementCentered(elementIndex, x, y, value, elemOutput, &accessor);
   }
 }
@@ -432,8 +448,8 @@ bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, 
   if (output->type() == Output::TypeNode)
   {
     const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
-    VectorValueAccessorX accessorX(nodeOutput->valuesV.constData());
-    VectorValueAccessorY accessorY(nodeOutput->valuesV.constData());
+    VectorValueAccessorX accessorX(nodeOutput->getValuesV().constData());
+    VectorValueAccessorY accessorY(nodeOutput->getValuesV().constData());
     bool resX = interpolate(elementIndex, x, y, valueX, nodeOutput, &accessorX);
     bool resY = interpolate(elementIndex, x, y, valueY, nodeOutput, &accessorY);
     return resX && resY;
@@ -441,8 +457,8 @@ bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, 
   else
   {
     const ElementOutput* elemOutput = static_cast<const ElementOutput*>(output);
-    VectorValueAccessorX accessorX(elemOutput->valuesV.constData());
-    VectorValueAccessorY accessorY(elemOutput->valuesV.constData());
+    VectorValueAccessorX accessorX(elemOutput->getValuesV().constData());
+    VectorValueAccessorY accessorY(elemOutput->getValuesV().constData());
     bool resX = interpolateElementCentered(elementIndex, x, y, valueX, elemOutput, &accessorX);
     bool resY = interpolateElementCentered(elementIndex, x, y, valueY, elemOutput, &accessorY);
     return resX && resY;

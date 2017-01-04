@@ -241,7 +241,7 @@ class CrayfishPlugin:
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(),
                                                  'Open Crayfish Dat File',
                                                  self.lastFolder(),
-                                                 "Results Files DAT, SOL, XMDF, GRIB, HEC2D, netCDF, Serafin, HEC 2D, Flo-2D (*.dat *.sol *.xmdf *.sww *.grb *.grb2 *.bin *.grib *.grib1 *.grib2 *.hdf *.nc *.hdf *.slf *BASE.OUT);;2DM Mesh Files (*.2dm)")
+                                                 "Results Files DAT, SOL, XMDF, XDMF, GRIB, HEC2D, netCDF, Serafin, HEC 2D, Flo-2D (*.dat *.sol *.xmdf *.xmf *.sww *.grb *.grb2 *.bin *.grib *.grib1 *.grib2 *.hdf *.nc *.hdf *.slf *BASE.OUT);;2DM Mesh Files (*.2dm)")
         inFileName = unicode(inFileName)
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel
             return
@@ -271,7 +271,8 @@ class CrayfishPlugin:
 
         elif (fileType == '.dat' or
               fileType == '.sol' or
-              fileType == '.xmdf'):
+              fileType == '.xmdf' or
+	      fileType == ".xmf"):
             """
                 The user has selected a results-only file...
             """
@@ -314,9 +315,12 @@ class CrayfishPlugin:
           return currCrayfishLayer
 
         # if no crayfish layer is selected, try to guess the mesh file name
-        if inFileName.lower().endswith(".xmdf"):
+        if (inFileName.lower().endswith(".xmdf")):
           # for XMDF assume the same filename, just different extension for mesh
           first = inFileName[:-5]
+        elif (inFileName.lower().endswith(".xmf")):
+          # for XDMF assume the same filename, just different extension for mesh
+          first = inFileName[:-4]
         else:
           # for DAT assume for abc_def.dat the mesh is abc.2dm
           # maybe we need more rules for guessing 2dm for different solvers

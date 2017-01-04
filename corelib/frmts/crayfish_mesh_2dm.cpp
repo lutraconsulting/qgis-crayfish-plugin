@@ -90,7 +90,7 @@ Mesh* Crayfish::loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
   NodeOutput* o = new NodeOutput;
   o->init(nodeCount, elemCount, false);
   o->time = 0.0;
-  memset(o->active.data(), 1, elemCount); // All cells active
+  memset(o->getActive().data(), 1, elemCount); // All cells active
 
   in.seek(0);
   QStringList chunks = QStringList();
@@ -197,7 +197,7 @@ Mesh* Crayfish::loadMesh2DM( const QString& twoDMFileName, LoadStatus* status )
       n.setId(nodeID);
       n.x = chunks[2].toDouble();
       n.y = chunks[3].toDouble();
-      o->values[nodeIndex] = chunks[4].toFloat();
+      o->getValues()[nodeIndex] = chunks[4].toFloat();
 
       nodeIndex++;
     }

@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 DataSet::DataSet(const QString& fileName)
   : mMesh(0)
   , mFileName(fileName)
+  , index(-1)
 {
 }
 
@@ -121,14 +122,15 @@ ElementOutput* DataSet::elemOutput(int outputTime)
   return 0;
 }
 
-void DataSet::updateZRange()
+void DataSet::updateZRange(int iOutput)
 {
   mZMin = std::numeric_limits<float>::max();
   mZMax = std::numeric_limits<float>::min();
-  for(int i = 0; i < outputCount(); i++)
+  for(int i = qMax(iOutput, 0); i < ((iOutput < 0) ? outputCount() : (iOutput+1)); i++)
   {
     float outputZMin, outputZMax;
-    constOutput(i)->getRange(outputZMin, outputZMax);
+    if (constOutput(i)->size > 0)
+		constOutput(i)->getRange(outputZMin, outputZMax);
     mZMin = qMin(outputZMin, mZMin);
     mZMax = qMax(outputZMax, mZMax);
   }
