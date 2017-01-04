@@ -300,7 +300,7 @@ static int readXdmfOutput(ElementOutput *o, int iT, int iF, outputUpdaterXdmf *u
 	}
 	for (int iP = 1; iP < pathSplit.size() - 1; iP++){
 		if (!groupNames.contains(QString::fromStdString(pathSplit[iP]))){
-			qDebug("Datagroup not found : %s", pathSplit[iP]);
+			qDebug("Datagroup not found : %s", pathSplit[iP].c_str());
 			return -1;
 		}
 		dataGroup = dataGroup.group(QString::fromStdString(pathSplit[iP]));
