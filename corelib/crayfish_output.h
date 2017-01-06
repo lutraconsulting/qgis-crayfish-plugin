@@ -65,6 +65,10 @@ public:
     return true;
   }
 
+  inline void updateIfNeeded() const {
+    if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index);
+  }
+
   typedef struct {
     float x,y;
     float length() const {
@@ -92,7 +96,7 @@ public:
   }
 
   virtual void getRange(float& zMin, float& zMax) const {
-    if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index);
+    updateIfNeeded();
     zMin = std::numeric_limits<float>::max();
     zMax = std::numeric_limits<float>::min();
     const float* v = values.constData();
@@ -108,7 +112,7 @@ public:
   }
 
   virtual bool isActive(int elemIndex) const {
-    if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index);
+    updateIfNeeded();
     return active[elemIndex];
   }
 
@@ -126,15 +130,15 @@ public:
   }
 
   inline const QVector<float> &getValues() const {
-    if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index);
+    updateIfNeeded();
     return values;
   }
   inline const QVector<char> &getActive() const {
-    if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index);
+    updateIfNeeded();
     return active;
   }
   inline const QVector<float2D> &getValuesV() const {
-    if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index);
+    updateIfNeeded();
     return valuesV;
   }
 
@@ -165,7 +169,7 @@ public:
   }
 
   virtual void getRange(float& zMin, float& zMax) const {
-    if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index);
+    updateIfNeeded();
     zMin = std::numeric_limits<float>::max();
     zMax = std::numeric_limits<float>::min();
     const float* v = values.constData();
@@ -196,16 +200,16 @@ public:
   }
 
   virtual bool isActive(int elemIndex) const {
-    if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index);
+    updateIfNeeded();
     return values[elemIndex] != -9999.0;
   }
 
   inline const QVector<float> &getValues() const {
-    if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index);
+    updateIfNeeded();
     return values;
   }
   inline const QVector<float2D> &getValuesV() const {
-    if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index);
+    updateIfNeeded();
     return valuesV;
   }
 
