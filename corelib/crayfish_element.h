@@ -30,38 +30,36 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QPointF>
 #include <QVector>
 
-class Element
-{
+class Element {
 public:
-    enum Type
-    {
-      Undefined,
-      ENP,
-      E4Q,
-      E3T,
-      E2L
-    };
+  enum Type {
+    Undefined,
+    ENP,
+    E4Q,
+    E3T,
+    E2L
+  };
 
-    Element();
-    ~Element();
+  Element();
+  ~Element();
 
-    int nodeCount() const;
-    bool isDummy() const;
-    Type eType() const;
-    uint p(int idx) const;
-    int id() const;
+  int nodeCount() const;
+  bool isDummy() const;
+  Type eType() const;
+  uint p(int idx) const;
+  int id() const;
 
-    void setEType(Type eType);
-    void setEType(Type eType, int node_count);
-    void setP(int idx, uint val);
-    void setP(uint* vals);
-    void setId(int id);
+  void setEType(Type eType);
+  void setEType(Type eType, int node_count);
+  void setP(int idx, uint val);
+  void setP(uint* vals);
+  void setId(int id);
 
 
 private:
-    int mId;        //!< just a reference to the ID in the input file (internally we use indices)
-    Type mEType;
-    QVector<uint> mP; //!< indices of nodes
+  int mId;        //!< just a reference to the ID in the input file (internally we use indices)
+  Type mEType;
+  QVector<uint> mP; //!< indices of nodes
 };
 
 

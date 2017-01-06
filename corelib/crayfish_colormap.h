@@ -35,12 +35,9 @@ class QSize;
 
 
 /** keep information about how data should be rendered */
-struct ColorMap
-{
-  struct Item
-  {
-    Item(double v = 0, QRgb c = 0, QString l = QString()): value(v), color(c), label(l)
-    {
+struct ColorMap {
+  struct Item {
+    Item(double v = 0, QRgb c = 0, QString l = QString()): value(v), color(c), label(l) {
       if (label.isNull())
         label = QString::number(v, 'f', 3);
     }
@@ -59,11 +56,22 @@ struct ColorMap
 
   ColorMap() : method(Linear), alpha(255), clipLow(false), clipHigh(false) {}
 
-  void clearItems() { items.clear(); }
-  void addItem(const Item& item) { items.append(item); }
-  void removeItem(int index) { items.remove(index); }
-  void moveItem(int indexOld, int indexNew) { items.insert(indexNew, items.value(indexOld)); items.remove(indexNew > indexOld ? indexOld : indexOld+1); }
-  Item& item(int index) { return items[index]; }
+  void clearItems() {
+    items.clear();
+  }
+  void addItem(const Item& item) {
+    items.append(item);
+  }
+  void removeItem(int index) {
+    items.remove(index);
+  }
+  void moveItem(int indexOld, int indexNew) {
+    items.insert(indexNew, items.value(indexOld));
+    items.remove(indexNew > indexOld ? indexOld : indexOld+1);
+  }
+  Item& item(int index) {
+    return items[index];
+  }
 
   void dump() const;
 

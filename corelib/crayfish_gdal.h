@@ -42,29 +42,44 @@ class NodeOutput;
 
 /******************************************************************************************************/
 
-class RawData
-{
+class RawData {
 public:
-  RawData(int c, int r, QVector<double> g): mCols(c), mRows(r), mData(new float[r*c]), mGeo(g)
-  {
+  RawData(int c, int r, QVector<double> g): mCols(c), mRows(r), mData(new float[r*c]), mGeo(g) {
     int size = r*c;
     for (int i = 0; i < size; ++i)
       mData[i] = -999.0f; // nodata value
   }
-  ~RawData() { delete [] mData; }
+  ~RawData() {
+    delete [] mData;
+  }
 
-  int size() const { return mRows*mCols; }
-  int cols() const { return mCols; }
-  int rows() const { return mRows; }
-  QVector<double> geoTransform() const { return mGeo; }
-  float* data() const { return mData; }
-  float* scanLine(int row) const { Q_ASSERT(row >= 0 && row < mRows); return mData+row*mCols; }
-  float dataAt(int index) const { return mData[index]; }
+  int size() const {
+    return mRows*mCols;
+  }
+  int cols() const {
+    return mCols;
+  }
+  int rows() const {
+    return mRows;
+  }
+  QVector<double> geoTransform() const {
+    return mGeo;
+  }
+  float* data() const {
+    return mData;
+  }
+  float* scanLine(int row) const {
+    Q_ASSERT(row >= 0 && row < mRows);
+    return mData+row*mCols;
+  }
+  float dataAt(int index) const {
+    return mData[index];
+  }
   QVector<float> mask() const {
-      QVector<float> dataMask(size(), 0.0f);
-      for (int i=0; i<size(); i++)
-          if (dataAt(i) != -999.0f) dataMask[i] = 1.0f;
-      return dataMask;
+    QVector<float> dataMask(size(), 0.0f);
+    for (int i=0; i<size(); i++)
+      if (dataAt(i) != -999.0f) dataMask[i] = 1.0f;
+    return dataMask;
   }
 
 private:
@@ -76,8 +91,7 @@ private:
   Q_DISABLE_COPY(RawData)
 };
 
-class CrayfishGDAL
-{
+class CrayfishGDAL {
 public:
   static bool writeGeoTIFF(const QString& outFilename, RawData* rd, const QString& wkt);
   static bool writeContoursSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, bool useLines, ColorMap* cm);
@@ -85,57 +99,56 @@ public:
 
 /******************************************************************************************************/
 
-class CrayfishGDALReader
-{
+class CrayfishGDALReader {
 public:
-    CrayfishGDALReader(const QString& fileName, const QString& driverName):
-        mFileName(fileName),
-        mDriverName(driverName),
-        mHDataset(0),
-        mPafScanline(0),
-        mMesh(0){}
+  CrayfishGDALReader(const QString& fileName, const QString& driverName):
+    mFileName(fileName),
+    mDriverName(driverName),
+    mHDataset(0),
+    mPafScanline(0),
+    mMesh(0) {}
 
-    virtual ~CrayfishGDALReader(){}
-    Mesh* load(LoadStatus* status);
+  virtual ~CrayfishGDALReader() {}
+  Mesh* load(LoadStatus* status);
 
 protected:
-    typedef QHash<QString, QString> metadata_hash; // KEY, VALUE
+  typedef QHash<QString, QString> metadata_hash; // KEY, VALUE
 
-    /* return true on failure */
-    virtual bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) = 0;
-    virtual void determineBandVectorInfo(QString& band_name, bool* is_vector, bool* is_x) = 0;
-    virtual float parseMetadataTime(const QString& time_s);
+  /* return true on failure */
+  virtual bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) = 0;
+  virtual void determineBandVectorInfo(QString& band_name, bool* is_vector, bool* is_x) = 0;
+  virtual float parseMetadataTime(const QString& time_s);
 
 private:
-    typedef QMap<float, QVector<GDALRasterBandH> > timestep_map; //TIME (sorted), [X, Y]
-    typedef QHash<QString, timestep_map > data_hash; //Data Type, TIME (sorted), [X, Y]
+  typedef QMap<float, QVector<GDALRasterBandH> > timestep_map; //TIME (sorted), [X, Y]
+  typedef QHash<QString, timestep_map > data_hash; //Data Type, TIME (sorted), [X, Y]
 
-    void openFile();
-    void initElements(Mesh::Nodes& nodes, Mesh::Elements& elements, bool is_longitude_shifted);
-    bool initNodes(Mesh::Nodes& nodes); //returns is_longitude_shifted
-    void parseParameters();
-    metadata_hash parseMetadata(GDALRasterBandH gdalBand);
-    void populateScaleForVector(NodeOutput* tos);
-    void addDataToOutput(GDALRasterBandH raster_band, NodeOutput* tos, bool is_vector, bool is_x);
-    bool addSrcProj();
-    void activateElements(NodeOutput* tos);
-    void addDatasets();
-    void createMesh();
-    void parseRasterBands();
+  void openFile();
+  void initElements(Mesh::Nodes& nodes, Mesh::Elements& elements, bool is_longitude_shifted);
+  bool initNodes(Mesh::Nodes& nodes); //returns is_longitude_shifted
+  void parseParameters();
+  metadata_hash parseMetadata(GDALRasterBandH gdalBand);
+  void populateScaleForVector(NodeOutput* tos);
+  void addDataToOutput(GDALRasterBandH raster_band, NodeOutput* tos, bool is_vector, bool is_x);
+  bool addSrcProj();
+  void activateElements(NodeOutput* tos);
+  void addDatasets();
+  void createMesh();
+  void parseRasterBands();
 
-    const QString mFileName;
-    const QString mDriverName; /* GDAL driver name */
-    GDALDatasetH mHDataset;
-    float *mPafScanline; /* temporary buffer for reading one raster line */
-    Mesh* mMesh;
-    data_hash mBands; /* raster bands GDAL handlers ordered by layer name and time */
+  const QString mFileName;
+  const QString mDriverName; /* GDAL driver name */
+  GDALDatasetH mHDataset;
+  float *mPafScanline; /* temporary buffer for reading one raster line */
+  Mesh* mMesh;
+  data_hash mBands; /* raster bands GDAL handlers ordered by layer name and time */
 
-    uint mNBands; /* number of bands */
-    uint mXSize; /* number of x pixels */
-    uint mYSize; /* number of y pixels */
-    uint mNPoints; /* nodes count */
-    uint mNVolumes; /* elements count */
-    double mGT[6]; /* affine transform matrix */
+  uint mNBands; /* number of bands */
+  uint mXSize; /* number of x pixels */
+  uint mYSize; /* number of y pixels */
+  uint mNPoints; /* nodes count */
+  uint mNVolumes; /* elements count */
+  double mGT[6]; /* affine transform matrix */
 };
 
 #endif // CRAYFISH_GDAL_H

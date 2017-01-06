@@ -34,24 +34,21 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QPolygonF>
 
 // TODO: use also directly for viewer rendering
-class MapToPixel
-{
+class MapToPixel {
 public:
   MapToPixel(double llX, double llY, double mupp, int rows)
     : mLlX(llX), mLlY(llY), mMupp(mupp), mRows(rows) {}
 
-  QPointF realToPixel(double rx, double ry) const
-  {
+  QPointF realToPixel(double rx, double ry) const {
     double px = (rx - mLlX) / mMupp;
     double py = mRows - (ry - mLlY) / mMupp;
     return QPointF(px, py);
   }
 
-  QPointF pixelToReal(double px, double py) const
-  {
-      double rx = mLlX + (px * mMupp);
-      double ry = mLlY + mMupp * (mRows - py);
-      return QPointF(rx,ry);
+  QPointF pixelToReal(double px, double py) const {
+    double rx = mLlX + (px * mMupp);
+    double ry = mLlY + mMupp * (mRows - py);
+    return QPointF(rx,ry);
   }
 
 private:
@@ -66,19 +63,17 @@ struct BBox;
 struct E4Qtmp;
 
 
-class Renderer
-{
+class Renderer {
 public:
 
-  struct ConfigMesh
-  {
+  struct ConfigMesh {
     ConfigMesh():
-        mRenderMesh(false),
-        mMeshBorderColor(Qt::black),
-        mMeshBorderWidth(1),
-        mMeshFillColor(Qt::transparent),
-        mMeshFillEnabled(false),
-        mMeshElemLabel(false) {}
+      mRenderMesh(false),
+      mMeshBorderColor(Qt::black),
+      mMeshBorderWidth(1),
+      mMeshFillColor(Qt::transparent),
+      mMeshFillEnabled(false),
+      mMeshElemLabel(false) {}
 
     bool mRenderMesh;   //!< whether to render the mesh as a wireframe/fill
     QColor mMeshBorderColor;  //!< color used for rendering of the wireframe
@@ -88,8 +83,7 @@ public:
     bool mMeshElemLabel;  //!< whether to render the element ids in a mesh element's center
   };
 
-  struct ConfigDataSet
-  {
+  struct ConfigDataSet {
     ConfigDataSet()
       : mShaftLengthMethod(MinMax)
       , mMinShaftLength(3)
@@ -103,11 +97,10 @@ public:
       , mVectorUserGridCellSize(10, 10)
       , mVectorFilterMin(-1)
       , mVectorFilterMax(-1)
-      , mVectorColor(Qt::black)
-    {}
+      , mVectorColor(Qt::black) {
+    }
 
-    enum VectorLengthMethod
-    {
+    enum VectorLengthMethod {
       MinMax,  //!< minimal and maximal length
       Scaled,  //!< length is scaled proportionally to the magnitude
       Fixed    //!< length is fixed to a certain value
@@ -133,8 +126,7 @@ public:
   };
 
   //! Master configuration for rendering
-  struct Config
-  {
+  struct Config {
     Config()
       : outputMesh(0)
       , outputContour(0)

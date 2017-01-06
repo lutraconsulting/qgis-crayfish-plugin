@@ -44,46 +44,53 @@ class NodeOutput;
 
 //Callback class to update an output
 class outputUpdater {
-	size_t size;
-	size_t maxSize;
-	std::queue<const Output*> allocatedOutputs;
+  size_t size;
+  size_t maxSize;
+  std::queue<const Output*> allocatedOutputs;
 protected:
-	void checkMem(const Output *addedOutput);
+  void checkMem(const Output *addedOutput);
 public:
-	outputUpdater(){
-		size = 0;
-		maxSize = 2UL * 1024UL * 1024UL * 1024UL; //Todo should be a parameter.
-	}
-	virtual int update(const Output *o, int iDataset, int iOutput) = 0;
+  outputUpdater() {
+    size = 0;
+    maxSize = 2UL * 1024UL * 1024UL * 1024UL; //Todo should be a parameter.
+  }
+  virtual int update(const Output *o, int iDataset, int iOutput) = 0;
 };
 
 
-struct Node
-{
-    double x;
-    double y;
+struct Node {
+  double x;
+  double y;
 
-    bool operator==(const Node& other) const { return x == other.x && y == other.y; }
-    QPointF toPointF() const { return QPointF(x,y); }
-    void setId(int id) {mId = id;}
-    int id() const {return mId;}
+  bool operator==(const Node& other) const {
+    return x == other.x && y == other.y;
+  }
+  QPointF toPointF() const {
+    return QPointF(x,y);
+  }
+  void setId(int id) {
+    mId = id;
+  }
+  int id() const {
+    return mId;
+  }
 private:
-    int mId;    //!< just a reference to the ID in the input file (internally we use indices)
+  int mId;    //!< just a reference to the ID in the input file (internally we use indices)
 };
 
-struct BBox
-{
+struct BBox {
   double minX;
   double maxX;
   double minY;
   double maxY;
 
-  bool isPointInside(double x, double y) const { return x >= minX && x <= maxX && y >= minY && y <= maxY; }
+  bool isPointInside(double x, double y) const {
+    return x >= minX && x <= maxX && y >= minY && y <= maxY;
+  }
 };
 
 /** core Mesh data structure: nodes + elements */
-class BasicMesh
-{
+class BasicMesh {
 public:
   typedef QVector<Node> Nodes;
   typedef QVector<Element> Elements;
@@ -92,8 +99,12 @@ public:
   BasicMesh(const Nodes& nodes, const Elements& elements);
   ~BasicMesh();
 
-  const Nodes& nodes() const { return mNodes; }
-  const Elements& elements() const { return mElems; }
+  const Nodes& nodes() const {
+    return mNodes;
+  }
+  const Elements& elements() const {
+    return mElems;
+  }
 
   int elementCountForType(Element::Type type);
 
@@ -108,18 +119,21 @@ protected:
 struct ValueAccessor;
 
 /** Adds data + functionality for reprojection, identification, support for rendering */
-class Mesh : public BasicMesh
-{
+class Mesh : public BasicMesh {
 public:
   Mesh(const Nodes& nodes, const Elements& elements);
   ~Mesh();
 
   void addDataSet(DataSet* ds);
 
-  const DataSets& dataSets() const { return mDataSets; }
+  const DataSets& dataSets() const {
+    return mDataSets;
+  }
   DataSet* dataSet(const QString& name);
 
-  BBox extent() const { return mExtent; }
+  BBox extent() const {
+    return mExtent;
+  }
 
   double valueAt(const Output* output, double xCoord, double yCoord) const;
   bool valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const;
@@ -131,13 +145,25 @@ public:
 
   void setDestinationCrs(const QString& destProj4);
   bool hasProjection() const;
-  QString sourceCrs() const { return mSrcProj4; }
-  QString destinationCrs() const { return mDestProj4; }
+  QString sourceCrs() const {
+    return mSrcProj4;
+  }
+  QString destinationCrs() const {
+    return mDestProj4;
+  }
 
-  BBox projectedExtent() const { return mProjection ? mProjExtent : mExtent; }
-  const Node* projectedNodes() const { return mProjection ? mProjNodes : mNodes.constData(); }
-  const Node& projectedNode(int nodeIndex) const { return mProjection ? mProjNodes[nodeIndex] : mNodes[nodeIndex]; }
-  const BBox& projectedBBox(int elemIndex) const { return mProjection ? mProjBBoxes[elemIndex] : mBBoxes[elemIndex]; }
+  BBox projectedExtent() const {
+    return mProjection ? mProjExtent : mExtent;
+  }
+  const Node* projectedNodes() const {
+    return mProjection ? mProjNodes : mNodes.constData();
+  }
+  const Node& projectedNode(int nodeIndex) const {
+    return mProjection ? mProjNodes[nodeIndex] : mNodes[nodeIndex];
+  }
+  const BBox& projectedBBox(int elemIndex) const {
+    return mProjection ? mProjBBoxes[elemIndex] : mBBoxes[elemIndex];
+  }
 
   //! calculate centroid of given element (takes reprojection into account)
   void elementCentroid(int elemIndex, double& cx, double& cy) const;
