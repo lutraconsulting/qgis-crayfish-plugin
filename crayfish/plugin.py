@@ -75,7 +75,7 @@ class CrayfishPlugin:
         self.menu.addAction(self.uploadAction)
 
         if not ensure_library_installed():
-          return
+            return
 
         self.crayfishLibFound = True
 
@@ -122,7 +122,7 @@ class CrayfishPlugin:
 
         # Create the dock widget
         self.dock = CrayfishDock(self.iface)
-        self.iface.addDockWidget( Qt.LeftDockWidgetArea, self.dock )
+        self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dock)
         self.dock.hide()   # do not show the dock by default
         QObject.connect(self.dock, SIGNAL("visibilityChanged(bool)"), self.dockVisibilityChanged)
         custom_actions = [self.actionExportGrid, self.actionExportContours, self.uploadAction, self.actionExportAnimation]
@@ -133,8 +133,8 @@ class CrayfishPlugin:
         # Register data items provider (if possible - since 2.10)
         self.dataItemsProvider = None
         if 'QgsDataItemProvider' in globals():
-          self.dataItemsProvider = CrayfishDataItemProvider()
-          QgsDataItemProviderRegistry.instance().addProvider(self.dataItemsProvider)
+            self.dataItemsProvider = CrayfishDataItemProvider()
+            QgsDataItemProviderRegistry.instance().addProvider(self.dataItemsProvider)
 
         # Processing toolbox
         try:
@@ -195,8 +195,8 @@ class CrayfishPlugin:
 
         # Unregister data item provider
         if self.dataItemsProvider is not None:
-          QgsDataItemProviderRegistry.instance().removeProvider(self.dataItemsProvider)
-          self.dataItemsProvider = None
+            QgsDataItemProviderRegistry.instance().removeProvider(self.dataItemsProvider)
+            self.dataItemsProvider = None
 
         # Make connections
         QObject.disconnect(self.lr, SIGNAL("layersWillBeRemoved(QStringList)"), self.layersRemoved)
@@ -221,10 +221,9 @@ class CrayfishPlugin:
             return settings.value("crayfishViewer/lastFolder")
 
     def setLastFolder(self, path):
-        if path <> os.sep and path.lower() <> 'c:\\' and path <> '':
+        if path != os.sep and path.lower() != 'c:\\' and path != '':
             settings = QSettings()
             settings.setValue("crayfishViewer/lastFolder", path)
-
 
     def addCrayfishLayer(self):
         """
@@ -259,7 +258,7 @@ class CrayfishPlugin:
             fileType == '.nc' or
             fileType == '.hdf' or
             fileType == '.slf' or
-            'BASE.OUT' in inFileName):
+                'BASE.OUT' in inFileName):
             """
                 The user has selected a mesh file...
             """
@@ -272,7 +271,7 @@ class CrayfishPlugin:
         elif (fileType == '.dat' or
               fileType == '.sol' or
               fileType == '.xmdf' or
-	      fileType == ".xmf"):
+              fileType == ".xmf"):
             """
                 The user has selected a results-only file...
             """
@@ -312,19 +311,19 @@ class CrayfishPlugin:
         # if there is a selected Crayfish layer, use the mesh
         currCrayfishLayer = self.dock.currentCrayfishLayer()
         if currCrayfishLayer:
-          return currCrayfishLayer
+            return currCrayfishLayer
 
         # if no crayfish layer is selected, try to guess the mesh file name
         if (inFileName.lower().endswith(".xmdf")):
-          # for XMDF assume the same filename, just different extension for mesh
-          first = inFileName[:-5]
+            # for XMDF assume the same filename, just different extension for mesh
+            first = inFileName[:-5]
         elif (inFileName.lower().endswith(".xmf")):
-          # for XDMF assume the same filename, just different extension for mesh
-          first = inFileName[:-4]
+            # for XDMF assume the same filename, just different extension for mesh
+            first = inFileName[:-4]
         else:
-          # for DAT assume for abc_def.dat the mesh is abc.2dm
-          # maybe we need more rules for guessing 2dm for different solvers
-          first, sep, last = inFileName.rpartition('_')
+            # for DAT assume for abc_def.dat the mesh is abc.2dm
+            # maybe we need more rules for guessing 2dm for different solvers
+            first, sep, last = inFileName.rpartition('_')
         meshFileName = first + '.2dm'
 
         parentLayer = self.getLayerWith2DM(meshFileName)
@@ -338,14 +337,14 @@ class CrayfishPlugin:
 
             # compatibility for QGIS 1.x
             if not hasattr(self.iface, "messageBar"):
-                res = QMessageBox.question(None, "Crayfish", "The mesh file does not exist:\n"+meshFileName+"\nWould you like to locate it manually?", QMessageBox.Yes|QMessageBox.No)
+                res = QMessageBox.question(None, "Crayfish", "The mesh file does not exist:\n" + meshFileName + "\nWould you like to locate it manually?", QMessageBox.Yes | QMessageBox.No)
                 if res != QMessageBox.Yes:
                     return
                 self.locateMeshForFailedDatFile(inFileName)
                 return
 
             # QGIS >= 2.0
-            self.lastFailedWidget = self.iface.messageBar().createMessage("Crayfish", "The mesh file does not exist ("+meshFileName+")")
+            self.lastFailedWidget = self.iface.messageBar().createMessage("Crayfish", "The mesh file does not exist (" + meshFileName + ")")
             self.lastFailedWidget._inFileName = inFileName
             button = QPushButton("Locate", self.lastFailedWidget)
             button.pressed.connect(self.locateMeshForFailedDatFile)
@@ -357,9 +356,8 @@ class CrayfishPlugin:
             return    # errors/warnings reported in addLayer()
 
         parentLayer = self.getLayerWith2DM(meshFileName)
-        assert( parentLayer is not None)
+        assert(parentLayer is not None)
         return parentLayer
-
 
     def loadDatFile(self, inFileName, parentLayer=None):
         """
@@ -383,21 +381,21 @@ class CrayfishPlugin:
         # try to load it as binary file, if not successful, try as ASCII format
         try:
             QApplication.setOverrideCursor(Qt.WaitCursor)
-            parentLayer.mesh.load_data( inFileName )
+            parentLayer.mesh.load_data(inFileName)
             QApplication.restoreOverrideCursor()
         except ValueError:
             QApplication.restoreOverrideCursor()
             err = last_load_status()[0]
             # reuse from showMeshLoadError
             err_msgs = {
-              Err.NotEnoughMemory : 'Not enough memory',
-              Err.FileNotFound : 'Unable to read the file - missing file or no read access',
-              Err.UnknownFormat : 'File format not recognized',
-              Err.IncompatibleMesh : 'Mesh is not compatible'
+                Err.NotEnoughMemory: 'Not enough memory',
+              Err.FileNotFound: 'Unable to read the file - missing file or no read access',
+              Err.UnknownFormat: 'File format not recognized',
+              Err.IncompatibleMesh: 'Mesh is not compatible'
             }
             msg = "Failed to load the data file"
             if err in err_msgs:
-              msg += " (%s)" % err_msgs[err]
+                msg += " (%s)" % err_msgs[err]
             qgis_message_bar.pushMessage("Crayfish", msg, level=QgsMessageBar.CRITICAL)
             return
 
@@ -412,8 +410,6 @@ class CrayfishPlugin:
         self.dock.currentLayerChanged()
         # allow user to go through the time steps with arrow keys
         self.dock.cboTime.setFocus()
-
-
 
     def locateMeshForFailedDatFile(self, datFileName=None):
         """ the user wants to specify the mesh file """
@@ -438,17 +434,14 @@ class CrayfishPlugin:
         # mesh file is ready, now load the .dat file
         self.loadDatFile(datFileName, layerWith2dm)
 
-
     def about(self):
         d = CrayfishAboutDialog(self.iface)
         d.show()
         res = d.exec_()
 
-
     def upload(self):
         d = upload_dialog.UploadDialog(self.iface, self.dock.currentCrayfishLayer())
         d.exec_()
-
 
     def getCrayfishLayers(self):
         crayfishLayers = []
@@ -457,7 +450,6 @@ class CrayfishPlugin:
             if l.type() == QgsMapLayer.PluginLayer and str(l.pluginLayerType()) == 'crayfish_viewer':
                 crayfishLayers.append(l)
         return crayfishLayers
-
 
     def have2DM(self, fileName):
         layers = self.getCrayfishLayers()
@@ -485,9 +477,9 @@ class CrayfishPlugin:
         warn = last_load_status()[1]
         if warn == Warn.UnsupportedElement:
                 # Unsupported element seen
-                qgis_message_bar.pushMessage("Crayfish", "The mesh contains elements that are unsupported at this time. The following types of elements will be ignored for the time being: E2L, E3L, E6T, E8Q, E9Q", level=QgsMessageBar.WARNING)
+            qgis_message_bar.pushMessage("Crayfish", "The mesh contains elements that are unsupported at this time. The following types of elements will be ignored for the time being: E2L, E3L, E6T, E8Q, E9Q", level=QgsMessageBar.WARNING)
         elif warn == Warn.InvalidElements:
-                qgis_message_bar.pushMessage("Crayfish", "The mesh contains some invalid elements, they will not be rendered.", level=QgsMessageBar.WARNING)
+            qgis_message_bar.pushMessage("Crayfish", "The mesh contains some invalid elements, they will not be rendered.", level=QgsMessageBar.WARNING)
 
         return layer
 
@@ -506,7 +498,6 @@ class CrayfishPlugin:
         # make sure the dock is visible and up-to-date
         self.dock.show()
 
-
     def dockVisibilityChanged(self, visible):
         if visible and len(self.getCrayfishLayers()) == 0:
             # force hidden on startup
@@ -515,12 +506,12 @@ class CrayfishPlugin:
     def crs_wkt(self, layer):
         mc = self.iface.mapCanvas()
         if mc.hasCrsTransformEnabled():
-          if hasattr(mc, "mapSettings"):
-            crsWkt = mc.mapSettings().destinationCrs().toWkt()
-          else:
-            crsWkt = mc.mapRenderer().destinationCrs().toWkt()
+            if hasattr(mc, "mapSettings"):
+                crsWkt = mc.mapSettings().destinationCrs().toWkt()
+            else:
+                crsWkt = mc.mapRenderer().destinationCrs().toWkt()
         else:
-          crsWkt = layer.crs().toWkt()  # no OTF reprojection
+            crsWkt = layer.crs().toWkt()  # no OTF reprojection
         return crsWkt
 
     def exportContours(self):
@@ -554,7 +545,7 @@ class CrayfishPlugin:
 
         except OSError: # delayed loading of GDAL failed (windows only)
             QMessageBox.critical(None, "Crayfish", "Export failed due to incompatible "
-              "GDAL library - try to upgrade your QGIS installation to a newer version.")
+                                 "GDAL library - try to upgrade your QGIS installation to a newer version.")
             return
         if not res:
             QMessageBox.critical(None, "Crayfish", "Failed to export contours to shapefile")
@@ -564,7 +555,7 @@ class CrayfishPlugin:
             name = os.path.splitext(os.path.basename(filenameSHP))[0]
             canvas_layer = self.iface.addVectorLayer(filenameSHP, name, "ogr")
             if dlgConfig.useLines():
-               style_with_black_lines(canvas_layer)
+                style_with_black_lines(canvas_layer)
             else:
                 if dlgConfig.useFixedLevels():
                     classified_style_from_colormap(canvas_layer, layer.colorMap())
@@ -596,7 +587,7 @@ class CrayfishPlugin:
             res = layer.currentOutput().export_grid(dlgConfig.resolution(), filenameTIF, crsWkt)
         except OSError: # delayed loading of GDAL failed (windows only)
             QMessageBox.critical(None, "Crayfish", "Export failed due to incompatible "
-              "GDAL library - try to upgrade your QGIS installation to a newer version.")
+                                 "GDAL library - try to upgrade your QGIS installation to a newer version.")
             return
         if not res:
             QMessageBox.critical(None, "Crayfish", "Failed to export to raster grid")

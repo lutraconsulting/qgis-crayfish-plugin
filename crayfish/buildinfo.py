@@ -2,11 +2,13 @@ import ConfigParser
 import os
 import platform
 
+
 def plugin_version_str():
     """ Return version of Python plugin from metadata as a string """
     cfg = ConfigParser.ConfigParser()
     cfg.read(os.path.join(os.path.dirname(__file__), 'metadata.txt'))
     return cfg.get('general', 'version')
+
 
 def findPlatformVersion():
     platformVersion = platform.system()
@@ -21,8 +23,10 @@ def findPlatformVersion():
         platformVersion += '64'
     return platformVersion
 
+
 def crayfish_zipfile():
     return 'crayfish-lib-%s.zip' % plugin_version_str()
+
 
 def crayfish_libname():
     if platform.system() == "Windows":

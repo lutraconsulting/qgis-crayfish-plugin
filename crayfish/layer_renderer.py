@@ -33,6 +33,7 @@ from .core import Renderer, RendererConfig
 
 
 class CrayfishPluginLayerRenderer(QgsMapLayerRenderer):
+
     def __init__(self, layer, rendererContext):
 
         QgsMapLayerRenderer.__init__(self, layer.id())
@@ -52,11 +53,11 @@ class CrayfishPluginLayerRenderer(QgsMapLayerRenderer):
         ct = self.rendererContext.coordinateTransform()
         extent = self.rendererContext.extent()  # this is extent in layer's coordinate system - but we need
         if ct:
-          # TODO: need a proper way how to get visible extent without using map canvas from interface
-          if iface.mapCanvas().isDrawing():
-            extent = iface.mapCanvas().extent()
-          else:
-            extent = ct.transformBoundingBox(extent)  # TODO: this is just approximate :-(
+            # TODO: need a proper way how to get visible extent without using map canvas from interface
+            if iface.mapCanvas().isDrawing():
+                extent = iface.mapCanvas().extent()
+            else:
+                extent = ct.transformBoundingBox(extent)  # TODO: this is just approximate :-(
         topleft = mapToPixel.transform(extent.xMinimum(), extent.yMaximum())
         bottomright = mapToPixel.transform(extent.xMaximum(), extent.yMinimum())
 
@@ -71,22 +72,22 @@ class CrayfishPluginLayerRenderer(QgsMapLayerRenderer):
 
         dsC = layer.currentContourDataSet()
         if dsC:
-          rconfig.set_output_contour(layer.currentContourOutput())
-          for k,v in dsC.config.iteritems():
-            if k.startswith("c_"):
-              rconfig[k] = v
+            rconfig.set_output_contour(layer.currentContourOutput())
+            for k, v in dsC.config.iteritems():
+                if k.startswith("c_"):
+                    rconfig[k] = v
 
         dsV = layer.currentVectorDataSet()
         if dsV:
-          rconfig.set_output_vector(layer.currentVectorOutput())
-          for k,v in dsV.config.iteritems():
-            if k.startswith("v_"):
-              rconfig[k] = v
+            rconfig.set_output_vector(layer.currentVectorOutput())
+            for k, v in dsV.config.iteritems():
+                if k.startswith("v_"):
+                    rconfig[k] = v
 
-        for k,v in layer.config.iteritems():
-          rconfig[k] = v
+        for k, v in layer.config.iteritems():
+            rconfig[k] = v
 
-        rconfig.set_view((int(self.width),int(self.height)), (self.extent.xMinimum(), self.extent.yMinimum()), self.pixelSize)
+        rconfig.set_view((int(self.width), int(self.height)), (self.extent.xMinimum(), self.extent.yMinimum()), self.pixelSize)
         self.rconfig = rconfig
 
     def _set_destination_crs(self, layer):
@@ -96,14 +97,14 @@ class CrayfishPluginLayerRenderer(QgsMapLayerRenderer):
         layer.mesh.set_destination_crs(ct.destCRS().toProj4() if ct else None)
 
     def _print_debug_info(self):
-            print '\n'
-            print 'About to render with the following parameters:'
-            print '\tExtent:\t%f,%f - %f,%f' % (self.extent.xMinimum(), self.extent.yMinimum(), self.extent.xMaximum(), self.extent.yMaximum())
-            print '\tWidth:\t' + str(self.width)
-            print '\tHeight:\t' + str(self.height)
-            print '\tXMin:\t' + str(self.extent.xMinimum())
-            print '\tYMin:\t' + str(self.extent.yMinimum())
-            print '\tPixSz:\t' + str(self.pixelSize)
+        print '\n'
+        print 'About to render with the following parameters:'
+        print '\tExtent:\t%f,%f - %f,%f' % (self.extent.xMinimum(), self.extent.yMinimum(), self.extent.xMaximum(), self.extent.yMaximum())
+        print '\tWidth:\t' + str(self.width)
+        print '\tHeight:\t' + str(self.height)
+        print '\tXMin:\t' + str(self.extent.xMinimum())
+        print '\tYMin:\t' + str(self.extent.yMinimum())
+        print '\tPixSz:\t' + str(self.pixelSize)
 
     def render(self):
         # This is done in separate rendering thread
@@ -120,7 +121,7 @@ class CrayfishPluginLayerRenderer(QgsMapLayerRenderer):
 
         painter = self.rendererContext.painter()
         rasterScaleFactor = self.rendererContext.rasterScaleFactor()
-        invRasterScaleFactor = 1.0/rasterScaleFactor
+        invRasterScaleFactor = 1.0 / rasterScaleFactor
         painter.save()
         painter.scale(invRasterScaleFactor, invRasterScaleFactor)
         painter.drawImage(0, 0, img)

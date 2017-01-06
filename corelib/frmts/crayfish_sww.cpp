@@ -38,16 +38,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define DEPTH_THRESHOLD   0.0001   // in meters
 
 
-Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
-{
+Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status) {
   if (status) status->clear();
 
   int ncid;
   int res;
 
   res = nc_open(fileName.toUtf8().constData(), NC_NOWRITE, &ncid);
-  if (res != NC_NOERR)
-  {
+  if (res != NC_NOERR) {
     qDebug("error: %s", nc_strerror(res));
     nc_close(ncid);
     if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
@@ -60,8 +58,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
   if (nc_inq_dimid(ncid, "number_of_volumes", &nVolumesId) != NC_NOERR ||
       nc_inq_dimid(ncid, "number_of_vertices", &nVerticesId) != NC_NOERR ||
       nc_inq_dimid(ncid, "number_of_points", &nPointsId) != NC_NOERR ||
-      nc_inq_dimid(ncid, "number_of_timesteps", &nTimestepsId) != NC_NOERR)
-  {
+      nc_inq_dimid(ncid, "number_of_timesteps", &nTimestepsId) != NC_NOERR) {
     nc_close(ncid);
     if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
     return 0;
@@ -69,15 +66,13 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
   if (nc_inq_dimlen(ncid, nVolumesId, &nVolumes) != NC_NOERR ||
       nc_inq_dimlen(ncid, nVerticesId, &nVertices) != NC_NOERR ||
       nc_inq_dimlen(ncid, nPointsId, &nPoints) != NC_NOERR ||
-      nc_inq_dimlen(ncid, nTimestepsId, &nTimesteps) != NC_NOERR)
-  {
+      nc_inq_dimlen(ncid, nTimestepsId, &nTimesteps) != NC_NOERR) {
     nc_close(ncid);
     if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
     return 0;
   }
 
-  if (nVertices != 3)
-  {
+  if (nVertices != 3) {
     qDebug("Expecting triangular elements!");
     nc_close(ncid);
     if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
@@ -89,8 +84,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
       nc_inq_varid(ncid, "y", &yid) != NC_NOERR ||
       nc_inq_varid(ncid, "volumes", &volumesid) != NC_NOERR ||
       nc_inq_varid(ncid, "time", &timeid) != NC_NOERR ||
-      nc_inq_varid(ncid, "stage", &stageid) != NC_NOERR)
-  {
+      nc_inq_varid(ncid, "stage", &stageid) != NC_NOERR) {
     nc_close(ncid);
     if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
     return 0;
@@ -101,8 +95,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
   unsigned int* pvolumes = new unsigned int[nVertices * nVolumes];
   if (nc_get_var_float (ncid, xid, px.data()) != NC_NOERR ||
       nc_get_var_float (ncid, yid, py.data()) != NC_NOERR ||
-      nc_get_var_int (ncid, volumesid, (int *) pvolumes) != NC_NOERR)
-  {
+      nc_get_var_int (ncid, volumesid, (int *) pvolumes) != NC_NOERR) {
     delete [] pvolumes;
 
     nc_close(ncid);
@@ -117,8 +110,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
 
   Mesh::Nodes nodes(nPoints);
   Node* nodesPtr = nodes.data();
-  for (size_t i = 0; i < nPoints; ++i, ++nodesPtr)
-  {
+  for (size_t i = 0; i < nPoints; ++i, ++nodesPtr) {
     nodesPtr->setId(i);
     nodesPtr->x = px[i] + xLLcorner;
     nodesPtr->y = py[i] + yLLcorner;
@@ -129,20 +121,15 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
 
   int zDims = 0;
   if ( nc_inq_varid(ncid, "z", &zid) == NC_NOERR &&
-       nc_get_var_float (ncid, zid, pz.data()) == NC_NOERR )
-  {
+       nc_get_var_float (ncid, zid, pz.data()) == NC_NOERR ) {
     // older SWW format: elevation is constant over time
 
     zDims = 1;
-  }
-  else if ( nc_inq_varid(ncid, "elevation", &zid) == NC_NOERR &&
-            nc_inq_varndims(ncid, zid, &zDims) == NC_NOERR &&
-            ((zDims == 1 && nc_get_var_float (ncid, zid, pz.data()) == NC_NOERR) || zDims == 2) )
-  {
+  } else if ( nc_inq_varid(ncid, "elevation", &zid) == NC_NOERR &&
+              nc_inq_varndims(ncid, zid, &zDims) == NC_NOERR &&
+              ((zDims == 1 && nc_get_var_float (ncid, zid, pz.data()) == NC_NOERR) || zDims == 2) ) {
     // we're good
-  }
-  else
-  {
+  } else {
     // neither "z" nor "elevation" are present -> something is going wrong
 
     delete [] pvolumes;
@@ -154,8 +141,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
 
   // read bed elevations
   QList<NodeOutput*> elevationOutputs;
-  if (zDims == 1)
-  {
+  if (zDims == 1) {
     // either "z" or "elevation" with 1 dimension
     NodeOutput* o = new NodeOutput;
     o->init(nPoints, nVolumes, false);
@@ -164,12 +150,9 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
     for (size_t i = 0; i < nPoints; ++i)
       o->getValues()[i] = pz[i];
     elevationOutputs << o;
-  }
-  else if (zDims == 2)
-  {
+  } else if (zDims == 2) {
     // newer SWW format: elevation may change over time
-    for (size_t t = 0; t < nTimesteps; ++t)
-    {
+    for (size_t t = 0; t < nTimesteps; ++t) {
       NodeOutput* toe = new NodeOutput;
       toe->init(nPoints, nVolumes, false);
       toe->time = times[t] / 3600.;
@@ -192,8 +175,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
   Mesh::Elements elements(nVolumes);
   Element* elementsPtr = elements.data();
 
-  for (size_t i = 0; i < nVolumes; ++i, ++elementsPtr)
-  {
+  for (size_t i = 0; i < nVolumes; ++i, ++elementsPtr) {
     elementsPtr->setId(i);
     elementsPtr->setEType(Element::E3T);
     elementsPtr->setP(&pvolumes[3*i]);
@@ -207,16 +189,13 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
   DataSet* bedDs = new DataSet(fileName);
   bedDs->setType(DataSet::Bed);
   bedDs->setName("Bed Elevation");
-  if (elevationOutputs.count() == 1)
-  {
+  if (elevationOutputs.count() == 1) {
     bedDs->setIsTimeVarying(false);
     bedDs->addOutput(elevationOutputs.at(0));  // takes ownership of the Output
-  }
-  else
-  {
+  } else {
     bedDs->setIsTimeVarying(true);
     foreach (NodeOutput* o, elevationOutputs)
-      bedDs->addOutput(o);
+    bedDs->addOutput(o);
   }
   bedDs->updateZRange();
   mesh->addDataSet(bedDs);
@@ -233,8 +212,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
   dsd->setName("Depth");
   dsd->setIsTimeVarying(true);
 
-  for (size_t t = 0; t < nTimesteps; ++t)
-  {
+  for (size_t t = 0; t < nTimesteps; ++t) {
     const NodeOutput* elevO = bedDs->isTimeVarying() ? bedDs->nodeOutput(t) : bedDs->nodeOutput(0);
     const float* elev = elevO->getValues().constData();
 
@@ -261,8 +239,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
       depths[j] = values[j] - elev[j];
 
     // determine which elements are active (wet)
-    for (size_t elemidx = 0; elemidx < nVolumes; ++elemidx)
-    {
+    for (size_t elemidx = 0; elemidx < nVolumes; ++elemidx) {
       const Element& elem = mesh->elements()[elemidx];
       float v0 = depths[elem.p(0)];
       float v1 = depths[elem.p(1)];
@@ -282,16 +259,14 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
 
   int momentumxid, momentumyid;
   if (nc_inq_varid(ncid, "xmomentum", &momentumxid) == NC_NOERR &&
-      nc_inq_varid(ncid, "ymomentum", &momentumyid) == NC_NOERR)
-  {
+      nc_inq_varid(ncid, "ymomentum", &momentumyid) == NC_NOERR) {
     DataSet* mds = new DataSet(fileName);
     mds->setType(DataSet::Vector);
     mds->setName("Momentum");
     mds->setIsTimeVarying(true);
 
     QVector<float> valuesX(nPoints), valuesY(nPoints);
-    for (size_t t = 0; t < nTimesteps; ++t)
-    {
+    for (size_t t = 0; t < nTimesteps; ++t) {
       NodeOutput* mto = new NodeOutput;
       mto->init(nPoints, nVolumes, true);
       mto->time = times[t] / 3600.;
@@ -309,8 +284,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
 
       NodeOutput::float2D* mtoValuesV = mto->getValuesV().data();
       float* mtoValues = mto->getValues().data();
-      for (size_t i = 0; i < nPoints; ++i)
-      {
+      for (size_t i = 0; i < nPoints; ++i) {
         mtoValuesV[i].x = valuesX[i];
         mtoValuesV[i].y = valuesY[i];
         mtoValues[i] = mtoValuesV[i].length();

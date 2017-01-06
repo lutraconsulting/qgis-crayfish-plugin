@@ -37,10 +37,12 @@ from qgis.core import (
 
 from PyQt4.QtGui import QColor
 
+
 def style_with_black_lines(layer):
     symbols = layer.rendererV2().symbols()
     symbol = symbols[0]
     symbol.setColor(QColor(0, 0, 0))
+
 
 def classified_style_from_colormap(layer, cm):
     def gen_cl(color, val, label):
@@ -50,7 +52,7 @@ def classified_style_from_colormap(layer, cm):
         return cat
 
     def closest_val(lst, val):
-        return min(lst, key=lambda x:abs(x-val))
+        return min(lst, key=lambda x: abs(x - val))
 
     assert(cm and layer)
     idx = layer.pendingFields().indexFromName("CVAL")
@@ -62,7 +64,7 @@ def classified_style_from_colormap(layer, cm):
     cl = []
     for i in range(1, cm.item_count()): # skip first one
         item = cm.item(i)
-        prev_item = cm.item(i-1)
+        prev_item = cm.item(i - 1)
         label = prev_item.label + " - " + item.label
         val = closest_val(vals, prev_item.value)
         cl.append(gen_cl(item.color, val, label))
@@ -70,14 +72,15 @@ def classified_style_from_colormap(layer, cm):
     renderer = QgsCategorizedSymbolRendererV2("CVAL", cl)
     layer.setRendererV2(renderer)
 
+
 def classified_style_from_interval(layer, cm):
     def ramp_value(first_cm, last_cm, prev_item):
         if prev_item < first_cm.value:
-           ramp_val = 0
+            ramp_val = 0
         elif prev_item > last_cm.value:
-           ramp_val = 1
+            ramp_val = 1
         else:
-           ramp_val = (prev_item - first_cm.value) / (last_cm.value - first_cm.value)
+            ramp_val = (prev_item - first_cm.value) / (last_cm.value - first_cm.value)
         return ramp_val
 
     def gen_cl(ramp, val, ramp_val, label):
@@ -92,7 +95,6 @@ def classified_style_from_interval(layer, cm):
     first_cm = cm.item(0)
     last_cm = cm.item(last_index)
 
-
     idx = layer.pendingFields().indexFromName("CVAL")
     vals = layer.uniqueValues(idx)
     ramp = QgsVectorGradientColorRampV2(QColor(*first_cm.color), QColor(*last_cm.color))
@@ -100,7 +102,7 @@ def classified_style_from_interval(layer, cm):
     cl = []
     for i in range(1, len(vals)): # skip first one
         item = vals[i]
-        prev_item = vals[i-1]
+        prev_item = vals[i - 1]
         label = str(item) + " - " + str(prev_item)
         ramp_val = ramp_value(first_cm, last_cm, prev_item)
         cl.append(gen_cl(ramp, prev_item, ramp_val, label))

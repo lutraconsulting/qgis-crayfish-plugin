@@ -39,66 +39,66 @@ from .gui.utils import time_to_string
 
 def animation(cfg, progress_fn=None):
 
-  dpi = 96
-  l = cfg['layer']
-  w,h = cfg['img_size']
-  imgfile = cfg['tmp_imgfile']
-  layers = cfg['layers'] if 'layers' in cfg else [l.id()]
-  extent = cfg['extent'] if 'extent' in cfg else l.extent()
-  crs = cfg['crs'] if 'crs' in cfg else None
-  dataset = l.currentDataSet()
-  count = dataset.output_count()
-  if 'time' in cfg:
-    time_from, time_to = cfg['time']
-  else:
-    time_from, time_to = dataset.output(0).time(), dataset.output(dataset.output_count()-1).time()
+    dpi = 96
+    l = cfg['layer']
+    w, h = cfg['img_size']
+    imgfile = cfg['tmp_imgfile']
+    layers = cfg['layers'] if 'layers' in cfg else [l.id()]
+    extent = cfg['extent'] if 'extent' in cfg else l.extent()
+    crs = cfg['crs'] if 'crs' in cfg else None
+    dataset = l.currentDataSet()
+    count = dataset.output_count()
+    if 'time' in cfg:
+        time_from, time_to = cfg['time']
+    else:
+        time_from, time_to = dataset.output(0).time(), dataset.output(dataset.output_count() - 1).time()
 
-  imgnum = 0
-  for i,o in enumerate(dataset.outputs()):
+    imgnum = 0
+    for i, o in enumerate(dataset.outputs()):
+
+        if progress_fn:
+            progress_fn(i, count)
+
+        if o.time() < time_from or o.time() > time_to:
+            continue
+
+        l.current_output_time = o.time()
+
+        mr = QgsMapRenderer()
+        # setup map parameters
+        mr.setExtent(extent)  # only used when creating new composer map??
+        mr.setLayerSet(layers)
+        mr.setOutputSize(QSize(w, h), dpi) # only used when creating new composer map
+        if crs is not None:
+            mr.setDestinationCrs(crs)
+            mr.setProjectionsEnabled(True)
+
+        c = prep_comp(cfg, mr, o.time())
+
+        # when using composition from template, match video's aspect ratio to paper size
+        # by updating video's width (keeping the height)
+        if cfg['layout']['type'] == 'file':
+            aspect = c.paperWidth() / c.paperHeight()
+            w = int(round(aspect * h))
+
+        image = QImage(QSize(w, h), QImage.Format_RGB32)
+        image.fill(0)
+        imagePainter = QPainter(image)
+        sourceArea = QRectF(0, 0, c.paperWidth(), c.paperHeight())
+        targetArea = QRectF(0, 0, w, h)
+        c.render(imagePainter, targetArea, sourceArea)
+        imagePainter.end()
+
+        imgnum += 1
+        image.save(imgfile % imgnum)
 
     if progress_fn:
-      progress_fn(i, count)
-
-    if o.time() < time_from or o.time() > time_to:
-      continue
-
-    l.current_output_time = o.time()
-
-    mr = QgsMapRenderer()
-    # setup map parameters
-    mr.setExtent(extent)  # only used when creating new composer map??
-    mr.setLayerSet(layers)
-    mr.setOutputSize(QSize(w,h), dpi) # only used when creating new composer map
-    if crs is not None:
-      mr.setDestinationCrs(crs)
-      mr.setProjectionsEnabled(True)
-
-    c = prep_comp(cfg, mr, o.time())
-
-    # when using composition from template, match video's aspect ratio to paper size
-    # by updating video's width (keeping the height)
-    if cfg['layout']['type'] == 'file':
-        aspect = c.paperWidth() / c.paperHeight()
-        w = int(round(aspect * h))
-
-    image = QImage(QSize(w, h), QImage.Format_RGB32)
-    image.fill(0)
-    imagePainter = QPainter(image)
-    sourceArea = QRectF(0, 0, c.paperWidth(), c.paperHeight())
-    targetArea = QRectF(0, 0, w, h)
-    c.render(imagePainter, targetArea, sourceArea)
-    imagePainter.end()
-
-    imgnum += 1
-    image.save(imgfile % imgnum)
-
-  if progress_fn:
-    progress_fn(count, count)
+        progress_fn(count, count)
 
 
 def prep_comp(cfg, mr, time):
     layoutcfg = cfg['layout']
-    w,h = mr.outputSize().width(), mr.outputSize().height()
+    w, h = mr.outputSize().width(), mr.outputSize().height()
     dpi = mr.outputDpi()
     c = QgsComposition(mr)
     if layoutcfg['type'] == 'file':
@@ -142,17 +142,17 @@ def set_item_pos(item, posindex, c):
     if posindex == 0:  # top-left
         item.setItemPosition(0, 0)
     elif posindex == 1: # top-right
-        item.setItemPosition(cw-r.width(),0)
+        item.setItemPosition(cw - r.width(), 0)
     elif posindex == 2: # bottom-left
-        item.setItemPosition(0, ch-r.height())
+        item.setItemPosition(0, ch - r.height())
     else:  # bottom-right
-        item.setItemPosition(cw-r.width(), ch-r.height())
+        item.setItemPosition(cw - r.width(), ch - r.height())
 
 
-def prepare_composition(c, w,h, dpi, time, layoutcfg):
+def prepare_composition(c, w, h, dpi, time, layoutcfg):
 
     c.setPlotStyle(QgsComposition.Print)
-    c.setPaperSize(w*25.4/dpi, h*25.4/dpi)
+    c.setPaperSize(w * 25.4 / dpi, h * 25.4 / dpi)
     c.setPrintResolution(dpi)
 
     composerMap = QgsComposerMap(c, 0, 0, c.paperWidth(), c.paperHeight())
@@ -168,7 +168,7 @@ def prepare_composition(c, w,h, dpi, time, layoutcfg):
         cTitle.setHAlign(Qt.AlignCenter)
         cTitle.setVAlign(Qt.AlignCenter)
         cTitle.adjustSizeToText()
-        cTitle.setItemPosition(0,0, c.paperWidth(), cTitle.rect().height())
+        cTitle.setItemPosition(0, 0, c.paperWidth(), cTitle.rect().height())
 
     if 'time' in layoutcfg:
         cTime = QgsComposerLabel(c)
@@ -203,8 +203,7 @@ def prepare_composition(c, w,h, dpi, time, layoutcfg):
     return composerMap
 
 
-
-def images_to_video(tmp_img_dir= "/tmp/vid/%03d.png", output_file="/tmp/vid/test.avi", fps=10, qual=1, ffmpeg_bin="ffmpeg"):
+def images_to_video(tmp_img_dir="/tmp/vid/%03d.png", output_file="/tmp/vid/test.avi", fps=10, qual=1, ffmpeg_bin="ffmpeg"):
     if qual == 0: # lossless
         opts = ["-vcodec", "ffv1"]
     else:
@@ -216,7 +215,7 @@ def images_to_video(tmp_img_dir= "/tmp/vid/%03d.png", output_file="/tmp/vid/test
     cmd += opts
     cmd += ["-r", str(fps), "-f", "avi", "-y", output_file]
 
-    f = tempfile.NamedTemporaryFile(prefix="crayfish",suffix=".txt")
+    f = tempfile.NamedTemporaryFile(prefix="crayfish", suffix=".txt")
     f.write(unicode(cmd).encode('utf8') + "\n\n")
 
     # stdin redirection is necessary in some cases on Windows

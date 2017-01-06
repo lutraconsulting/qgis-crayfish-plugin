@@ -39,8 +39,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 Renderer::Renderer(const Config& cfg, QImage& img)
   : mCfg(cfg)
   , mtp(cfg.llX, cfg.llY, cfg.pixelSize, cfg.outputSize.height())
-  , mImage(img)
-{
+  , mImage(img) {
   mLlX = cfg.llX;
   mLlY = cfg.llY;
   mPixelSize = cfg.pixelSize;
@@ -53,37 +52,28 @@ Renderer::Renderer(const Config& cfg, QImage& img)
   mOutputVector  = cfg.outputVector;
   mMesh = cfg.outputMesh;
 
-  if (mOutputContour)
-  {
-    if (!mOutputContour->dataSet)
-    {
+  if (mOutputContour) {
+    if (!mOutputContour->dataSet) {
       qDebug("Ignoring contour data: no dataset");
       mOutputContour = 0;
-    }
-    else if (mOutputContour->dataSet->mesh() != mMesh)
-    {
+    } else if (mOutputContour->dataSet->mesh() != mMesh) {
       qDebug("Ignoring contour data: different mesh");
       mOutputContour = 0;
     }
   }
 
-  if (mOutputVector)
-  {
-    if (!mOutputVector->dataSet)
-    {
+  if (mOutputVector) {
+    if (!mOutputVector->dataSet) {
       qDebug("Ignoring vector data: no dataset");
       mOutputVector = 0;
-    }
-    else if (mOutputVector->dataSet->mesh() != mMesh)
-    {
+    } else if (mOutputVector->dataSet->mesh() != mMesh) {
       qDebug("Ignoring vector data: different mesh");
       mOutputVector = 0;
     }
   }
 
   // use a default color map if none specified
-  if (mOutputContour && mCfg.ds.mColorMap.items.count() == 0 && mOutputContour->dataSet)
-  {
+  if (mOutputContour && mCfg.ds.mColorMap.items.count() == 0 && mOutputContour->dataSet) {
     double vMin = mOutputContour->dataSet->minZValue();
     double vMax = mOutputContour->dataSet->maxZValue();
     mCfg.ds.mColorMap = ColorMap::defaultColorMap(vMin, vMax);
@@ -92,8 +82,7 @@ Renderer::Renderer(const Config& cfg, QImage& img)
 
 
 
-void Renderer::draw()
-{
+void Renderer::draw() {
   if (!mMesh)
     return; // nothing to do
 
@@ -113,111 +102,100 @@ void Renderer::draw()
     drawVectorData(mOutputVector);
 }
 
-QPolygonF Renderer::elementPolygonPixel(const Element& elem)
-{
-    int nPoints = elem.nodeCount();
-    QPolygonF pts(nPoints + 1);
-    for (int i=0; i<nPoints; ++i)
-    {
-        pts[i] = realToPixel( elem.p(i) );
-    }
+QPolygonF Renderer::elementPolygonPixel(const Element& elem) {
+  int nPoints = elem.nodeCount();
+  QPolygonF pts(nPoints + 1);
+  for (int i=0; i<nPoints; ++i) {
+    pts[i] = realToPixel( elem.p(i) );
+  }
 
-    if (elem.eType() == Element::E2L)
-    {
-        pts.resize(nPoints); //remove last one
-    } else {
-        pts[nPoints] = pts[0]; // last one == first one
-    }
+  if (elem.eType() == Element::E2L) {
+    pts.resize(nPoints); //remove last one
+  } else {
+    pts[nPoints] = pts[0]; // last one == first one
+  }
 
-    return pts;
+  return pts;
 }
 
-void Renderer::drawMeshFill()
-{
-    QPainter p(&mImage);
-    p.setRenderHint(QPainter::Antialiasing);
-    QBrush fillBrush(mCfg.mesh.mMeshFillColor);
+void Renderer::drawMeshFill() {
+  QPainter p(&mImage);
+  p.setRenderHint(QPainter::Antialiasing);
+  QBrush fillBrush(mCfg.mesh.mMeshFillColor);
 
-    const Mesh::Elements& elems = mMesh->elements();
-    for (int i=0; i < elems.count(); ++i)
-    {
-      const Element& elem = elems[i];
-      if( elem.isDummy() )
-          continue;
+  const Mesh::Elements& elems = mMesh->elements();
+  for (int i=0; i < elems.count(); ++i) {
+    const Element& elem = elems[i];
+    if( elem.isDummy() )
+      continue;
 
-      // If the element is outside the view of the canvas, skip it
-      if( elemOutsideView(i) )
-          continue;
+    // If the element is outside the view of the canvas, skip it
+    if( elemOutsideView(i) )
+      continue;
 
-      QPolygonF pts = elementPolygonPixel(elem);
+    QPolygonF pts = elementPolygonPixel(elem);
 
-      QPainterPath elemPath;
-      elemPath.addPolygon(pts);
-      p.fillPath(elemPath, fillBrush);
-    }
+    QPainterPath elemPath;
+    elemPath.addPolygon(pts);
+    p.fillPath(elemPath, fillBrush);
+  }
 }
 
-void Renderer::drawMeshFrame()
-{
-    QPainter p(&mImage);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.setPen(QPen(QBrush(mCfg.mesh.mMeshBorderColor), mCfg.mesh.mMeshBorderWidth));
+void Renderer::drawMeshFrame() {
+  QPainter p(&mImage);
+  p.setRenderHint(QPainter::Antialiasing);
+  p.setPen(QPen(QBrush(mCfg.mesh.mMeshBorderColor), mCfg.mesh.mMeshBorderWidth));
 
-    const Mesh::Elements& elems = mMesh->elements();
-    for (int i=0; i < elems.count(); ++i)
-    {
-      const Element& elem = elems[i];
-      if( elem.isDummy() )
-          continue;
+  const Mesh::Elements& elems = mMesh->elements();
+  for (int i=0; i < elems.count(); ++i) {
+    const Element& elem = elems[i];
+    if( elem.isDummy() )
+      continue;
 
-      // If the element is outside the view of the canvas, skip it
-      if( elemOutsideView(i) )
-          continue;
+    // If the element is outside the view of the canvas, skip it
+    if( elemOutsideView(i) )
+      continue;
 
-      QPolygonF pts = elementPolygonPixel(elem);
+    QPolygonF pts = elementPolygonPixel(elem);
 
-      p.drawPolyline(pts.constData(), pts.size());
-    }
+    p.drawPolyline(pts.constData(), pts.size());
+  }
 }
 
-void Renderer::drawMeshLabels()
-{
-    QPainter p(&mImage);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.setPen(QPen(QBrush(mCfg.mesh.mMeshBorderColor), mCfg.mesh.mMeshBorderWidth));
-    p.setFont(QFont(""));
-    const Mesh::Elements& elems = mMesh->elements();
-    for (int i=0; i < elems.count(); ++i)
-    {
-        const Element& elem = elems[i];
-        if( elem.isDummy() )
-            continue;
+void Renderer::drawMeshLabels() {
+  QPainter p(&mImage);
+  p.setRenderHint(QPainter::Antialiasing);
+  p.setPen(QPen(QBrush(mCfg.mesh.mMeshBorderColor), mCfg.mesh.mMeshBorderWidth));
+  p.setFont(QFont(""));
+  const Mesh::Elements& elems = mMesh->elements();
+  for (int i=0; i < elems.count(); ++i) {
+    const Element& elem = elems[i];
+    if( elem.isDummy() )
+      continue;
 
-        // If the element is outside the view of the canvas, skip it
-        if( elemOutsideView(i) )
-            continue;
+    // If the element is outside the view of the canvas, skip it
+    if( elemOutsideView(i) )
+      continue;
 
-        QPolygonF pts = elementPolygonPixel(elem);
+    QPolygonF pts = elementPolygonPixel(elem);
 
-        double cx, cy;
-        mMesh->elementCentroid(i, cx, cy);
-        QString txt = QString::number(elem.id());
-        QRect bb = p.fontMetrics().boundingRect(txt);
-        QPointF xy = mtp.realToPixel(cx, cy);
-        bb.moveTo(xy.x() - bb.width()/2.0, xy.y() - bb.height()/2.0);
+    double cx, cy;
+    mMesh->elementCentroid(i, cx, cy);
+    QString txt = QString::number(elem.id());
+    QRect bb = p.fontMetrics().boundingRect(txt);
+    QPointF xy = mtp.realToPixel(cx, cy);
+    bb.moveTo(xy.x() - bb.width()/2.0, xy.y() - bb.height()/2.0);
 
-        if (pts.containsPoint(bb.bottomLeft(), Qt::WindingFill) &&
-            pts.containsPoint(bb.bottomRight(), Qt::WindingFill) &&
-            pts.containsPoint(bb.topLeft(), Qt::WindingFill) &&
-            pts.containsPoint(bb.topRight(), Qt::WindingFill))
-        {
-            p.drawText(bb, Qt::AlignCenter, txt);
-        }
+    if (pts.containsPoint(bb.bottomLeft(), Qt::WindingFill) &&
+        pts.containsPoint(bb.bottomRight(), Qt::WindingFill) &&
+        pts.containsPoint(bb.topLeft(), Qt::WindingFill) &&
+        pts.containsPoint(bb.topRight(), Qt::WindingFill)) {
+      p.drawText(bb, Qt::AlignCenter, txt);
     }
+  }
 }
 
-void Renderer::drawContourData(const Output* output)
-{
+void Renderer::drawContourData(const Output* output) {
   // Render E4Q before E3T
   QVector<Element::Type> typesToRender;
   typesToRender.append(Element::ENP);
@@ -225,30 +203,29 @@ void Renderer::drawContourData(const Output* output)
   typesToRender.append(Element::E3T);
   typesToRender.append(Element::E2L);
   QVectorIterator<Element::Type> it(typesToRender);
-  while(it.hasNext())
-  {
+  while(it.hasNext()) {
     Element::Type elemTypeToRender = it.next();
 
     const Mesh::Elements& elems = mMesh->elements();
-    for(int i = 0; i < elems.count(); i++){
+    for(int i = 0; i < elems.count(); i++) {
 
       const Element& elem = elems[i];
       if( elem.eType() != elemTypeToRender )
-          continue;
+        continue;
 
       if( elem.isDummy() )
-          continue;
+        continue;
 
       // For each element
 
       // If the element's activity flag is off, ignore it
-      if( ! output->isActive(i) ){
-          continue;
+      if( ! output->isActive(i) ) {
+        continue;
       }
 
       // If the element is outside the view of the canvas, skip it
-      if( elemOutsideView(i) ){
-          continue;
+      if( elemOutsideView(i) ) {
+        continue;
       }
 
       const BBox& bbox = mMesh->projectedBBox(i);
@@ -257,9 +234,8 @@ void Renderer::drawContourData(const Output* output)
       int topLim, bottomLim, leftLim, rightLim;
       bbox2rect(bbox, leftLim, rightLim, topLim, bottomLim);
 
-      for(int j=topLim; j<=bottomLim; j++)
-      {
-          paintRow(i, j, leftLim, rightLim, output);
+      for(int j=topLim; j<=bottomLim; j++) {
+        paintRow(i, j, leftLim, rightLim, output);
       }
     } // for all elements
 
@@ -267,16 +243,14 @@ void Renderer::drawContourData(const Output* output)
 }
 
 
-inline float mag(float input)
-{
-    if(input < 0.0){
-        return -1.0;
-    }
-    return 1.0;
+inline float mag(float input) {
+  if(input < 0.0) {
+    return -1.0;
+  }
+  return 1.0;
 }
 
-void Renderer::drawVectorData(const Output* output)
-{
+void Renderer::drawVectorData(const Output* output) {
   /*
     Here is where we render vector data
 
@@ -305,8 +279,7 @@ void Renderer::drawVectorData(const Output* output)
 
   if (mCfg.ds.mVectorUserGrid)
     drawVectorDataOnGrid(p, output);
-  else
-  {
+  else {
     if (output->type() == Output::TypeNode)
       drawVectorDataOnNodes(p, static_cast<const NodeOutput*>(output));
     else
@@ -317,14 +290,12 @@ void Renderer::drawVectorData(const Output* output)
 }
 
 
-void Renderer::drawVectorDataOnGrid(QPainter& p, const Output* output)
-{
+void Renderer::drawVectorDataOnGrid(QPainter& p, const Output* output) {
   int cellx = mCfg.ds.mVectorUserGridCellSize.width();
   int celly = mCfg.ds.mVectorUserGridCellSize.height();
 
   const Mesh::Elements& elems = mMesh->elements();
-  for(int i = 0; i < elems.count(); i++)
-  {
+  for(int i = 0; i < elems.count(); i++) {
     const Element& elem = elems[i];
 
     if (elem.isDummy())
@@ -354,15 +325,12 @@ void Renderer::drawVectorDataOnGrid(QPainter& p, const Output* output)
     if (bottom % celly != 0)
       bottom -= (bottom % celly);
 
-    for (int y = top; y <= bottom; y += celly)
-    {
-      for (int x = left; x <= right; x += cellx)
-      {
+    for (int y = top; y <= bottom; y += celly) {
+      for (int x = left; x <= right; x += cellx) {
         QPointF pt = mtp.pixelToReal(x, y);
 
         double vx, vy;
-        if (mMesh->vectorValueAt(i, pt.x(), pt.y(), &vx, &vy, output))
-        {
+        if (mMesh->vectorValueAt(i, pt.x(), pt.y(), &vx, &vy, output)) {
           // The supplied point was inside the element
           drawVectorArrow(p, output, QPointF(x,y), vx, vy, sqrt(vx*vx + vy*vy));
         }
@@ -373,11 +341,9 @@ void Renderer::drawVectorDataOnGrid(QPainter& p, const Output* output)
 }
 
 
-void Renderer::drawVectorDataOnNodes(QPainter& p, const NodeOutput* output)
-{
+void Renderer::drawVectorDataOnNodes(QPainter& p, const NodeOutput* output) {
   const Mesh::Nodes& nodes = mMesh->nodes();
-  for(int nodeIndex = 0; nodeIndex < nodes.count(); nodeIndex++)
-  {
+  for(int nodeIndex = 0; nodeIndex < nodes.count(); nodeIndex++) {
     if (!nodeInsideView(nodeIndex))
       continue;
 
@@ -390,11 +356,9 @@ void Renderer::drawVectorDataOnNodes(QPainter& p, const NodeOutput* output)
   }
 }
 
-void Renderer::drawVectorDataOnElements(QPainter& p, const ElementOutput* output)
-{
+void Renderer::drawVectorDataOnElements(QPainter& p, const ElementOutput* output) {
   const Mesh::Elements& elements = mMesh->elements();
-  for(int elemIndex = 0; elemIndex < elements.count(); elemIndex++)
-  {
+  for(int elemIndex = 0; elemIndex < elements.count(); elemIndex++) {
     if (elemOutsideView(elemIndex))
       continue;
 
@@ -411,8 +375,7 @@ void Renderer::drawVectorDataOnElements(QPainter& p, const ElementOutput* output
 }
 
 
-void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float V)
-{
+void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float V) {
   if (xVal == 0.0 && yVal == 0.0)
     return;
 
@@ -432,35 +395,31 @@ void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF&
   // Now determine the X and Y distances of the end of the line from the start
   float xDist = 0.0;
   float yDist = 0.0;
-  switch (mCfg.ds.mShaftLengthMethod)
-  {
-    case ConfigDataSet::MinMax:
-    {
-      float minShaftLength = mCfg.ds.mMinShaftLength;
-      float maxShaftLength = mCfg.ds.mMaxShaftLength;
-      float minVal = output->dataSet->minZValue();
-      float maxVal = output->dataSet->maxZValue();
-      double k = (V - minVal) / (maxVal - minVal);
-      double L = minShaftLength + k * (maxShaftLength - minShaftLength);
-      xDist = cosAlpha * L;
-      yDist = sinAlpha * L;
-      break;
-    }
-    case ConfigDataSet::Scaled:
-    {
-      float scaleFactor = mCfg.ds.mScaleFactor;
-      xDist = scaleFactor * xVal;
-      yDist = scaleFactor * yVal;
-      break;
-    }
-    case ConfigDataSet::Fixed:
-    {
-      // We must be using a fixed length
-      float fixedShaftLength = mCfg.ds.mFixedShaftLength;
-      xDist = cosAlpha * fixedShaftLength;
-      yDist = sinAlpha * fixedShaftLength;
-      break;
-    }
+  switch (mCfg.ds.mShaftLengthMethod) {
+  case ConfigDataSet::MinMax: {
+    float minShaftLength = mCfg.ds.mMinShaftLength;
+    float maxShaftLength = mCfg.ds.mMaxShaftLength;
+    float minVal = output->dataSet->minZValue();
+    float maxVal = output->dataSet->maxZValue();
+    double k = (V - minVal) / (maxVal - minVal);
+    double L = minShaftLength + k * (maxShaftLength - minShaftLength);
+    xDist = cosAlpha * L;
+    yDist = sinAlpha * L;
+    break;
+  }
+  case ConfigDataSet::Scaled: {
+    float scaleFactor = mCfg.ds.mScaleFactor;
+    xDist = scaleFactor * xVal;
+    yDist = scaleFactor * yVal;
+    break;
+  }
+  case ConfigDataSet::Fixed: {
+    // We must be using a fixed length
+    float fixedShaftLength = mCfg.ds.mFixedShaftLength;
+    xDist = cosAlpha * fixedShaftLength;
+    yDist = sinAlpha * fixedShaftLength;
+    break;
+  }
   }
 
   // Flip the Y axis (pixel vs real-world axis)
@@ -503,16 +462,15 @@ void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF&
   vectorHeadPoints[2].setY( -1.0 * vectorHeadWidthPerc * 0.5 * 0.01 );
 
   // Determine the arrow head coords
-  for (int j=0; j<3; j++)
-  {
+  for (int j=0; j<3; j++) {
     finalVectorHeadPoints[j].setX(   lineEnd.x()
-                                   + ( vectorHeadPoints[j].x() * cosAlpha * vectorLength )
-                                   - ( vectorHeadPoints[j].y() * sinAlpha * vectorLength )
+                                     + ( vectorHeadPoints[j].x() * cosAlpha * vectorLength )
+                                     - ( vectorHeadPoints[j].y() * sinAlpha * vectorLength )
                                  );
 
     finalVectorHeadPoints[j].setY(   lineEnd.y()
-                                   - ( vectorHeadPoints[j].x() * sinAlpha * vectorLength )
-                                   - ( vectorHeadPoints[j].y() * cosAlpha * vectorLength )
+                                     - ( vectorHeadPoints[j].x() * sinAlpha * vectorLength )
+                                     - ( vectorHeadPoints[j].y() * cosAlpha * vectorLength )
                                  );
   }
 
@@ -529,56 +487,48 @@ void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF&
 }
 
 
-void Renderer::paintRow(uint elementIdx, int rowIdx, int leftLim, int rightLim, const Output* output)
-{
+void Renderer::paintRow(uint elementIdx, int rowIdx, int leftLim, int rightLim, const Output* output) {
   /*
     Grab the pointer to the row if we do not have it already
     */
   QRgb* line = (QRgb*) mImage.scanLine(rowIdx);
 
-  for(int j=leftLim; j<=rightLim; j++)
-  {
+  for(int j=leftLim; j<=rightLim; j++) {
     // Determine real-world coords
     // Interpolate a value from the element
     // Set the value in the QImage
     QPointF p = mtp.pixelToReal(j, rowIdx);
 
     double val;
-    if( mMesh->valueAt(elementIdx, p.x(), p.y(), &val, output) )
-    {
-        // The supplied point was inside the element
-        line[j] = mCfg.ds.mColorMap.value(val);
+    if( mMesh->valueAt(elementIdx, p.x(), p.y(), &val, output) ) {
+      // The supplied point was inside the element
+      line[j] = mCfg.ds.mColorMap.value(val);
     }
   }
 }
 
 
-bool Renderer::nodeInsideView(uint nodeIndex)
-{
+bool Renderer::nodeInsideView(uint nodeIndex) {
   const Node& n = mMesh->projectedNode(nodeIndex);
   return n.x > mLlX && n.x < mUrX && n.y > mLlY && n.y < mUrY;
 }
 
-bool Renderer::elemOutsideView(uint i)
-{
+bool Renderer::elemOutsideView(uint i) {
   const BBox& bbox = mMesh->projectedBBox(i);
   // Determine if this element is visible within the view
   return bbox.maxX < mLlX || bbox.minX > mUrX || bbox.minY > mUrY || bbox.maxY < mLlY;
 }
 
-QPoint Renderer::realToPixel(int nodeIndex)
-{
+QPoint Renderer::realToPixel(int nodeIndex) {
   return realToPixelF(nodeIndex).toPoint();
 }
 
-QPointF Renderer::realToPixelF(int nodeIndex)
-{
+QPointF Renderer::realToPixelF(int nodeIndex) {
   const Node& n = mMesh->projectedNode(nodeIndex);
   return mtp.realToPixel(n.x, n.y);
 }
 
-void Renderer::bbox2rect(const BBox& bbox, int& leftLim, int& rightLim, int& topLim, int& bottomLim)
-{
+void Renderer::bbox2rect(const BBox& bbox, int& leftLim, int& rightLim, int& topLim, int& bottomLim) {
   QPoint ll = mtp.realToPixel(bbox.minX, bbox.minY).toPoint();
   QPoint ur = mtp.realToPixel(bbox.maxX, bbox.maxY).toPoint();
   topLim = std::max( ur.y(), 0 );

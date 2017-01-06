@@ -38,15 +38,15 @@ pg.setConfigOption('antialias', True)
 # plain black and white colors and we first want to use more distinctive ones
 colors = [
     # darker colors
-    QColor( "#1f78b4" ),
-    QColor( "#33a02c" ),
-    QColor( "#e31a1c" ),
-    QColor( "#ff7f00" ),
+    QColor("#1f78b4"),
+    QColor("#33a02c"),
+    QColor("#e31a1c"),
+    QColor("#ff7f00"),
     # lighter colors
-    QColor( "#a6cee3" ),
-    QColor( "#b2df8a" ),
-    QColor( "#fb9a99" ),
-    QColor( "#fdbf6f" ),
+    QColor("#a6cee3"),
+    QColor("#b2df8a"),
+    QColor("#fb9a99"),
+    QColor("#fdbf6f"),
 ]
 
 
@@ -54,7 +54,7 @@ def timeseries_plot_data(ds, geometry):
     """ return array with tuples defining X,Y points for plot """
 
     pt = geometry.asPoint()
-    x,y = [], []
+    x, y = [], []
 
     for output in ds.outputs():
         t = output.time()
@@ -74,7 +74,7 @@ def cross_section_plot_data(output, geometry, resolution=1.):
     mesh = output.dataset().mesh()
     offset = 0
     length = geometry.length()
-    x,y = [], []
+    x, y = [], []
 
     while offset < length:
         pt = geometry.interpolate(offset).asPoint()
@@ -108,6 +108,8 @@ def export_plot(plt, filename, width=None, height=None):
     """ Export an existing plot to an image and save with given filename.
     Optionally, image width and height in pixels can be specified. """
     e = ImageExporter(plt.plotItem)
-    if width is not None: e.parameters()['width'] = width
-    if height is not None: e.parameters()['height'] = height
+    if width is not None:
+        e.parameters()['width'] = width
+    if height is not None:
+        e.parameters()['height'] = height
     e.export(filename)

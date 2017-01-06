@@ -32,61 +32,61 @@ from PyQt4.QtGui import QImage, qRed, qGreen, qBlue, qAlpha
 
 
 def renderToRaster(layer, fileName, imgW, extent=None):
-  """ Render Crayfish plugin layer with its current settings to a raster file.
-  Only image width is needed - height is computed from extent aspect ratio.
-  Uses mesh extent if extent is not specified.
-  """
+    """ Render Crayfish plugin layer with its current settings to a raster file.
+    Only image width is needed - height is computed from extent aspect ratio.
+    Uses mesh extent if extent is not specified.
+    """
 
-  if extent is None:
-    extent = layer.provider.meshExtent()
+    if extent is None:
+        extent = layer.provider.meshExtent()
 
-  dX = extent.right()-extent.left()
-  dY = extent.bottom()-extent.top()
-  imgH = int(imgW * dY/dX)
-  mupp = dX / imgW
+    dX = extent.right() - extent.left()
+    dY = extent.bottom() - extent.top()
+    imgH = int(imgW * dY / dX)
+    mupp = dX / imgW
 
-  oldSize = layer.provider.canvasSize()
-  oldExtent = layer.provider.extent()
-  oldPixelSize = layer.provider.pixelSize()
+    oldSize = layer.provider.canvasSize()
+    oldExtent = layer.provider.extent()
+    oldPixelSize = layer.provider.pixelSize()
 
-  layer.provider.setCanvasSize(QSize(imgW,imgH))
-  layer.provider.setExtent(extent.left(), extent.top(), mupp)
-  img = layer.provider.draw()
+    layer.provider.setCanvasSize(QSize(imgW, imgH))
+    layer.provider.setExtent(extent.left(), extent.top(), mupp)
+    img = layer.provider.draw()
 
-  crsWkt = layer.crs().toWkt()
-  qimageToRaster(img, fileName, extent.left(), extent.bottom(), mupp, crsWkt)
+    crsWkt = layer.crs().toWkt()
+    qimageToRaster(img, fileName, extent.left(), extent.bottom(), mupp, crsWkt)
 
-  layer.provider.setCanvasSize(oldSize)
-  layer.provider.setExtent(oldExtent.left(), oldExtent.top(), oldPixelSize)
+    layer.provider.setCanvasSize(oldSize)
+    layer.provider.setExtent(oldExtent.left(), oldExtent.top(), oldPixelSize)
 
 
 def qimageToRaster(img, fileName, xMin=0, yMax=0, mupp=1, crsWkt=None):
-  """ Use GDAL to turn a QImage to GeoTIFF file """
+    """ Use GDAL to turn a QImage to GeoTIFF file """
 
-  driver = gdal.GetDriverByName("GTiff")
+    driver = gdal.GetDriverByName("GTiff")
 
-  ds = driver.Create(fileName, img.width(), img.height(), 4, gdal.GDT_Byte, ['ALPHA=YES'])
+    ds = driver.Create(fileName, img.width(), img.height(), 4, gdal.GDT_Byte, ['ALPHA=YES'])
 
-  # setup affine transform
-  ds.SetGeoTransform([ xMin, mupp, 0, yMax, 0, -mupp ])
+    # setup affine transform
+    ds.SetGeoTransform([xMin, mupp, 0, yMax, 0, -mupp])
 
-  if crsWkt is not None:
-    ds.SetProjection(str(crsWkt))
+    if crsWkt is not None:
+        ds.SetProjection(str(crsWkt))
 
-  size = img.height(), img.width()
-  raster_r = numpy.zeros(size, dtype=numpy.uint8)
-  raster_g = numpy.zeros(size, dtype=numpy.uint8)
-  raster_b = numpy.zeros(size, dtype=numpy.uint8)
-  raster_a = numpy.zeros(size, dtype=numpy.uint8)
+    size = img.height(), img.width()
+    raster_r = numpy.zeros(size, dtype=numpy.uint8)
+    raster_g = numpy.zeros(size, dtype=numpy.uint8)
+    raster_b = numpy.zeros(size, dtype=numpy.uint8)
+    raster_a = numpy.zeros(size, dtype=numpy.uint8)
 
-  for i in xrange(img.width()*img.height()):
-    x,y = i % img.width(), i / img.width()
-    rgb = img.pixel(x,y)
-    raster_r[y,x], raster_g[y,x], raster_b[y,x], raster_a[y,x] = qRed(rgb), qGreen(rgb), qBlue(rgb), qAlpha(rgb)
+    for i in xrange(img.width() * img.height()):
+        x, y = i % img.width(), i / img.width()
+        rgb = img.pixel(x, y)
+        raster_r[y, x], raster_g[y, x], raster_b[y, x], raster_a[y, x] = qRed(rgb), qGreen(rgb), qBlue(rgb), qAlpha(rgb)
 
-  ds.GetRasterBand(1).WriteArray(raster_r)
-  ds.GetRasterBand(2).WriteArray(raster_g)
-  ds.GetRasterBand(3).WriteArray(raster_b)
-  ds.GetRasterBand(4).WriteArray(raster_a)
+    ds.GetRasterBand(1).WriteArray(raster_r)
+    ds.GetRasterBand(2).WriteArray(raster_g)
+    ds.GetRasterBand(3).WriteArray(raster_b)
+    ds.GetRasterBand(4).WriteArray(raster_a)
 
-  ds = None   # Once we're done, close properly the dataset
+    ds = None   # Once we're done, close properly the dataset

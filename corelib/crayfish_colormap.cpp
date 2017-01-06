@@ -30,41 +30,32 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QPainter>
 #include <QPixmap>
 
-void ColorMap::dump() const
-{
+void ColorMap::dump() const {
   qDebug("COLOR RAMP: items %d", items.count());
-  for (int i = 0; i < items.count(); ++i)
-  {
+  for (int i = 0; i < items.count(); ++i) {
     qDebug("%d:  %f  --  %08x", i, items[i].value, items[i].color);
   }
 }
 
 
-QRgb ColorMap::valueDiscrete(double v) const
-{
+QRgb ColorMap::valueDiscrete(double v) const {
   if (items.count() == 0)
     return qRgba(0,0,0,0);
 
   int currentIdx = items.count() / 2; // TODO: keep last used index
 
-  while (currentIdx >= 0 && currentIdx < items.count())
-  {
+  while (currentIdx >= 0 && currentIdx < items.count()) {
     // Start searching from the last index - assumtion is that neighboring pixels tend to be similar values
     const Item& currentItem = items.value(currentIdx);
     bool valueVeryClose = qAbs(v - currentItem.value) < 0.0000001;
 
-    if (currentIdx != 0 && v <= items.at(currentIdx-1).value)
-    {
+    if (currentIdx != 0 && v <= items.at(currentIdx-1).value) {
       currentIdx--;
-    }
-    else if (v <= currentItem.value || valueVeryClose)
-    {
+    } else if (v <= currentItem.value || valueVeryClose) {
       if (clipLow && currentIdx == 0 && v < currentItem.value)
         return qRgba(0,0,0,0); // clipped - transparent
       return qRgba( qRed(currentItem.color), qGreen(currentItem.color), qBlue(currentItem.color), qAlpha(currentItem.color) * alpha / 255);
-    }
-    else
-    {
+    } else {
       // Search deeper into the color ramp list
       currentIdx++;
     }
@@ -78,22 +69,17 @@ QRgb ColorMap::valueDiscrete(double v) const
 }
 
 
-QRgb ColorMap::valueLinear(double v) const
-{
+QRgb ColorMap::valueLinear(double v) const {
   // interpolate
   int currentIdx = items.count() / 2; // TODO: keep last used index
 
-  while (currentIdx >= 0 && currentIdx < items.count())
-  {
+  while (currentIdx >= 0 && currentIdx < items.count()) {
     const Item& currentItem = items[currentIdx];
     bool valueVeryClose = qAbs(v - currentItem.value) < 0.0000001;
 
-    if (currentIdx > 0 && v <= items[currentIdx-1].value)
-    {
+    if (currentIdx > 0 && v <= items[currentIdx-1].value) {
       currentIdx--;
-    }
-    else if (currentIdx > 0 && (v <= currentItem.value || valueVeryClose))
-    {
+    } else if (currentIdx > 0 && (v <= currentItem.value || valueVeryClose)) {
       // we are at the right interval
       const Item& prevItem = items[currentIdx-1];
       double scale = (v - prevItem.value) / (currentItem.value - prevItem.value);
@@ -102,19 +88,13 @@ QRgb ColorMap::valueLinear(double v) const
       int vB = (int)((double) qBlue(prevItem.color)  + ((double)(qBlue(currentItem.color)  - qBlue(prevItem.color) ) * scale) + 0.5);
       int vA = (int)((double) qAlpha(prevItem.color) + ((double)(qAlpha(currentItem.color) - qAlpha(prevItem.color)) * scale) + 0.5);
       return qRgba(vR, vG, vB, vA * alpha / 255);
-    }
-    else if ((currentIdx == 0               && ( ( !clipLow  && v <= currentItem.value ) || valueVeryClose ) )
-          || (currentIdx == items.count()-1 && ( ( !clipHigh && v >= currentItem.value ) || valueVeryClose ) ) )
-    {
+    } else if ((currentIdx == 0               && ( ( !clipLow  && v <= currentItem.value ) || valueVeryClose ) )
+               || (currentIdx == items.count()-1 && ( ( !clipHigh && v >= currentItem.value ) || valueVeryClose ) ) ) {
       // outside of the range
       return qRgba( qRed(currentItem.color), qGreen(currentItem.color), qBlue(currentItem.color), qAlpha(currentItem.color) * alpha / 255);
-    }
-    else if (v > currentItem.value)
-    {
+    } else if (v > currentItem.value) {
       currentIdx++;
-    }
-    else
-    {
+    } else {
       return qRgba(0,0,0,0); // transparent pixel
     }
   }
@@ -122,27 +102,21 @@ QRgb ColorMap::valueLinear(double v) const
   return qRgba(0,0,0,0); // transparent pixel
 }
 
-QRgb ColorMap::value(double v) const
-{
+QRgb ColorMap::value(double v) const {
   return method == Linear ? valueLinear(v) : valueDiscrete(v);
 }
 
 
-QPixmap ColorMap::previewPixmap(const QSize& size, double vMin, double vMax)
-{
+QPixmap ColorMap::previewPixmap(const QSize& size, double vMin, double vMax) {
   QPixmap pix(size);
   pix.fill(Qt::white);
   QPainter p(&pix);
 
-  if (items.count() == 0)
-  {
+  if (items.count() == 0) {
     p.drawLine(0,0,size.width()-1,size.height()-1);
     p.drawLine(0,size.height()-1,size.width()-1,0);
-  }
-  else
-  {
-    for (int i = 0; i < size.width(); ++i)
-    {
+  } else {
+    for (int i = 0; i < size.width(); ++i) {
       double v = vMin + (vMax-vMin) *  i / (size.width()-1);
       p.setPen(QColor(value(v)));
       p.drawLine(i,0,i,size.height()-1);
@@ -153,8 +127,7 @@ QPixmap ColorMap::previewPixmap(const QSize& size, double vMin, double vMax)
 }
 
 
-ColorMap ColorMap::defaultColorMap(double vMin, double vMax)
-{
+ColorMap ColorMap::defaultColorMap(double vMin, double vMax) {
   ColorMap map;
   map.items.append(Item(vMin, qRgb(0,0,255))); // blue
   map.items.append(Item(vMin*0.75+vMax*0.25, qRgb(0,255,255))); // cyan
