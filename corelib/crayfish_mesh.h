@@ -52,7 +52,7 @@ protected:
 public:
 	outputUpdater(){
 		size = 0;
-		maxSize = 2 * 1024 * 1024 * 1024; //Todo should be a parameter
+		maxSize = 2UL * 1024UL * 1024UL * 1024UL; //Todo should be a parameter.
 	}
 	virtual int update(const Output *o, int iDataset, int iOutput) = 0;
 };
