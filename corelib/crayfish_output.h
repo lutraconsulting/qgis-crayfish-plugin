@@ -143,15 +143,12 @@ public:
   }
 
   inline QVector<float> &getValues() {
-    updateIfNeeded();
     return values;
   }
   inline QVector<char> &getActive() {
-    updateIfNeeded();
     return active;
   }
   inline QVector<float2D> &getValuesV() {
-    updateIfNeeded();
     return valuesV;
   }
 
