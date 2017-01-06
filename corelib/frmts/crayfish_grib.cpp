@@ -34,64 +34,59 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 /* ************************************************************************** */
 ;
 
-class GribReader: public CrayfishGDALReader
-{
+class GribReader: public CrayfishGDALReader {
 public:
-    GribReader(const QString& fileName): CrayfishGDALReader(fileName, "GRIB"),
-        mRefTime(std::numeric_limits<float>::min()) {}
+  GribReader(const QString& fileName): CrayfishGDALReader(fileName, "GRIB"),
+    mRefTime(std::numeric_limits<float>::min()) {}
 protected:
-    bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
-       metadata_hash::const_iterator iter;
+  bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
+    metadata_hash::const_iterator iter;
 
-       iter = metadata.find("grib_comment");
-       if (iter == metadata.end()) return true; //FAILURE
-       band_name = iter.value();
+    iter = metadata.find("grib_comment");
+    if (iter == metadata.end()) return true; //FAILURE
+    band_name = iter.value();
 
-       if (mRefTime == std::numeric_limits<float>::min())
-       {
-           iter = metadata.find("grib_ref_time");
-           if (iter == metadata.end()) return true; //FAILURE
-           mRefTime = parseMetadataTime(iter.value());
-       }
-
-       iter = metadata.find("grib_valid_time");
-       if (iter == metadata.end()) return true; //FAILURE
-       float valid_time = parseMetadataTime(iter.value());
-       *time = (valid_time - mRefTime) / 3600.0; // input times are always in seconds UTC, we need them back in hours
-
-       return false; // SUCCESS
+    if (mRefTime == std::numeric_limits<float>::min()) {
+      iter = metadata.find("grib_ref_time");
+      if (iter == metadata.end()) return true; //FAILURE
+      mRefTime = parseMetadataTime(iter.value());
     }
 
-    void determineBandVectorInfo(QString& band_name, bool* is_vector, bool* is_x)
-    {
+    iter = metadata.find("grib_valid_time");
+    if (iter == metadata.end()) return true; //FAILURE
+    float valid_time = parseMetadataTime(iter.value());
+    *time = (valid_time - mRefTime) / 3600.0; // input times are always in seconds UTC, we need them back in hours
 
-        if (band_name.contains("u-component")) {
-            *is_vector = true; // vector
-            *is_x =  true; //X-Axis
-        }
-        else if (band_name.contains("v-component")) {
-            *is_vector = true; // vector
-            *is_x =  false; //Y-Axis
-        } else {
-            *is_vector = false; // scalar
-            *is_x =  true; //X-Axis
-        }
+    return false; // SUCCESS
+  }
 
-        band_name = band_name.replace("u-component of", "")
-                             .replace("v-component of", "")
-                             .replace("u-component", "")
-                             .replace("v-component", "");
+  void determineBandVectorInfo(QString& band_name, bool* is_vector, bool* is_x) {
+
+    if (band_name.contains("u-component")) {
+      *is_vector = true; // vector
+      *is_x =  true; //X-Axis
+    } else if (band_name.contains("v-component")) {
+      *is_vector = true; // vector
+      *is_x =  false; //Y-Axis
+    } else {
+      *is_vector = false; // scalar
+      *is_x =  true; //X-Axis
     }
+
+    band_name = band_name.replace("u-component of", "")
+                .replace("v-component of", "")
+                .replace("u-component", "")
+                .replace("v-component", "");
+  }
 
 private:
-    float mRefTime; // ref time (UTC sec) is parsed only once, because
-                    // some GRIB files do not use FORECAST_SEC, but VALID_TIME
-                    // metadata, so ref time varies with dataset-to-dataset
+  float mRefTime; // ref time (UTC sec) is parsed only once, because
+  // some GRIB files do not use FORECAST_SEC, but VALID_TIME
+  // metadata, so ref time varies with dataset-to-dataset
 };
 
 
-Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status)
-{
-    GribReader reader(fileName);
-    return reader.load(status);
+Mesh* Crayfish::loadGRIB(const QString& fileName, LoadStatus* status) {
+  GribReader reader(fileName);
+  return reader.load(status);
 }

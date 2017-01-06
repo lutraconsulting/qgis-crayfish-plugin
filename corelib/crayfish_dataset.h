@@ -41,64 +41,85 @@ class ElementOutput;
  * DataSet represents one sub-layer of the plugin layer.
  * One mesh may have several DataSet instances attached.
  */
-class DataSet
-{
+class DataSet {
 public:
-    DataSet(const QString& fileName);
-    ~DataSet();
+  DataSet(const QString& fileName);
+  ~DataSet();
 
-    static QString sanitizeName(const QString& name);
+  static QString sanitizeName(const QString& name);
 
-    //! mesh to which this dataset is associated
-    const Mesh* mesh() const { return mMesh; }
-    void setMesh(const Mesh* m) { mMesh = m; }
+  //! mesh to which this dataset is associated
+  const Mesh* mesh() const {
+    return mMesh;
+  }
+  void setMesh(const Mesh* m) {
+    mMesh = m;
+  }
 
-    QString fileName() const { return mFileName; }
+  QString fileName() const {
+    return mFileName;
+  }
 
-    void setName(const QString& name, bool sanitize = true);
-    QString name() const { return mName; }
+  void setName(const QString& name, bool sanitize = true);
+  QString name() const {
+    return mName;
+  }
 
-    enum Type
-    {
-      Bed,
-      Scalar,
-      Vector
-    };
+  enum Type {
+    Bed,
+    Scalar,
+    Vector
+  };
 
-    void setType(Type t) { mType = t; }
-    Type type() const { return mType; }
+  void setType(Type t) {
+    mType = t;
+  }
+  Type type() const {
+    return mType;
+  }
 
-    int outputCount() const { return outputs.size(); }
+  int outputCount() const {
+    return outputs.size();
+  }
 
-    void addOutput(Output* output);
+  void addOutput(Output* output);
 
-    const Output* constOutput(int outputTime) const;
-    const NodeOutput* constNodeOutput(int outputTime) const;
-    const ElementOutput* constElemOutput(int outputTime) const;
+  const Output* constOutput(int outputTime) const;
+  const NodeOutput* constNodeOutput(int outputTime) const;
+  const ElementOutput* constElemOutput(int outputTime) const;
 
-    Output* output(int outputTime);
-    NodeOutput* nodeOutput(int outputTime);
-    ElementOutput* elemOutput(int outputTime);
+  Output* output(int outputTime);
+  NodeOutput* nodeOutput(int outputTime);
+  ElementOutput* elemOutput(int outputTime);
 
-    void updateZRange();
+  void updateZRange(int iOutput=-1);
 
-    float minZValue() const { return mZMin; }
-    float maxZValue() const { return mZMax; }
+  float minZValue() const {
+    return mZMin;
+  }
+  float maxZValue() const {
+    return mZMax;
+  }
 
-    void setIsTimeVarying(bool varying) { mTimeVarying = varying; }
-    bool isTimeVarying() const { return mTimeVarying; }
+  void setIsTimeVarying(bool varying) {
+    mTimeVarying = varying;
+  }
+  bool isTimeVarying() const {
+    return mTimeVarying;
+  }
 
+  int index; //! index in the mesh Datasets array
 
 protected:
 
-    const Mesh* mMesh;
-    QString mFileName;
-    Type mType;
-    QString mName;
-    QVector<Output*> outputs;
-    float mZMin;   //!< min Z value of data
-    float mZMax;   //!< max Z value of data
-    bool mTimeVarying;  //!< whether the data are time-varying (may contain more than one Output)
+  const Mesh* mMesh;
+  QString mFileName;
+  Type mType;
+  QString mName;
+  QVector<Output*> outputs;
+  float mZMin;   //!< min Z value of data
+  float mZMax;   //!< max Z value of data
+  bool mTimeVarying;  //!< whether the data are time-varying (may contain more than one Output)
 
 };
 

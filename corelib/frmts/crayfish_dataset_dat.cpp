@@ -60,8 +60,7 @@ static NodeOutput* _readTimestep(float t, bool isVector, bool hasStatus, QTextSt
 static ElementOutput* _readTimestampElementCentered(float t, bool isVector, QTextStream& stream, int elemCount);
 
 
-Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status)
-{
+Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status) {
   // implementation based on information from:
   // http://www.xmswiki.com/wiki/SMS:Binary_Dataset_Files_*.dat
 
@@ -101,16 +100,13 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
   QScopedPointer<DataSet> dsMax(new DataSet(datFileName));
   dsMax->setIsTimeVarying(false);
 
-  while (card != CT_ENDDS)
-  {
-    if( in.readRawData( (char*)&card, 4) != 4 )
-    {
+  while (card != CT_ENDDS) {
+    if( in.readRawData( (char*)&card, 4) != 4 ) {
       // We've reached the end of the file and there was no ends card
       break;
     }
 
-    switch (card)
-    {
+    switch (card) {
 
     case CT_OBJTYPE:
       // Object type
@@ -173,7 +169,7 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
       if( in.readRawData( (char*)&name, 40) != 40 )
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
       if(name[39] != 0)
-          name[39] = 0;
+        name[39] = 0;
       ds->setName(QString(name).trimmed());
       dsMax->setName(ds->name() + "/Maximums");
       break;
@@ -187,33 +183,26 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
 
       QScopedPointer<NodeOutput> o(new NodeOutput);
       o->time = time;
-      try
-      {
+      try {
         o->init(nodeCount, elemCount, ds->type() == DataSet::Vector);
-      }
-      catch (const std::bad_alloc &)
-      {
+      } catch (const std::bad_alloc &) {
         EXIT_WITH_ERROR(LoadStatus::Err_NotEnoughMemory);
       }
 
-      if (istat)
-      {
+      if (istat) {
         // Read status flags
-        char* active = o->active.data();
-        for (int i=0; i < elemCount; i++)
-        {
+        char* active = o->getActive().data();
+        for (int i=0; i < elemCount; i++) {
           if( in.readRawData( active+i, 1) != 1 )
             EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
         }
       }
 
-      float* values = o->values.data();
-      NodeOutput::float2D* valuesV = o->valuesV.data();
-      for (int i=0; i<nodeCount; i++)
-      {
+      float* values = o->getValues().data();
+      NodeOutput::float2D* valuesV = o->getValuesV().data();
+      for (int i=0; i<nodeCount; i++) {
         // Read values flags
-        if (ds->type() == DataSet::Vector)
-        {
+        if (ds->type() == DataSet::Vector) {
           NodeOutput::float2D v;
           if( in.readRawData( (char*)&v.x, 4) != 4 )
             EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
@@ -221,9 +210,7 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
             EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
           valuesV[i] = v;
           values[i] = v.length(); // Determine the magnitude
-        }
-        else
-        {
+        } else {
           if( in.readRawData( (char*)&values[i], 4) != 4 )
             EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
         }
@@ -245,8 +232,7 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
   Mesh::DataSets datasets;
   datasets << ds.take();
 
-  if (dsMax->outputCount() != 0)
-  {
+  if (dsMax->outputCount() != 0) {
     dsMax->updateZRange();
     datasets << dsMax.take();
   }
@@ -256,19 +242,16 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
 
 // for both nodes and elements
 template <typename T>
-QVector<int> _mapIDToIndex(const T& items)
-{
+QVector<int> _mapIDToIndex(const T& items) {
   int maxID = 0;
-  for (int i = 0; i < items.count(); ++i)
-  {
+  for (int i = 0; i < items.count(); ++i) {
     int itemID = items[i].id();
     if (itemID > maxID)
       maxID = itemID;
   }
 
   QVector<int> map(maxID, -1);
-  for (int i = 0; i < items.count(); ++i)
-  {
+  for (int i = 0; i < items.count(); ++i) {
     int itemID = items[i].id();
     map[itemID-1] = i;
   }
@@ -276,8 +259,7 @@ QVector<int> _mapIDToIndex(const T& items)
   return map;
 }
 
-Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status)
-{
+Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status) {
   QFile file(fileName);
   if (!file.open(QIODevice::ReadOnly))
     EXIT_WITH_ERROR(LoadStatus::Err_FileNotFound);  // Couldn't open the file
@@ -295,8 +277,7 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
 
   if (firstLine.trimmed() == "DATASET")
     oldFormat = false;
-  else if (firstLine == "SCALAR" || firstLine == "VECTOR")
-  {
+  else if (firstLine == "SCALAR" || firstLine == "VECTOR") {
     oldFormat = true;
     isVector = (firstLine == "VECTOR");
 
@@ -304,8 +285,7 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
     ds->setIsTimeVarying(true);
     ds->setType(isVector ? DataSet::Vector : DataSet::Scalar);
     ds->setName(QFileInfo(fileName).baseName());
-  }
-  else
+  } else
     EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
 
   // see if it contains element-centered results - supported by BASEMENT
@@ -323,35 +303,26 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
 
   Mesh::DataSets datasets;
 
-  while (!stream.atEnd())
-  {
+  while (!stream.atEnd()) {
     QString line = stream.readLine();
     QStringList items = line.split(reSpaces, QString::SkipEmptyParts);
     if (items.count() < 1)
       continue; // empty line?? let's skip it
 
     QString cardType = items[0];
-    if (cardType == "ND" && items.count() >= 2)
-    {
+    if (cardType == "ND" && items.count() >= 2) {
       int fileNodeCount = items[1].toInt();
       if (nodeIDToIndex.count() != fileNodeCount)
         EXIT_WITH_ERROR(LoadStatus::Err_IncompatibleMesh);
-    }
-    else if (!oldFormat && cardType == "NC" && items.count() >= 2)
-    {
+    } else if (!oldFormat && cardType == "NC" && items.count() >= 2) {
       int fileElemCount = items[1].toInt();
       if (elemIDToIndex.count() != fileElemCount)
         EXIT_WITH_ERROR(LoadStatus::Err_IncompatibleMesh);
-    }
-    else if (!oldFormat && cardType == "OBJTYPE")
-    {
+    } else if (!oldFormat && cardType == "OBJTYPE") {
       if (items[1] != "mesh2d" && items[1] != "\"mesh2d\"")
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
-    }
-    else if (!oldFormat && (cardType == "BEGSCL" || cardType == "BEGVEC"))
-    {
-      if (ds)
-      {
+    } else if (!oldFormat && (cardType == "BEGSCL" || cardType == "BEGVEC")) {
+      if (ds) {
         qDebug("Crayfish: New dataset while previous one is still active!");
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
       }
@@ -359,21 +330,15 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
       ds.reset(new DataSet(fileName));
       ds->setIsTimeVarying(true);
       ds->setType(isVector ? DataSet::Vector : DataSet::Scalar);
-    }
-    else if (!oldFormat && cardType == "ENDDS")
-    {
-      if (!ds)
-      {
+    } else if (!oldFormat && cardType == "ENDDS") {
+      if (!ds) {
         qDebug("Crayfish: ENDDS card for no active dataset!");
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
       }
       ds->updateZRange();
       datasets << ds.take();
-    }
-    else if (!oldFormat && cardType == "NAME" && items.count() >= 2)
-    {
-      if (!ds)
-      {
+    } else if (!oldFormat && cardType == "NAME" && items.count() >= 2) {
+      if (!ds) {
         qDebug("Crayfish: NAME card for no active dataset!");
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
       }
@@ -382,36 +347,26 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
       int quoteIdx2 = line.indexOf('\"', quoteIdx1+1);
       if (quoteIdx1 > 0 && quoteIdx2 > 0)
         ds->setName(line.mid(quoteIdx1+1, quoteIdx2-quoteIdx1-1));
-    }
-    else if (oldFormat && (cardType == "SCALAR" || cardType == "VECTOR"))
-    {
+    } else if (oldFormat && (cardType == "SCALAR" || cardType == "VECTOR")) {
       // just ignore - we know the type from earlier...
-    }
-    else if (cardType == "TS" && items.count() >= (oldFormat ? 2 : 3))
-    {
+    } else if (cardType == "TS" && items.count() >= (oldFormat ? 2 : 3)) {
       float t = items[oldFormat ? 1 : 2].toFloat();
 
-      if (elementCentered)
-      {
+      if (elementCentered) {
         ElementOutput* o = _readTimestampElementCentered(t, isVector, stream, elemCount);
         ds->addOutput(o);
-      }
-      else
-      {
+      } else {
         bool hasStatus = (oldFormat ? false : items[1].toInt());
         NodeOutput* o = _readTimestep(t, isVector, hasStatus, stream, nodeCount, elemCount, nodeIDToIndex);
         ds->addOutput(o);
       }
 
-    }
-    else
-    {
+    } else {
       qDebug("Crafish: Unknown card: %s", items.join(" ").toAscii().data());
     }
   }
 
-  if (oldFormat)
-  {
+  if (oldFormat) {
     if (ds->outputCount() == 0)
       EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
 
@@ -423,57 +378,45 @@ Mesh::DataSets Crayfish::loadAsciiDataSet(const QString& fileName, const Mesh* m
 }
 
 
-static NodeOutput* _readTimestep(float t, bool isVector, bool hasStatus, QTextStream& stream, int nodeCount, int elemCount, QVector<int>& nodeIDToIndex)
-{
+static NodeOutput* _readTimestep(float t, bool isVector, bool hasStatus, QTextStream& stream, int nodeCount, int elemCount, QVector<int>& nodeIDToIndex) {
   NodeOutput* o = new NodeOutput;
   o->init(nodeCount, elemCount, isVector);
   o->time = t / 3600.;
 
   QRegExp reSpaces("\\s+");
 
-  if (hasStatus)
-  {
+  if (hasStatus) {
     // only for new format
-    char* active = o->active.data();
-    for (int i = 0; i < elemCount; ++i)
-    {
+    char* active = o->getActive().data();
+    for (int i = 0; i < elemCount; ++i) {
       active[i] = stream.readLine().toInt();
     }
-  }
-  else
-    memset(o->active.data(), 1, elemCount); // there is no status flag -> everything is active
+  } else
+    memset(o->getActive().data(), 1, elemCount); // there is no status flag -> everything is active
 
-  float* values = o->values.data();
-  NodeOutput::float2D* valuesV = o->valuesV.data();
-  for (int i = 0; i < nodeIDToIndex.count(); ++i)
-  {
+  float* values = o->getValues().data();
+  NodeOutput::float2D* valuesV = o->getValuesV().data();
+  for (int i = 0; i < nodeIDToIndex.count(); ++i) {
     QStringList tsItems = stream.readLine().split(reSpaces, QString::SkipEmptyParts);
     int index = nodeIDToIndex[i];
     if (index < 0)
       continue; // node ID that does not exist in the mesh
 
-    if (isVector)
-    {
+    if (isVector) {
       NodeOutput::float2D v;
-      if (tsItems.count() >= 2) // BASEMENT files with vectors have 3 columns
-      {
+      if (tsItems.count() >= 2) { // BASEMENT files with vectors have 3 columns
         v.x = tsItems[0].toFloat();
         v.y = tsItems[1].toFloat();
-      }
-      else
-      {
+      } else {
         qDebug("Crayfish: invalid timestep line");
         v.x = v.y = 0;
       }
       valuesV[index] = v;
       values[index] = v.length(); // Determine the magnitude
-    }
-    else
-    {
+    } else {
       if (tsItems.count() >= 1)
         values[index] = tsItems[0].toFloat();
-      else
-      {
+      else {
         qDebug("Crayfish: invalid timestep line");
         values[index] = 0;
       }
@@ -484,8 +427,7 @@ static NodeOutput* _readTimestep(float t, bool isVector, bool hasStatus, QTextSt
 }
 
 
-static ElementOutput* _readTimestampElementCentered(float t, bool isVector, QTextStream& stream, int elemCount)
-{
+static ElementOutput* _readTimestampElementCentered(float t, bool isVector, QTextStream& stream, int elemCount) {
   ElementOutput* o = new ElementOutput;
   o->init(elemCount, isVector);
   o->time = t / 3600.;
@@ -494,34 +436,26 @@ static ElementOutput* _readTimestampElementCentered(float t, bool isVector, QTex
 
   // TODO: hasStatus
 
-  float* values = o->values.data();
-  Output::float2D* valuesV = o->valuesV.data();
-  for (int i = 0; i < elemCount; ++i)
-  {
+  float* values = o->getValues().data();
+  Output::float2D* valuesV = o->getValuesV().data();
+  for (int i = 0; i < elemCount; ++i) {
     QStringList tsItems = stream.readLine().split(reSpaces, QString::SkipEmptyParts);
 
-    if (isVector)
-    {
+    if (isVector) {
       Output::float2D v;
-      if (tsItems.count() >= 2) // BASEMENT files with vectors have 3 columns
-      {
+      if (tsItems.count() >= 2) { // BASEMENT files with vectors have 3 columns
         v.x = tsItems[0].toFloat();
         v.y = tsItems[1].toFloat();
-      }
-      else
-      {
+      } else {
         qDebug("Crayfish: invalid timestep line");
         v.x = v.y = 0;
       }
       valuesV[i] = v;
       values[i] = v.length(); // Determine the magnitude
-    }
-    else
-    {
+    } else {
       if (tsItems.count() >= 1)
         values[i] = tsItems[0].toFloat();
-      else
-      {
+      else {
         qDebug("Crayfish: invalid timestep line");
         values[i] = 0;
       }

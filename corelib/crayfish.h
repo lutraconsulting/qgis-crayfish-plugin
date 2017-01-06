@@ -35,32 +35,34 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 class DataSet;
 class ColorMap;
 
-struct LoadStatus
-{
-  LoadStatus() { clear(); }
+struct LoadStatus {
+  LoadStatus() {
+    clear();
+  }
 
-  void clear() { mLastError = Err_None; mLastWarning = Warn_None; }
+  void clear() {
+    mLastError = Err_None;
+    mLastWarning = Warn_None;
+  }
 
-  enum Error
-  {
-      Err_None,
-      Err_NotEnoughMemory,
-      Err_FileNotFound,
-      Err_UnknownFormat,
-      Err_IncompatibleMesh,
-      Err_InvalidData,
-      Err_MissingDriver
+  enum Error {
+    Err_None,
+    Err_NotEnoughMemory,
+    Err_FileNotFound,
+    Err_UnknownFormat,
+    Err_IncompatibleMesh,
+    Err_InvalidData,
+    Err_MissingDriver
   };
 
 
-  enum Warning
-  {
-      Warn_None,
-      Warn_UnsupportedElement,
-      Warn_InvalidElements,
-      Warn_ElementWithInvalidNode,
-      Warn_ElementNotUnique,
-      Warn_NodeNotUnique
+  enum Warning {
+    Warn_None,
+    Warn_UnsupportedElement,
+    Warn_InvalidElements,
+    Warn_ElementWithInvalidNode,
+    Warn_ElementNotUnique,
+    Warn_NodeNotUnique
   };
 
   Error mLastError;
@@ -68,8 +70,7 @@ struct LoadStatus
 };
 
 
-class Crayfish
-{
+class Crayfish {
 public:
   //Crayfish();
 
@@ -92,6 +93,7 @@ protected:
   static Mesh::DataSets loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
   static Mesh::DataSets loadAsciiDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);
   static Mesh::DataSets loadXmdfDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
+  static Mesh::DataSets loadXdmfDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
 };
 
 #endif // CRAYFISH_H

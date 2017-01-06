@@ -36,18 +36,18 @@ import zipfile
 pkg = False
 
 if len(sys.argv) > 1:
-  for arg in sys.argv[1:]:
-    if arg.startswith('-pkg='):
-      pkg = True
-      version = arg[5:]
-    else:
-      print("install.py [-pkg=version]")
-      print("")
-      print("  Install Crayfish Python plugin")
-      print("")
-      print("  Arguments:")
-      print("  -pkg      Create a package for upload instead of installing")
-      sys.exit(0)
+    for arg in sys.argv[1:]:
+        if arg.startswith('-pkg='):
+            pkg = True
+            version = arg[5:]
+        else:
+            print("install.py [-pkg=version]")
+            print("")
+            print("  Install Crayfish Python plugin")
+            print("")
+            print("  Arguments:")
+            print("  -pkg      Create a package for upload instead of installing")
+            sys.exit(0)
 
 install_files = ['metadata.txt']
 install_files += glob.glob("*.py")
@@ -64,28 +64,29 @@ install_dirs = ['illuvis', 'doc', 'ui', 'gui', 'examples', 'algs', 'images']
 
 # add pyqtgraph
 for entry in os.walk('pyqtgraph'):
-  install_dirs.append(entry[0])
-  for file_entry in entry[2]:
-    install_files.append(os.path.join(entry[0], file_entry))
+    install_dirs.append(entry[0])
+    for file_entry in entry[2]:
+        install_files.append(os.path.join(entry[0], file_entry))
 
 # remove .pyc
-install_files = [ filename for filename in install_files if not filename.endswith('.pyc') ]
+install_files = [filename for filename in install_files if not filename.endswith('.pyc')]
 
 if pkg:
-  with zipfile.ZipFile(os.path.join("..","crayfish-%s.zip" % version), "w", zipfile.ZIP_DEFLATED) as z:
-    for filename in install_files:
-      z.write(filename, "crayfish/"+filename)
+    with zipfile.ZipFile(os.path.join("..", "crayfish-%s.zip" % version), "w", zipfile.ZIP_DEFLATED) as z:
+        for filename in install_files:
+            z.write(filename, "crayfish/" + filename)
 
 else:
-  plugin_dir = os.path.expanduser(os.path.join("~", ".qgis2", "python", "plugins", "crayfish"))
-  if not os.path.exists(plugin_dir):
-    os.makedirs(plugin_dir)
-  print(install_dirs)
-  for subdir in install_dirs:
-    subdir_path = os.path.join(plugin_dir, subdir)
-    if not os.path.exists(subdir_path): os.makedirs(subdir_path)
+    plugin_dir = os.path.expanduser(os.path.join("~", ".qgis2", "python", "plugins", "crayfish"))
+    if not os.path.exists(plugin_dir):
+        os.makedirs(plugin_dir)
+    print(install_dirs)
+    for subdir in install_dirs:
+        subdir_path = os.path.join(plugin_dir, subdir)
+        if not os.path.exists(subdir_path):
+            os.makedirs(subdir_path)
 
-  for filename in install_files:
-    print("-- "+filename)
-    destdir = os.path.join(plugin_dir, os.path.dirname(filename))
-    shutil.copy(filename, destdir)
+    for filename in install_files:
+        print("-- " + filename)
+        destdir = os.path.join(plugin_dir, os.path.dirname(filename))
+        shutil.copy(filename, destdir)

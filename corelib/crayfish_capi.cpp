@@ -47,48 +47,40 @@ typedef ColorMap* ColorMapH;
 static LoadStatus sLastLoadStatus;
 
 
-int CF_Version()
-{
+int CF_Version() {
   return 0x020302; // 2.3.2
 }
 
 
-MeshH CF_LoadMesh(const char* meshFile)
-{
+MeshH CF_LoadMesh(const char* meshFile) {
   return (MeshH) Crayfish::loadMesh(QString::fromUtf8(meshFile), &sLastLoadStatus);
 }
 
 
-void CF_CloseMesh(MeshH mesh)
-{
+void CF_CloseMesh(MeshH mesh) {
   delete mesh;
 }
 
 
-int CF_ExportGrid(OutputH output, double mupp, const char* outputFilename, const char* projWkt)
-{
+int CF_ExportGrid(OutputH output, double mupp, const char* outputFilename, const char* projWkt) {
   return Crayfish::exportRawDataToTIF(output, mupp, QString::fromUtf8(outputFilename), QString::fromUtf8(projWkt));
 }
 
-int CF_ExportContours(OutputH output, double mupp, double interval, const char* outputFilename, const char* projWkt, bool useLines, ColorMapH cm)
-{
+int CF_ExportContours(OutputH output, double mupp, double interval, const char* outputFilename, const char* projWkt, bool useLines, ColorMapH cm) {
   return Crayfish::exportContoursToSHP(output, mupp, interval, QString::fromUtf8(outputFilename), QString::fromUtf8(projWkt), useLines, (ColorMap*) cm);
 }
 
-int CF_Mesh_nodeCount(MeshH mesh)
-{
+int CF_Mesh_nodeCount(MeshH mesh) {
   return mesh->nodes().count();
 }
 
 
-int CF_Mesh_elementCount(MeshH mesh)
-{
+int CF_Mesh_elementCount(MeshH mesh) {
   return mesh->elements().count();
 }
 
 
-NodeH CF_Mesh_nodeAt(MeshH mesh, int index)
-{
+NodeH CF_Mesh_nodeAt(MeshH mesh, int index) {
   if (index < 0 || index >= mesh->nodes().count())
     return 0;
 
@@ -97,8 +89,7 @@ NodeH CF_Mesh_nodeAt(MeshH mesh, int index)
 }
 
 
-ElementH CF_Mesh_elementAt(MeshH mesh, int index)
-{
+ElementH CF_Mesh_elementAt(MeshH mesh, int index) {
   if (index < 0 || index >= mesh->elements().count())
     return 0;
 
@@ -107,14 +98,12 @@ ElementH CF_Mesh_elementAt(MeshH mesh, int index)
 }
 
 
-int CF_Mesh_dataSetCount(MeshH mesh)
-{
+int CF_Mesh_dataSetCount(MeshH mesh) {
   return mesh->dataSets().count();
 }
 
 
-DataSetH CF_Mesh_dataSetAt(MeshH mesh, int index)
-{
+DataSetH CF_Mesh_dataSetAt(MeshH mesh, int index) {
   if (index < 0 || index >= mesh->dataSets().count())
     return 0;
 
@@ -123,72 +112,66 @@ DataSetH CF_Mesh_dataSetAt(MeshH mesh, int index)
 }
 
 
-int CF_DS_type(DataSetH ds)
-{
+int CF_DS_type(DataSetH ds) {
   return ds->type();
 }
 
 int CF_E_nodeCount(ElementH elem) {
-    return elem->nodeCount();
+  return elem->nodeCount();
 }
 
-int CF_E_nodeIndexAt(ElementH elem, int index){
-    if (index < 0 || index >= elem->nodeCount())
-      return 0;
+int CF_E_nodeIndexAt(ElementH elem, int index) {
+  if (index < 0 || index >= elem->nodeCount())
+    return 0;
 
-    return elem->p(index);
+  return elem->p(index);
 }
 
-int CF_E_id(ElementH elem){
-    return elem->id();
+int CF_E_id(ElementH elem) {
+  return elem->id();
 }
 
-int CF_E_type(ElementH elem){
-    return elem->eType();
+int CF_E_type(ElementH elem) {
+  return elem->eType();
 }
 
-int CF_N_id(NodeH node){
-    return node->id();
+int CF_N_id(NodeH node) {
+  return node->id();
 }
 
-double CF_N_x(NodeH node){
-    return node->x;
+double CF_N_x(NodeH node) {
+  return node->x;
 }
 
-double CF_N_y(NodeH node){
-    return node->y;
+double CF_N_y(NodeH node) {
+  return node->y;
 }
 
 // helper to return string data - without having to deal with memory too much.
 // returned pointer is valid only next call. also not thread-safe.
-const char* _return_str(const QString& str)
-{
+const char* _return_str(const QString& str) {
   static QByteArray lastStr;
   lastStr = str.toUtf8();
   return lastStr.constData();
 }
 
 
-const char* CF_DS_name(DataSetH ds)
-{
+const char* CF_DS_name(DataSetH ds) {
   return _return_str(ds->name());
 }
 
 
-const char* CF_DS_fileName(DataSetH ds)
-{
+const char* CF_DS_fileName(DataSetH ds) {
   return _return_str(ds->fileName());
 }
 
 
-int CF_DS_outputCount(DataSetH ds)
-{
+int CF_DS_outputCount(DataSetH ds) {
   return ds->outputCount();
 }
 
 
-OutputH CF_DS_outputAt(DataSetH ds, int index)
-{
+OutputH CF_DS_outputAt(DataSetH ds, int index) {
   if (index < 0 || index >= ds->outputCount())
     return 0;
 
@@ -196,148 +179,125 @@ OutputH CF_DS_outputAt(DataSetH ds, int index)
 }
 
 
-MeshH CF_DS_mesh(DataSetH ds)
-{
+MeshH CF_DS_mesh(DataSetH ds) {
   return (MeshH)ds->mesh();
 }
 
 
-int CF_O_type(OutputH o)
-{
+int CF_O_type(OutputH o) {
   return o->type();
 }
 
 
-float CF_O_time(OutputH o)
-{
+float CF_O_time(OutputH o) {
   return o->time;
 }
 
 
-float CF_O_valueAt(OutputH o, int index)
-{
+float CF_O_valueAt(OutputH o, int index) {
   if (o->type() == Output::TypeNode)
-    return static_cast<const NodeOutput*>(o)->values[index];
+    return static_cast<const NodeOutput*>(o)->getValues()[index];
   else if (o->type() == Output::TypeElement)
-    return static_cast<const ElementOutput*>(o)->values[index];
+    return static_cast<const ElementOutput*>(o)->getValues()[index];
   else
     return 0;
 }
 
-void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y)
-{
-  if (o->type() == Output::TypeNode)
-  {
+void CF_O_valueVectorAt(OutputH o, int index, float* x, float* y) {
+  if (o->type() == Output::TypeNode) {
     const NodeOutput* nodeO = static_cast<const NodeOutput*>(o);
-    *x = nodeO->valuesV[index].x;
-    *y = nodeO->valuesV[index].y;
-  }
-  else
-  {
+    *x = nodeO->getValuesV()[index].x;
+    *y = nodeO->getValuesV()[index].y;
+  } else {
     const ElementOutput* elO = static_cast<const ElementOutput*>(o);
-    *x = elO->valuesV[index].x;
-    *y = elO->valuesV[index].y;
+    *x = elO->getValuesV()[index].x;
+    *y = elO->getValuesV()[index].y;
   }
 }
 
 void CF_O_range(OutputH o, float* zMin, float* zMax) {
-    Q_ASSERT(zMin && zMax && o);
-    o->getRange(*zMin, *zMax);
+  Q_ASSERT(zMin && zMax && o);
+  o->getRange(*zMin, *zMax);
 }
 
-char CF_O_statusAt(OutputH o, int index)
-{
+char CF_O_statusAt(OutputH o, int index) {
   return static_cast<const NodeOutput*>(o)->isActive(index);
 }
 
-DataSetH CF_O_dataSet(OutputH o)
-{
+DataSetH CF_O_dataSet(OutputH o) {
   return (DataSetH)o->dataSet;
 }
 
 
-bool CF_Mesh_loadDataSet(MeshH mesh, const char* path)
-{
+bool CF_Mesh_loadDataSet(MeshH mesh, const char* path) {
   Mesh::DataSets lst = Crayfish::loadDataSet(QString::fromUtf8(path), mesh, &sLastLoadStatus);
   if (!lst.count())
     return false;
 
   foreach (DataSet* ds, lst)
-    mesh->addDataSet(ds);
+  mesh->addDataSet(ds);
   return true;
 }
 
 
-int CF_LastLoadError()
-{
+int CF_LastLoadError() {
   return sLastLoadStatus.mLastError;
 }
 
 
-int CF_LastLoadWarning()
-{
+int CF_LastLoadWarning() {
   return sLastLoadStatus.mLastWarning;
 }
 
 
-RendererH CF_R_create(RendererConfigH cfg, ImageH img)
-{
+RendererH CF_R_create(RendererConfigH cfg, ImageH img) {
   RendererH rend = new Renderer(*cfg, *img);
   return rend;
 }
 
 
-void CF_R_destroy(RendererH rend)
-{
+void CF_R_destroy(RendererH rend) {
   delete rend;
 }
 
 
-void CF_R_draw(RendererH rend)
-{
+void CF_R_draw(RendererH rend) {
   rend->draw();
 }
 
 
-RendererConfigH CF_RC_create()
-{
+RendererConfigH CF_RC_create() {
   RendererConfigH cfg = new Renderer::Config();
   return cfg;
 }
 
 
-void CF_RC_destroy(RendererConfigH cfg)
-{
+void CF_RC_destroy(RendererConfigH cfg) {
   delete cfg;
 }
 
 
-void CF_RC_setView(RendererConfigH cfg, int width, int height, double llx, double lly, double pixelSize)
-{
+void CF_RC_setView(RendererConfigH cfg, int width, int height, double llx, double lly, double pixelSize) {
   cfg->outputSize = QSize(width, height);
   cfg->llX = llx;
   cfg->llY = lly;
   cfg->pixelSize = pixelSize;
 }
 
-void CF_RC_setOutputMesh(RendererConfigH cfg, MeshH mesh)
-{
+void CF_RC_setOutputMesh(RendererConfigH cfg, MeshH mesh) {
   cfg->outputMesh = mesh;
 }
 
-void CF_RC_setOutputContour(RendererConfigH cfg, OutputH output)
-{
+void CF_RC_setOutputContour(RendererConfigH cfg, OutputH output) {
   cfg->outputContour = output;
 }
 
-void CF_RC_setOutputVector(RendererConfigH cfg, OutputH output)
-{
+void CF_RC_setOutputVector(RendererConfigH cfg, OutputH output) {
   cfg->outputVector = output;
 }
 
 
-void CF_Mesh_extent(MeshH mesh, double* xmin, double* ymin, double* xmax, double* ymax)
-{
+void CF_Mesh_extent(MeshH mesh, double* xmin, double* ymin, double* xmax, double* ymax) {
   BBox b = mesh->extent();
   *xmin = b.minX;
   *ymin = b.minY;
@@ -346,41 +306,34 @@ void CF_Mesh_extent(MeshH mesh, double* xmin, double* ymin, double* xmax, double
 }
 
 
-double CF_Mesh_valueAt(MeshH mesh, OutputH output, double x, double y)
-{
+double CF_Mesh_valueAt(MeshH mesh, OutputH output, double x, double y) {
   return mesh->valueAt(output, x, y);
 }
 
-void CF_Mesh_setSourceCrs(MeshH mesh, const char* srcProj4)
-{
+void CF_Mesh_setSourceCrs(MeshH mesh, const char* srcProj4) {
   mesh->setSourceCrs(QString::fromAscii(srcProj4));
 }
 
-void CF_Mesh_setDestinationCrs(MeshH mesh, const char* destProj4)
-{
+void CF_Mesh_setDestinationCrs(MeshH mesh, const char* destProj4) {
   mesh->setDestinationCrs(QString::fromAscii(destProj4));
 }
 
-const char* CF_Mesh_sourceCrs(MeshH mesh)
-{
+const char* CF_Mesh_sourceCrs(MeshH mesh) {
   return _return_str(mesh->sourceCrs());
 }
 
-const char* CF_Mesh_destinationCrs(MeshH mesh)
-{
+const char* CF_Mesh_destinationCrs(MeshH mesh) {
   return _return_str(mesh->destinationCrs());
 }
 
 
-void CF_DS_valueRange(DataSetH ds, float* vMin, float* vMax)
-{
+void CF_DS_valueRange(DataSetH ds, float* vMin, float* vMax) {
   *vMin = ds->minZValue();
   *vMax = ds->maxZValue();
 }
 
 
-void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
-{
+void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value) {
   QString k = QString::fromAscii(key);
   if (k == "mesh")
     cfg->mesh.mRenderMesh = value->toBool();
@@ -430,8 +383,7 @@ void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
 
 
 
-void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value)
-{
+void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value) {
   QString k = QString::fromAscii(key);
   if (k == "mesh")
     *value = QVariant(cfg->mesh.mRenderMesh);
@@ -480,69 +432,59 @@ void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value)
 }
 
 
-VariantH CF_V_create()
-{
+VariantH CF_V_create() {
   return new QVariant();
 }
 
 
-void CF_V_destroy(VariantH v)
-{
+void CF_V_destroy(VariantH v) {
   delete v;
 }
 
 
-int CF_V_type(VariantH v)
-{
- if (v->type() == QVariant::Invalid)
-   return 0;
- if (v->type() == QVariant::Bool || v->type() == QVariant::Int)
-   return 1;
- else if (v->type() == QVariant::Double || (int)v->type() == (int)QMetaType::Float)
-   return 2;
- else if (v->type() == QVariant::Color)
-   return 3;
- else if (v->canConvert<ColorMap>())
-   return 4;
- else
- {
-   qDebug("unknown type: %d",v->type());
-   return -1;
- }
+int CF_V_type(VariantH v) {
+  if (v->type() == QVariant::Invalid)
+    return 0;
+  if (v->type() == QVariant::Bool || v->type() == QVariant::Int)
+    return 1;
+  else if (v->type() == QVariant::Double || (int)v->type() == (int)QMetaType::Float)
+    return 2;
+  else if (v->type() == QVariant::Color)
+    return 3;
+  else if (v->canConvert<ColorMap>())
+    return 4;
+  else {
+    qDebug("unknown type: %d",v->type());
+    return -1;
+  }
 }
 
 
-void CF_V_fromInt(VariantH v, int i)
-{
+void CF_V_fromInt(VariantH v, int i) {
   *v = QVariant(i);
 }
 
 
-int CF_V_toInt(VariantH v)
-{
+int CF_V_toInt(VariantH v) {
   return v->toInt();
 }
 
 
-void CF_V_fromDouble(VariantH v, double d)
-{
+void CF_V_fromDouble(VariantH v, double d) {
   *v = QVariant(d);
 }
 
 
-double CF_V_toDouble(VariantH v)
-{
+double CF_V_toDouble(VariantH v) {
   return v->toDouble();
 }
 
 
-void CF_V_fromColor(VariantH v, int r, int g, int b, int a)
-{
+void CF_V_fromColor(VariantH v, int r, int g, int b, int a) {
   *v = QVariant::fromValue(QColor(r,g,b,a));
 }
 
-void CF_V_toColor(VariantH v, int* r, int* g, int* b, int* a)
-{
+void CF_V_toColor(VariantH v, int* r, int* g, int* b, int* a) {
   QColor c = v->value<QColor>();
   *r = c.red();
   *g = c.green();
@@ -550,122 +492,102 @@ void CF_V_toColor(VariantH v, int* r, int* g, int* b, int* a)
   *a = c.alpha();
 }
 
-ColorMapH CF_CM_create()
-{
+ColorMapH CF_CM_create() {
   return new ColorMap();
 }
 
 
-void CF_CM_destroy(ColorMapH cm)
-{
+void CF_CM_destroy(ColorMapH cm) {
   delete cm;
 }
 
 
-int CF_CM_value(ColorMapH cm, double v)
-{
+int CF_CM_value(ColorMapH cm, double v) {
   return cm->value(v);
 }
 
 
-void CF_V_toColorMap(VariantH v, ColorMapH cm)
-{
+void CF_V_toColorMap(VariantH v, ColorMapH cm) {
   *cm = v->value<ColorMap>();
 }
 
 
-void CF_V_fromColorMap(VariantH v, ColorMapH cm)
-{
+void CF_V_fromColorMap(VariantH v, ColorMapH cm) {
   *v = QVariant::fromValue(*cm);
 }
 
 
-int CF_CM_itemCount(ColorMapH cm)
-{
+int CF_CM_itemCount(ColorMapH cm) {
   return cm->items.count();
 }
 
 
-double CF_CM_itemValue(ColorMapH cm, int index)
-{
+double CF_CM_itemValue(ColorMapH cm, int index) {
   return cm->items[index].value;
 }
 
 
-int CF_CM_itemColor(ColorMapH cm, int index)
-{
+int CF_CM_itemColor(ColorMapH cm, int index) {
   return cm->items[index].color;
 }
 
 
-const char* CF_CM_itemLabel(ColorMapH cm, int index)
-{
+const char* CF_CM_itemLabel(ColorMapH cm, int index) {
   return _return_str( cm->items[index].label );
 }
 
 
-void CF_CM_setItemCount(ColorMapH cm, int count)
-{
+void CF_CM_setItemCount(ColorMapH cm, int count) {
   cm->items.resize(count);
 }
 
 
-void CF_CM_setItemValue(ColorMapH cm, int index, double value)
-{
+void CF_CM_setItemValue(ColorMapH cm, int index, double value) {
   cm->items[index].value = value;
 }
 
 
-void CF_CM_setItemColor(ColorMapH cm, int index, int color)
-{
+void CF_CM_setItemColor(ColorMapH cm, int index, int color) {
   cm->items[index].color = color;
 }
 
 
-void CF_CM_setItemLabel(ColorMapH cm, int index, const char* label)
-{
+void CF_CM_setItemLabel(ColorMapH cm, int index, const char* label) {
   cm->items[index].label = QString::fromUtf8(label);
 }
 
 
-ColorMapH CF_CM_createDefault(double vmin, double vmax)
-{
+ColorMapH CF_CM_createDefault(double vmin, double vmax) {
   return new ColorMap(ColorMap::defaultColorMap(vmin, vmax));
 }
 
-void CF_CM_clip(ColorMapH cm, int* clipLow, int* clipHigh)
-{
+void CF_CM_clip(ColorMapH cm, int* clipLow, int* clipHigh) {
   *clipLow = cm->clipLow;
   *clipHigh = cm->clipHigh;
 }
 
 
-void CF_CM_setClip(ColorMapH cm, int clipLow, int clipHigh)
-{
+void CF_CM_setClip(ColorMapH cm, int clipLow, int clipHigh) {
   cm->clipLow = clipLow;
   cm->clipHigh = clipHigh;
 }
 
 
-int CF_CM_alpha(ColorMapH cm)
-{
+int CF_CM_alpha(ColorMapH cm) {
   return cm->alpha;
 }
 
 
-void CF_CM_setAlpha(ColorMapH cm, int alpha)
-{
+void CF_CM_setAlpha(ColorMapH cm, int alpha) {
   cm->alpha = alpha;
 }
 
 
-int CF_CM_method(ColorMapH cm)
-{
+int CF_CM_method(ColorMapH cm) {
   return cm->method;
 }
 
 
-void CF_CM_setMethod(ColorMapH cm, int method)
-{
+void CF_CM_setMethod(ColorMapH cm, int method) {
   cm->method = (ColorMap::Method) method;
 }

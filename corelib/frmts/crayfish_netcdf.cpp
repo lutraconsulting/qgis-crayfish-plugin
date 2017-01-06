@@ -1,4 +1,4 @@
- /*
+/*
 Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
 Copyright (C) 2016 Lutra Consulting
 
@@ -34,45 +34,42 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QString>
 #include <QtGlobal>
 
-class NetCDFReader: public CrayfishGDALReader
-{
+class NetCDFReader: public CrayfishGDALReader {
 public:
-    NetCDFReader(const QString& fileName): CrayfishGDALReader(fileName, "NETCDF"){}
+  NetCDFReader(const QString& fileName): CrayfishGDALReader(fileName, "NETCDF") {}
 
-    bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
-       metadata_hash::const_iterator iter;
+  bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
+    metadata_hash::const_iterator iter;
 
-       iter = metadata.find("netcdf_dim_time");
-       if (iter == metadata.end()) return true; //FAILURE, skip no-time bands
-       *time = parseMetadataTime(iter.value());
+    iter = metadata.find("netcdf_dim_time");
+    if (iter == metadata.end()) return true; //FAILURE, skip no-time bands
+    *time = parseMetadataTime(iter.value());
 
-       iter = metadata.find("netcdf_varname");
-       if (iter == metadata.end()) return true; //FAILURE
-       band_name = iter.value();
+    iter = metadata.find("netcdf_varname");
+    if (iter == metadata.end()) return true; //FAILURE
+    band_name = iter.value();
 
-       // Loop throught all additional dimensions but time
-       for (iter = metadata.begin(); iter != metadata.end(); ++iter) {
-         QString key = iter.key();
-         if (key.contains("netcdf_dim_")) {
-             key = key.replace("netcdf_dim_", "");
-             if (key != "time") {
-                band_name += "_" + key + ":" + iter.value();
-             }
-         }
-       }
-
-       return false; // SUCCESS
+    // Loop throught all additional dimensions but time
+    for (iter = metadata.begin(); iter != metadata.end(); ++iter) {
+      QString key = iter.key();
+      if (key.contains("netcdf_dim_")) {
+        key = key.replace("netcdf_dim_", "");
+        if (key != "time") {
+          band_name += "_" + key + ":" + iter.value();
+        }
+      }
     }
 
-    void determineBandVectorInfo(QString& , bool* is_vector, bool* is_x)
-    {
-        *is_vector = false; // ONLY scalars supported so far
-        *is_x =  true;
-    }
+    return false; // SUCCESS
+  }
+
+  void determineBandVectorInfo(QString& , bool* is_vector, bool* is_x) {
+    *is_vector = false; // ONLY scalars supported so far
+    *is_x =  true;
+  }
 };
 
-Mesh* Crayfish::loadNetCDF(const QString& fileName, LoadStatus* status)
-{
-    NetCDFReader reader(fileName);
-    return reader.load(status);
+Mesh* Crayfish::loadNetCDF(const QString& fileName, LoadStatus* status) {
+  NetCDFReader reader(fileName);
+  return reader.load(status);
 }

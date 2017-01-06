@@ -32,12 +32,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_renderer.h" // for MapToPixel
 
 
-static void exportRawDataElements(Element::Type elemType, const Output* output, RawData* rd, const MapToPixel& xform)
-{
+static void exportRawDataElements(Element::Type elemType, const Output* output, RawData* rd, const MapToPixel& xform) {
   const Mesh* mesh = output->dataSet->mesh();
   const Mesh::Elements& elems = mesh->elements();
-  for (int i=0; i < elems.count(); i++)
-  {
+  for (int i=0; i < elems.count(); i++) {
     const Element& elem = elems[i];
     if(elem.eType() != elemType)
       continue;
@@ -62,16 +60,14 @@ static void exportRawDataElements(Element::Type elemType, const Output* output, 
     int rightLim = ur.x();
 
     double val;
-    for (int j=topLim; j<=bottomLim; j++)
-    {
+    for (int j=topLim; j<=bottomLim; j++) {
       float* line = rd->scanLine(j);
 
-      for (int k=leftLim; k<=rightLim; k++)
-      {
+      for (int k=leftLim; k<=rightLim; k++) {
         Q_ASSERT(k >= 0 && k < rd->cols());
         QPointF p = xform.pixelToReal(k, j);
         if( mesh->valueAt(i, p.x(), p.y(), &val, output) )
-            line[k] = val; // The supplied point was inside the element
+          line[k] = val; // The supplied point was inside the element
       }
     }
   }
@@ -80,8 +76,7 @@ static void exportRawDataElements(Element::Type elemType, const Output* output, 
 
 
 //! Return new raw data image for the given dataset/output time, sampled with given resolution
-static RawData* exportRawData(const Output* output, double mupp)
-{
+static RawData* exportRawData(const Output* output, double mupp) {
   if (!output)
     return 0;
   if (mupp <= 0)
@@ -127,8 +122,7 @@ static RawData* exportRawData(const Output* output, double mupp)
 }
 
 
-bool Crayfish::exportRawDataToTIF(const Output* output, double mupp, const QString& outFilename, const QString& projWkt)
-{
+bool Crayfish::exportRawDataToTIF(const Output* output, double mupp, const QString& outFilename, const QString& projWkt) {
   RawData* rd = exportRawData(output, mupp);
   if (!rd)
     return false;
@@ -139,8 +133,7 @@ bool Crayfish::exportRawDataToTIF(const Output* output, double mupp, const QStri
   return res;
 }
 
-bool Crayfish::exportContoursToSHP(const Output* output, double mupp, double interval, const QString& outFilename, const QString& projWkt, bool useLines, ColorMap* cm)
-{
+bool Crayfish::exportContoursToSHP(const Output* output, double mupp, double interval, const QString& outFilename, const QString& projWkt, bool useLines, ColorMap* cm) {
 
 
   RawData* rd = exportRawData(output, mupp);

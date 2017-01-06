@@ -31,6 +31,7 @@ from qgis.core import *
 from .plugin_layer import CrayfishPluginLayer
 from .gui.plugin_layer_props_dialog import CrayfishPluginPropsDialog
 
+
 class CrayfishPluginLayerType(QgsPluginLayerType):
 
     def __init__(self):

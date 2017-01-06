@@ -28,8 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "frmts/crayfish_mesh_2dm.h"
 
-Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
-{
+Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status) {
   if (meshFile.endsWith(".sww"))
     return loadSWW(meshFile, status);
 
@@ -59,8 +58,7 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
   return loadMesh2DM(meshFile, status);
 }
 
-Mesh::DataSets Crayfish::loadDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status)
-{
+Mesh::DataSets Crayfish::loadDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status) {
   if (status) status->clear();
 
   LoadStatus s;
@@ -91,6 +89,15 @@ Mesh::DataSets Crayfish::loadDataSet(const QString& fileName, const Mesh* mesh, 
   s.clear();
 
   lst = loadXmdfDataSet(fileName, mesh, &s);
+  if (status) *status = s;
+
+  // if the file format was not recognized, try to load it as XDMF dataset
+  if (s.mLastError != LoadStatus::Err_UnknownFormat)
+    return Mesh::DataSets();
+
+  s.clear();
+
+  lst = loadXdmfDataSet(fileName, mesh, &s);
   if (status) *status = s;
 
   return lst;
