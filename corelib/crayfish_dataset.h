@@ -80,7 +80,8 @@ public:
     NodeOutput* nodeOutput(int outputTime);
     ElementOutput* elemOutput(int outputTime);
 
-    void updateZRange(int iOutput=-1);
+    void updateZRange(int iOutput);
+    void updateZRange();
 
     float minZValue() const { return mZMin; }
     float maxZValue() const { return mZMax; }

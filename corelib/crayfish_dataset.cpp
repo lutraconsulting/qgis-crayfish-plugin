@@ -122,17 +122,23 @@ ElementOutput* DataSet::elemOutput(int outputTime)
   return 0;
 }
 
-void DataSet::updateZRange(int iOutput)
+void DataSet::updateZRange()
 {
   mZMin = std::numeric_limits<float>::max();
   mZMax = std::numeric_limits<float>::min();
-  for(int i = qMax(iOutput, 0); i < ((iOutput < 0) ? outputCount() : (iOutput+1)); i++)
+  for(int i = 0; i < outputCount(); i++)
   {
-    float outputZMin, outputZMax;
     if (constOutput(i)->isLoaded())
-        constOutput(i)->getRange(outputZMin, outputZMax);
-    mZMin = qMin(outputZMin, mZMin);
-    mZMax = qMax(outputZMax, mZMax);
+    {
+      updateZRange(i);
+    }
   }
 }
 
+void DataSet::updateZRange(int iOutput)
+{
+  float outputZMin, outputZMax;
+  constOutput(iOutput)->getRange(outputZMin, outputZMax);
+  mZMin = qMin(outputZMin, mZMin);
+  mZMax = qMax(outputZMax, mZMax);
+}
