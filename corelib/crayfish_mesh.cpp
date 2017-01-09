@@ -43,17 +43,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 void outputUpdater::checkMem(const Output *addedOutput)
 {
-	size += addedOutput->size;
-	allocatedOutputs.push(addedOutput);
-	while (size > maxSize){
-		const Output *toRemove = allocatedOutputs.front();
-		size -= toRemove->size;
-		if (toRemove->type() == toRemove->TypeNode)
-			const_cast<NodeOutput*>(static_cast<const NodeOutput*> (toRemove))->init(0, 0, true);
-		else
-			const_cast<ElementOutput*>(static_cast<const ElementOutput*> (toRemove))->init(0, true);
-		allocatedOutputs.pop();
-	}
+    size += addedOutput->size;
+    allocatedOutputs.push(addedOutput);
+    while (size > maxSize){
+        const Output *toRemove = allocatedOutputs.front();
+        size -= toRemove->size;
+        if (toRemove->type() == toRemove->TypeNode)
+            const_cast<NodeOutput*>(static_cast<const NodeOutput*> (toRemove))->init(0, 0, true);
+        else
+            const_cast<ElementOutput*>(static_cast<const ElementOutput*> (toRemove))->init(0, true);
+        allocatedOutputs.pop();
+    }
 }
 
 BasicMesh::BasicMesh(const Mesh::Nodes& nodes, const Mesh::Elements& elements)

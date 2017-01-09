@@ -44,17 +44,17 @@ class NodeOutput;
 
 //Callback class to update an output
 class outputUpdater {
-	size_t size;
-	size_t maxSize;
-	std::queue<const Output*> allocatedOutputs;
+    size_t size;
+    size_t maxSize;
+    std::queue<const Output*> allocatedOutputs;
 protected:
-	void checkMem(const Output *addedOutput);
+    void checkMem(const Output *addedOutput);
 public:
-	outputUpdater(){
-		size = 0;
-		maxSize = 2UL * 1024UL * 1024UL * 1024UL; //Todo should be a parameter.
-	}
-	virtual int update(const Output *o, int iDataset, int iOutput) = 0;
+    outputUpdater(){
+        size = 0;
+        maxSize = 2UL * 1024UL * 1024UL * 1024UL; //Todo should be a parameter.
+    }
+    virtual int update(const Output *o, int iDataset, int iOutput) = 0;
 };
 
 

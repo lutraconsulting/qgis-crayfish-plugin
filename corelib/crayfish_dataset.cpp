@@ -130,7 +130,7 @@ void DataSet::updateZRange(int iOutput)
   {
     float outputZMin, outputZMax;
     if (constOutput(i)->size > 0)
-		constOutput(i)->getRange(outputZMin, outputZMax);
+        constOutput(i)->getRange(outputZMin, outputZMax);
     mZMin = qMin(outputZMin, mZMin);
     mZMax = qMax(outputZMax, mZMax);
   }

@@ -43,8 +43,8 @@ public:
   Output()
     : dataSet(0)
     , time(-1)
-	, size(0)
-	, index(-1)
+    , size(0)
+    , index(-1)
   {
   }
 
@@ -129,15 +129,15 @@ public:
   void init(int nodeCount, int elemCount, bool isVector)
   {
     active.resize(elemCount);
-	active.squeeze();
+    active.squeeze();
     values.resize(nodeCount);
-	values.squeeze();
-	size = elemCount*sizeof(char) + nodeCount*sizeof(float);
+    values.squeeze();
+    size = elemCount*sizeof(char) + nodeCount*sizeof(float);
     if (isVector)
     {
       valuesV.resize(nodeCount);
-	  size += nodeCount*sizeof(float2D);
-	  valuesV.squeeze();
+      size += nodeCount*sizeof(float2D);
+      valuesV.squeeze();
     }
   }
 
@@ -182,7 +182,7 @@ public:
 <<<<<<< HEAD
   virtual void getRange(float& zMin, float& zMax) const
   {
-	if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index);
+    if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index);
 =======
   virtual void getRange(float& zMin, float& zMax) const {
     updateIfNeeded();
@@ -209,13 +209,13 @@ public:
   void init(int elemCount, bool isVector)
   {
     values.resize(elemCount);
-	values.squeeze();
-	size = elemCount*sizeof(float);
-	if (isVector){
-		valuesV.resize(elemCount);
-		valuesV.squeeze();
-		size += elemCount*sizeof(float2D);
-	}
+    values.squeeze();
+    size = elemCount*sizeof(float);
+    if (isVector){
+        valuesV.resize(elemCount);
+        valuesV.squeeze();
+        size += elemCount*sizeof(float2D);
+    }
 
   }
 
