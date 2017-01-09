@@ -1,12 +1,13 @@
 
 import sys
 sys.path.append('..')
+from qgis.core import QgsGeometry
+
 import crayfish
 import crayfish.plot
 import unittest
 import os
 
-from qgis.core import QgsGeometry
 
 TEST_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -271,5 +272,19 @@ class TestCrayfishLoad(unittest.TestCase):
     geometry = QgsGeometry.fromWkt("LINESTRING (975 1000, 950 1925)")
     test_cross_section(geometry, o, False, "outside")
 
+  def test_load_xdmf_file(self):
+    m = crayfish.Mesh(TEST_DIR + "/simpleXFMD.2dm")
+    m.load_data(TEST_DIR + "/simpleXFMD.xmf")
+    self.assertEqual(m.dataset_count(), 5)
+
+    self.assertEqual(m.dataset(0).type(), crayfish.DS_Bed)
+    self.assertEqual(m.dataset(1).type(), crayfish.DS_Scalar)
+
+    ds = m.dataset(1)
+    self.assertEqual(ds.output_count(), 21)
+    o = ds.output(2)
+    self.assertEqual(o.time(), 100.8949966430664)
+    self.assertEqual(o.value(210), 0.0)
+    
 if __name__ == '__main__':
   unittest.main()
