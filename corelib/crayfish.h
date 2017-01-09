@@ -92,6 +92,7 @@ protected:
   static Mesh::DataSets loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
   static Mesh::DataSets loadAsciiDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);
   static Mesh::DataSets loadXmdfDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
+  static Mesh::DataSets loadXdmfDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
 };
 
 #endif // CRAYFISH_H

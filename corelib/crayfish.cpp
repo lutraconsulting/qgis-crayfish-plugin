@@ -92,6 +92,15 @@ Mesh::DataSets Crayfish::loadDataSet(const QString& fileName, const Mesh* mesh, 
 
   lst = loadXmdfDataSet(fileName, mesh, &s);
   if (status) *status = s;
+  
+  // if the file format was not recognized, try to load it as XDMF dataset
+  if (s.mLastError != LoadStatus::Err_UnknownFormat)
+    return Mesh::DataSets();
+
+  s.clear();
+
+  lst = loadXdmfDataSet(fileName, mesh, &s);
+  if (status) *status = s;
 
   return lst;
 }
