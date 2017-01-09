@@ -93,14 +93,8 @@ public:
 
   virtual Type type() const { return TypeNode; }
 
-<<<<<<< HEAD
-  virtual void getRange(float& zMin, float& zMax) const
-  {
-    if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index);
-=======
   virtual void getRange(float& zMin, float& zMax) const {
     updateIfNeeded();
->>>>>>> sebbelese-master
     zMin = std::numeric_limits<float>::max();
     zMax = std::numeric_limits<float>::min();
     const float* v = values.constData();
@@ -117,14 +111,10 @@ public:
     }
   }
 
-<<<<<<< HEAD
-  virtual bool isActive(int elemIndex) const { if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index); return active[elemIndex]; }
-=======
   virtual bool isActive(int elemIndex) const {
     updateIfNeeded();
     return active[elemIndex];
   }
->>>>>>> sebbelese-master
 
   void init(int nodeCount, int elemCount, bool isVector)
   {
@@ -141,11 +131,6 @@ public:
     }
   }
 
-<<<<<<< HEAD
-  inline const QVector<float> &getValues() const { if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index); return values; }
-  inline const QVector<char> &getActive() const { if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index); return active; }
-  inline const QVector<float2D> &getValuesV() const { if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index); return valuesV; }
-=======
   inline const QVector<float> &getValues() const {
     updateIfNeeded();
     return values;
@@ -158,7 +143,6 @@ public:
     updateIfNeeded();
     return valuesV;
   }
->>>>>>> sebbelese-master
 
   inline QVector<float> &getValues() { return values; }
   inline QVector<char> &getActive() { return active; }
@@ -179,14 +163,8 @@ public:
 
   virtual Type type() const { return TypeElement; }
 
-<<<<<<< HEAD
-  virtual void getRange(float& zMin, float& zMax) const
-  {
-    if (size==0) dataSet->mesh()->updater->update(this, index, dataSet->index);
-=======
   virtual void getRange(float& zMin, float& zMax) const {
     updateIfNeeded();
->>>>>>> sebbelese-master
     zMin = std::numeric_limits<float>::max();
     zMax = std::numeric_limits<float>::min();
     const float* v = values.constData();
@@ -219,12 +197,6 @@ public:
 
   }
 
-<<<<<<< HEAD
-  virtual bool isActive(int elemIndex) const { if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index); return values[elemIndex] != -9999.0; }
-
-  inline const QVector<float> &getValues() const { if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index); return values; }
-  inline const QVector<float2D> &getValuesV() const { if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index); return valuesV; }
-=======
   virtual bool isActive(int elemIndex) const {
     updateIfNeeded();
     return values[elemIndex] != -9999.0;
@@ -238,7 +210,6 @@ public:
     updateIfNeeded();
     return valuesV;
   }
->>>>>>> sebbelese-master
 
   inline QVector<float> &getValues() { return values; }
   inline QVector<float2D> &getValuesV() { return valuesV; }
