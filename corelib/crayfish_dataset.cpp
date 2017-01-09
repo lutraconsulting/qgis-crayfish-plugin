@@ -31,10 +31,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <limits>
 
 
-DataSet::DataSet(const QString& fileName)
+DataSet::DataSet(const QString& fileName, size_t index)
   : mMesh(0)
-  , mFileName(fileName)
-  , index(-1)
+  , mFileName(fileName) 
+  , mIndex(index)
 {
 }
 
@@ -129,7 +129,7 @@ void DataSet::updateZRange(int iOutput)
   for(int i = qMax(iOutput, 0); i < ((iOutput < 0) ? outputCount() : (iOutput+1)); i++)
   {
     float outputZMin, outputZMax;
-    if (constOutput(i)->size > 0)
+    if (constOutput(i)->isLoaded())
         constOutput(i)->getRange(outputZMin, outputZMax);
     mZMin = qMin(outputZMin, mZMin);
     mZMax = qMax(outputZMax, mZMax);

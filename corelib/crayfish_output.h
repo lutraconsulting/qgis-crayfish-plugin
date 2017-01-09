@@ -40,11 +40,10 @@ class DataSet;
 class Output
 {
 public:
-  Output()
+  Output(size_t index = 0)
     : dataSet(0)
     , time(-1)
-    , size(0)
-    , index(-1)
+    , mIndex(index)
   {
   }
 
@@ -66,8 +65,21 @@ public:
   //! find out whether an element is active in this output
   virtual bool isActive(int elemIndex) const { Q_UNUSED(elemIndex); return true; }
 
+  virtual bool isLoaded() const = 0;
+  virtual size_t getSize() const = 0;
+  virtual void unload() = 0;
+
   inline void updateIfNeeded() const {
-    if (size == 0) dataSet->mesh()->updater->update(this, index, dataSet->index);
+    if (!isLoaded()) {
+        outputUpdater * updater = dataSet->mesh()->updater;
+        if (updater)
+        {
+          Output * o = const_cast<Output*>(this);
+          updater->update(o, mIndex, dataSet->getIndex());
+          updater->checkMem(o);
+          (const_cast<DataSet*> (dataSet))->updateZRange(getIndex());
+        }
+    }
   }
 
   typedef struct {
@@ -79,9 +91,10 @@ public:
   const DataSet* dataSet;  //!< dataset to which this data belong
   float time;               //!< time since beginning of simulation (in hours)
 
-  size_t size;
-  int index; //! index in the dataset Outputs array
+  size_t getIndex() const {return mIndex;}
 
+protected:
+  size_t mIndex; //! index in the dataset Outputs array
 };
 
 
@@ -90,6 +103,7 @@ public:
 class NodeOutput : public Output
 {
 public:
+  NodeOutput(size_t index = 0):Output(index) {}
 
   virtual Type type() const { return TypeNode; }
 
@@ -116,17 +130,27 @@ public:
     return active[elemIndex];
   }
 
+  virtual bool isLoaded() const {
+    return ((values.size() > 0) || (valuesV.size() > 0));
+  }
+
+  virtual void unload() {
+    init(0, 0, true);
+  }
+
+  virtual size_t getSize() const {
+    return values.size()*sizeof(float) + valuesV.size()*sizeof(float2D) + active.size()*sizeof(char);
+  }
+
   void init(int nodeCount, int elemCount, bool isVector)
   {
     active.resize(elemCount);
     active.squeeze();
     values.resize(nodeCount);
     values.squeeze();
-    size = elemCount*sizeof(char) + nodeCount*sizeof(float);
     if (isVector)
     {
       valuesV.resize(nodeCount);
-      size += nodeCount*sizeof(float2D);
       valuesV.squeeze();
     }
   }
@@ -159,7 +183,7 @@ private:
 class ElementOutput : public Output
 {
 public:
-  // TODO
+  ElementOutput(size_t index = 0):Output(index) {}
 
   virtual Type type() const { return TypeElement; }
 
@@ -187,19 +211,26 @@ public:
   void init(int elemCount, bool isVector)
   {
     values.resize(elemCount);
-    values.squeeze();
-    size = elemCount*sizeof(float);
     if (isVector){
         valuesV.resize(elemCount);
-        valuesV.squeeze();
-        size += elemCount*sizeof(float2D);
     }
-
   }
 
   virtual bool isActive(int elemIndex) const {
     updateIfNeeded();
     return values[elemIndex] != -9999.0;
+  }
+
+  virtual bool isLoaded() const {
+    return ((values.size() > 0) || (valuesV.size() > 0));
+  }
+
+  virtual size_t getSize() const {
+    return values.size()*sizeof(float) + valuesV.size()*sizeof(float2D);
+  }
+
+  virtual void unload() {
+    init(0, true);
   }
 
   inline const QVector<float> &getValues() const {

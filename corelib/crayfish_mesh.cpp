@@ -41,17 +41,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define DEG2RAD   (3.14159265358979323846 / 180)
 #define RAD2DEG   (180 / 3.14159265358979323846)
 
-void outputUpdater::checkMem(const Output *addedOutput)
+void outputUpdater::checkMem(Output *addedOutput)
 {
-    size += addedOutput->size;
+    size += addedOutput->getSize();
     allocatedOutputs.push(addedOutput);
     while (size > maxSize){
-        const Output *toRemove = allocatedOutputs.front();
-        size -= toRemove->size;
-        if (toRemove->type() == toRemove->TypeNode)
-            const_cast<NodeOutput*>(static_cast<const NodeOutput*> (toRemove))->init(0, 0, true);
-        else
-            const_cast<ElementOutput*>(static_cast<const ElementOutput*> (toRemove))->init(0, true);
+        Output *toRemove = allocatedOutputs.front();
+        size -= toRemove->getSize();
+        toRemove->unload();
         allocatedOutputs.pop();
     }
 }

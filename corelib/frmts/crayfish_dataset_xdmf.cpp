@@ -56,7 +56,7 @@ public:
         lastHdfFilename = "";
         lastDataSet = "";
         HdFile = NULL;
-    };
+    }
     ~outputUpdaterXdmf(){
         if (HdFile) delete HdFile;
     }
@@ -65,11 +65,8 @@ public:
     HdfFile *HdFile;
     QVector<hsize_t> dataDim;
     QVector<double> data;
-    int update(const Output *o, int iTime, int iField){
-        int res =  readXdmfOutput(static_cast<ElementOutput*>(const_cast<Output*>(o)), iTime, iField, this);//non-const cast to fix...
-        checkMem(o);
-        (const_cast<DataSet*> (o->dataSet))->updateZRange(o->index);
-        return res;
+    int update(Output *o, int iTime, int iField){
+        return readXdmfOutput(static_cast<ElementOutput*>(o), iTime, iField, this);
     }
 };
 
@@ -247,9 +244,8 @@ Mesh::DataSets Crayfish::loadXdmfDataSet(const QString& datFileName, const Mesh*
     }
     //We suppose all timesteps to have the same structure
     Mesh::DataSets datasets;
-    for (int iF = 0; iF < updater->snaps[0].names.size(); iF++){
-        DataSet* ds = new DataSet(datFileName);
-        ds->index = iF;
+    for (size_t iF = 0; iF < updater->snaps[0].names.size(); iF++){
+        DataSet* ds = new DataSet(datFileName, iF);
         ds->setIsTimeVarying(true);
         ds->setName(QString::fromStdString(updater->snaps[0].names[iF]), false);
         if (updater->snaps[0].HyperSlabs[iF][2][1] == 1)
@@ -265,11 +261,10 @@ Mesh::DataSets Crayfish::loadXdmfDataSet(const QString& datFileName, const Mesh*
         datasets.append(ds);
     }
 
-    for (int iT = 0; iT < updater->snaps.size(); iT++){
-        for (int iF = 0; iF < updater->snaps[iT].names.size(); iF++){
+    for (size_t iT = 0; iT < updater->snaps.size(); iT++){
+        for (size_t iF = 0; iF < updater->snaps[iT].names.size(); iF++){
             ElementOutput* o = NULL;
-            o = new ElementOutput;
-            o->index = iT;
+            o = new ElementOutput(iT);
             o->time = updater->snaps[iT].time;
             datasets[iF]->addOutput(o);
         }
@@ -305,7 +300,7 @@ static int readXdmfOutput(ElementOutput *o, int iT, int iF, outputUpdaterXdmf *u
         qDebug("Datagroup not valid");
         return -1;
     }
-    for (int iP = 1; iP < pathSplit.size() - 1; iP++){
+    for (size_t iP = 1; iP < pathSplit.size() - 1; iP++){
         if (!groupNames.contains(QString::fromStdString(pathSplit[iP]))){
             qDebug("Datagroup not found : %s", pathSplit[iP].c_str());
             return -1;

@@ -142,15 +142,17 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
 
     GDALRasterBandH hBand = GDALGetRasterBand( hDstDS, 1 );
     GDALSetRasterNoDataValue(hBand, -999);
-    GDALRasterIO( hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
-                  rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
+    CPLErr err = GDALRasterIO(hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
+                              rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0);
 
     if (add_mask_band) {
         GDALRasterBandH hMaskBand = GDALGetRasterBand( hDstDS, 2 );
         QVector<float> mask = rd->mask();
-        GDALRasterIO( hMaskBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
-                      mask.data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
+        err = GDALRasterIO( hMaskBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
+                            mask.data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
     }
+
+    Q_ASSERT(err == CE_None);
     return hDstDS;
 }
 

@@ -46,15 +46,16 @@ class NodeOutput;
 class outputUpdater {
     size_t size;
     size_t maxSize;
-    std::queue<const Output*> allocatedOutputs;
-protected:
-    void checkMem(const Output *addedOutput);
+    std::queue<Output *> allocatedOutputs;
 public:
     outputUpdater(){
         size = 0;
         maxSize = 2UL * 1024UL * 1024UL * 1024UL; //Todo should be a parameter.
     }
-    virtual int update(const Output *o, int iDataset, int iOutput) = 0;
+
+    virtual ~outputUpdater(){}
+    virtual int update(Output *o, int iOutput, int iDataset) = 0;
+    void checkMem(Output *addedOutput);
 };
 
 
