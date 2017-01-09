@@ -155,15 +155,15 @@ public:
     }
   }
 
-  inline const QVector<float> &getValues() const {
+  inline const QVector<float> &loadedValues() const {
     updateIfNeeded();
     return values;
   }
-  inline const QVector<char> &getActive() const {
+  inline const QVector<char> &loadedActive() const {
     updateIfNeeded();
     return active;
   }
-  inline const QVector<float2D> &getValuesV() const {
+  inline const QVector<float2D> &loadedValuesV() const {
     updateIfNeeded();
     return valuesV;
   }
@@ -233,11 +233,11 @@ public:
     init(0, true);
   }
 
-  inline const QVector<float> &getValues() const {
+  inline const QVector<float> &loadedValues() const {
     updateIfNeeded();
     return values;
   }
-  inline const QVector<float2D> &getValuesV() const {
+  inline const QVector<float2D> &loadedValuesV() const {
     updateIfNeeded();
     return valuesV;
   }

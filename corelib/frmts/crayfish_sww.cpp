@@ -236,7 +236,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
   for (size_t t = 0; t < nTimesteps; ++t)
   {
     const NodeOutput* elevO = bedDs->isTimeVarying() ? bedDs->nodeOutput(t) : bedDs->nodeOutput(0);
-    const float* elev = elevO->getValues().constData();
+    const float* elev = elevO->loadedValues().constData();
 
     NodeOutput* tos = new NodeOutput;
     tos->init(nPoints, nVolumes, false);

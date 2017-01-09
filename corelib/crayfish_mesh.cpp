@@ -237,13 +237,13 @@ bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const O
   if (output->type() == Output::TypeNode)
   {
     const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
-    ScalarValueAccessor accessor(nodeOutput->getValues().constData());
+    ScalarValueAccessor accessor(nodeOutput->loadedValues().constData());
     return interpolate(elementIndex, x, y, value, nodeOutput, &accessor);
   }
   else
   {
     const ElementOutput* elemOutput = static_cast<const ElementOutput*>(output);
-    ScalarValueAccessor accessor(elemOutput->getValues().constData());
+    ScalarValueAccessor accessor(elemOutput->loadedValues().constData());
     return interpolateElementCentered(elementIndex, x, y, value, elemOutput, &accessor);
   }
 }
@@ -445,8 +445,8 @@ bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, 
   if (output->type() == Output::TypeNode)
   {
     const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
-    VectorValueAccessorX accessorX(nodeOutput->getValuesV().constData());
-    VectorValueAccessorY accessorY(nodeOutput->getValuesV().constData());
+    VectorValueAccessorX accessorX(nodeOutput->loadedValuesV().constData());
+    VectorValueAccessorY accessorY(nodeOutput->loadedValuesV().constData());
     bool resX = interpolate(elementIndex, x, y, valueX, nodeOutput, &accessorX);
     bool resY = interpolate(elementIndex, x, y, valueY, nodeOutput, &accessorY);
     return resX && resY;
@@ -454,8 +454,8 @@ bool Mesh::vectorValueAt(uint elementIndex, double x, double y, double* valueX, 
   else
   {
     const ElementOutput* elemOutput = static_cast<const ElementOutput*>(output);
-    VectorValueAccessorX accessorX(elemOutput->getValuesV().constData());
-    VectorValueAccessorY accessorY(elemOutput->getValuesV().constData());
+    VectorValueAccessorX accessorX(elemOutput->loadedValuesV().constData());
+    VectorValueAccessorY accessorY(elemOutput->loadedValuesV().constData());
     bool resX = interpolateElementCentered(elementIndex, x, y, valueX, elemOutput, &accessorX);
     bool resY = interpolateElementCentered(elementIndex, x, y, valueY, elemOutput, &accessorY);
     return resX && resY;
