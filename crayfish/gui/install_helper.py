@@ -25,13 +25,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
-import platform
 import time
 import urllib2
 import zipfile
 
-from PyQt4.QtCore import QSettings, Qt
+from PyQt4.QtCore import Qt, QUrl, QEventLoop
 from PyQt4.QtGui import QCursor, QMessageBox, qApp
+from PyQt4.QtNetwork import QNetworkRequest
+from qgis.core import QgsNetworkAccessManager
 
 from ..core import load_library, VersionError, libpath
 from ..buildinfo import findPlatformVersion, crayfish_zipfile
@@ -124,29 +125,18 @@ def ensure_library_installed(parent_widget=None):
     load_library()
     return True
 
-
 def downloadBinPackage(packageUrl, destinationFileName):
-    s = QSettings()
-    # FIXME - does this work from behind a proxy?
-    useProxy = s.value("proxy/proxyEnabled", False, type=bool)
-    if useProxy:
-        proxyHost = s.value("proxy/proxyHost", unicode())
-        proxyPassword = s.value("proxy/proxyPassword", unicode())
-        proxyPort = s.value("proxy/proxyPort", unicode())
-        proxyType = s.value("proxy/proxyType", unicode())
-        proxyTypes = { 'DefaultProxy' : 'http', 'HttpProxy' : 'http', 'Socks5Proxy' : 'socks', 'HttpCachingProxy' : 'http', 'FtpCachingProxy' : 'ftp' }
-        if proxyType in proxyTypes: proxyType = proxyTypes[proxyType]
-        proxyUser = s.value("proxy/proxyUser", unicode())
-        proxyString = 'http://' + proxyUser + ':' + proxyPassword + '@' + proxyHost + ':' + proxyPort
-        proxy = urllib2.ProxyHandler({proxyType : proxyString})
-        auth = urllib2.HTTPBasicAuthHandler()
-        opener = urllib2.build_opener(proxy, auth, urllib2.HTTPHandler)
-        urllib2.install_opener(opener)
-    conn = urllib2.urlopen(packageUrl)
+    request = QNetworkRequest(QUrl(packageUrl))
+    reply = QgsNetworkAccessManager.instance().get(request)
+    evloop = QEventLoop()
+    reply.finished.connect(evloop.quit)
+    evloop.exec_(QEventLoop.ExcludeUserInputEvents)
+    response = bytearray(reply.readAll())
+
     if os.path.isfile(destinationFileName):
         os.unlink(destinationFileName)
     destinationFile = open(destinationFileName, 'wb')
-    destinationFile.write( conn.read() )
+    destinationFile.write(response)
     destinationFile.close()
 
 

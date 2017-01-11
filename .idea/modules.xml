@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../central-db/.idea/central-db.iml" filepath="$PROJECT_DIR$/../central-db/.idea/central-db.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/qgis-crayfish-plugin.iml" filepath="$PROJECT_DIR$/.idea/qgis-crayfish-plugin.iml" />
+    </modules>
+  </component>
+</project>
