@@ -160,9 +160,9 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
     NodeOutput* o = new NodeOutput;
     o->init(nPoints, nVolumes, false);
     o->time = 0.0;
-    memset(o->active.data(), 1, nVolumes); // All cells active
+    memset(o->getActive().data(), 1, nVolumes); // All cells active
     for (size_t i = 0; i < nPoints; ++i)
-      o->values[i] = pz[i];
+      o->getValues()[i] = pz[i];
     elevationOutputs << o;
   }
   else if (zDims == 2)
@@ -173,8 +173,8 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
       NodeOutput* toe = new NodeOutput;
       toe->init(nPoints, nVolumes, false);
       toe->time = times[t] / 3600.;
-      memset(toe->active.data(), 1, nVolumes); // All cells active
-      float* elev = toe->values.data();
+      memset(toe->getActive().data(), 1, nVolumes); // All cells active
+      float* elev = toe->getValues().data();
 
       // fetching "elevation" data for one timestep
       size_t start[2], count[2];
@@ -236,12 +236,12 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
   for (size_t t = 0; t < nTimesteps; ++t)
   {
     const NodeOutput* elevO = bedDs->isTimeVarying() ? bedDs->nodeOutput(t) : bedDs->nodeOutput(0);
-    const float* elev = elevO->values.constData();
+    const float* elev = elevO->loadedValues().constData();
 
     NodeOutput* tos = new NodeOutput;
     tos->init(nPoints, nVolumes, false);
     tos->time = times[t] / 3600.;
-    float* values = tos->values.data();
+    float* values = tos->getValues().data();
 
     // fetching "stage" data for one timestep
     size_t start[2], count[2];
@@ -256,7 +256,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
     NodeOutput* tod = new NodeOutput;
     tod->init(nPoints, nVolumes, false);
     tod->time = tos->time;
-    float* depths = tod->values.data();
+    float* depths = tod->getValues().data();
     for (size_t j = 0; j < nPoints; ++j)
       depths[j] = values[j] - elev[j];
 
@@ -267,9 +267,9 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
       float v0 = depths[elem.p(0)];
       float v1 = depths[elem.p(1)];
       float v2 = depths[elem.p(2)];
-      tos->active[elemidx] = v0 > DEPTH_THRESHOLD && v1 > DEPTH_THRESHOLD && v2 > DEPTH_THRESHOLD;
+      tos->getActive()[elemidx] = v0 > DEPTH_THRESHOLD && v1 > DEPTH_THRESHOLD && v2 > DEPTH_THRESHOLD;
     }
-    tod->active = tos->active;
+    tod->getActive() = tos->getActive();
 
     dss->addOutput(tos);
     dsd->addOutput(tod);
@@ -295,7 +295,7 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
       NodeOutput* mto = new NodeOutput;
       mto->init(nPoints, nVolumes, true);
       mto->time = times[t] / 3600.;
-      mto->active = dsd->nodeOutput(t)->active;
+      mto->getActive() = dsd->nodeOutput(t)->getActive();
 
       // fetching "stage" data for one timestep
       size_t start[2], count[2];
@@ -307,8 +307,8 @@ Mesh* Crayfish::loadSWW(const QString& fileName, LoadStatus* status)
       nc_get_vars_float(ncid, momentumxid, start, count, stride, valuesX.data());
       nc_get_vars_float(ncid, momentumyid, start, count, stride, valuesY.data());
 
-      NodeOutput::float2D* mtoValuesV = mto->valuesV.data();
-      float* mtoValues = mto->values.data();
+      NodeOutput::float2D* mtoValuesV = mto->getValuesV().data();
+      float* mtoValues = mto->getValues().data();
       for (size_t i = 0; i < nPoints; ++i)
       {
         mtoValuesV[i].x = valuesX[i];

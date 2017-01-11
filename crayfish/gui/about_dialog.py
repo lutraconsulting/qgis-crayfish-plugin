@@ -28,16 +28,20 @@ import os
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from PyQt4.QtWebKit import *
 from qgis.core import *
 
 from ..core import plugin_version_str
 from .utils import load_ui
 
-uiDialog, qtBaseClass = load_ui('crayfish_about_dialog_widget')
+try:
+    from PyQt4.QtWebKit import *
+    uiDialog, qtBaseClass = load_ui('crayfish_about_dialog_widget')
+    has_webkit = True
+except ImportError:
+    uiDialog, qtBaseClass = load_ui('crayfish_about_dialog_widget_nowebkit')
+    has_webkit = False
 
 class CrayfishAboutDialog(qtBaseClass, uiDialog):
-
     def __init__(self, iface, activateNews=False):
 
         qtBaseClass.__init__(self)
@@ -50,13 +54,18 @@ class CrayfishAboutDialog(qtBaseClass, uiDialog):
         self.about_page = os.path.join(doc_dir, "about.html")
         self.news_page = os.path.join(doc_dir, "news.html")
 
-        self.aboutBrowser.setHtml(self.sourceAbout(), QUrl.fromLocalFile(self.about_page))
-        self.aboutBrowser.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
-        self.aboutBrowser.linkClicked.connect(QDesktopServices.openUrl)
+        if has_webkit:
+            self.aboutBrowser.setHtml(self.sourceAbout(), QUrl.fromLocalFile(self.about_page))
+            self.aboutBrowser.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
+            self.aboutBrowser.linkClicked.connect(QDesktopServices.openUrl)
 
-        self.newsBrowser.setHtml(self.sourceNews(), QUrl.fromLocalFile(self.news_page))
-        self.newsBrowser.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
-        self.newsBrowser.linkClicked.connect(QDesktopServices.openUrl)
+            self.newsBrowser.setHtml(self.sourceNews(), QUrl.fromLocalFile(self.news_page))
+            self.newsBrowser.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
+            self.newsBrowser.linkClicked.connect(QDesktopServices.openUrl)
+
+        else: # pyqt4 on fedora/debian doesn't contain webkit for newer distributions
+            self.aboutBrowser.setHtml(self.sourceAbout())
+            self.newsBrowser.setHtml(self.sourceNews())
 
         if activateNews:
             self.tabWidget.setCurrentIndex(1)

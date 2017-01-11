@@ -381,9 +381,9 @@ void Renderer::drawVectorDataOnNodes(QPainter& p, const NodeOutput* output)
     if (!nodeInsideView(nodeIndex))
       continue;
 
-    float xVal = output->valuesV[nodeIndex].x;
-    float yVal = output->valuesV[nodeIndex].y;
-    float V = output->values[nodeIndex];  // pre-calculated magnitude
+    float xVal = output->loadedValuesV()[nodeIndex].x;
+    float yVal = output->loadedValuesV()[nodeIndex].y;
+    float V = output->loadedValues()[nodeIndex];  // pre-calculated magnitude
     QPointF lineStart = realToPixelF( nodeIndex );
 
     drawVectorArrow(p, output, lineStart, xVal, yVal, V);
@@ -401,9 +401,9 @@ void Renderer::drawVectorDataOnElements(QPainter& p, const ElementOutput* output
     double cx, cy;
     mMesh->elementCentroid(elemIndex, cx, cy);
 
-    float xVal = output->valuesV[elemIndex].x;
-    float yVal = output->valuesV[elemIndex].y;
-    float V = output->values[elemIndex];  // pre-calculated magnitude
+    float xVal = output->loadedValuesV()[elemIndex].x;
+    float yVal = output->loadedValuesV()[elemIndex].y;
+    float V = output->loadedValues()[elemIndex];  // pre-calculated magnitude
     QPointF lineStart = mtp.realToPixel(cx, cy);
 
     drawVectorArrow(p, output, lineStart, xVal, yVal, V);

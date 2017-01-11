@@ -311,27 +311,27 @@ static void populateScaleForVector(NodeOutput* tos, int nPoints){
    // see #134
    for (int idx=0; idx<nPoints; ++idx)
    {
-       if (is_nodata(tos->valuesV[idx].x) ||
-           is_nodata(tos->valuesV[idx].y))
+       if (is_nodata(tos->getValuesV()[idx].x) ||
+           is_nodata(tos->getValuesV()[idx].y))
        {
-           tos->values[idx] = -9999.0;
+           tos->getValues()[idx] = -9999.0;
        }
        else {
-           tos->values[idx] = tos->valuesV[idx].length();
+           tos->getValues()[idx] = tos->getValuesV()[idx].length();
        }
    }
 }
 
 static void activateElements(Mesh* mesh, NodeOutput* tos, int nElem){
    // Activate only elements that do all node's outputs with some data
-   char* active = tos->active.data();
+   char* active = tos->getActive().data();
    for (int idx=0; idx<nElem; ++idx)
    {
        Element elem = mesh->elements().at(idx);
 
-       if (is_nodata(tos->values[elem.p(0)]) ||
-           is_nodata(tos->values[elem.p(1)]) ||
-           is_nodata(tos->values[elem.p(2)]))
+       if (is_nodata(tos->getValues()[elem.p(0)]) ||
+           is_nodata(tos->getValues()[elem.p(1)]) ||
+           is_nodata(tos->getValues()[elem.p(2)]))
        {
            active[idx] = 0; //NOT ACTIVE
        } else {
@@ -390,12 +390,12 @@ static void addData(Mesh* mesh, const QString& fileName, const QStringList& var_
                 }
                 if (is_vector) {
                     if (is_x) {
-                        tos->valuesV[nP].x = val;
+                        tos->getValuesV()[nP].x = val;
                     } else {
-                        tos->valuesV[nP].y = val;
+                        tos->getValuesV()[nP].y = val;
                     }
                 } else {
-                    tos->values[nP] = val;
+                    tos->getValues()[nP] = val;
                 }
             }
         }

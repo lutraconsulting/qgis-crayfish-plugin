@@ -44,7 +44,7 @@ class ElementOutput;
 class DataSet
 {
 public:
-    DataSet(const QString& fileName);
+    DataSet(const QString& fileName, size_t mIndex=0);
     ~DataSet();
 
     static QString sanitizeName(const QString& name);
@@ -80,6 +80,7 @@ public:
     NodeOutput* nodeOutput(int outputTime);
     ElementOutput* elemOutput(int outputTime);
 
+    void updateZRange(int iOutput);
     void updateZRange();
 
     float minZValue() const { return mZMin; }
@@ -88,6 +89,7 @@ public:
     void setIsTimeVarying(bool varying) { mTimeVarying = varying; }
     bool isTimeVarying() const { return mTimeVarying; }
 
+    size_t getIndex() const {return mIndex;}
 
 protected:
 
@@ -99,7 +101,7 @@ protected:
     float mZMin;   //!< min Z value of data
     float mZMax;   //!< max Z value of data
     bool mTimeVarying;  //!< whether the data are time-varying (may contain more than one Output)
-
+    size_t mIndex; //! index in the mesh Datasets array
 };
 
 #endif // CRAYFISH_DATASET_H

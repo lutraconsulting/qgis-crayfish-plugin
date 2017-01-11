@@ -152,8 +152,8 @@ static DataSet* readXmdfGroupAsDataSet(const HdfGroup& g, const QString& datFile
       if (isVector)
       {
         const float* input = values.constData() + 2*i*nNodes;
-        NodeOutput::float2D* data = o->valuesV.data();
-        float* scalar = o->values.data();
+        NodeOutput::float2D* data = o->getValuesV().data();
+        float* scalar = o->getValues().data();
         for (int j = 0; j < nNodes; ++j)
         {
           data[j].x = input[2*j];
@@ -163,9 +163,9 @@ static DataSet* readXmdfGroupAsDataSet(const HdfGroup& g, const QString& datFile
       }
       else
       {
-        memcpy(o->values.data(), values.constData()+(i*nNodes), sizeof(float)*nNodes);
+        memcpy(o->getValuesV().data(), values.constData()+(i*nNodes), sizeof(float)*nNodes);
       }
-      memcpy(o->active.data(), active.constData()+(i*nElems), sizeof(uchar)*nElems);
+      memcpy(o->getActive().data(), active.constData()+(i*nElems), sizeof(uchar)*nElems);
       ds->addOutput(o);
     }
 

@@ -199,7 +199,7 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
       if (istat)
       {
         // Read status flags
-        char* active = o->active.data();
+        char* active = o->getActive().data();
         for (int i=0; i < elemCount; i++)
         {
           if( in.readRawData( active+i, 1) != 1 )
@@ -207,8 +207,8 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
         }
       }
 
-      float* values = o->values.data();
-      NodeOutput::float2D* valuesV = o->valuesV.data();
+      float* values = o->getValues().data();
+      NodeOutput::float2D* valuesV = o->getValuesV().data();
       for (int i=0; i<nodeCount; i++)
       {
         // Read values flags
@@ -434,17 +434,17 @@ static NodeOutput* _readTimestep(float t, bool isVector, bool hasStatus, QTextSt
   if (hasStatus)
   {
     // only for new format
-    char* active = o->active.data();
+    char* active = o->getActive().data();
     for (int i = 0; i < elemCount; ++i)
     {
       active[i] = stream.readLine().toInt();
     }
   }
   else
-    memset(o->active.data(), 1, elemCount); // there is no status flag -> everything is active
+    memset(o->getActive().data(), 1, elemCount); // there is no status flag -> everything is active
 
-  float* values = o->values.data();
-  NodeOutput::float2D* valuesV = o->valuesV.data();
+  float* values = o->getValues().data();
+  NodeOutput::float2D* valuesV = o->getValuesV().data();
   for (int i = 0; i < nodeIDToIndex.count(); ++i)
   {
     QStringList tsItems = stream.readLine().split(reSpaces, QString::SkipEmptyParts);
@@ -494,8 +494,8 @@ static ElementOutput* _readTimestampElementCentered(float t, bool isVector, QTex
 
   // TODO: hasStatus
 
-  float* values = o->values.data();
-  Output::float2D* valuesV = o->valuesV.data();
+  float* values = o->getValues().data();
+  Output::float2D* valuesV = o->getValuesV().data();
   for (int i = 0; i < elemCount; ++i)
   {
     QStringList tsItems = stream.readLine().split(reSpaces, QString::SkipEmptyParts);

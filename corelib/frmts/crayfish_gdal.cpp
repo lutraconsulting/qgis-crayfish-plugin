@@ -142,15 +142,17 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
 
     GDALRasterBandH hBand = GDALGetRasterBand( hDstDS, 1 );
     GDALSetRasterNoDataValue(hBand, -999);
-    GDALRasterIO( hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
-                  rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
+    CPLErr err = GDALRasterIO(hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
+                              rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0);
 
     if (add_mask_band) {
         GDALRasterBandH hMaskBand = GDALGetRasterBand( hDstDS, 2 );
         QVector<float> mask = rd->mask();
-        GDALRasterIO( hMaskBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
-                      mask.data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
+        err = GDALRasterIO( hMaskBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
+                            mask.data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0 );
     }
+
+    Q_ASSERT(err == CE_None);
     return hDstDS;
 }
 
@@ -483,13 +485,13 @@ void CrayfishGDALReader::populateScaleForVector(NodeOutput* tos){
    // see #134
    for (uint idx=0; idx<mNPoints; ++idx)
    {
-       if (is_nodata(tos->valuesV[idx].x) ||
-           is_nodata(tos->valuesV[idx].y))
+       if (is_nodata(tos->getValuesV()[idx].x) ||
+           is_nodata(tos->getValuesV()[idx].y))
        {
-           tos->values[idx] = -9999.0;
+           tos->getValues()[idx] = -9999.0;
        }
        else {
-           tos->values[idx] = tos->valuesV[idx].length();
+           tos->getValues()[idx] = tos->getValuesV()[idx].length();
        }
    }
 }
@@ -531,14 +533,14 @@ void CrayfishGDALReader::addDataToOutput(GDALRasterBandH raster_band, NodeOutput
            {
                if (is_x)
                {
-                   tos->valuesV[idx].x = val;
+                   tos->getValuesV()[idx].x = val;
                } else
                {
-                   tos->valuesV[idx].y = val;
+                   tos->getValuesV()[idx].y = val;
                }
            }
            else {
-               tos->values[idx] = val;
+               tos->getValues()[idx] = val;
            }
        }
 
@@ -547,15 +549,15 @@ void CrayfishGDALReader::addDataToOutput(GDALRasterBandH raster_band, NodeOutput
 
 void CrayfishGDALReader::activateElements(NodeOutput* tos){
    // Activate only elements that do all node's outputs with some data
-   char* active = tos->active.data();
+   char* active = tos->getActive().data();
    for (uint idx=0; idx<mNVolumes; ++idx)
    {
        Element elem = mMesh->elements().at(idx);
 
-       if (is_nodata(tos->values[elem.p(0)]) ||
-           is_nodata(tos->values[elem.p(1)]) ||
-           is_nodata(tos->values[elem.p(2)]) ||
-           is_nodata(tos->values[elem.p(3)]))
+       if (is_nodata(tos->getValues()[elem.p(0)]) ||
+           is_nodata(tos->getValues()[elem.p(1)]) ||
+           is_nodata(tos->getValues()[elem.p(2)]) ||
+           is_nodata(tos->getValues()[elem.p(3)]))
        {
            active[idx] = 0; //NOT ACTIVE
        } else {

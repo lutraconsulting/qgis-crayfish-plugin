@@ -153,7 +153,7 @@ static void readFaceOutput(Mesh* mesh, const QString fileName, const HdfFile& hd
         ElementOutput* tos = new ElementOutput;
         tos->init(nElems, false);
         tos->time = times[tidx];
-        std::fill(tos->values.begin(),tos->values.end(),-9999.0f);
+        std::fill(tos->getValues().begin(),tos->getValues().end(),-9999.0f);
         dsd->addOutput(tos);
     }
 
@@ -180,8 +180,8 @@ static void readFaceOutput(Mesh* mesh, const QString fileName, const HdfFile& hd
                     for (int c = 0; c < 2; ++c) {
                         int cell_idx = face2Cells[2*i + c] + areaElemStartIndex[nArea];
                         // Take just maximum
-                        if (tos->values[cell_idx] < val ) {
-                            tos->values[cell_idx] = val;
+                        if (tos->getValues()[cell_idx] < val ) {
+                            tos->getValues()[cell_idx] = val;
                         }
                     }
                 }
@@ -256,24 +256,24 @@ static ElementOutput* readElemOutput(Mesh* mesh, const QString fileName, const H
               int eInx = areaElemStartIndex[nArea] + i;
               float val = vals[idx];
               if (val != val) { //NaN
-                tos->values[eInx] = -9999;
+                tos->getValues()[eInx] = -9999;
               } else {
                 if (is_bed_output) {
-                    tos->values[eInx] = val;
+                    tos->getValues()[eInx] = val;
                 } else
                 {
                     if (datasetName == "Depth") {
                         if (fabs(val) < eps) {
-                            tos->values[eInx] = -9999; // 0 Depth is no-data
+                            tos->getValues()[eInx] = -9999; // 0 Depth is no-data
                         } else {
-                            tos->values[eInx] = val;
+                            tos->getValues()[eInx] = val;
                         }
                     } else { //Water surface
-                        float bed_elev = bed_elevation->values[eInx];
+                        float bed_elev = bed_elevation->getValues()[eInx];
                         if (fabs(bed_elev - val) < eps) {
-                            tos->values[eInx] = -9999; // no change from bed elevation
+                            tos->getValues()[eInx] = -9999; // no change from bed elevation
                         } else {
-                            tos->values[eInx] = val;
+                            tos->getValues()[eInx] = val;
                         }
                     }
                 }

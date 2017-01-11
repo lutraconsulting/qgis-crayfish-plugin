@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QPointF>
 #include <QString>
 #include <QVector>
+#include <queue>
 
 #include "crayfish_element.h"
 
@@ -40,6 +41,23 @@ class DataSet;
 class ElementOutput;
 class Output;
 class NodeOutput;
+
+//Callback class to update an output
+class outputUpdater {
+    size_t size;
+    size_t maxSize;
+    std::queue<Output *> allocatedOutputs;
+public:
+    outputUpdater(){
+        size = 0;
+        maxSize = 2UL * 1024UL * 1024UL * 1024UL; //Todo should be a parameter.
+    }
+
+    virtual ~outputUpdater(){}
+    virtual int update(Output *o, int iOutput, int iDataset) = 0;
+    void checkMem(Output *addedOutput);
+};
+
 
 struct Node
 {
@@ -124,6 +142,8 @@ public:
 
   //! calculate centroid of given element (takes reprojection into account)
   void elementCentroid(int elemIndex, double& cx, double& cy) const;
+
+  outputUpdater *updater;
 
 protected:
 

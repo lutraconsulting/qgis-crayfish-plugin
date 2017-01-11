@@ -89,16 +89,16 @@ static void createElements(const QVector<QVector<int> >& orientedEdgeGroups, Mes
 static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
 static void activateElements(NodeOutput* tos, const Mesh* mesh){
    // Activate only elements that do all node's outputs with some data
-   char* active = tos->active.data();
+   char* active = tos->getActive().data();
 
    for (int idx=0; idx<mesh->elements().size(); ++idx)
    {
        Element elem = mesh->elements().at(idx);
 
-       if (is_nodata(tos->values[elem.p(0)]) ||
-           is_nodata(tos->values[elem.p(1)]) ||
-           is_nodata(tos->values[elem.p(2)]) ||
-           is_nodata(tos->values[elem.p(3)]))
+       if (is_nodata(tos->getValues()[elem.p(0)]) ||
+           is_nodata(tos->getValues()[elem.p(1)]) ||
+           is_nodata(tos->getValues()[elem.p(2)]) ||
+           is_nodata(tos->getValues()[elem.p(3)]))
        {
            active[idx] = 0; //NOT ACTIVE
        } else {
@@ -128,10 +128,10 @@ static void addStaticDataset(QVector<float>& vals, const QString& name, const Da
 
     o->init(nnodes, nelem, false);
     o->time = 0.0;
-    o->values = vals;
+    o->getValues() = vals;
 
     if (type == DataSet::Bed) {
-        memset(o->active.data(), 1, nelem); // All cells active
+        memset(o->getActive().data(), 1, nelem); // All cells active
     } else {
         activateElements(o, mesh);
     }
@@ -270,15 +270,15 @@ static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh, const QVecto
             if (!depthOutput || !flowOutput || !waterLevelOutput) throw LoadStatus::Err_UnknownFormat;
             if (node_inx == nnodes) throw LoadStatus::Err_IncompatibleMesh;
 
-            flowOutput->values[node_inx] = getFloat(lineParts[2]);
-            flowOutput->valuesV[node_inx].x = getFloat(lineParts[3]);
-            flowOutput->valuesV[node_inx].y = getFloat(lineParts[4]);
+            flowOutput->getValues()[node_inx] = getFloat(lineParts[2]);
+            flowOutput->getValuesV()[node_inx].x = getFloat(lineParts[3]);
+            flowOutput->getValuesV()[node_inx].y = getFloat(lineParts[4]);
 
             float depth = getFloat(lineParts[1]);
-            depthOutput->values[node_inx] = depth;
+            depthOutput->getValues()[node_inx] = depth;
 
             if (!is_nodata(depth)) depth += elevations[node_inx];
-            waterLevelOutput->values[node_inx] = depth;
+            waterLevelOutput->getValues()[node_inx] = depth;
 
             node_inx ++;
 
