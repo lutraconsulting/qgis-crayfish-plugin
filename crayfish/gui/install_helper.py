@@ -88,7 +88,7 @@ def ensure_library_installed(parent_widget=None):
         return False
 
     # Determine where to extract the files
-    packageUrl = 'resources/crayfish/viewer/binaries/%s/%s' % (platformVersion, crayfish_zipfile())
+    packageUrl = 'products/crayfish/viewer/binaries/%s/%s' % (platformVersion, crayfish_zipfile())
     packageUrl = downloadBaseUrl + urllib2.quote(packageUrl)
 
     # Download it
@@ -127,18 +127,23 @@ def ensure_library_installed(parent_widget=None):
 
 def downloadBinPackage(packageUrl, destinationFileName):
     request = QNetworkRequest(QUrl(packageUrl))
+    request.setRawHeader('Accept-Encoding', 'gzip,deflate')
+
     reply = QgsNetworkAccessManager.instance().get(request)
     evloop = QEventLoop()
     reply.finished.connect(evloop.quit)
     evloop.exec_(QEventLoop.ExcludeUserInputEvents)
-    response = bytearray(reply.readAll())
+    content_type = reply.rawHeader('Content-Type')
+    if bytearray(content_type) == bytearray('application/zip'):
+        if os.path.isfile(destinationFileName):
+            os.unlink(destinationFileName)
 
-    if os.path.isfile(destinationFileName):
-        os.unlink(destinationFileName)
-    destinationFile = open(destinationFileName, 'wb')
-    destinationFile.write(response)
-    destinationFile.close()
-
+        destinationFile = open(destinationFileName, 'wb')
+        destinationFile.write(bytearray(reply.readAll()))
+        destinationFile.close()
+    else:
+        ret_code = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+        raise IOError("{} {}".format(ret_code, packageUrl))
 
 def extractBinPackage(destinationFileName):
     """ extract the downloaded package with .dll and .pyd files.

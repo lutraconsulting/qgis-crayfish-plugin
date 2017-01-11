@@ -23,4 +23,5 @@ plugin/crayfish.exp
 plugin/crayfish.lib
 *.zip
 *-swp
-.idea/
+.idea/*
+
