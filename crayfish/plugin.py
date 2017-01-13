@@ -272,7 +272,7 @@ class CrayfishPlugin:
         elif (fileType == '.dat' or
               fileType == '.sol' or
               fileType == '.xmdf' or
-	      fileType == ".xmf"):
+              fileType == ".xmf"):
             """
                 The user has selected a results-only file...
             """

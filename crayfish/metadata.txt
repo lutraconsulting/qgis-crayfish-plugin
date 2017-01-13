@@ -13,6 +13,9 @@ about=The Crayfish plugin aspires to be a time explorer for various grid and vec
 
 ; start of optional metadata
 changelog=2.4.0 - New Features:
+ - Fix download of the binaries when behind proxy
+ - Add support for XMDF results from res_to_res TUFLOW utility
+ - Add support of XDMF result files (.xmd)
  <p>2.3.2 - Bug fixes:
  - Fix loading of the plugin when gdal 2.x library is not present in the QGIS installation
  <p>2.3.1 - Bug fixes:

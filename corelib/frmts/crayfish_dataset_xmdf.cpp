@@ -33,6 +33,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_hdf5.h"
 
 static DataSet* readXmdfGroupAsDataSet(const HdfGroup& g, const QString& datFileName, const QString& name, int nNodes, int nElems);
+static void addDataSetsFromGroup(Mesh::DataSets& datasets, const HdfGroup& g, const QString& datFileName, int nNodes, int nElems);
 
 
 Mesh::DataSets Crayfish::loadXmdfDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status)
@@ -70,15 +71,7 @@ Mesh::DataSets Crayfish::loadXmdfDataSet(const QString& datFileName, const Mesh*
   Mesh::DataSets datasets;
 
   HdfGroup gTemporal = gMesh.group("Temporal");
-  foreach (const QString& name, gTemporal.groups())
-  {
-    HdfGroup g = gTemporal.group(name);
-    if (DataSet* ds = readXmdfGroupAsDataSet(g, datFileName, name, nNodes, nElems))
-    {
-      ds->updateZRange();
-      datasets.append(ds);
-    }
-  }
+  addDataSetsFromGroup(datasets, gTemporal, datFileName, nNodes, nElems);
 
   HdfGroup gMaximums = gMesh.group("Maximums");
   foreach (const QString& name, gMaximums.groups())
@@ -94,7 +87,24 @@ Mesh::DataSets Crayfish::loadXmdfDataSet(const QString& datFileName, const Mesh*
     }
   }
 
+  // res_to_res.exe (TUFLOW utiity tool)
+  HdfGroup gDifference = gMesh.group("Difference");
+  addDataSetsFromGroup(datasets, gDifference, datFileName, nNodes, nElems);
+
   return datasets;
+}
+
+static void addDataSetsFromGroup(Mesh::DataSets& datasets, const HdfGroup& rootGroup, const QString& datFileName, int nNodes, int nElems)
+{
+    foreach (const QString& name, rootGroup.groups())
+    {
+      HdfGroup g = rootGroup.group(name);
+      if (DataSet* ds = readXmdfGroupAsDataSet(g, datFileName, name, nNodes, nElems))
+      {
+        ds->updateZRange();
+        datasets.append(ds);
+      }
+    }
 }
 
 
