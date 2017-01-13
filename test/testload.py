@@ -285,6 +285,36 @@ class TestCrayfishLoad(unittest.TestCase):
     o = ds.output(2)
     self.assertEqual(o.time(), 100.8949966430664)
     self.assertEqual(o.value(210), 0.0)
+
+  def test_load_tuflow_dat(self):
+    m = crayfish.Mesh(TEST_DIR + "/tuflow/dat/dat_format.2dm")
+    m.load_data(TEST_DIR + "/tuflow/dat/dat_format_d.dat")
+    m.load_data(TEST_DIR + "/tuflow/dat/dat_format_V.dat")
+    self.assertEqual(m.dataset_count(), 5)
+
+    self.assertEqual(m.dataset(0).type(), crayfish.DS_Bed)
+    self.assertEqual(m.dataset(1).type(), crayfish.DS_Scalar)
+    self.assertEqual(m.dataset(4).type(), crayfish.DS_Vector)
+    
+    ds = m.dataset(1)
+    self.assertEqual(ds.output_count(), 61)
+    o = ds.output(2)
+    self.assertEqual(o.time(), 0.1666666716337204)
+    self.assertEqual(o.value(210), 0.0)
+
+  def test_load_tuflow_xmdf(self):
+    m = crayfish.Mesh(TEST_DIR + "/tuflow/xmdf/xmdf_format.2dm")
+    m.load_data(TEST_DIR + "/tuflow/xmdf/xmdf_format.xmdf")
+    self.assertEqual(m.dataset_count(), 7)
+
+    self.assertEqual(m.dataset(0).type(), crayfish.DS_Bed)
+    self.assertEqual(m.dataset(1).type(), crayfish.DS_Scalar)
+
+    ds = m.dataset(1)
+    self.assertEqual(ds.output_count(), 61)
+    o = ds.output(2)
+    self.assertEqual(o.time(), 0.1666666716337204)
+    self.assertEqual(o.value(210), 0.0)
     
 if __name__ == '__main__':
   unittest.main()

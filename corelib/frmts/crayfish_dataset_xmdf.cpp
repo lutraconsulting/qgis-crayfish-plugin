@@ -173,7 +173,7 @@ static DataSet* readXmdfGroupAsDataSet(const HdfGroup& g, const QString& datFile
       }
       else
       {
-        memcpy(o->getValuesV().data(), values.constData()+(i*nNodes), sizeof(float)*nNodes);
+        memcpy(o->getValues().data(), values.constData()+(i*nNodes), sizeof(float)*nNodes);
       }
       memcpy(o->getActive().data(), active.constData()+(i*nElems), sizeof(uchar)*nElems);
       ds->addOutput(o);

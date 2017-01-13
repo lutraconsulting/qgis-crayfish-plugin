@@ -136,6 +136,9 @@ public:
 
   virtual void unload() {
     init(0, 0, true);
+    active.squeeze();
+    values.squeeze();
+    valuesV.squeeze();
   }
 
   virtual size_t getSize() const {
@@ -145,13 +148,10 @@ public:
   void init(int nodeCount, int elemCount, bool isVector)
   {
     active.resize(elemCount);
-    active.squeeze();
     values.resize(nodeCount);
-    values.squeeze();
     if (isVector)
     {
       valuesV.resize(nodeCount);
-      valuesV.squeeze();
     }
   }
 
@@ -231,6 +231,8 @@ public:
 
   virtual void unload() {
     init(0, true);
+    values.squeeze();
+    valuesV.squeeze();
   }
 
   inline const QVector<float> &loadedValues() const {
