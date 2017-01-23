@@ -1,4 +1,3 @@
-
 import sys
 sys.path.append('..')
 from qgis.core import QgsGeometry
