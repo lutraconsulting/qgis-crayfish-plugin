@@ -71,25 +71,31 @@ Mesh::DataSets Crayfish::loadXmdfDataSet(const QString& datFileName, const Mesh*
   Mesh::DataSets datasets;
 
   HdfGroup gTemporal = gMesh.group("Temporal");
-  addDataSetsFromGroup(datasets, gTemporal, datFileName, nNodes, nElems);
+  if (gTemporal.isValid()) {
+    addDataSetsFromGroup(datasets, gTemporal, datFileName, nNodes, nElems);
+  }
 
   HdfGroup gMaximums = gMesh.group("Maximums");
-  foreach (const QString& name, gMaximums.groups())
-  {
-    HdfGroup g = gMaximums.group(name);
-    if (DataSet* ds = readXmdfGroupAsDataSet(g, datFileName, name + "/Maximums", nNodes, nElems))
-    {
-      if (ds->outputCount() != 1)
-        qDebug("Maximum dataset should have just one timestep!");
-      ds->setIsTimeVarying(false);
-      ds->updateZRange();
-      datasets.append(ds);
-    }
+  if (gMaximums.isValid()) {
+      foreach (const QString& name, gMaximums.groups())
+      {
+        HdfGroup g = gMaximums.group(name);
+        if (DataSet* ds = readXmdfGroupAsDataSet(g, datFileName, name + "/Maximums", nNodes, nElems))
+        {
+          if (ds->outputCount() != 1)
+            qDebug("Maximum dataset should have just one timestep!");
+          ds->setIsTimeVarying(false);
+          ds->updateZRange();
+          datasets.append(ds);
+        }
+      }
   }
 
   // res_to_res.exe (TUFLOW utiity tool)
   HdfGroup gDifference = gMesh.group("Difference");
-  addDataSetsFromGroup(datasets, gDifference, datFileName, nNodes, nElems);
+  if (gDifference.isValid()) {
+    addDataSetsFromGroup(datasets, gDifference, datFileName, nNodes, nElems);
+  }
 
   return datasets;
 }
