@@ -12,7 +12,9 @@ about=The Crayfish plugin aspires to be a time explorer for various grid and vec
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=2.4.0 - New Features:
+changelog=2.4.1 - Bug fix:
+ - Fix link to ffmpeg
+  <p>2.4.0 - New Features:
  - Fix download of the binaries when behind proxy
  - Add support for XMDF results from res_to_res TUFLOW utility
  - Add support for XDMF result files (.xmd)
@@ -121,7 +123,7 @@ changelog=2.4.0 - New Features:
 ; tags are in comma separated value format, spaces are allowed
 tags=hydraulic,hydraulic modelling,flood,analysis,animation,results viewer,flow,river,channel,mesh,netcdf,anuga,grib,serafin,telemac,hecras,tuflow,sms
 
-homepage=http://www.lutraconsulting.co.uk/resources/crayfish
+homepage=http://www.lutraconsulting.co.uk/products/crayfish
 tracker=https://github.com/lutraconsulting/qgis-crayfish-plugin/issues
 repository=https://github.com/lutraconsulting/qgis-crayfish-plugin
 icon=images/crayfish_128px.png

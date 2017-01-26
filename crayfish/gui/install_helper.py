@@ -191,12 +191,12 @@ def extractBinPackageAfterRestart():
     z.close()
     os.unlink(updateLibraryIndicator)
     return True
-    
+
 def downloadFfmpeg(parent_widget=None):
 
     ffmpegZip = 'ffmpeg-20150505-git-6ef3426-win32-static.zip'
     ffmpegZipPath = os.path.join(destFolder, ffmpegZip)
-    ffmpegUrl = downloadBaseUrl+'resources/crayfish/viewer/binaries/'+findPlatformVersion()+'/extra/'+ffmpegZip
+    ffmpegUrl = downloadBaseUrl+'products/crayfish/viewer/binaries/'+findPlatformVersion()+'/extra/'+ffmpegZip
 
     qApp.setOverrideCursor(QCursor(Qt.WaitCursor))
     try:
