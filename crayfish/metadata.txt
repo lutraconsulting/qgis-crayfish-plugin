@@ -14,7 +14,7 @@ about=The Crayfish plugin aspires to be a time explorer for various grid and vec
 ; start of optional metadata
 changelog=2.4.1 - Bug fix:
  - Fix link to ffmpeg
-  <p>2..4.0 - New Features:
+  <p>2.4.0 - New Features:
  - Fix download of the binaries when behind proxy
  - Add support for XMDF results from res_to_res TUFLOW utility
  - Add support for XDMF result files (.xmd)
