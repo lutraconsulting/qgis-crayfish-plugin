@@ -16,7 +16,7 @@ You can use Crayfish to load the following file formats in QGIS:
 - [HEC-RAS](http://www.hec.usace.army.mil/software/hec-ras/): Outputs of the HEC-RAS modelling package
 - [Serafin files](http://www.gdal.org/drv_selafin.html): Outputs of the TELEMAC 2D hydrodynamic modelling package
 - [FLO-2D](http://www.flo-2d.com/): Outputs of the FLO-2D modelling package
-- XMDF: Generic format for scientific data.
+- XDMF: Generic format for scientific data.
 
 <img src="https://travis-ci.org/lutraconsulting/qgis-crayfish-plugin.svg?branch=master">
 
