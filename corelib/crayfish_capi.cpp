@@ -49,7 +49,7 @@ static LoadStatus sLastLoadStatus;
 
 int CF_Version()
 {
-  return 0x020400; // 2.4.0
+  return 0x020500; // 2.5.0
 }
 
 
