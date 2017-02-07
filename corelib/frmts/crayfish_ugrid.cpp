@@ -24,11 +24,14 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <QVector>
+#include <QString>
 
 #include "crayfish.h"
 #include "crayfish_mesh.h"
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
+#include "math.h"
 
 #include <netcdf.h>
 
@@ -37,294 +40,185 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 // determine that when loading data
 #define DEPTH_THRESHOLD   0.0001   // in meters
 
+static int openFile(const QString& fileName) {
+    int ncid;
+    int res = nc_open(fileName.toUtf8().constData(), NC_NOWRITE, &ncid);
+    if (res != NC_NOERR)
+    {
+      qDebug("error: %s", nc_strerror(res));
+      throw LoadStatus::Err_UnknownFormat;
+    }
+    return ncid;
+}
+
+static size_t get_dimension(const QString& name, int ncid) {
+    int dimId;
+    size_t res;
+    if (nc_inq_dimid(ncid, name.toStdString().c_str(), &dimId) != NC_NOERR)
+    {
+      throw LoadStatus::Err_UnknownFormat;
+    }
+    if (nc_inq_dimlen(ncid, dimId, &res) != NC_NOERR)
+    {
+      throw LoadStatus::Err_UnknownFormat;
+    }
+    return res;
+}
+
+static QVector<int> readIntArr(const QString& name, size_t dim, int ncid)
+{
+        int arr_id;
+        if (nc_inq_varid(ncid, name.toStdString().c_str(), &arr_id) != NC_NOERR)
+        {
+          throw LoadStatus::Err_UnknownFormat;
+        }
+        QVector<int> arr_val(dim);
+        if (nc_get_var_int (ncid, arr_id, arr_val.data()) != NC_NOERR)
+        {
+          throw LoadStatus::Err_UnknownFormat;
+        }
+        return arr_val;
+}
+
+static QVector<double> readDoubleArr(const QString& name, size_t dim, int ncid) {
+    int arr_id;
+    if (nc_inq_varid(ncid, name.toStdString().c_str(), &arr_id) != NC_NOERR)
+    {
+      throw LoadStatus::Err_UnknownFormat;
+    }
+    QVector<double> arr_val(dim);
+    if (nc_get_var_double (ncid, arr_id, arr_val.data()) != NC_NOERR)
+    {
+      throw LoadStatus::Err_UnknownFormat;
+    }
+    return arr_val;
+}
+
+
+static int getAttrInt(const QString& name, const QString& attr_name, int ncid) {
+    int arr_id;
+    if (nc_inq_varid(ncid, name.toStdString().c_str(), &arr_id) != NC_NOERR)
+    {
+      throw LoadStatus::Err_UnknownFormat;
+    }
+
+    int val;
+    if (nc_get_att_int(ncid, arr_id, attr_name.toStdString().c_str(), &val))
+    {
+        throw LoadStatus::Err_UnknownFormat;
+    }
+    return val;
+}
+
+static double getAttrDouble(const QString& name, const QString& attr_name, int ncid) {
+    int arr_id;
+    if (nc_inq_varid(ncid, name.toStdString().c_str(), &arr_id) != NC_NOERR)
+    {
+      throw LoadStatus::Err_UnknownFormat;
+    }
+
+    double val;
+    if (nc_get_att_double(ncid, arr_id, attr_name.toStdString().c_str(), &val))
+    {
+        throw LoadStatus::Err_UnknownFormat;
+    }
+    return val;
+}
+
+static void setProjection(Mesh* m, int ncid) {
+    // TODO
+    return;
+}
+
+static Mesh::Nodes createNodes(size_t nPoints, int ncid) {
+    QVector<double> nodes_x = readDoubleArr("mesh2d_node_x", nPoints, ncid);
+    QVector<double> nodes_y = readDoubleArr("mesh2d_node_y", nPoints, ncid);
+
+    Mesh::Nodes nodes(nPoints);
+    Node* nodesPtr = nodes.data();
+    for (size_t i = 0; i < nPoints; ++i, ++nodesPtr)
+    {
+              nodesPtr->setId(i);
+              nodesPtr->x = nodes_x[i];
+              nodesPtr->y = nodes_y[i];
+    }
+    return nodes;
+}
+
+static Mesh::Elements createElements(size_t nVolumes, int ncid) {
+    int nMaxVertices = get_dimension("max_nmesh2d_face_nodes", ncid);
+    double fill_val = getAttrInt("mesh2d_face_nodes", "_FillValue", ncid);
+    QVector<int> face_nodes_conn = readIntArr("mesh2d_face_nodes", nVolumes * nMaxVertices, ncid);
+
+    Mesh::Elements elements(nVolumes);
+    Element* elementsPtr = elements.data();
+
+    for (size_t i = 0; i < nVolumes; ++i, ++elementsPtr)
+    {
+        elementsPtr->setId(i);
+        Element::Type et = Element::ENP;
+        int nVertices = nMaxVertices;
+
+        for (size_t j = 0; j < nMaxVertices; ++j) {
+            size_t idx = nMaxVertices*i + j;
+            int val = face_nodes_conn[idx];
+
+            if (fill_val == val) {
+                // found fill val
+                nVertices = j;
+                Q_ASSERT(nVertices > 1);
+                if (nVertices == 2) {
+                    et = Element::E2L;
+                } else if (nVertices == 3) {
+                    et = Element::E3T;
+                } else if (nVertices == 4) {
+                    et = Element::E4Q;
+                }
+                break;
+            }
+        }
+
+        elementsPtr->setEType(et, nVertices);
+        elementsPtr->setP(&(face_nodes_conn.data()[nMaxVertices*i]));
+    }
+    return elements;
+}
+
+static Mesh* createMesh(size_t nPoints, size_t nVolumes, int ncid) {
+    Mesh::Nodes nodes = createNodes(nPoints, ncid);
+    Mesh::Elements elements = createElements(nVolumes, ncid);
+    Mesh* m = new Mesh(nodes, elements);
+    return m;
+}
 
 Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
 {
-  if (status) status->clear();
-
-  int ncid;
-  int res;
-
-  res = nc_open(fileName.toUtf8().constData(), NC_NOWRITE, &ncid);
-  if (res != NC_NOERR)
-  {
-    qDebug("error: %s", nc_strerror(res));
-    nc_close(ncid);
-    if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
-    return 0;
-  }
-
-  // get dimensions
-  int nVolumesId, nVerticesId, nPointsId, nTimestepsId;
-  size_t nVolumes, nVertices, nPoints, nTimesteps;
-  if (nc_inq_dimid(ncid, "nmesh2d_face", &nVolumesId) != NC_NOERR ||
-      nc_inq_dimid(ncid, "max_nmesh2d_face_nodes", &nVerticesId) != NC_NOERR ||
-      nc_inq_dimid(ncid, "nmesh2d_node", &nPointsId) != NC_NOERR ||
-      nc_inq_dimid(ncid, "time", &nTimestepsId) != NC_NOERR)
-  {
-    nc_close(ncid);
-    if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
-    return 0;
-  }
-  if (nc_inq_dimlen(ncid, nVolumesId, &nVolumes) != NC_NOERR ||
-      nc_inq_dimlen(ncid, nVerticesId, &nVertices) != NC_NOERR ||
-      nc_inq_dimlen(ncid, nPointsId, &nPoints) != NC_NOERR ||
-      nc_inq_dimlen(ncid, nTimestepsId, &nTimesteps) != NC_NOERR)
-  {
-    nc_close(ncid);
-    if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
-    return 0;
-  }
-
-  if (nVertices != 3)
-  {
-    qDebug("Expecting triangular elements!");
-    nc_close(ncid);
-    if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
-    return 0;
-  }
-
-  int xid, yid, zid, volumesid, timeid, stageid;
-  if (nc_inq_varid(ncid, "x", &xid) != NC_NOERR ||
-      nc_inq_varid(ncid, "y", &yid) != NC_NOERR ||
-      nc_inq_varid(ncid, "volumes", &volumesid) != NC_NOERR ||
-      nc_inq_varid(ncid, "time", &timeid) != NC_NOERR ||
-      nc_inq_varid(ncid, "stage", &stageid) != NC_NOERR)
-  {
-    nc_close(ncid);
-    if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
-    return 0;
-  }
-
-  // load mesh data
-  QVector<float> px(nPoints), py(nPoints), pz(nPoints);
-  unsigned int* pvolumes = new unsigned int[nVertices * nVolumes];
-  if (nc_get_var_float (ncid, xid, px.data()) != NC_NOERR ||
-      nc_get_var_float (ncid, yid, py.data()) != NC_NOERR ||
-      nc_get_var_int (ncid, volumesid, (int *) pvolumes) != NC_NOERR)
-  {
-    delete [] pvolumes;
-
-    nc_close(ncid);
-    if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
-    return 0;
-  }
-
-  // we may need to apply a shift to the X,Y coordinates
-  float xLLcorner = 0, yLLcorner = 0;
-  nc_get_att_float(ncid, NC_GLOBAL, "xllcorner", &xLLcorner);
-  nc_get_att_float(ncid, NC_GLOBAL, "yllcorner", &yLLcorner);
-
-  Mesh::Nodes nodes(nPoints);
-  Node* nodesPtr = nodes.data();
-  for (size_t i = 0; i < nPoints; ++i, ++nodesPtr)
-  {
-    nodesPtr->setId(i);
-    nodesPtr->x = px[i] + xLLcorner;
-    nodesPtr->y = py[i] + yLLcorner;
-  }
-
-  QVector<float> times(nTimesteps);
-  nc_get_var_float(ncid, timeid, times.data());
-
-  int zDims = 0;
-  if ( nc_inq_varid(ncid, "z", &zid) == NC_NOERR &&
-       nc_get_var_float (ncid, zid, pz.data()) == NC_NOERR )
-  {
-    // older SWW format: elevation is constant over time
-
-    zDims = 1;
-  }
-  else if ( nc_inq_varid(ncid, "elevation", &zid) == NC_NOERR &&
-            nc_inq_varndims(ncid, zid, &zDims) == NC_NOERR &&
-            ((zDims == 1 && nc_get_var_float (ncid, zid, pz.data()) == NC_NOERR) || zDims == 2) )
-  {
-    // we're good
-  }
-  else
-  {
-    // neither "z" nor "elevation" are present -> something is going wrong
-
-    delete [] pvolumes;
-
-    nc_close(ncid);
-    if (status) status->mLastError = LoadStatus::Err_UnknownFormat;
-    return 0;
-  }
-
-  // read bed elevations
-  QList<NodeOutput*> elevationOutputs;
-  if (zDims == 1)
-  {
-    // either "z" or "elevation" with 1 dimension
-    NodeOutput* o = new NodeOutput;
-    o->init(nPoints, nVolumes, false);
-    o->time = 0.0;
-    memset(o->getActive().data(), 1, nVolumes); // All cells active
-    for (size_t i = 0; i < nPoints; ++i)
-      o->getValues()[i] = pz[i];
-    elevationOutputs << o;
-  }
-  else if (zDims == 2)
-  {
-    // newer SWW format: elevation may change over time
-    for (size_t t = 0; t < nTimesteps; ++t)
+    if (status) status->clear();
+    int ncid = 0;
+    Mesh* mesh = 0;
+    try
     {
-      NodeOutput* toe = new NodeOutput;
-      toe->init(nPoints, nVolumes, false);
-      toe->time = times[t] / 3600.;
-      memset(toe->getActive().data(), 1, nVolumes); // All cells active
-      float* elev = toe->getValues().data();
+        ncid = openFile(fileName);
 
-      // fetching "elevation" data for one timestep
-      size_t start[2], count[2];
-      const ptrdiff_t stride[2] = {1,1};
-      start[0] = t;
-      start[1] = 0;
-      count[0] = 1;
-      count[1] = nPoints;
-      nc_get_vars_float(ncid, zid, start, count, stride, elev);
+        // Parse dimensions
+        int nPoints = get_dimension("nmesh2d_node", ncid);
+        int nVolumes = get_dimension("nmesh2d_face", ncid);
+        int nTimesteps = get_dimension("time", ncid);
 
-      elevationOutputs << toe;
+        // Create mMesh
+        mesh = createMesh(nPoints, nVolumes, ncid);
+        setProjection(mesh, ncid);
+
+        // Create datasets
+        // addDatasets();
     }
-  }
-
-  Mesh::Elements elements(nVolumes);
-  Element* elementsPtr = elements.data();
-
-  for (size_t i = 0; i < nVolumes; ++i, ++elementsPtr)
-  {
-    elementsPtr->setId(i);
-    elementsPtr->setEType(Element::E3T);
-    elementsPtr->setP(&pvolumes[3*i]);
-  }
-
-  delete [] pvolumes;
-
-  Mesh* mesh = new Mesh(nodes, elements);
-
-  // Create a dataset for the bed elevation
-  DataSet* bedDs = new DataSet(fileName);
-  bedDs->setType(DataSet::Bed);
-  bedDs->setName("Bed Elevation");
-  if (elevationOutputs.count() == 1)
-  {
-    bedDs->setIsTimeVarying(false);
-    bedDs->addOutput(elevationOutputs.at(0));  // takes ownership of the Output
-  }
-  else
-  {
-    bedDs->setIsTimeVarying(true);
-    foreach (NodeOutput* o, elevationOutputs)
-      bedDs->addOutput(o);
-  }
-  bedDs->updateZRange();
-  mesh->addDataSet(bedDs);
-
-  // load results
-
-  DataSet* dss = new DataSet(fileName);
-  dss->setType(DataSet::Scalar);
-  dss->setName("Stage");
-  dss->setIsTimeVarying(true);
-
-  DataSet* dsd = new DataSet(fileName);
-  dsd->setType(DataSet::Scalar);
-  dsd->setName("Depth");
-  dsd->setIsTimeVarying(true);
-
-  for (size_t t = 0; t < nTimesteps; ++t)
-  {
-    const NodeOutput* elevO = bedDs->isTimeVarying() ? bedDs->nodeOutput(t) : bedDs->nodeOutput(0);
-    const float* elev = elevO->loadedValues().constData();
-
-    NodeOutput* tos = new NodeOutput;
-    tos->init(nPoints, nVolumes, false);
-    tos->time = times[t] / 3600.;
-    float* values = tos->getValues().data();
-
-    // fetching "stage" data for one timestep
-    size_t start[2], count[2];
-    const ptrdiff_t stride[2] = {1,1};
-    start[0] = t;
-    start[1] = 0;
-    count[0] = 1;
-    count[1] = nPoints;
-    nc_get_vars_float(ncid, stageid, start, count, stride, values);
-
-    // derived data: depth = stage - elevation
-    NodeOutput* tod = new NodeOutput;
-    tod->init(nPoints, nVolumes, false);
-    tod->time = tos->time;
-    float* depths = tod->getValues().data();
-    for (size_t j = 0; j < nPoints; ++j)
-      depths[j] = values[j] - elev[j];
-
-    // determine which elements are active (wet)
-    for (size_t elemidx = 0; elemidx < nVolumes; ++elemidx)
+    catch (LoadStatus::Error error)
     {
-      const Element& elem = mesh->elements()[elemidx];
-      float v0 = depths[elem.p(0)];
-      float v1 = depths[elem.p(1)];
-      float v2 = depths[elem.p(2)];
-      tos->getActive()[elemidx] = v0 > DEPTH_THRESHOLD && v1 > DEPTH_THRESHOLD && v2 > DEPTH_THRESHOLD;
-    }
-    tod->getActive() = tos->getActive();
-
-    dss->addOutput(tos);
-    dsd->addOutput(tod);
-  }
-
-  dss->updateZRange();
-  mesh->addDataSet(dss);
-  dsd->updateZRange();
-  mesh->addDataSet(dsd);
-
-  int momentumxid, momentumyid;
-  if (nc_inq_varid(ncid, "xmomentum", &momentumxid) == NC_NOERR &&
-      nc_inq_varid(ncid, "ymomentum", &momentumyid) == NC_NOERR)
-  {
-    DataSet* mds = new DataSet(fileName);
-    mds->setType(DataSet::Vector);
-    mds->setName("Momentum");
-    mds->setIsTimeVarying(true);
-
-    QVector<float> valuesX(nPoints), valuesY(nPoints);
-    for (size_t t = 0; t < nTimesteps; ++t)
-    {
-      NodeOutput* mto = new NodeOutput;
-      mto->init(nPoints, nVolumes, true);
-      mto->time = times[t] / 3600.;
-      mto->getActive() = dsd->nodeOutput(t)->getActive();
-
-      // fetching "stage" data for one timestep
-      size_t start[2], count[2];
-      const ptrdiff_t stride[2] = {1,1};
-      start[0] = t;
-      start[1] = 0;
-      count[0] = 1;
-      count[1] = nPoints;
-      nc_get_vars_float(ncid, momentumxid, start, count, stride, valuesX.data());
-      nc_get_vars_float(ncid, momentumyid, start, count, stride, valuesY.data());
-
-      NodeOutput::float2D* mtoValuesV = mto->getValuesV().data();
-      float* mtoValues = mto->getValues().data();
-      for (size_t i = 0; i < nPoints; ++i)
-      {
-        mtoValuesV[i].x = valuesX[i];
-        mtoValuesV[i].y = valuesY[i];
-        mtoValues[i] = mtoValuesV[i].length();
-      }
-
-      mds->addOutput(mto);
+        if (status) status->mLastError = (error);
+        if (mesh) delete mesh;
+        mesh = 0;
     }
 
-
-    mds->updateZRange();
-    mesh->addDataSet(mds);
-  }
-
-  nc_close(ncid);
-
-  return mesh;
+    if (ncid != 0) nc_close(ncid);
+    return mesh;
 }
