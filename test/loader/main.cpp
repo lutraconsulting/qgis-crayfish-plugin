@@ -47,5 +47,16 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // STATS
+    int nDatasets = CF_Mesh_dataSetCount(m);
+    std::cout << std::endl << "Stats" << std::endl;
+    std::cout << "  Node count: " << CF_Mesh_nodeCount(m) <<  std::endl;
+    std::cout << "  Element count: " << CF_Mesh_elementCount(m) << std::endl;
+    std::cout << "  Dataset count: " << nDatasets << std::endl;
+    std::cout << "  Datasets: " << nDatasets << std::endl;
+    for (int i=0; i<nDatasets; ++i) {
+        DataSetH ds = CF_Mesh_dataSetAt(m, i);
+        std::cout << "    " << CF_DS_name(ds) << " (" <<  CF_DS_outputCount(ds) << ")" << std::endl;
+    }
     return EXIT_SUCCESS;
 }

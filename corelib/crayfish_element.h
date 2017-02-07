@@ -55,7 +55,6 @@ public:
     void setEType(Type eType, int node_count);
     void setP(int idx, uint val);
     void setP(uint* vals);
-    void setP(int* vals);
     void setId(int id);
 
 

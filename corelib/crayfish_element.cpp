@@ -49,6 +49,5 @@ void Element::setEType(Type eType, int node_count) {
 uint Element::p(int idx) const {Q_ASSERT(idx < nodeCount()); return mP[idx];}
 void Element::setP(int idx, uint val) {Q_ASSERT(idx < nodeCount()); mP[idx] = val;}
 void Element::setP(uint* vals) {for (int i=0; i<nodeCount(); i++) {mP[i] = vals[i];}}
-void Element::setP(int* vals) {for (int i=0; i<nodeCount(); i++) {Q_ASSERT(vals[i] >= 0); mP[i] = (uint) vals[i];}}
 void Element::setId(int id) {mId = id;}
 int Element::id() const {return mId;}

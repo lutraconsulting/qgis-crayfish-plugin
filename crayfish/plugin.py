@@ -287,11 +287,13 @@ class CrayfishPlugin:
         # Load mesh as new Crayfish layer for file
         # In file is container of multiple meshes, load them all separately (e.g. netCFD file)
         data_sources_to_add = [inFileName]
-        if fileType == '.nc':
-            # this one is container of multiple sublayers
-            temp_raster = QgsRasterLayer(inFileName)
-            if (not temp_raster.isValid()) and (len(temp_raster.subLayers()) > 1):
-                data_sources_to_add = temp_raster.subLayers()
+
+        # TODO move to netcdf reader C++!
+        # if fileType == '.nc':
+        #    # this one is container of multiple sublayers
+        #    temp_raster = QgsRasterLayer(inFileName)
+        #    if (not temp_raster.isValid()) and (len(temp_raster.subLayers()) > 1):
+        #        data_sources_to_add = temp_raster.subLayers()
 
         added_layers = 0
         for data_source in data_sources_to_add:

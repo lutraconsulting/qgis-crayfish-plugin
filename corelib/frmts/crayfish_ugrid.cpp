@@ -147,7 +147,8 @@ static Mesh::Nodes createNodes(size_t nPoints, int ncid) {
 
 static Mesh::Elements createElements(size_t nVolumes, int ncid) {
     int nMaxVertices = get_dimension("max_nmesh2d_face_nodes", ncid);
-    double fill_val = getAttrInt("mesh2d_face_nodes", "_FillValue", ncid);
+    int fill_val = getAttrInt("mesh2d_face_nodes", "_FillValue", ncid);
+    int start_index = getAttrInt("mesh2d_face_nodes", "start_index", ncid);
     QVector<int> face_nodes_conn = readIntArr("mesh2d_face_nodes", nVolumes * nMaxVertices, ncid);
 
     Mesh::Elements elements(nVolumes);
@@ -158,6 +159,7 @@ static Mesh::Elements createElements(size_t nVolumes, int ncid) {
         elementsPtr->setId(i);
         Element::Type et = Element::ENP;
         int nVertices = nMaxVertices;
+        QVector<uint> idxs(nMaxVertices);
 
         for (size_t j = 0; j < nMaxVertices; ++j) {
             size_t idx = nMaxVertices*i + j;
@@ -175,11 +177,13 @@ static Mesh::Elements createElements(size_t nVolumes, int ncid) {
                     et = Element::E4Q;
                 }
                 break;
+            } else {
+                idxs[j] = val - start_index;
             }
         }
 
         elementsPtr->setEType(et, nVertices);
-        elementsPtr->setP(&(face_nodes_conn.data()[nMaxVertices*i]));
+        elementsPtr->setP(idxs.data());
     }
     return elements;
 }
@@ -189,6 +193,31 @@ static Mesh* createMesh(size_t nPoints, size_t nVolumes, int ncid) {
     Mesh::Elements elements = createElements(nVolumes, ncid);
     Mesh* m = new Mesh(nodes, elements);
     return m;
+}
+
+static void addBedLevel(Mesh* m, int nVolumes, int ncid, const QString& fileName) {
+    // read data
+    int fill_val = getAttrInt("mesh2d_flowelem_bl", "_FillValue", ncid);
+    QVector<double> bed = readDoubleArr("mesh2d_flowelem_bl", nVolumes, ncid);
+
+    // Create output
+    ElementOutput* el = new ElementOutput();
+    el->init(nVolumes, false);
+    QVector<float>& vals = el->getValues();
+    for (size_t i = 0; i< nVolumes; ++i) {
+        vals[i] = bed[i];
+    }
+
+    // Create a dataset for the bed elevation
+    DataSet* bedDs = new DataSet(fileName);
+    bedDs->setType(DataSet::Bed);
+    bedDs->setName("Bed Elevation");
+    bedDs->addOutput(el);
+    bedDs->setIsTimeVarying(false);
+    bedDs->updateZRange();
+
+    // Add to mesh
+    m->addDataSet(bedDs);
 }
 
 Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
@@ -208,6 +237,9 @@ Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
         // Create mMesh
         mesh = createMesh(nPoints, nVolumes, ncid);
         setProjection(mesh, ncid);
+
+        // Add bed level
+        addBedLevel(mesh, nVolumes, ncid, fileName);
 
         // Create datasets
         // addDatasets();
