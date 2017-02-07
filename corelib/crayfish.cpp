@@ -46,9 +46,18 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
 
   // This may be either single filename or
   // subdataset name in form NETCDF:filename:variable
+  // or UGRID netCDF file
   if (meshFile.endsWith(".nc") ||
       meshFile.startsWith("NETCDF:"))
-    return loadNetCDF(meshFile, status);
+  {
+      Mesh* m = loadNetCDF(meshFile, status);
+      if (!m) {
+          // error, try UGRID
+          if (status) status->clear();
+          m = loadUGRID(meshFile, status);
+      }
+    return m;
+  }
 
   if (meshFile.endsWith((".slf")))
     return loadSerafin(meshFile, status);

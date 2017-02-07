@@ -88,6 +88,7 @@ protected:
   static Mesh* loadHec2D(const QString& fileName, LoadStatus* status = 0);
   static Mesh* loadNetCDF(const QString& fileName, LoadStatus* status = 0);
   static Mesh* loadSerafin(const QString& fileName, LoadStatus* status = 0);
+  static Mesh* loadUGRID(const QString& fileName, LoadStatus* status = 0);
 
   static Mesh::DataSets loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
   static Mesh::DataSets loadAsciiDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);

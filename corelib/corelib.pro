@@ -93,6 +93,7 @@ SOURCES += crayfish.cpp \
     frmts/crayfish_grib.cpp \
     frmts/crayfish_hec2d.cpp \
     frmts/crayfish_sww.cpp \
+    frmts/crayfish_ugrid.cpp \
     frmts/crayfish_serafin.cpp \
     frmts/crayfish_netcdf.cpp \
     frmts/crayfish_mesh_2dm.cpp \
