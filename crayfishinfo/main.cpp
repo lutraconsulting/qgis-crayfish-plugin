@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 
     MeshH m = CF_LoadMesh(mesh_file.toStdString().c_str());
     if (m) {
-        std::cout << "Mesh loaded: OK" << std::endl;
+        std::cout << "Mesh loaded: OK" << std::endl;       
     } else {
         std::cout << "Mesh loaded: ERR" << std::endl;
         std::cout << "Status err:" << CF_LastLoadError() <<  std::endl;

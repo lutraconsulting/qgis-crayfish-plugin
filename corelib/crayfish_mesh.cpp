@@ -610,6 +610,29 @@ void Mesh::setSourceCrs(const QString& srcProj4)
   reprojectMesh();
 }
 
+static QString _setSourceCrsFromEPSG(int epsg) {
+    QString ret;
+
+    OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
+    if (OSRImportFromEPSG(hSRS, epsg) == OGRERR_NONE)
+    {
+        char * ppszReturn = 0;
+        if (OSRExportToProj4(hSRS, &ppszReturn) == OGRERR_NONE && ppszReturn != 0)
+        {
+            ret = ppszReturn;
+        }
+    }
+    OSRDestroySpatialReference(hSRS);
+
+    return ret;
+}
+
+void Mesh::setSourceCrsFromEPSG(int epsg)
+{
+    QString proj4 = _setSourceCrsFromEPSG(epsg);
+    setSourceCrs(proj4);
+}
+
 void Mesh::setDestinationCrs(const QString& destProj4)
 {
   if (mDestProj4 == destProj4)

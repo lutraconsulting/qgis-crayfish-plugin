@@ -129,6 +129,7 @@ public:
 
   void setSourceCrs(const QString& srcProj4); // proj4
   void setSourceCrsFromWKT(const QString& wkt); // wkt
+  void setSourceCrsFromEPSG(int epsg); // EPSG code
 
   void setDestinationCrs(const QString& destProj4);
   bool hasProjection() const;

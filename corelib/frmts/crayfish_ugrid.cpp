@@ -148,6 +148,7 @@ static QVector<int> readIntArr(const QString& name, size_t dim, int ncid)
         return arr_val;
 }
 
+
 static QVector<double> readDoubleArr(const QString& name, size_t dim, int ncid) {
     int arr_id;
     if (nc_inq_varid(ncid, name.toStdString().c_str(), &arr_id) != NC_NOERR)
@@ -178,10 +179,21 @@ static int getAttrInt(const QString& name, const QString& attr_name, int ncid) {
     return val;
 }
 
+static QString getAttrStr(const QString& name, const QString& attr_name, int ncid) {
+    int arr_id;
+    if (nc_inq_varid(ncid, name.toStdString().c_str(), &arr_id)) UGRID_THROW_ERR;
+    return get_attr_str(attr_name, ncid, arr_id);
+}
+
 ////////////////////////////////////////////////////////////////
 static void setProjection(Mesh* m, int ncid) {
-    // TODO
-    return;
+    QString wkt = getAttrStr("projected_coordinate_system", "wkt", ncid);
+    if (wkt.isEmpty()) {
+        int epsg = getAttrInt("projected_coordinate_system", "epsg", ncid);
+        m->setSourceCrsFromEPSG(epsg);
+    } else {
+        m->setSourceCrsFromWKT(wkt);
+    }
 }
 
 static Mesh::Nodes createNodes(const Dimensions& dims, int ncid) {
