@@ -1,9 +1,9 @@
 TEMPLATE = subdirs
 CONFIG += ordered
-SUBDIRS = crayfish \
+SUBDIRS = corelib \
           crayfishinfo
 
-crayfishinfo.depends = crayfish
+crayfishinfo.depends = corelib
 
-crayfish.subdir = crayfish
+corelib.subdir = corelib
 crayfishinfo.subdir = crayfishinfo
