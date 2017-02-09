@@ -73,6 +73,8 @@ public:
 
 Mesh* Crayfish::loadNetCDF(const QString& fileName, LoadStatus* status)
 {
+    // First we need to split it to sub
+
     NetCDFReader reader(fileName);
     return reader.load(status);
 }

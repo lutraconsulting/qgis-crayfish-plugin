@@ -263,7 +263,7 @@ class CrayfishPlugin:
             """
                 The user has selected a mesh file...
             """
-            if not self.loadMesh(inFileName, fileType):
+            if not self.loadMesh(inFileName):
                 return
 
             # update GUI
@@ -283,31 +283,16 @@ class CrayfishPlugin:
             qgis_message_bar.pushMessage("Crayfish", "The file type you are trying to load is not supported: " + fileType, level=QgsMessageBar.CRITICAL)
             return
 
-    def loadMesh(self, inFileName, fileType):
+    def loadMesh(self, inFileName):
         # Load mesh as new Crayfish layer for file
-        # In file is container of multiple meshes, load them all separately (e.g. netCFD file)
-        data_sources_to_add = [inFileName]
+        layerWith2dm = self.getLayerWith2DM(inFileName)
 
-        # TODO move to netcdf reader C++!
-        # if fileType == '.nc':
-        #    # this one is container of multiple sublayers
-        #    temp_raster = QgsRasterLayer(inFileName)
-        #    if (not temp_raster.isValid()) and (len(temp_raster.subLayers()) > 1):
-        #        data_sources_to_add = temp_raster.subLayers()
+        if layerWith2dm:
+            # This 2dm has already been added
+            qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
+            return True
 
-        added_layers = 0
-        for data_source in data_sources_to_add:
-            layerWith2dm = self.getLayerWith2DM(data_source)
-
-            if layerWith2dm:
-                # This 2dm has already been added
-                qgis_message_bar.pushMessage("Crayfish", "The mesh file is already loaded in layer " + layerWith2dm.name(), level=QgsMessageBar.INFO)
-                continue
-
-            if self.addLayer(data_source): # addLayer() reports errors/warnings
-                added_layers += 1
-
-        return added_layers > 0 # success
+        return self.addLayer(inFileName) # addLayer() reports errors/warnings
 
     def loadMeshForFile(self, inFileName):
 
