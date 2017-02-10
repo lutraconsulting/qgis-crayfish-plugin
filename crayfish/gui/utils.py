@@ -160,16 +160,12 @@ def qv2bool(v):
 def qv2string(v):
     return v.toString() if isinstance(v, QVariant) else v
 
-
-
-
-def time_to_string(hours):
-
-    seconds = round(hours * 3600.0, 2)
-    m, s = divmod(seconds, 60)
-    h, m = divmod(m, 60)
-    return "%02d:%02d:%05.2f" % (h, m, s)
-
+def float_safe(txt):
+    """ convert to float, return 0 if conversion is not possible """
+    try:
+        return float(txt)
+    except ValueError:
+        return 0.
 
 def load_ui(name):
     ui_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),

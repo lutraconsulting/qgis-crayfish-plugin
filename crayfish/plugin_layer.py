@@ -34,6 +34,7 @@ from qgis.utils import iface
 
 from .gui.utils import QgsMessageBar, qgis_message_bar, defaultColorRamp
 from .layer_renderer import CrayfishPluginLayerRenderer
+from .gui.datetime_settings import CrayfishDateTimeSettings
 from .core import Err, last_load_status, Mesh, ColorMap, DataSet
 
 
@@ -114,6 +115,7 @@ class CrayfishPluginLayer(QgsPluginLayer):
         self.lockCurrent = True
 
         self.renderer = None
+        self.dateTimeSettings = None
 
         # cache dataset objects - we associate further properties to them
         # so we don't want the object to be deleted while this layer is alive

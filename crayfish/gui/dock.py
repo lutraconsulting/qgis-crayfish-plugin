@@ -30,6 +30,7 @@ from qgis.core import *
 
 from ..core import DataSet, DS_Bed, DS_Vector
 from .plot_widget import CrayfishPlotWidget
+from .datetime_options_dialog import CrayfishDatetimeOptionsDialog
 from .vector_options_dialog import CrayfishVectorOptionsDialog
 from .mesh_options_dialog import CrayfishMeshOptionsDialog
 from .render_settings import CrayfishRenderSettings
@@ -64,6 +65,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
         self.btnAdvanced.setIcon(iconOptions)
         self.btnVectorOptions.setIcon(iconOptions)
         self.btnMeshOptions.setIcon(iconOptions)
+        self.btnTimeOptions.setIcon(iconOptions)
 
         self.btnPlot.setIcon(QgsApplication.getThemeIcon("/histogram.png"))
         self.btnLockCurrent.setIcon(QgsApplication.getThemeIcon("/locked.svg"))
@@ -88,6 +90,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
         QObject.connect(self.contourTransparencySlider, SIGNAL('valueChanged(int)'), self.transparencyChanged)
         QObject.connect(self.cboContourBasic, SIGNAL('currentIndexChanged(int)'), self.contourColorMapChanged)
         QObject.connect(self.btnAdvanced, SIGNAL("clicked()"), self.editAdvanced)
+        QObject.connect(self.btnTimeOptions, SIGNAL("clicked()"), self.editDateTime)
         QObject.connect(self.radContourBasic, SIGNAL("clicked()"), self.setContourType)
         QObject.connect(self.radContourAdvanced, SIGNAL("clicked()"), self.setContourType)
         QObject.connect(self.btnMeshOptions, SIGNAL("clicked()"), self.displayMeshPropsDialog)
@@ -470,6 +473,10 @@ class CrayfishDock(qtBaseClass, uiDialog):
         self.advancedColorMapDialog.show()
         self.updateColorMapAndRedraw(ds)
 
+
+    def editDateTime(self):
+        self.dateTimeDialog = CrayfishDatetimeOptionsDialog(self.iface self)
+        self.advancedColorMapDialog.show()
 
     def setContourType(self):
         ds = self.currentDataSet()

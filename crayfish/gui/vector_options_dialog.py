@@ -28,16 +28,9 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 
-from .utils import load_ui
+from .utils import load_ui, float_safe
 
 uiDialog, qtBaseClass = load_ui('crayfish_viewer_vector_options_dialog_widget')
-
-def float_safe(txt):
-    """ convert to float, return 0 if conversion is not possible """
-    try:
-        return float(txt)
-    except ValueError:
-        return 0.
 
 
 class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
