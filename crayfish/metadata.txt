@@ -14,7 +14,10 @@ about=The Crayfish plugin aspires to be a time explorer for various grid and vec
 ; start of optional metadata
 changelog=2.5.0 - New Features:
  - UGRID support (NetCDF)
- - Fix link to ffmpeg
+ - NetCDF4 support
+ - All NetCDF quantities loaded in one layer
+ - Settings for time display format
+ - Fix link to ffmpeg (windows)
   <p>2.4.0 - New Features:
  - Fix download of the binaries when behind proxy
  - Add support for XMDF results from res_to_res TUFLOW utility
