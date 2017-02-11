@@ -23,6 +23,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+from datetime import datetime
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -34,6 +35,7 @@ from .datetime_options_dialog import CrayfishDatetimeOptionsDialog
 from .vector_options_dialog import CrayfishVectorOptionsDialog
 from .mesh_options_dialog import CrayfishMeshOptionsDialog
 from .render_settings import CrayfishRenderSettings
+from .datetime_settings import CrayfishDateTimeSettings
 from .utils import load_ui, initColorButton, initColorRampComboBox, name2ramp, time_to_string
 from .dataset_view import DataSetModel
 from .colormap_dialog import CrayfishColorMapDialog
@@ -74,6 +76,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
         self.vectorPropsDialog = None
         self.advancedColorMapDialog = None
         self.meshPropsDialog = None
+        self.timePropsDialog = None
 
         # Ensure refresh() is called when the layer changes
         QObject.connect(self.cboTime, SIGNAL("currentIndexChanged(int)"), self.outputTimeChanged)
@@ -206,6 +209,14 @@ class CrayfishDock(qtBaseClass, uiDialog):
         self.updateColorMapAndRedraw(ds)
 
 
+    def repopulate_time_control_combo(self, dataSet):
+        self.cboTime.blockSignals(True) # make sure that currentIndexChanged(int) will not be emitted
+        self.cboTime.clear()
+        if dataSet.time_varying():
+            for output in dataSet.outputs():
+                self.cboTime.addItem(time_to_string(output.time(), dataSet))
+        self.cboTime.blockSignals(False)
+
     def dataSetChanged(self, index):
 
         dataSetItem = self.treeDataSets.model().index2item(index)
@@ -225,13 +236,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
             l.contour_ds_index = l.current_ds_index
             l.vector_ds_index = l.current_ds_index if dataSet.type() == DataSet.Vector else -1
 
-        # repopulate the time control combo
-        self.cboTime.blockSignals(True) # make sure that currentIndexChanged(int) will not be emitted
-        self.cboTime.clear()
-        if dataSet.time_varying():
-            for output in dataSet.outputs():
-                self.cboTime.addItem(time_to_string(output.time()))
-        self.cboTime.blockSignals(False)
+        self.repopulate_time_control_combo(dataSet=dataSet)
 
         self.sliderTime.setMaximum(dataSet.output_count()-1)
 
@@ -475,8 +480,15 @@ class CrayfishDock(qtBaseClass, uiDialog):
 
 
     def editDateTime(self):
-        self.dateTimeDialog = CrayfishDatetimeOptionsDialog(self.iface self)
-        self.advancedColorMapDialog.show()
+        if self.timePropsDialog is not None:
+            self.timePropsDialog.close()
+
+        ts = CrayfishDateTimeSettings( self.currentDataSet() )
+        self.timePropsDialog = CrayfishDatetimeOptionsDialog(self.iface,
+                                                             ts,
+                                                             self.repopulate_time_control_combo,
+                                                             self)
+        self.timePropsDialog.show()
 
     def setContourType(self):
         ds = self.currentDataSet()

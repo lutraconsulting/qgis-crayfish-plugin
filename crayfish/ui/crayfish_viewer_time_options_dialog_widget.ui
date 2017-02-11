@@ -6,43 +6,36 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>228</width>
-    <height>215</height>
+    <width>252</width>
+    <height>332</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Vector Rendering Options</string>
+   <string>Time Display Options</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout_4">
    <item>
-    <widget class="QWidget" name="widget" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Substract </string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="substractHoursEdit">
-        <property name="text">
-         <string>0</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>hours</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+    <widget class="QComboBox" name="useTimeCB">
+     <property name="currentIndex">
+      <number>1</number>
+     </property>
+     <item>
+      <property name="text">
+       <string>Use absolute time</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Use relative time</string>
+      </property>
+     </item>
     </widget>
    </item>
    <item>
     <widget class="QGroupBox" name="absoluteTimeGB">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="title">
       <string>Use absolute time </string>
      </property>
@@ -50,16 +43,16 @@
       <bool>false</bool>
      </property>
      <property name="checkable">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <property name="checked">
       <bool>false</bool>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_3">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <widget class="QLabel" name="refLabel">
         <property name="text">
-         <string>Reference date and time</string>
+         <string>Reference date/time</string>
         </property>
        </widget>
       </item>
@@ -69,15 +62,20 @@
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Date/Time Format</string>
+         <string>Date/time Format</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="timeFormatCB">
+       <widget class="QComboBox" name="dateTimeFormatCB">
         <property name="editable">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
+        <item>
+         <property name="text">
+          <string>%d.%m.%Y %H:%M:%S</string>
+         </property>
+        </item>
         <item>
          <property name="text">
           <string>%d.%m.%Y %H:%M</string>
@@ -85,24 +83,130 @@
         </item>
         <item>
          <property name="text">
-          <string>%d %b %Y %H:%M:%S</string>
+          <string>%d.%m.%Y %H</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>%H:%M:%S</string>
+          <string>%d.%m.%Y</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>%d %m %Y %H:%M:%S</string>
+          <string>%d/%m/%Y %H:%M:%S</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>%a, %d %b %Y %H:%M:%S</string>
+          <string>%d/%m/%Y %H:%M</string>
          </property>
         </item>
+        <item>
+         <property name="text">
+          <string>%d/%m/%Y %H</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>%d/%m/%Y</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>%m/%d/%Y %H:%M:%S</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>%m/%d/%Y %H:%M</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>%m/%d/%Y %H</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>%m/%d/%Y</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="relativeTimeGB">
+     <property name="title">
+      <string>Use relative time</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <widget class="QWidget" name="widget" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Substract </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="substractHoursEdit">
+           <property name="text">
+            <string>0</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>hours</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QWidget" name="widget_2" native="true">
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Time Format</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="timeFormatCB">
+           <property name="editable">
+            <bool>false</bool>
+           </property>
+           <item>
+            <property name="text">
+             <string>%H:%M:%S</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>%H</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>%d %H</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>%d</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>

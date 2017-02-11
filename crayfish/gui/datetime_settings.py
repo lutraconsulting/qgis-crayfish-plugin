@@ -24,6 +24,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import datetime
+
+
 class CrayfishDateTimeSettings():
     
     def __init__(self, ds):
@@ -32,13 +35,22 @@ class CrayfishDateTimeSettings():
         """
         self.ds = ds
 
-        self.substractHours = ds.config["datetime_substract_hours"]
-        self.useAbsoluteTime = ds.config["datetime_use_absolute_time"]
-        self.refTime = ds.config["datetime_reference_time"]
-        self.absoluteTimeFormat = ds.config["datetime_absolute_time_format"]
+        self.useAbsoluteTime = ds.timeConfig["dt_use_absolute_time"]
 
-    def applyToDataSet(self):
-        self.ds.config["datetime_substract_hours"] = self.substractHours
-        self.ds.config["datetime_use_absolute_time"] = self.useAbsoluteTime
-        self.ds.config["datetime_reference_time"] = self.refTime
-        self.ds.config["datetime_absolute_time_format"] = self.absoluteTimeFormat
+        self.substractHours = ds.timeConfig["dt_substract_hours"]
+        self.timeFormat = ds.timeConfig["dt_time_format"]
+
+        self.refTime = ds.timeConfig["dt_reference_time"]
+        self.dateTimeFormat = ds.timeConfig["dt_datetime_format"]
+
+    def dataSet(self):
+        return self.ds
+
+    def apply_to_dataset(self):
+        self.ds.timeConfig["dt_use_absolute_time"] = self.useAbsoluteTime
+
+        self.ds.timeConfig["dt_substract_hours"] = self.substractHours
+        self.ds.timeConfig["dt_time_format"] = self.timeFormat
+
+        self.ds.timeConfig["dt_reference_time"] = self.refTime
+        self.ds.timeConfig["dt_datetime_format"] = self.dateTimeFormat
