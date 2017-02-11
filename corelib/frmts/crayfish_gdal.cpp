@@ -296,7 +296,7 @@ void CrayfishGDALDataset::init(const QString& dsName) {
 
     // Open dataset
     mHDataset = GDALOpen( mDatasetName.toAscii().data(), GA_ReadOnly );
-    if( mHDataset == NULL ) throw LoadStatus::Err_UnknownFormat;
+    if(!mHDataset) throw LoadStatus::Err_UnknownFormat;
 
     // Now parse it
     parseParameters();
@@ -507,8 +507,6 @@ void CrayfishGDALReader::parseRasterBands(const CrayfishGDALDataset* cfGDALDatas
            }
        }
    }
-
-   if (mBands.empty()) throw LoadStatus::Err_InvalidData;
 }
 
 void CrayfishGDALReader::populateScaleForVector(NodeOutput* tos){
@@ -669,7 +667,10 @@ bool CrayfishGDALReader::addSrcProj() {
 QStringList CrayfishGDALReader::parseDatasetNames() {
     QStringList ret;
 
-    GDALDatasetH hDataset = GDALOpen( mFileName.toAscii().data(), GA_ReadOnly );
+    // Force usage of the predefined GDAL driver
+    // http://gis.stackexchange.com/a/179167
+    QString gdal_name = mDriverName + ":\"" + mFileName + "\"";
+    GDALDatasetH hDataset = GDALOpen( gdal_name.toAscii().data(), GA_ReadOnly );
     if( hDataset == NULL ) throw LoadStatus::Err_UnknownFormat;
 
     metadata_hash metadata = parseMetadata(hDataset, "SUBDATASETS");
@@ -683,7 +684,7 @@ QStringList CrayfishGDALReader::parseDatasetNames() {
 
     // there are no GDAL subdatasets
     if (ret.isEmpty()) {
-        ret.append(mFileName);
+        ret.append(gdal_name);
     }
 
     GDALClose( hDataset );
@@ -691,7 +692,9 @@ QStringList CrayfishGDALReader::parseDatasetNames() {
 }
 
 void CrayfishGDALReader::registerDriver() {
+    // re-register all
     GDALAllRegister();
+    // check that our driver exists
     GDALDriverH hDriver = GDALGetDriverByName(mDriverName.toAscii().data());
     if (!hDriver) throw LoadStatus::Err_MissingDriver;
 }
