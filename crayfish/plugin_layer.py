@@ -35,7 +35,7 @@ from qgis.utils import iface
 
 from .gui.utils import QgsMessageBar, qgis_message_bar, defaultColorRamp
 from .layer_renderer import CrayfishPluginLayerRenderer
-from .core import Err, last_load_status, Mesh, ColorMap, DataSet
+from .core import Err, last_load_status, Mesh, ColorMap, DataSet, DATETIME_FMT
 
 
 def qstring2int(s):
@@ -76,7 +76,6 @@ def qstring2rgb(s):
         raise ValueError, s
     return (int(r),int(g),int(b),int(a))
 
-DATETIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 def qstring2datetime(s):
     try:
@@ -304,7 +303,7 @@ class CrayfishPluginLayer(QgsPluginLayer):
         ds.timeConfig = {
             "dt_substract_hours": 0,
             "dt_use_absolute_time": False,
-            "dt_reference_time": datetime.datetime.now(),
+            "dt_reference_time": ds.ref_time(),
             "dt_time_format": "%H:%M:%S",
             "dt_datetime_format": "%d.%m.%Y %H:%M"
         }

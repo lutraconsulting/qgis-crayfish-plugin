@@ -28,6 +28,7 @@ import ctypes
 import os
 import platform
 import weakref
+import datetime
 
 import sip
 from PyQt4.QtGui import QColor
@@ -35,6 +36,9 @@ from PyQt4.QtGui import QPixmap, QPainter, QColor
 from PyQt4.QtCore import Qt
 
 from buildinfo import plugin_version_str, crayfish_libname
+
+# keep in sync with DATETIME_FMT in crayfish_capi.cpp
+DATETIME_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 lib = None  # initialized on demand
 
@@ -89,6 +93,7 @@ def load_library():
     lib.CF_Mesh_destinationCrs.restype = ctypes.c_char_p
     lib.CF_DS_name.restype = ctypes.c_char_p
     lib.CF_DS_fileName.restype = ctypes.c_char_p
+    lib.CF_DS_refTime.restype = ctypes.c_char_p
     lib.CF_DS_outputAt.restype = ctypes.c_void_p
     lib.CF_DS_mesh.restype = ctypes.c_void_p
     lib.CF_O_dataSet.restype = ctypes.c_void_p
@@ -343,6 +348,13 @@ class DataSet(object):
 
   def filename(self):
     return self.lib.CF_DS_fileName(self.handle)
+
+  def ref_time(self):
+    refTime = self.lib.CF_DS_refTime(self.handle)
+    if refTime:
+      return datetime.datetime.strptime(refTime, DATETIME_FMT)
+    else:
+      return datetime.datetime.now()
 
   def output_count(self):
     return self.lib.CF_DS_outputCount(self.handle)

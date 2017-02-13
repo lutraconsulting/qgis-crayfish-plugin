@@ -414,7 +414,11 @@ static dataset_info_map parseDatasetInfo(const Dimensions& dims, int ncid) {
     return dsinfo_map;
 }
 
-static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString& fileName, const QVector<double>& times, const dataset_info_map& dsinfo_map) {
+static void addDatasets(Mesh* m, const Dimensions& dims, int ncid,
+                        const QString& fileName, const QVector<double>& times,
+                        const dataset_info_map& dsinfo_map,
+                        const QDateTime& refTime) {
+
     /* PHASE 2 - add datasets */
     foreach (DatasetInfo dsi, dsinfo_map) {
         // Create a dataset
@@ -500,13 +504,21 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString
         }
 
         ds->updateZRange();
+        ds->setRefTime(refTime);
+
         // Add to mesh
         m->addDataSet(ds);
     }
 }
 
-static void parseTime(int ncid, const Dimensions& dims, Mesh* mesh, QVector<double>& times) {
+static QDateTime parseTime(int ncid, const Dimensions& dims, QVector<double>& times) {
+    QDateTime dt;
+
     times = readDoubleArr("time", dims.nTimesteps, ncid);
+
+    QStringList formats_supported;
+    formats_supported.append("yyyy-MM-dd HH:mm:ss");
+    formats_supported.append("yyyy-MM-dd HH:mm:s.z");
 
     // We are trying to parse strings like
     QString units = getAttrStr("time", "units", ncid);
@@ -525,8 +537,15 @@ static void parseTime(int ncid, const Dimensions& dims, Mesh* mesh, QVector<doub
             times[i] /= div_by;
         }
 
-        //TODO -- extract base time
+        //TODO -- reuse in netcdf reader
+        // now time
+        foreach (QString fmt, formats_supported) {
+           dt =  QDateTime::fromString(units_list[1], fmt);
+           if (dt.isValid())
+               break;
+        }
     }
+    return dt;
 }
 
 Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
@@ -549,13 +568,13 @@ Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
         setProjection(mesh, ncid);
 
         // Parse time array
-        parseTime(ncid, dims, mesh, times);
+        QDateTime refTime = parseTime(ncid, dims, times);
 
         // Parse dataset info
         dataset_info_map dsinfo_map = parseDatasetInfo(dims, ncid);
 
         // Create datasets
-        addDatasets(mesh, dims, ncid, fileName, times, dsinfo_map);
+        addDatasets(mesh, dims, ncid, fileName, times, dsinfo_map, refTime);
     }
     catch (LoadStatus::Error error)
     {

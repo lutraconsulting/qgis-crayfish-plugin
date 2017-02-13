@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <QMap>
 #include <QVariant>
+#include <QDateTime>
 
 class Mesh;
 class Output;
@@ -91,13 +92,16 @@ public:
 
     size_t getIndex() const {return mIndex;}
 
-protected:
+    void setRefTime(const QDateTime& dt) {refTime = dt;}
+    QDateTime getRefTime() const {return refTime;}
 
+protected:
     const Mesh* mMesh;
     QString mFileName;
     Type mType;
     QString mName;
     QVector<Output*> outputs;
+    QDateTime refTime; //!< reference (base) time for output's times
     float mZMin;   //!< min Z value of data
     float mZMax;   //!< max Z value of data
     bool mTimeVarying;  //!< whether the data are time-varying (may contain more than one Output)

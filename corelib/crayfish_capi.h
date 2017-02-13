@@ -112,6 +112,8 @@ CF_EXPORT OutputH CF_DS_outputAt(DataSetH ds, int index);
 CF_EXPORT MeshH CF_DS_mesh(DataSetH ds);
 CF_EXPORT void CF_DS_valueRange(DataSetH ds, float* vMin, float* vMax);
 
+CF_EXPORT const char* CF_DS_refTime(DataSetH ds);
+
 // Output functions
 CF_EXPORT int CF_O_type(OutputH o);
 CF_EXPORT float CF_O_time(OutputH o);
