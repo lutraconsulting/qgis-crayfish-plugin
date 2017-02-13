@@ -50,16 +50,26 @@ public:
         #endif
     }
 
-    bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
+    bool parseBandInfo(const metadata_hash& metadata, QString& band_name,
+                       float* time, bool* is_vector, bool* is_x
+                       ) {
        metadata_hash::const_iterator iter;
 
+       // TIME
        iter = metadata.find("netcdf_dim_time");
        if (iter == metadata.end()) return true; //FAILURE, skip no-time bands
        *time = parseMetadataTime(iter.value());
 
-       iter = metadata.find("netcdf_varname");
-       if (iter == metadata.end()) return true; //FAILURE
-       band_name = iter.value();
+       // NAME
+       iter = metadata.find("long_name");
+       if (iter == metadata.end())
+       {
+           iter = metadata.find("netcdf_varname");
+           if (iter == metadata.end()) return true; //FAILURE, should be always present
+           band_name = iter.value();
+       } else {
+           band_name = iter.value();
+       }
 
        // Loop throught all additional dimensions but time
        for (iter = metadata.begin(); iter != metadata.end(); ++iter) {
@@ -72,20 +82,28 @@ public:
          }
        }
 
-       return false; // SUCCESS
-    }
+       // VECTOR
+       if (band_name.contains("x-component")) {
+           *is_vector = true; // vector
+           *is_x =  true; //X-Axis
+       }
+       else if (band_name.contains("y-component")) {
+           *is_vector = true; // vector
+           *is_x =  false; //Y-Axis
+       } else {
+           *is_vector = false; // scalar
+           *is_x =  true; //X-Axis
+       }
 
-    void determineBandVectorInfo(QString& , bool* is_vector, bool* is_x)
-    {
-        *is_vector = false; // ONLY scalars supported so far
-        *is_x =  true;
+       band_name = band_name.replace("x-component", "")
+                            .replace("y-component", "");
+
+       return false; // SUCCESS
     }
 };
 
 Mesh* Crayfish::loadNetCDF(const QString& fileName, LoadStatus* status)
 {
-    // First we need to split it to sub
-
     NetCDFReader reader(fileName);
     return reader.load(status);
 }

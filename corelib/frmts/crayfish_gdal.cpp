@@ -471,13 +471,11 @@ void CrayfishGDALReader::parseRasterBands(const CrayfishGDALDataset* cfGDALDatas
 
        QString band_name;
        float time = std::numeric_limits<float>::min();
-       if (parseBandInfo(metadata, band_name, &time)) {
-           continue;
-       }
-
        bool is_vector;
        bool is_x;
-       determineBandVectorInfo(band_name, &is_vector, &is_x);
+       if (parseBandInfo(metadata, band_name, &time, &is_vector, &is_x)) {
+           continue;
+       }
 
        // Add to data structures
        int data_count = is_vector ? 2 : 1;

@@ -130,8 +130,7 @@ protected:
     typedef QHash<QString, QString> metadata_hash; // KEY, VALUE
 
     /* return true on failure */
-    virtual bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) = 0;
-    virtual void determineBandVectorInfo(QString& band_name, bool* is_vector, bool* is_x) = 0;
+    virtual bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time, bool* is_vector, bool* is_x) = 0;
     virtual float parseMetadataTime(const QString& time_s);
     virtual QString GDALFileName(const QString& fileName); /* some formats require e.g. adding driver name at the beginning */
 
