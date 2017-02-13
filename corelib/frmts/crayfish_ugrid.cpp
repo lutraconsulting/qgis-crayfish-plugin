@@ -300,7 +300,7 @@ struct DatasetInfo{
 typedef QMap<QString, DatasetInfo> dataset_info_map; // name -> DatasetInfo
 
 
-static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString& fileName) {
+static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString& fileName, const QVector<double>& times) {
     /*
      * list of datasets:
      *   Getting the full list of variables from the file and then grouping them in two steps:
@@ -435,7 +435,7 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString
 
         // Create output
         for (size_t ts=0; ts<dims.nTimesteps; ++ts) {
-            float time = ts + 1; //TODO
+            float time = times[ts];
 
 
             if (dsi.outputType == Output::TypeNode) {
@@ -492,12 +492,38 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString
     }
 }
 
+static void parseTime(int ncid, const Dimensions& dims, Mesh* mesh, QVector<double>& times) {
+    times = readDoubleArr("time", dims.nTimesteps, ncid);
+
+    // We are trying to parse strings like
+    QString units = getAttrStr("time", "units", ncid);
+    // "seconds since 2001-05-05 00:00:00"
+    // "hours since 1900-01-01 00:00:0.0"
+    QStringList units_list = units.split(" since ");
+    if (units_list.size() == 2) {
+        // Give me hours
+        float div_by = 1;
+        if (units_list[0] == "seconds") {
+            div_by = 3600.0;
+        } else if (units_list[0] == "minutes") {
+            div_by = 60.0;
+        }
+        for(size_t i=0; i<dims.nTimesteps; ++i) {
+            times[i] /= div_by;
+        }
+
+        //TODO -- extract base time
+    }
+}
+
 Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
 {
     if (status) status->clear();
     int ncid = 0;
     Mesh* mesh = 0;
     Dimensions dims;
+    QVector<double> times;
+
     try
     {
         ncid = openFile(fileName);
@@ -509,11 +535,14 @@ Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
         mesh = createMesh(dims, ncid);
         setProjection(mesh, ncid);
 
+        // Parse time array
+        parseTime(ncid, dims, mesh, times);
+
         // Add bed level
         addBedLevel(mesh, dims, ncid, fileName);
 
         // Create datasets
-        addDatasets(mesh, dims, ncid, fileName);
+        addDatasets(mesh, dims, ncid, fileName, times);
     }
     catch (LoadStatus::Error error)
     {
