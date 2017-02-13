@@ -36,7 +36,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <netcdf.h>
 
-static inline bool val_or_nodata(float val, float nodata, float eps=std::numeric_limits<float>::epsilon())
+static inline double val_or_nodata(float val, float nodata, float eps=std::numeric_limits<float>::epsilon())
 {
     if (fabs(val - nodata) < eps) {
         return -9999.0;
@@ -45,7 +45,7 @@ static inline bool val_or_nodata(float val, float nodata, float eps=std::numeric
     }
 }
 
-static inline bool scale(float val_x, float val_y, float nodata_x, float nodata_y, float eps=std::numeric_limits<float>::epsilon())
+static inline double scale(float val_x, float val_y, float nodata_x, float nodata_y, float eps=std::numeric_limits<float>::epsilon())
 {
     if (fabs(val_x - nodata_x) < eps) {
         return -9999.0;

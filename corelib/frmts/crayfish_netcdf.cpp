@@ -39,6 +39,17 @@ class NetCDFReader: public CrayfishGDALReader
 public:
     NetCDFReader(const QString& fileName): CrayfishGDALReader(fileName, "NETCDF"){}
 
+    QString GDALFileName(const QString& fileName) {
+        #ifdef WIN32
+            // Force usage of the predefined GDAL driver
+            // http://gis.stackexchange.com/a/179167
+            // on Windows, HDF5 driver is checked before NETCDF driver in GDAL
+            return  "NETCDF:\"" + fileName + "\"";
+        #else
+            return  fileName;
+        #endif
+    }
+
     bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
        metadata_hash::const_iterator iter;
 

@@ -425,6 +425,10 @@ void CrayfishGDALReader::initElements(Mesh::Nodes& nodes, Mesh::Elements& elemen
    Q_ASSERT(reconnected == 0);
 }
 
+QString CrayfishGDALReader::GDALFileName(const QString& fileName) {
+    return fileName;
+}
+
 float CrayfishGDALReader::parseMetadataTime(const QString& time_s)
 {
    QString time_trimmed = time_s.trimmed();
@@ -665,11 +669,9 @@ bool CrayfishGDALReader::addSrcProj() {
 }
 
 QStringList CrayfishGDALReader::parseDatasetNames() {
+    QString gdal_name = GDALFileName(mFileName);
     QStringList ret;
 
-    // Force usage of the predefined GDAL driver
-    // http://gis.stackexchange.com/a/179167
-    QString gdal_name = mDriverName + ":\"" + mFileName + "\"";
     GDALDatasetH hDataset = GDALOpen( gdal_name.toAscii().data(), GA_ReadOnly );
     if( hDataset == NULL ) throw LoadStatus::Err_UnknownFormat;
 
