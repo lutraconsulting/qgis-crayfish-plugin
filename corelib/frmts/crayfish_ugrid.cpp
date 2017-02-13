@@ -99,18 +99,6 @@ struct Dimensions {
         get_dimension("time", ncid, &nTimesteps, &ncid_timestep);
     }
 
-    bool is_time_x_node_array(int dim1_id, int dim2_id) const {
-        return ((dim1_id == ncid_timestep) && (dim2_id == ncid_node));
-    }
-
-    bool is_time_x_elem_array(int dim1_id, int dim2_id) const {
-        return ((dim1_id == ncid_timestep) && (dim2_id == ncid_element));
-    }
-
-    bool is_output_array(int dim1_id, int dim2_id) const {
-        return (is_time_x_node_array(dim1_id, dim2_id) || is_time_x_elem_array(dim1_id, dim2_id));
-    }
-
     int ncid_node;
     size_t nNodes;
 
@@ -264,43 +252,17 @@ static Mesh* createMesh(const Dimensions& dims, int ncid) {
     return m;
 }
 
-static void addBedLevel(Mesh* m, const Dimensions& dims, int ncid, const QString& fileName) {
-    // read data
-    int fill_val = getAttrInt("mesh2d_flowelem_bl", "_FillValue", ncid);
-    QVector<double> bed = readDoubleArr("mesh2d_flowelem_bl", dims.nElements, ncid);
-
-    // Create output
-    ElementOutput* el = new ElementOutput();
-    el->init(dims.nElements, false);
-    QVector<float>& vals = el->getValues();
-    for (size_t i = 0; i< dims.nElements; ++i) {
-        vals[i] = val_or_nodata(bed[i], fill_val);
-    }
-
-    // Create a dataset for the bed elevation
-    DataSet* bedDs = new DataSet(fileName);
-    bedDs->setType(DataSet::Bed);
-    bedDs->setName("Bed Elevation");
-    bedDs->addOutput(el);
-    bedDs->setIsTimeVarying(false);
-    bedDs->updateZRange();
-
-    // Add to mesh
-    m->addDataSet(bedDs);
-}
-
 struct DatasetInfo{
     QString name;
     DataSet::Type dsType;
     Output::Type outputType;
-
+    size_t nTimesteps;
     int ncid_x;
     int ncid_y;
 };
 typedef QMap<QString, DatasetInfo> dataset_info_map; // name -> DatasetInfo
 
-
-static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString& fileName, const QVector<double>& times) {
+static dataset_info_map parseDatasetInfo(const Dimensions& dims, int ncid) {
     /*
      * list of datasets:
      *   Getting the full list of variables from the file and then grouping them in two steps:
@@ -317,9 +279,31 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString
      *     Finally, if also standard_name is absent, fall back to the bare variable name (e.g. “mesh2d_s1”).
      */
 
+
     /* PHASE 1 - gather all variables to be used for node/element datasets */
     dataset_info_map dsinfo_map;
     int varid = -1;
+
+    QStringList ignore_variables;
+    ignore_variables.append("mesh2d");
+    ignore_variables.append("projected_coordinate_system");
+    ignore_variables.append("time");
+    ignore_variables.append("timestep");
+    ignore_variables.append("mesh2d_node_x");
+    ignore_variables.append("mesh2d_node_x");
+    ignore_variables.append("mesh2d_node_y");
+    ignore_variables.append("mesh2d_face_nodes");
+    ignore_variables.append("mesh2d_edge_nodes");
+    ignore_variables.append("mesh2d_edge_x");
+    ignore_variables.append("mesh2d_edge_y");
+    ignore_variables.append("mesh2d_edge_x_bnd");
+    ignore_variables.append("mesh2d_edge_y_bnd");
+    ignore_variables.append("mesh2d_face_x");
+    ignore_variables.append("mesh2d_face_y");
+    ignore_variables.append("mesh2d_face_x_bnd");
+    ignore_variables.append("mesh2d_face_y_bnd");
+    ignore_variables.append("mesh2d_edge_type");
+
     do {
         ++varid;
 
@@ -328,21 +312,45 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString
         if (nc_inq_varname(ncid, varid, variable_name_c)) break; // probably we are at the end of available arrays, quit endless loop
         QString variable_name(variable_name_c);
 
-        // get number of dimensions
-        int ndims;
-        if (nc_inq_varndims(ncid, varid, &ndims)) continue;
-        if (ndims != 2) continue; //datasets must have 2 dimensions
+        if (!ignore_variables.contains(variable_name)) {
 
-        // check the dimensions
-        int dimids[2];
-        if (nc_inq_vardimid(ncid, varid, dimids)) continue;
+            // get number of dimensions
+            int ndims;
+            if (nc_inq_varndims(ncid, varid, &ndims)) continue;
 
-        // is it output?
-        if (dims.is_output_array(dimids[0], dimids[1])) {
+            // we parse either timedependent or time-indepenended (e.g. Bed/Maximums)
+            if ((ndims < 1) || (ndims > 2)) continue;
+            int dimids[2];
+            if (nc_inq_vardimid(ncid, varid, dimids)) continue;
+
+            int nTimesteps;
+            Output::Type output_type;
+            if (ndims == 1) {
+                nTimesteps = 1;
+                if (dimids[0] == dims.ncid_node) {
+                    output_type = Output::TypeNode;
+                } else if (dimids[0] == dims.ncid_element) {
+                    output_type = Output::TypeElement;
+                } else {
+                    continue;
+                }
+            } else {
+                nTimesteps = dims.nTimesteps;
+                if (dimids[1] == dims.ncid_node) {
+                    output_type = Output::TypeNode;
+                } else if (dimids[1] == dims.ncid_element) {
+                    output_type = Output::TypeElement;
+                } else {
+                    continue;
+                }
+            }
 
             // Get name, if it is vector and if it is x or y
             QString name;
             DataSet::Type dsType = DataSet::Scalar;
+            if (variable_name == "mesh2d_flowelem_bl") {
+                dsType = DataSet::Bed;
+            }
             bool is_y = false;
 
             QString long_name = get_attr_str("long_name", ncid, varid);
@@ -384,17 +392,14 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString
                 }
             } else {
                 DatasetInfo dsInfo;
+                dsInfo.nTimesteps = nTimesteps;
                 dsInfo.dsType = dsType;
                 if (is_y) {
                     dsInfo.ncid_y = varid;
                 } else {
                     dsInfo.ncid_x = varid;
                 }
-                if (dims.is_time_x_node_array(dimids[0], dimids[1])) {
-                    dsInfo.outputType = Output::TypeNode;
-                } else {
-                    dsInfo.outputType = Output::TypeElement;
-                }
+                dsInfo.outputType = output_type;
                 dsInfo.name = name;
                 dsinfo_map[name] = dsInfo;
             }
@@ -402,19 +407,27 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString
     }
     while (true);
 
+    if (dsinfo_map.size() == 0) {
+        throw LoadStatus::Err_InvalidData;
+    }
+
+    return dsinfo_map;
+}
+
+static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString& fileName, const QVector<double>& times, const dataset_info_map& dsinfo_map) {
     /* PHASE 2 - add datasets */
     foreach (DatasetInfo dsi, dsinfo_map) {
         // Create a dataset
         DataSet* ds = new DataSet(fileName);
         ds->setType(dsi.dsType);
         ds->setName(dsi.name);
-        ds->setIsTimeVarying(dims.nTimesteps > 1);
+        ds->setIsTimeVarying(dsi.nTimesteps > 1);
 
         size_t arr_size;
         if (dsi.outputType == Output::TypeNode) {
-            arr_size = dims.nTimesteps * dims.nNodes;
+            arr_size = dsi.nTimesteps * dims.nNodes;
         } else {
-            arr_size = dims.nTimesteps * dims.nElements;
+            arr_size = dsi.nTimesteps * dims.nElements;
         }
 
         // read X data
@@ -434,7 +447,7 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid, const QString
         }
 
         // Create output
-        for (size_t ts=0; ts<dims.nTimesteps; ++ts) {
+        for (size_t ts=0; ts<dsi.nTimesteps; ++ts) {
             float time = times[ts];
 
 
@@ -538,11 +551,11 @@ Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
         // Parse time array
         parseTime(ncid, dims, mesh, times);
 
-        // Add bed level
-        addBedLevel(mesh, dims, ncid, fileName);
+        // Parse dataset info
+        dataset_info_map dsinfo_map = parseDatasetInfo(dims, ncid);
 
         // Create datasets
-        addDatasets(mesh, dims, ncid, fileName, times);
+        addDatasets(mesh, dims, ncid, fileName, times, dsinfo_map);
     }
     catch (LoadStatus::Error error)
     {
