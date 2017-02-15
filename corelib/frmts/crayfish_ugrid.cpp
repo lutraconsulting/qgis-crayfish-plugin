@@ -80,6 +80,15 @@ void get_dimension(const QString& name, int ncid, size_t* val, int* ncid_val) {
     if (nc_inq_dimlen(ncid, *ncid_val, val) != NC_NOERR) UGRID_THROW_ERR;
 }
 
+void get_dimension_optional(const QString& name, int ncid, size_t* val, int* ncid_val) {
+    try {
+        get_dimension(name, ncid, val, ncid_val);
+    } catch (LoadStatus::Error) {
+        *ncid_val = -1;
+        *val = 0;
+    }
+}
+
 QString get_attr_str(const QString& name, int ncid, int varid) {
     size_t attlen = 0;
 
@@ -102,20 +111,36 @@ QString get_attr_str(const QString& name, int ncid, int varid) {
 
 struct Dimensions {
     void read(int ncid) {
-        get_dimension("nmesh2d_node", ncid, &nNodes, &ncid_node);
-        get_dimension("nmesh2d_face", ncid, &nElements, &ncid_element);
-        get_dimension("nmesh2d_edge", ncid, &nEdges, &ncid_edge);
+        get_dimension("nmesh2d_node", ncid, &nNodes2D, &ncid_node2D);
+        get_dimension("nmesh2d_face", ncid, &nElements2D, &ncid_element2D);
+        get_dimension("nmesh2d_edge", ncid, &nEdges2D, &ncid_edge2D);
         get_dimension("time", ncid, &nTimesteps, &ncid_timestep);
+
+        // these are not required
+        get_dimension_optional("nmesh1d_node", ncid, &nNodes1D, &ncid_node1D);
+        get_dimension_optional("nmesh1d_edge", ncid, &nEdges1D, &ncid_edge1D);
+
+        nNodes = nNodes1D + nNodes2D;
+        nElements = nEdges1D + nElements2D;
     }
 
-    int ncid_node;
+    int ncid_node1D;
+    size_t nNodes1D;
+
+    int ncid_edge1D;
+    size_t nEdges1D;
+
+    int ncid_node2D;
+    size_t nNodes2D;
+
+    int ncid_element2D;
+    size_t nElements2D;
+
+    int ncid_edge2D;
+    size_t nEdges2D;
+
     size_t nNodes;
-
-    int ncid_element;
     size_t nElements;
-
-    int ncid_edge;
-    size_t nEdges;
 
     int ncid_timestep;
     size_t nTimesteps;
@@ -127,25 +152,25 @@ static int openFile(const QString& fileName) {
     int res = nc_open(fileName.toUtf8().constData(), NC_NOWRITE, &ncid);
     if (res != NC_NOERR)
     {
-      qDebug("error: %s", nc_strerror(res));
-      throw LoadStatus::Err_UnknownFormat;
+        qDebug("error: %s", nc_strerror(res));
+        throw LoadStatus::Err_UnknownFormat;
     }
     return ncid;
 }
 
 static QVector<int> readIntArr(const QString& name, size_t dim, int ncid)
 {
-        int arr_id;
-        if (nc_inq_varid(ncid, name.toStdString().c_str(), &arr_id) != NC_NOERR)
-        {
-          throw LoadStatus::Err_UnknownFormat;
-        }
-        QVector<int> arr_val(dim);
-        if (nc_get_var_int (ncid, arr_id, arr_val.data()) != NC_NOERR)
-        {
-          throw LoadStatus::Err_UnknownFormat;
-        }
-        return arr_val;
+    int arr_id;
+    if (nc_inq_varid(ncid, name.toStdString().c_str(), &arr_id) != NC_NOERR)
+    {
+        throw LoadStatus::Err_UnknownFormat;
+    }
+    QVector<int> arr_val(dim);
+    if (nc_get_var_int (ncid, arr_id, arr_val.data()) != NC_NOERR)
+    {
+        throw LoadStatus::Err_UnknownFormat;
+    }
+    return arr_val;
 }
 
 
@@ -153,12 +178,12 @@ static QVector<double> readDoubleArr(const QString& name, size_t dim, int ncid) 
     int arr_id;
     if (nc_inq_varid(ncid, name.toStdString().c_str(), &arr_id) != NC_NOERR)
     {
-      throw LoadStatus::Err_UnknownFormat;
+        throw LoadStatus::Err_UnknownFormat;
     }
     QVector<double> arr_val(dim);
     if (nc_get_var_double (ncid, arr_id, arr_val.data()) != NC_NOERR)
     {
-      throw LoadStatus::Err_UnknownFormat;
+        throw LoadStatus::Err_UnknownFormat;
     }
     return arr_val;
 }
@@ -168,7 +193,7 @@ static int getAttrInt(const QString& name, const QString& attr_name, int ncid) {
     int arr_id;
     if (nc_inq_varid(ncid, name.toStdString().c_str(), &arr_id) != NC_NOERR)
     {
-      throw LoadStatus::Err_UnknownFormat;
+        throw LoadStatus::Err_UnknownFormat;
     }
 
     int val;
@@ -199,35 +224,63 @@ static void setProjection(Mesh* m, int ncid) {
 }
 
 static Mesh::Nodes createNodes(const Dimensions& dims, int ncid) {
-    QVector<double> nodes_x = readDoubleArr("mesh2d_node_x", dims.nNodes, ncid);
-    QVector<double> nodes_y = readDoubleArr("mesh2d_node_y", dims.nNodes, ncid);
-
     Mesh::Nodes nodes(dims.nNodes);
     Node* nodesPtr = nodes.data();
-    for (size_t i = 0; i < dims.nNodes; ++i, ++nodesPtr)
+
+    // 1D
+    if (dims.nNodes1D > 0) {
+        QVector<double> nodes1D_x = readDoubleArr("mesh1d_node_x", dims.nNodes1D, ncid);
+        QVector<double> nodes1D_y = readDoubleArr("mesh1d_node_y", dims.nNodes1D, ncid);
+        for (size_t i = 0; i < dims.nNodes1D; ++i, ++nodesPtr)
+        {
+            nodesPtr->setId(i);
+            nodesPtr->x = nodes1D_x[i];
+            nodesPtr->y = nodes1D_y[i];
+        }
+    }
+
+    // 2D
+    QVector<double> nodes2D_x = readDoubleArr("mesh2d_node_x", dims.nNodes2D, ncid);
+    QVector<double> nodes2D_y = readDoubleArr("mesh2d_node_y", dims.nNodes2D, ncid);
+    for (size_t i = 0; i < dims.nNodes2D; ++i, ++nodesPtr)
     {
-              nodesPtr->setId(i);
-              nodesPtr->x = nodes_x[i];
-              nodesPtr->y = nodes_y[i];
+        nodesPtr->setId(i);
+        nodesPtr->x = nodes2D_x[i];
+        nodesPtr->y = nodes2D_y[i];
     }
     return nodes;
 }
 
 static Mesh::Elements createElements(const Dimensions& dims, int ncid) {
+    Mesh::Elements elements(dims.nElements);
+    Element* elementsPtr = elements.data();
+
+    // 1D
+    if (dims.nEdges1D > 0) {
+        int start_index = getAttrInt("mesh1d_edge_nodes", "start_index", ncid);
+        QVector<int> edges_nodes_conn = readIntArr("mesh1d_edge_nodes", dims.nEdges1D * 2, ncid);
+
+        for (size_t i = 0; i < dims.nEdges1D; ++i, ++elementsPtr)
+        {
+            elementsPtr->setId(i);
+            elementsPtr->setEType(Element::E2L);
+            elementsPtr->setP(0, edges_nodes_conn[2*i] - start_index);
+            elementsPtr->setP(1, edges_nodes_conn[2*i + 1] - start_index);
+        }
+    }
+
+    // 2D
     size_t nMaxVertices;
     int nMaxVerticesId;
     get_dimension("max_nmesh2d_face_nodes", ncid, &nMaxVertices, &nMaxVerticesId);
 
     int fill_val = getAttrInt("mesh2d_face_nodes", "_FillValue", ncid);
-    int start_index = getAttrInt("mesh2d_face_nodes", "start_index", ncid);
-    QVector<int> face_nodes_conn = readIntArr("mesh2d_face_nodes", dims.nElements * nMaxVertices, ncid);
+    int start_index = getAttrInt("mesh2d_face_nodes", "start_index", ncid) - dims.nNodes1D;
+    QVector<int> face_nodes_conn = readIntArr("mesh2d_face_nodes", dims.nElements2D * nMaxVertices, ncid);
 
-    Mesh::Elements elements(dims.nElements);
-    Element* elementsPtr = elements.data();
-
-    for (size_t i = 0; i < dims.nElements; ++i, ++elementsPtr)
+    for (size_t i = 0; i < dims.nElements2D; ++i, ++elementsPtr)
     {
-        elementsPtr->setId(i);
+        elementsPtr->setId(dims.nEdges1D + i);
         Element::Type et = Element::ENP;
         int nVertices = nMaxVertices;
         QVector<uint> idxs(nMaxVertices);
@@ -274,6 +327,7 @@ struct DatasetInfo{
     size_t nTimesteps;
     int ncid_x;
     int ncid_y;
+    size_t arr_size;
 };
 typedef QMap<QString, DatasetInfo> dataset_info_map; // name -> DatasetInfo
 
@@ -300,24 +354,31 @@ static dataset_info_map parseDatasetInfo(const Dimensions& dims, int ncid, bool 
     int varid = -1;
 
     QStringList ignore_variables;
-    ignore_variables.append("mesh2d");
     ignore_variables.append("projected_coordinate_system");
     ignore_variables.append("time");
     ignore_variables.append("timestep");
-    ignore_variables.append("mesh2d_node_x");
-    ignore_variables.append("mesh2d_node_x");
-    ignore_variables.append("mesh2d_node_y");
     ignore_variables.append("mesh2d_face_nodes");
-    ignore_variables.append("mesh2d_edge_nodes");
-    ignore_variables.append("mesh2d_edge_x");
-    ignore_variables.append("mesh2d_edge_y");
-    ignore_variables.append("mesh2d_edge_x_bnd");
-    ignore_variables.append("mesh2d_edge_y_bnd");
     ignore_variables.append("mesh2d_face_x");
     ignore_variables.append("mesh2d_face_y");
     ignore_variables.append("mesh2d_face_x_bnd");
     ignore_variables.append("mesh2d_face_y_bnd");
-    ignore_variables.append("mesh2d_edge_type");
+
+    QStringList meshes;
+    meshes.append("mesh1d");
+    meshes.append("mesh2d");
+
+    foreach (QString mesh, meshes) {
+        ignore_variables.append(mesh);
+        ignore_variables.append(mesh + "_flowelem_ba");
+        ignore_variables.append(mesh + "_node_x");
+        ignore_variables.append(mesh + "_node_y");
+        ignore_variables.append(mesh + "_edge_nodes");
+        ignore_variables.append(mesh + "_edge_x");
+        ignore_variables.append(mesh + "_edge_y");
+        ignore_variables.append(mesh + "_edge_x_bnd");
+        ignore_variables.append(mesh + "_edge_y_bnd");
+        ignore_variables.append(mesh + "_edge_type");
+    }
 
     do {
         ++varid;
@@ -339,26 +400,45 @@ static dataset_info_map parseDatasetInfo(const Dimensions& dims, int ncid, bool 
             if (nc_inq_vardimid(ncid, varid, dimids)) continue;
 
             int nTimesteps;
+            size_t arr_size;
             QString output_type;
             if (ndims == 1) {
                 nTimesteps = 1;
-                if (dimids[0] == dims.ncid_node) {
-                    output_type = "Node";
-                } else if (dimids[0] == dims.ncid_element) {
-                    output_type = "Element";
-                } else if (parse_edge_outputs && (dimids[0] == dims.ncid_edge)) {
-                    output_type = "Edge";
+                if (dimids[0] == dims.ncid_node1D) {
+                    output_type = "Node1D";
+                    arr_size = nTimesteps * dims.nNodes1D;
+                } else if (dimids[0] == dims.ncid_edge1D) {
+                    output_type = "Edge1D";
+                    arr_size = nTimesteps * dims.nEdges1D;
+                } else if (dimids[0] == dims.ncid_node2D) {
+                    output_type = "Node2D";
+                    arr_size = nTimesteps * dims.nNodes2D;
+                } else if (dimids[0] == dims.ncid_element2D) {
+                    output_type = "Element2D";
+                    arr_size = nTimesteps * dims.nElements2D;
+                } else if (parse_edge_outputs && (dimids[0] == dims.ncid_edge2D)) {
+                    output_type = "Edge2D";
+                    arr_size = nTimesteps * dims.nEdges2D;
                 } else {
                     continue;
                 }
             } else {
                 nTimesteps = dims.nTimesteps;
-                if (dimids[1] == dims.ncid_node) {
-                    output_type = "Node";
-                } else if (dimids[1] == dims.ncid_element) {
-                    output_type = "Element";
-                } else if (parse_edge_outputs && (dimids[1] == dims.ncid_edge)) {
-                    output_type = "Edge";
+                if (dimids[1] == dims.ncid_node1D) {
+                    output_type = "Node1D";
+                    arr_size = nTimesteps * dims.nNodes1D;
+                } else if (dimids[1] == dims.ncid_edge1D) {
+                    output_type = "Edge1D";
+                    arr_size = nTimesteps * dims.nEdges1D;
+                } else if (dimids[1] == dims.ncid_node2D) {
+                    output_type = "Node2D";
+                    arr_size = nTimesteps * dims.nNodes2D;
+                } else if (dimids[1] == dims.ncid_element2D) {
+                    output_type = "Element2D";
+                    arr_size = nTimesteps * dims.nElements2D;
+                } else if (parse_edge_outputs && (dimids[1] == dims.ncid_edge2D)) {
+                    output_type = "Edge2D";
+                    arr_size = nTimesteps * dims.nEdges2D;
                 } else {
                     continue;
                 }
@@ -401,6 +481,7 @@ static dataset_info_map parseDatasetInfo(const Dimensions& dims, int ncid, bool 
                 name = long_name.replace(", x-component", "").replace(", y-component", "");
             }
 
+            name = name + " (" + output_type + ")";
 
             // Add it to the map
             if (dsinfo_map.contains(name)) {
@@ -420,6 +501,7 @@ static dataset_info_map parseDatasetInfo(const Dimensions& dims, int ncid, bool 
                 }
                 dsInfo.outputType = output_type;
                 dsInfo.name = name;
+                dsInfo.arr_size = arr_size;
                 dsinfo_map[name] = dsInfo;
             }
         }
@@ -447,37 +529,27 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid,
         ds->setName(dsi.name);
         ds->setIsTimeVarying(dsi.nTimesteps > 1);
 
-        size_t arr_size;
-        if (dsi.outputType == "Node") {
-            arr_size = dsi.nTimesteps * dims.nNodes;
-        } else if (dsi.outputType == "Element") {
-            arr_size = dsi.nTimesteps * dims.nElements;
-        } else { // Edges
-            arr_size = dsi.nTimesteps * dims.nEdges;
-        }
-
         // read X data
-        double fill_val_x = 0.;
-        if (nc_get_att_double(ncid, dsi.ncid_x, "_FillValue", &fill_val_x)) UGRID_THROW_ERR;
+        double fill_val_x = -9999.;
+        nc_get_att_double(ncid, dsi.ncid_x, "_FillValue", &fill_val_x); // SKIP error, this is optional in metadata
 
-        QVector<double> vals_x(arr_size);
+        QVector<double> vals_x(dsi.arr_size);
         if (nc_get_var_double (ncid, dsi.ncid_x, vals_x.data())) UGRID_THROW_ERR;
 
         // read Y data if vector
-        double fill_val_y = 0.;
+        double fill_val_y = -9999.;
         QVector<double> vals_y;
         if (dsi.dsType == DataSet::Vector) {
-           if (nc_get_att_double(ncid, dsi.ncid_y, "_FillValue", &fill_val_y)) UGRID_THROW_ERR;
-           vals_y.resize(arr_size);
-           if (nc_get_var_double (ncid, dsi.ncid_y, vals_y.data())) UGRID_THROW_ERR;
+            nc_get_att_double(ncid, dsi.ncid_y, "_FillValue", &fill_val_y); // SKIP error, this is optional in metadata
+            vals_y.resize(dsi.arr_size);
+            if (nc_get_var_double (ncid, dsi.ncid_y, vals_y.data())) UGRID_THROW_ERR;
         }
 
         // Create output
         for (size_t ts=0; ts<dsi.nTimesteps; ++ts) {
             float time = times[ts];
 
-
-            if (dsi.outputType == "Node") {
+            if (dsi.outputType == "Node1D") {
                 NodeOutput* el = new NodeOutput();
                 el->time = time;
                 el->init(dims.nNodes, dims.nElements, (dsi.dsType == DataSet::Vector));
@@ -486,8 +558,8 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid,
                 QVector<Output::float2D>& vals_V = el->getValuesV();
                 QVector<char>& active = el->getActive();
 
-                for (size_t i = 0; i< dims.nNodes; ++i) {
-                    size_t idx = ts*dims.nNodes + i;
+                for (size_t i = 0; i< dims.nNodes1D; ++i) {
+                    size_t idx = ts*dims.nNodes1D + i;
                     if (dsi.dsType == DataSet::Vector) {
                         vals_V[i].x = val_or_nodata(vals_x[idx], fill_val_x);
                         vals_V[i].y = val_or_nodata(vals_y[idx], fill_val_y);
@@ -496,70 +568,22 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid,
                         vals[i] = val_or_nodata(vals_x[idx], fill_val_x);
                     }
                 }
+                for (size_t i=dims.nNodes1D; i<dims.nNodes; ++i) {
+                    if (dsi.dsType == DataSet::Vector) {
+                        vals_V[i].x = -9999.0;
+                        vals_V[i].y = -9999.0;
+                        vals[i] = -9999.0;
+                    } else {
+                        vals[i] = -9999.0;
+                    }
+                }
 
                 for (size_t i = 0; i< dims.nElements; ++i) {
-                    // All active
-                    active[i] = 1;
+                    active[i] = (i<dims.nEdges1D);
                 }
+
                 ds->addOutput(el);
-             } else if (dsi.outputType == "Edge") {
-                    NodeOutput* el = new NodeOutput();
-                    el->time = time;
-                    el->init(dims.nNodes, dims.nElements, (dsi.dsType == DataSet::Vector));
-
-                    QVector<float>& vals = el->getValues();
-                    QVector<Output::float2D>& vals_V = el->getValuesV();
-                    QVector<char>& active = el->getActive();
-
-                    for (size_t i=0; i<dims.nNodes; ++i) {
-                        vals[i] = -9999;
-                        if (dsi.dsType == DataSet::Vector) {
-                            vals_V[i].x = -9999;
-                            vals_V[i].y = -9999;
-                        }
-                    }
-
-                    for (size_t i = 0; i< dims.nEdges; ++i) {
-
-                        size_t idx = ts*dims.nEdges + i;
-                        size_t node_1_idx = edges[i].node_1;
-                        size_t node_2_idx = edges[i].node_2;
-
-                        // take max
-                        if (dsi.dsType == DataSet::Vector) {
-                            double val_x = val_or_nodata(vals_x[idx], fill_val_x);
-                            double val_y = val_or_nodata(vals_y[idx], fill_val_y);
-                            double val_scale = scale(vals_x[idx], vals_y[idx], fill_val_x, fill_val_y);
-
-                            if ((vals[node_1_idx] == -9999) || (vals[node_1_idx] < val_scale)) {
-                                vals_V[node_1_idx].x = val_x;
-                                vals_V[node_1_idx].y = val_y;
-                                vals[node_1_idx] = val_scale;
-                            }
-                            if ((vals[node_2_idx] == -9999) || (vals[node_2_idx] < val_scale)) {
-                                vals_V[node_2_idx].x = val_x;
-                                vals_V[node_2_idx].y = val_y;
-                                vals[node_2_idx] = val_scale;
-                            }
-
-                        } else {
-                            double val_x = val_or_nodata(vals_x[idx], fill_val_x);
-                            if ((vals[node_1_idx] == -9999) || (vals[node_1_idx] < val_x)) {
-                                vals[node_1_idx] = val_x;
-                            }
-                            if ((vals[node_2_idx] == -9999) || (vals[node_2_idx] < val_x)) {
-                                vals[node_2_idx] = val_x;
-                            }
-                        }
-                    }
-
-                    for (size_t i = 0; i< dims.nElements; ++i) {
-                        // All active
-                        active[i] = 1;
-                    }
-                    ds->addOutput(el);
-
-            } else { //if (dsi.outputType == "Element")
+            } else if (dsi.outputType == "Edge1D") {
                 ElementOutput* el = new ElementOutput();
                 el->time = time;
                 el->init(dims.nElements, (dsi.dsType == DataSet::Vector));
@@ -567,8 +591,8 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid,
                 QVector<float>& vals = el->getValues();
                 QVector<Output::float2D>& vals_V = el->getValuesV();
 
-                for (size_t i = 0; i< dims.nElements; ++i) {
-                    size_t idx = ts*dims.nElements + i;
+                for (size_t i = 0; i< dims.nEdges1D; ++i) {
+                    size_t idx = ts*dims.nEdges1D + i;
                     if (dsi.dsType == DataSet::Vector) {
                         vals_V[i].x = val_or_nodata(vals_x[idx], fill_val_x);
                         vals_V[i].y = val_or_nodata(vals_y[idx], fill_val_y);
@@ -577,8 +601,143 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid,
                         vals[i] = val_or_nodata(vals_x[idx], fill_val_x);
                     }
                 }
+                for (size_t i=dims.nEdges1D; i<dims.nElements; ++i) {
+                    if (dsi.dsType == DataSet::Vector) {
+                        vals_V[i].x = -9999.0;
+                        vals_V[i].y = -9999.0;
+                        vals[i] = -9999.0;
+                    } else {
+                        vals[i] = -9999.0;
+                    }
+                }
+
                 ds->addOutput(el);
+
+            } else if (dsi.outputType == "Node2D") {
+                NodeOutput* el = new NodeOutput();
+                el->time = time;
+                el->init(dims.nNodes, dims.nElements, (dsi.dsType == DataSet::Vector));
+
+                QVector<float>& vals = el->getValues();
+                QVector<Output::float2D>& vals_V = el->getValuesV();
+                QVector<char>& active = el->getActive();
+
+                for (size_t i=0; i<dims.nNodes1D; ++i) {
+                    if (dsi.dsType == DataSet::Vector) {
+                        vals_V[i].x = -9999.0;
+                        vals_V[i].y = -9999.0;
+                        vals[i] = -9999.0;
+                    } else {
+                        vals[i] = -9999.0;
+                    }
+                }
+
+                for (size_t i = 0; i< dims.nNodes2D; ++i) {
+                    size_t idx = ts*dims.nNodes2D + i;
+
+                    if (dsi.dsType == DataSet::Vector) {
+                        vals_V[dims.nNodes1D + i].x = val_or_nodata(vals_x[idx], fill_val_x);
+                        vals_V[dims.nNodes1D + i].y = val_or_nodata(vals_y[idx], fill_val_y);
+                        vals[dims.nNodes1D + i] = scale(vals_x[idx], vals_y[idx], fill_val_x, fill_val_y);
+                    } else {
+                        vals[dims.nNodes1D + i] = val_or_nodata(vals_x[idx], fill_val_x);
+                    }
+                }
+
+                for (size_t i = 0; i< dims.nElements2D; ++i) {
+                    active[i] = (i>=dims.nEdges1D);
+                }
+
+                ds->addOutput(el);
+            } else if (dsi.outputType == "Edge2D") {
+                NodeOutput* el = new NodeOutput();
+                el->time = time;
+                el->init(dims.nNodes, dims.nElements, (dsi.dsType == DataSet::Vector));
+
+                QVector<float>& vals = el->getValues();
+                QVector<Output::float2D>& vals_V = el->getValuesV();
+                QVector<char>& active = el->getActive();
+
+                for (size_t i=0; i<dims.nNodes; ++i) {
+                    vals[i] = -9999;
+                    if (dsi.dsType == DataSet::Vector) {
+                        vals_V[i].x = -9999;
+                        vals_V[i].y = -9999;
+                    }
+                }
+
+                for (size_t i = 0; i< dims.nEdges2D; ++i) {
+
+                    size_t idx = ts*dims.nEdges2D + i;
+                    size_t node_1_idx = edges[i].node_1;
+                    size_t node_2_idx = edges[i].node_2;
+
+                    // take max
+                    if (dsi.dsType == DataSet::Vector) {
+                        double val_x = val_or_nodata(vals_x[idx], fill_val_x);
+                        double val_y = val_or_nodata(vals_y[idx], fill_val_y);
+                        double val_scale = scale(vals_x[idx], vals_y[idx], fill_val_x, fill_val_y);
+
+                        if ((vals[node_1_idx] == -9999) || (vals[node_1_idx] < val_scale)) {
+                            vals_V[node_1_idx].x = val_x;
+                            vals_V[node_1_idx].y = val_y;
+                            vals[node_1_idx] = val_scale;
+                        }
+                        if ((vals[node_2_idx] == -9999) || (vals[node_2_idx] < val_scale)) {
+                            vals_V[node_2_idx].x = val_x;
+                            vals_V[node_2_idx].y = val_y;
+                            vals[node_2_idx] = val_scale;
+                        }
+
+                    } else {
+                        double val_x = val_or_nodata(vals_x[idx], fill_val_x);
+                        if ((vals[node_1_idx] == -9999) || (vals[node_1_idx] < val_x)) {
+                            vals[node_1_idx] = val_x;
+                        }
+                        if ((vals[node_2_idx] == -9999) || (vals[node_2_idx] < val_x)) {
+                            vals[node_2_idx] = val_x;
+                        }
+                    }
+                }
+
+                for (size_t i = 0; i< dims.nElements; ++i) {
+                    active[i] = (i>=dims.nEdges1D);
+                }
+                ds->addOutput(el);
+
+            } else if (dsi.outputType == "Element2D") {
+                ElementOutput* el = new ElementOutput();
+                el->time = time;
+                el->init(dims.nElements, (dsi.dsType == DataSet::Vector));
+
+                QVector<float>& vals = el->getValues();
+                QVector<Output::float2D>& vals_V = el->getValuesV();
+
+                for (size_t i=0; i<dims.nEdges1D; ++i) {
+                    if (dsi.dsType == DataSet::Vector) {
+                        vals_V[i].x = -9999.0;
+                        vals_V[i].y = -9999.0;
+                        vals[i] = -9999.0;
+                    } else {
+                        vals[i] = -9999.0;
+                    }
+                }
+
+                for (size_t i = 0; i< dims.nElements2D; ++i) {
+                    size_t idx = ts*dims.nElements2D + i;
+                    if (dsi.dsType == DataSet::Vector) {
+                        vals_V[dims.nEdges1D + i].x = val_or_nodata(vals_x[idx], fill_val_x);
+                        vals_V[dims.nEdges1D + i].y = val_or_nodata(vals_y[idx], fill_val_y);
+                        vals[dims.nEdges1D + i] = scale(vals_x[idx], vals_y[idx], fill_val_x, fill_val_y);
+                    } else {
+                        vals[dims.nEdges1D + i] = val_or_nodata(vals_x[idx], fill_val_x);
+                    }
+                }
+                ds->addOutput(el);
+            } else {
+                Q_ASSERT(false); //should never happen
             }
+
         }
 
         ds->updateZRange();
@@ -617,21 +776,21 @@ static QDateTime parseTime(int ncid, const Dimensions& dims, QVector<double>& ti
 
         // now time
         foreach (QString fmt, formats_supported) {
-           dt =  QDateTime::fromString(units_list[1], fmt);
-           if (dt.isValid())
-               break;
+            dt =  QDateTime::fromString(units_list[1], fmt);
+            if (dt.isValid())
+                break;
         }
     }
     return dt;
 }
 
 static QVector<Edge> parseEdges(const Dimensions& dims, int ncid) {
-    int start_index = getAttrInt("mesh2d_edge_nodes", "start_index", ncid);
-    QVector<int> edge_nodes_conn = readIntArr("mesh2d_edge_nodes", dims.nEdges * 2, ncid);
+    int start_index = getAttrInt("mesh2d_edge_nodes", "start_index", ncid) - dims.nNodes1D;
+    QVector<int> edge_nodes_conn = readIntArr("mesh2d_edge_nodes", dims.nEdges2D * 2, ncid);
 
     QVector<Edge> edges;
 
-    for (size_t i=0; i<dims.nEdges; ++i) {
+    for (size_t i=0; i<dims.nEdges2D; ++i) {
         Edge edge;
         edge.node_1 = edge_nodes_conn[2*i]- start_index;
         edge.node_2 = edge_nodes_conn[2*i+1] - start_index;
@@ -667,6 +826,8 @@ Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
         } catch (LoadStatus::Error)
         {
             // it seems that some datasets do not have mesh2d_edge_nodes array at all??
+            // confirmed -> this is actually bug in their software
+            // we can remove this once they fix it?
             parse_edge_outputs = false;
         }
 
