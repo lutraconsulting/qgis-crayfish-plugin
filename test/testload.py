@@ -187,13 +187,13 @@ class TestCrayfishLoad(unittest.TestCase):
 
   def test_load_netCDF_UGRID_data_file(self):
     m = crayfish.Mesh(TEST_DIR + "/NetCDF/simplebox_hex7_map.nc")
-    self.assertEqual(m.dataset_count(), 8)
+    self.assertEqual(m.dataset_count(), 15)
     ds = m.dataset(1)
     self.assertEqual(ds.type(), crayfish.DS_Scalar)
     self.assertEqual(ds.output_count(), 13)
     o = ds.output(0)
     self.assertEqual(o.time(), 0.0013888889225199819)
-    self.assertEqual(o.value(1), 57.48727798461914)
+    self.assertEqual(o.value(1), 0.0)
 
   def test_load_hec2d_file(self):
     m = crayfish.Mesh(TEST_DIR + "/test.p01.hdf")

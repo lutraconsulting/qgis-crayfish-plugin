@@ -463,7 +463,9 @@ void CrayfishGDALReader::parseRasterBands(const CrayfishGDALDataset* cfGDALDatas
    {
        // Get Band
        GDALRasterBandH gdalBand = GDALGetRasterBand( cfGDALDataset->mHDataset, i );
-       if (!gdalBand) throw LoadStatus::Err_InvalidData;
+       if (!gdalBand) {
+           throw LoadStatus::Err_InvalidData;
+       }
 
 
        // Get metadata
@@ -551,7 +553,9 @@ void CrayfishGDALReader::addDataToOutput(GDALRasterBandH raster_band, NodeOutput
                    0, //nPixelSpace
                    0 //nLineSpace
                    );
-       if (err != CE_None) throw LoadStatus::Err_InvalidData;
+       if (err != CE_None) {
+           throw LoadStatus::Err_InvalidData;
+       }
 
        for (uint x = 0; x < mXSize; ++x)
        {
@@ -578,6 +582,7 @@ void CrayfishGDALReader::addDataToOutput(GDALRasterBandH raster_band, NodeOutput
            }
        }
 
+       GDALFlushRasterCache(raster_band);
    }
 }
 
@@ -765,7 +770,7 @@ Mesh* CrayfishGDALReader::load(LoadStatus* status)
    if (mPafScanline) free(mPafScanline);
 
    // do not allow mesh without any valid datasets
-   if (mMesh->dataSets().empty()) {
+   if (mMesh && (mMesh->dataSets().empty())) {
        if (status) status->mLastError = LoadStatus::Err_InvalidData;
        if (mMesh) delete mMesh;
        mMesh = 0;
