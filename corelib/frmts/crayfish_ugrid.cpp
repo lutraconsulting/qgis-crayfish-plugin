@@ -69,6 +69,11 @@ QMap<QString, QString> initHumanReadableNamesMap() {
 }
 QMap<QString, QString> STANDARD_NAMES_TO_HUMAN_READABLE_NAMES = initHumanReadableNamesMap();
 
+struct Edge {
+    size_t node_1;
+    size_t node_2;
+};
+
 
 void get_dimension(const QString& name, int ncid, size_t* val, int* ncid_val) {
     if (nc_inq_dimid(ncid, name.toStdString().c_str(), ncid_val) != NC_NOERR) UGRID_THROW_ERR;
@@ -96,6 +101,7 @@ struct Dimensions {
     void read(int ncid) {
         get_dimension("nmesh2d_node", ncid, &nNodes, &ncid_node);
         get_dimension("nmesh2d_face", ncid, &nElements, &ncid_element);
+        get_dimension("nmesh2d_edge", ncid, &nEdges, &ncid_edge);
         get_dimension("time", ncid, &nTimesteps, &ncid_timestep);
     }
 
@@ -104,6 +110,9 @@ struct Dimensions {
 
     int ncid_element;
     size_t nElements;
+
+    int ncid_edge;
+    size_t nEdges;
 
     int ncid_timestep;
     size_t nTimesteps;
@@ -252,10 +261,11 @@ static Mesh* createMesh(const Dimensions& dims, int ncid) {
     return m;
 }
 
+
 struct DatasetInfo{
     QString name;
     DataSet::Type dsType;
-    Output::Type outputType;
+    QString outputType;
     size_t nTimesteps;
     int ncid_x;
     int ncid_y;
@@ -324,22 +334,26 @@ static dataset_info_map parseDatasetInfo(const Dimensions& dims, int ncid) {
             if (nc_inq_vardimid(ncid, varid, dimids)) continue;
 
             int nTimesteps;
-            Output::Type output_type;
+            QString output_type;
             if (ndims == 1) {
                 nTimesteps = 1;
                 if (dimids[0] == dims.ncid_node) {
-                    output_type = Output::TypeNode;
+                    output_type = "Node";
                 } else if (dimids[0] == dims.ncid_element) {
-                    output_type = Output::TypeElement;
+                    output_type = "Element";
+                } else if (dimids[0] == dims.ncid_edge) {
+                    output_type = "Edge";
                 } else {
                     continue;
                 }
             } else {
                 nTimesteps = dims.nTimesteps;
                 if (dimids[1] == dims.ncid_node) {
-                    output_type = Output::TypeNode;
+                    output_type = "Node";
                 } else if (dimids[1] == dims.ncid_element) {
-                    output_type = Output::TypeElement;
+                    output_type = "Element";
+                } else if (dimids[1] == dims.ncid_edge) {
+                    output_type = "Edge";
                 } else {
                     continue;
                 }
@@ -417,7 +431,8 @@ static dataset_info_map parseDatasetInfo(const Dimensions& dims, int ncid) {
 static void addDatasets(Mesh* m, const Dimensions& dims, int ncid,
                         const QString& fileName, const QVector<double>& times,
                         const dataset_info_map& dsinfo_map,
-                        const QDateTime& refTime) {
+                        const QDateTime& refTime,
+                        const QVector<Edge>& edges) {
 
     /* PHASE 2 - add datasets */
     foreach (DatasetInfo dsi, dsinfo_map) {
@@ -428,10 +443,12 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid,
         ds->setIsTimeVarying(dsi.nTimesteps > 1);
 
         size_t arr_size;
-        if (dsi.outputType == Output::TypeNode) {
+        if (dsi.outputType == "Node") {
             arr_size = dsi.nTimesteps * dims.nNodes;
-        } else {
+        } else if (dsi.outputType == "Element") {
             arr_size = dsi.nTimesteps * dims.nElements;
+        } else { // Edges
+            arr_size = dsi.nTimesteps * dims.nEdges;
         }
 
         // read X data
@@ -455,7 +472,7 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid,
             float time = times[ts];
 
 
-            if (dsi.outputType == Output::TypeNode) {
+            if (dsi.outputType == "Node") {
                 NodeOutput* el = new NodeOutput();
                 el->time = time;
                 el->init(dims.nNodes, dims.nElements, (dsi.dsType == DataSet::Vector));
@@ -480,8 +497,64 @@ static void addDatasets(Mesh* m, const Dimensions& dims, int ncid,
                     active[i] = 1;
                 }
                 ds->addOutput(el);
+             } else if (dsi.outputType == "Edge") {
+                    NodeOutput* el = new NodeOutput();
+                    el->time = time;
+                    el->init(dims.nNodes, dims.nElements, (dsi.dsType == DataSet::Vector));
 
-            } else {
+                    QVector<float>& vals = el->getValues();
+                    QVector<Output::float2D>& vals_V = el->getValuesV();
+                    QVector<char>& active = el->getActive();
+
+                    for (size_t i=0; i<dims.nNodes; ++i) {
+                        vals[i] = -9999;
+                        if (dsi.dsType == DataSet::Vector) {
+                            vals_V[i].x = -9999;
+                            vals_V[i].y = -9999;
+                        }
+                    }
+
+                    for (size_t i = 0; i< dims.nEdges; ++i) {
+
+                        size_t idx = ts*dims.nEdges + i;
+                        size_t node_1_idx = edges[i].node_1;
+                        size_t node_2_idx = edges[i].node_2;
+
+                        // take max
+                        if (dsi.dsType == DataSet::Vector) {
+                            double val_x = val_or_nodata(vals_x[idx], fill_val_x);
+                            double val_y = val_or_nodata(vals_y[idx], fill_val_y);
+                            double val_scale = scale(vals_x[idx], vals_y[idx], fill_val_x, fill_val_y);
+
+                            if ((vals[node_1_idx] == -9999) || (vals[node_1_idx] < val_scale)) {
+                                vals_V[node_1_idx].x = val_x;
+                                vals_V[node_1_idx].y = val_y;
+                                vals[node_1_idx] = val_scale;
+                            }
+                            if ((vals[node_2_idx] == -9999) || (vals[node_2_idx] < val_scale)) {
+                                vals_V[node_2_idx].x = val_x;
+                                vals_V[node_2_idx].y = val_y;
+                                vals[node_2_idx] = val_scale;
+                            }
+
+                        } else {
+                            double val_x = val_or_nodata(vals_x[idx], fill_val_x);
+                            if ((vals[node_1_idx] == -9999) || (vals[node_1_idx] < val_x)) {
+                                vals[node_1_idx] = val_x;
+                            }
+                            if ((vals[node_2_idx] == -9999) || (vals[node_2_idx] < val_x)) {
+                                vals[node_2_idx] = val_x;
+                            }
+                        }
+                    }
+
+                    for (size_t i = 0; i< dims.nElements; ++i) {
+                        // All active
+                        active[i] = 1;
+                    }
+                    ds->addOutput(el);
+
+            } else { //if (dsi.outputType == "Element")
                 ElementOutput* el = new ElementOutput();
                 el->time = time;
                 el->init(dims.nElements, (dsi.dsType == DataSet::Vector));
@@ -548,6 +621,21 @@ static QDateTime parseTime(int ncid, const Dimensions& dims, QVector<double>& ti
     return dt;
 }
 
+static QVector<Edge> parseEdges(const Dimensions& dims, int ncid) {
+    int start_index = getAttrInt("mesh2d_edge_nodes", "start_index", ncid);
+    QVector<int> edge_nodes_conn = readIntArr("mesh2d_edge_nodes", dims.nEdges * 2, ncid);
+
+    QVector<Edge> edges;
+
+    for (size_t i=0; i<dims.nEdges; ++i) {
+        Edge edge;
+        edge.node_1 = edge_nodes_conn[2*i]- start_index;
+        edge.node_2 = edge_nodes_conn[2*i+1] - start_index;
+        edges.push_back(edge);
+    }
+    return edges;
+}
+
 Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
 {
     if (status) status->clear();
@@ -567,6 +655,9 @@ Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
         mesh = createMesh(dims, ncid);
         setProjection(mesh, ncid);
 
+        // Parse Edges
+        QVector<Edge> edges = parseEdges(dims, ncid);
+
         // Parse time array
         QDateTime refTime = parseTime(ncid, dims, times);
 
@@ -574,7 +665,7 @@ Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
         dataset_info_map dsinfo_map = parseDatasetInfo(dims, ncid);
 
         // Create datasets
-        addDatasets(mesh, dims, ncid, fileName, times, dsinfo_map, refTime);
+        addDatasets(mesh, dims, ncid, fileName, times, dsinfo_map, refTime, edges);
     }
     catch (LoadStatus::Error error)
     {
