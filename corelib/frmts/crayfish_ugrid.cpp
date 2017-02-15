@@ -244,7 +244,7 @@ static Mesh::Nodes createNodes(const Dimensions& dims, int ncid) {
     QVector<double> nodes2D_y = readDoubleArr("mesh2d_node_y", dims.nNodes2D, ncid);
     for (size_t i = 0; i < dims.nNodes2D; ++i, ++nodesPtr)
     {
-        nodesPtr->setId(i);
+        nodesPtr->setId(dims.nNodes1D+i);
         nodesPtr->x = nodes2D_x[i];
         nodesPtr->y = nodes2D_y[i];
     }
