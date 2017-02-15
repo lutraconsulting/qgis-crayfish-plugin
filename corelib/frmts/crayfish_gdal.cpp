@@ -764,6 +764,12 @@ Mesh* CrayfishGDALReader::load(LoadStatus* status)
    qDeleteAll(gdal_datasets);
    if (mPafScanline) free(mPafScanline);
 
+   // do not allow mesh without any valid datasets
+   if (mMesh->dataSets().empty()) {
+       if (status) status->mLastError = LoadStatus::Err_InvalidData;
+       if (mMesh) delete mMesh;
+       mMesh = 0;
+   }
    return mMesh;
 }
 

@@ -80,6 +80,8 @@ protected:
                              .replace("v-component of", "")
                              .replace("u-component", "")
                              .replace("v-component", "");
+
+        return false; // success
     }
 
 private:

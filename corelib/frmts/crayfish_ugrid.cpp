@@ -83,7 +83,10 @@ void get_dimension(const QString& name, int ncid, size_t* val, int* ncid_val) {
 QString get_attr_str(const QString& name, int ncid, int varid) {
     size_t attlen = 0;
 
-    if (nc_inq_attlen (ncid, varid, name.toStdString().c_str(), &attlen)) UGRID_THROW_ERR;
+    if (nc_inq_attlen (ncid, varid, name.toStdString().c_str(), &attlen)) {
+        // attribute is missing
+        return QString();
+    }
 
     char *string_attr;
     string_attr = (char *) malloc(attlen + 1);
@@ -187,7 +190,9 @@ static void setProjection(Mesh* m, int ncid) {
     QString wkt = getAttrStr("projected_coordinate_system", "wkt", ncid);
     if (wkt.isEmpty()) {
         int epsg = getAttrInt("projected_coordinate_system", "epsg", ncid);
-        m->setSourceCrsFromEPSG(epsg);
+        if (epsg != 0) {
+            m->setSourceCrsFromEPSG(epsg);
+        }
     } else {
         m->setSourceCrsFromWKT(wkt);
     }
@@ -272,7 +277,7 @@ struct DatasetInfo{
 };
 typedef QMap<QString, DatasetInfo> dataset_info_map; // name -> DatasetInfo
 
-static dataset_info_map parseDatasetInfo(const Dimensions& dims, int ncid) {
+static dataset_info_map parseDatasetInfo(const Dimensions& dims, int ncid, bool parse_edge_outputs) {
     /*
      * list of datasets:
      *   Getting the full list of variables from the file and then grouping them in two steps:
@@ -341,7 +346,7 @@ static dataset_info_map parseDatasetInfo(const Dimensions& dims, int ncid) {
                     output_type = "Node";
                 } else if (dimids[0] == dims.ncid_element) {
                     output_type = "Element";
-                } else if (dimids[0] == dims.ncid_edge) {
+                } else if (parse_edge_outputs && (dimids[0] == dims.ncid_edge)) {
                     output_type = "Edge";
                 } else {
                     continue;
@@ -352,7 +357,7 @@ static dataset_info_map parseDatasetInfo(const Dimensions& dims, int ncid) {
                     output_type = "Node";
                 } else if (dimids[1] == dims.ncid_element) {
                     output_type = "Element";
-                } else if (dimids[1] == dims.ncid_edge) {
+                } else if (parse_edge_outputs && (dimids[1] == dims.ncid_edge)) {
                     output_type = "Edge";
                 } else {
                     continue;
@@ -610,7 +615,6 @@ static QDateTime parseTime(int ncid, const Dimensions& dims, QVector<double>& ti
             times[i] /= div_by;
         }
 
-        //TODO -- reuse in netcdf reader
         // now time
         foreach (QString fmt, formats_supported) {
            dt =  QDateTime::fromString(units_list[1], fmt);
@@ -656,13 +660,21 @@ Mesh* Crayfish::loadUGRID(const QString& fileName, LoadStatus* status)
         setProjection(mesh, ncid);
 
         // Parse Edges
-        QVector<Edge> edges = parseEdges(dims, ncid);
+        QVector<Edge> edges;
+        bool parse_edge_outputs = true;
+        try {
+            edges = parseEdges(dims, ncid);
+        } catch (LoadStatus::Error)
+        {
+            // it seems that some datasets do not have mesh2d_edge_nodes array at all??
+            parse_edge_outputs = false;
+        }
 
         // Parse time array
         QDateTime refTime = parseTime(ncid, dims, times);
 
         // Parse dataset info
-        dataset_info_map dsinfo_map = parseDatasetInfo(dims, ncid);
+        dataset_info_map dsinfo_map = parseDatasetInfo(dims, ncid, parse_edge_outputs);
 
         // Create datasets
         addDatasets(mesh, dims, ncid, fileName, times, dsinfo_map, refTime, edges);
