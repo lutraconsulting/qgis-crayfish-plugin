@@ -549,7 +549,7 @@ void CrayfishGDALReader::addDataToOutput(GDALRasterBandH raster_band, NodeOutput
                    mPafScanline, //pData
                    mXSize, //nBufXSize
                    1, //nBufYSize
-                   GDT_Float32,
+                   GDT_Float32, //eBufType
                    0, //nPixelSpace
                    0 //nLineSpace
                    );

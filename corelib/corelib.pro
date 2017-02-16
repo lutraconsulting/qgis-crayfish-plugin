@@ -115,7 +115,8 @@ HEADERS += crayfish.h \
     elem/crayfish_e2l.h \
     frmts/crayfish_mesh_2dm.h \
     frmts/crayfish_hdf5.h \
-    contrib/tinyxml2.h
+    contrib/tinyxml2.h \
+    frmts/crayfish_netcdf.h
 
 INCLUDEPATH += $$PWD
 
