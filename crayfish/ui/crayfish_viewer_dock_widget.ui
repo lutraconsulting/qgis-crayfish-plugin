@@ -78,19 +78,6 @@ by clicking the icons next to dataset names.</string>
     </item>
     <item>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0" colspan="5">
-       <widget class="QSlider" name="sliderTime">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="tickPosition">
-         <enum>QSlider::TicksBelow</enum>
-        </property>
-        <property name="tickInterval">
-         <number>1</number>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0">
        <widget class="QComboBox" name="cboTime">
         <property name="editable">
@@ -138,6 +125,38 @@ by clicking the icons next to dataset names.</string>
         </property>
         <property name="autoRaise">
          <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="5">
+       <widget class="QToolButton" name="btnTimeOptions">
+        <property name="toolTip">
+         <string>Advanced Contour Options</string>
+        </property>
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="popupMode">
+         <enum>QToolButton::InstantPopup</enum>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+        <property name="arrowType">
+         <enum>Qt::NoArrow</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="6">
+       <widget class="QSlider" name="sliderTime">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="tickPosition">
+         <enum>QSlider::TicksBelow</enum>
+        </property>
+        <property name="tickInterval">
+         <number>1</number>
         </property>
        </widget>
       </item>

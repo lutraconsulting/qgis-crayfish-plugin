@@ -44,11 +44,16 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
   if (meshFile.endsWith((".hdf")))
     return loadHec2D(meshFile, status);
 
-  // This may be either single filename or
-  // subdataset name in form NETCDF:filename:variable
-  if (meshFile.endsWith(".nc") ||
-      meshFile.startsWith("NETCDF:"))
-    return loadNetCDF(meshFile, status);
+  if (meshFile.endsWith(".nc"))
+  {
+      Mesh* m = loadUGRID(meshFile, status);
+      if (!m) {
+          // error, try UGRID
+          if (status) status->clear();
+          m = loadNetCDF(meshFile, status);
+      }
+    return m;
+  }
 
   if (meshFile.endsWith((".slf")))
     return loadSerafin(meshFile, status);

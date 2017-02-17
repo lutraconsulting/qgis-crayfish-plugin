@@ -24,6 +24,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <QDateTime>
+
+// keep in sync with DATETIME_FMT in core.py
+#define DATETIME_FMT "yyyy-MM-dd'T'HH:mm:ss.z'Z'"
+
 #include "crayfish.h"
 #include "crayfish_mesh.h"
 #include "crayfish_dataset.h"
@@ -49,7 +54,7 @@ static LoadStatus sLastLoadStatus;
 
 int CF_Version()
 {
-  return 0x020400; // 2.4.0
+  return 0x020500; // 2.5.0
 }
 
 
@@ -378,6 +383,15 @@ void CF_DS_valueRange(DataSetH ds, float* vMin, float* vMax)
   *vMax = ds->maxZValue();
 }
 
+const char* CF_DS_refTime(DataSetH ds)
+{
+    QDateTime dt = ds->getRefTime();
+    if (dt.isValid()) {
+        return _return_str(dt.toString(DATETIME_FMT));
+    } else {
+        return "";
+    }
+}
 
 void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
 {

@@ -23,6 +23,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+from datetime import datetime
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -30,9 +31,11 @@ from qgis.core import *
 
 from ..core import DataSet, DS_Bed, DS_Vector
 from .plot_widget import CrayfishPlotWidget
+from .datetime_options_dialog import CrayfishDatetimeOptionsDialog
 from .vector_options_dialog import CrayfishVectorOptionsDialog
 from .mesh_options_dialog import CrayfishMeshOptionsDialog
 from .render_settings import CrayfishRenderSettings
+from .datetime_settings import CrayfishDateTimeSettings
 from .utils import load_ui, initColorButton, initColorRampComboBox, name2ramp, time_to_string
 from .dataset_view import DataSetModel
 from .colormap_dialog import CrayfishColorMapDialog
@@ -50,8 +53,6 @@ class CrayfishDock(qtBaseClass, uiDialog):
         self.setObjectName("CrayfishViewerDock") # used by main window to save/restore state
         self.iface = iface
 
-        self.addIlluvisPromo()
-
         self.plot_dock_widget = None
 
         # make sure we accept only doubles for min/max values
@@ -64,6 +65,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
         self.btnAdvanced.setIcon(iconOptions)
         self.btnVectorOptions.setIcon(iconOptions)
         self.btnMeshOptions.setIcon(iconOptions)
+        self.btnTimeOptions.setIcon(iconOptions)
 
         self.btnPlot.setIcon(QgsApplication.getThemeIcon("/histogram.png"))
         self.btnLockCurrent.setIcon(QgsApplication.getThemeIcon("/locked.svg"))
@@ -72,6 +74,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
         self.vectorPropsDialog = None
         self.advancedColorMapDialog = None
         self.meshPropsDialog = None
+        self.timePropsDialog = None
 
         # Ensure refresh() is called when the layer changes
         QObject.connect(self.cboTime, SIGNAL("currentIndexChanged(int)"), self.outputTimeChanged)
@@ -88,6 +91,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
         QObject.connect(self.contourTransparencySlider, SIGNAL('valueChanged(int)'), self.transparencyChanged)
         QObject.connect(self.cboContourBasic, SIGNAL('currentIndexChanged(int)'), self.contourColorMapChanged)
         QObject.connect(self.btnAdvanced, SIGNAL("clicked()"), self.editAdvanced)
+        QObject.connect(self.btnTimeOptions, SIGNAL("clicked()"), self.editDateTime)
         QObject.connect(self.radContourBasic, SIGNAL("clicked()"), self.setContourType)
         QObject.connect(self.radContourAdvanced, SIGNAL("clicked()"), self.setContourType)
         QObject.connect(self.btnMeshOptions, SIGNAL("clicked()"), self.displayMeshPropsDialog)
@@ -203,6 +207,14 @@ class CrayfishDock(qtBaseClass, uiDialog):
         self.updateColorMapAndRedraw(ds)
 
 
+    def repopulate_time_control_combo(self, dataSet):
+        self.cboTime.blockSignals(True) # make sure that currentIndexChanged(int) will not be emitted
+        self.cboTime.clear()
+        if dataSet.time_varying():
+            for output in dataSet.outputs():
+                self.cboTime.addItem(time_to_string(output.time(), dataSet))
+        self.cboTime.blockSignals(False)
+
     def dataSetChanged(self, index):
 
         dataSetItem = self.treeDataSets.model().index2item(index)
@@ -222,13 +234,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
             l.contour_ds_index = l.current_ds_index
             l.vector_ds_index = l.current_ds_index if dataSet.type() == DataSet.Vector else -1
 
-        # repopulate the time control combo
-        self.cboTime.blockSignals(True) # make sure that currentIndexChanged(int) will not be emitted
-        self.cboTime.clear()
-        if dataSet.time_varying():
-            for output in dataSet.outputs():
-                self.cboTime.addItem(time_to_string(output.time()))
-        self.cboTime.blockSignals(False)
+        self.repopulate_time_control_combo(dataSet=dataSet)
 
         self.sliderTime.setMaximum(dataSet.output_count()-1)
 
@@ -471,6 +477,17 @@ class CrayfishDock(qtBaseClass, uiDialog):
         self.updateColorMapAndRedraw(ds)
 
 
+    def editDateTime(self):
+        if self.timePropsDialog is not None:
+            self.timePropsDialog.close()
+
+        ts = CrayfishDateTimeSettings( self.currentDataSet() )
+        self.timePropsDialog = CrayfishDatetimeOptionsDialog(self.iface,
+                                                             ts,
+                                                             self.repopulate_time_control_combo,
+                                                             self)
+        self.timePropsDialog.show()
+
     def setContourType(self):
         ds = self.currentDataSet()
         basic = self.radContourBasic.isChecked()
@@ -487,37 +504,6 @@ class CrayfishDock(qtBaseClass, uiDialog):
         vMin,vMax = ds.value_range()
         pix = cm.previewPixmap(self.lblAdvancedPreview.size(), vMin, vMax)
         self.lblAdvancedPreview.setPixmap(pix)
-
-
-    def addIlluvisPromo(self):
-
-        if QSettings().value("/crayfishViewer/hideIlluvisPromo"):
-          return
-
-        self.labelPromo = QLabel(self)
-        self.labelPromo.setStyleSheet("QLabel { background-color: #e7f5fe; border: 1px solid #b9cfe4; }")
-        self.labelPromo.setWordWrap(True)
-        self.labelPromo.setObjectName("labelPromo")
-        self.labelPromo.setText(
-          "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-          "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-          "p, li { white-space: pre-wrap; }\n"
-          "</style></head><body><table<tr><td><span style=\" font-weight:600;\">Publish to the Web</span>"
-          " - new integration with <span style=\" font-style:italic;\">illuvis</span> allows you to easily"
-          " and securely share flood maps with colleagues, clients and other stakeholders. "
-          "<a href=\"https://www.illuvis.com/?referrer=crayfish\">"
-          "<span style=\" text-decoration: underline; color:#0057ae;\">Find out more</span></a></p></td>"
-          "<td><a href=\"crayfish:closePromo\"><span style=\"text-decoration: none; color: #0057ae; font-weight:600;\">x</span></a>"
-          "</td></tr></table></body></html>")
-        self.labelPromo.linkActivated.connect(self.promoLinkActivated)
-        self.verticalLayout_2.insertWidget(0, self.labelPromo)
-
-    def promoLinkActivated(self, link):
-        if link == "crayfish:closePromo":
-          self.labelPromo.hide()
-          QSettings().setValue("/crayfishViewer/hideIlluvisPromo", 1)
-        elif link.startswith('http'):
-          QDesktopServices.openUrl(QUrl(link))
 
 
     def timeFirst(self):

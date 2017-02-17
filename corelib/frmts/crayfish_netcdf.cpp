@@ -39,16 +39,37 @@ class NetCDFReader: public CrayfishGDALReader
 public:
     NetCDFReader(const QString& fileName): CrayfishGDALReader(fileName, "NETCDF"){}
 
-    bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
+    QString GDALFileName(const QString& fileName) {
+        #ifdef WIN32
+            // Force usage of the predefined GDAL driver
+            // http://gis.stackexchange.com/a/179167
+            // on Windows, HDF5 driver is checked before NETCDF driver in GDAL
+            return  "NETCDF:\"" + fileName + "\"";
+        #else
+            return  fileName;
+        #endif
+    }
+
+    bool parseBandInfo(const metadata_hash& metadata, QString& band_name,
+                       float* time, bool* is_vector, bool* is_x
+                       ) {
        metadata_hash::const_iterator iter;
 
+       // TIME
        iter = metadata.find("netcdf_dim_time");
        if (iter == metadata.end()) return true; //FAILURE, skip no-time bands
        *time = parseMetadataTime(iter.value());
 
-       iter = metadata.find("netcdf_varname");
-       if (iter == metadata.end()) return true; //FAILURE
-       band_name = iter.value();
+       // NAME
+       iter = metadata.find("long_name");
+       if (iter == metadata.end())
+       {
+           iter = metadata.find("netcdf_varname");
+           if (iter == metadata.end()) return true; //FAILURE, should be always present
+           band_name = iter.value();
+       } else {
+           band_name = iter.value();
+       }
 
        // Loop throught all additional dimensions but time
        for (iter = metadata.begin(); iter != metadata.end(); ++iter) {
@@ -61,13 +82,23 @@ public:
          }
        }
 
-       return false; // SUCCESS
-    }
+       // VECTOR
+       if (band_name.contains("x-component")) {
+           *is_vector = true; // vector
+           *is_x =  true; //X-Axis
+       }
+       else if (band_name.contains("y-component")) {
+           *is_vector = true; // vector
+           *is_x =  false; //Y-Axis
+       } else {
+           *is_vector = false; // scalar
+           *is_x =  true; //X-Axis
+       }
 
-    void determineBandVectorInfo(QString& , bool* is_vector, bool* is_x)
-    {
-        *is_vector = false; // ONLY scalars supported so far
-        *is_x =  true;
+       band_name = band_name.replace("x-component", "")
+                            .replace("y-component", "");
+
+       return false; // SUCCESS
     }
 };
 

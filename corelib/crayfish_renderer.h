@@ -180,6 +180,7 @@ protected:
   bool nodeInsideView(uint nodeIndex);
   bool elemOutsideView(uint);
   void paintRow(uint, int, int, int, const Output* output);
+  void paintLine(const Element& elem, const Output* output);
   void bbox2rect(const BBox& bbox, int& leftLim, int& rightLim, int& topLim, int& bottomLim);
 
   //! rendering configuration

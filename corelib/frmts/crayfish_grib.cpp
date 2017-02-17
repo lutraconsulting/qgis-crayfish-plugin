@@ -40,9 +40,12 @@ public:
     GribReader(const QString& fileName): CrayfishGDALReader(fileName, "GRIB"),
         mRefTime(std::numeric_limits<float>::min()) {}
 protected:
-    bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) {
+    bool parseBandInfo(const metadata_hash& metadata, QString& band_name,
+                       float* time, bool* is_vector, bool* is_x
+                       ) {
        metadata_hash::const_iterator iter;
 
+       // NAME
        iter = metadata.find("grib_comment");
        if (iter == metadata.end()) return true; //FAILURE
        band_name = iter.value();
@@ -54,17 +57,13 @@ protected:
            mRefTime = parseMetadataTime(iter.value());
        }
 
+       // TIME
        iter = metadata.find("grib_valid_time");
        if (iter == metadata.end()) return true; //FAILURE
        float valid_time = parseMetadataTime(iter.value());
        *time = (valid_time - mRefTime) / 3600.0; // input times are always in seconds UTC, we need them back in hours
 
-       return false; // SUCCESS
-    }
-
-    void determineBandVectorInfo(QString& band_name, bool* is_vector, bool* is_x)
-    {
-
+        // VECTOR
         if (band_name.contains("u-component")) {
             *is_vector = true; // vector
             *is_x =  true; //X-Axis
@@ -81,6 +80,8 @@ protected:
                              .replace("v-component of", "")
                              .replace("u-component", "")
                              .replace("v-component", "");
+
+        return false; // success
     }
 
 private:

@@ -40,6 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QHash>
 #include <QVector>
 #include <QRegExp>
+#include <QtAlgorithms>
 #include <math.h>
 
 static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
@@ -290,7 +291,19 @@ bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval,
 
 
 /******************************************************************************************************/
-void CrayfishGDALReader::parseParameters() {
+void CrayfishGDALDataset::init(const QString& dsName) {
+    mDatasetName = dsName;
+
+    // Open dataset
+    mHDataset = GDALOpen( mDatasetName.toAscii().data(), GA_ReadOnly );
+    if(!mHDataset) throw LoadStatus::Err_UnknownFormat;
+
+    // Now parse it
+    parseParameters();
+    parseProj();
+}
+
+void CrayfishGDALDataset::parseParameters() {
    mNBands = GDALGetRasterCount( mHDataset );
    if (mNBands == 0) throw LoadStatus::Err_InvalidData;
 
@@ -306,19 +319,35 @@ void CrayfishGDALReader::parseParameters() {
    mNVolumes = (mXSize - 1) * (mYSize -1);
 }
 
-void CrayfishGDALReader::openFile() {
-
-   GDALAllRegister();
-   GDALDriverH hDriver = GDALGetDriverByName(mDriverName.toAscii().data());
-   if (!hDriver) throw LoadStatus::Err_MissingDriver;
-
-   // Open dataset
-   mHDataset = GDALOpen( mFileName.toAscii().data(), GA_ReadOnly );
-   if( mHDataset == NULL ) throw LoadStatus::Err_UnknownFormat;
+void CrayfishGDALDataset::parseProj() {
+   char* proj = const_cast<char*> (GDALGetProjectionRef( mHDataset ));
+   if( proj != NULL ) {
+       mProj = QString(proj);
+   }
 }
+
+/******************************************************************************************************/
+
+bool CrayfishGDALReader::meshes_equals(const CrayfishGDALDataset* ds1, const CrayfishGDALDataset* ds2) const
+{
+    return ((ds1->mXSize == ds2->mXSize) &&
+            (ds1->mYSize == ds2->mYSize) &&
+            (is_nodata(ds1->mGT[0], ds2->mGT[0])) &&
+            (is_nodata(ds1->mGT[1], ds2->mGT[1])) &&
+            (is_nodata(ds1->mGT[2], ds2->mGT[2])) &&
+            (is_nodata(ds1->mGT[3], ds2->mGT[3])) &&
+            (is_nodata(ds1->mGT[4], ds2->mGT[4])) &&
+            (is_nodata(ds1->mGT[5], ds2->mGT[5])) &&
+            ds1->mProj == ds2->mProj);
+}
+
 
 bool CrayfishGDALReader::initNodes(Mesh::Nodes& nodes) {
    Node* nodesPtr = nodes.data();
+   uint mXSize = meshGDALDataset()->mXSize;
+   uint mYSize = meshGDALDataset()->mYSize;
+   const double* mGT = meshGDALDataset()->mGT;
+
    for (uint y = 0; y < mYSize; ++y)
    {
        for (uint x = 0; x < mXSize; ++x, ++nodesPtr)
@@ -353,6 +382,9 @@ void CrayfishGDALReader::initElements(Mesh::Nodes& nodes, Mesh::Elements& elemen
    Element* elementsPtr = elements.data();
    int reconnected = 0;
    int eid = 0;
+   uint mXSize = meshGDALDataset()->mXSize;
+   uint mYSize = meshGDALDataset()->mYSize;
+
    for (uint y = 0; y < mYSize-1; ++y)
    {
        for (uint x = 0; x < mXSize-1; ++x)
@@ -393,6 +425,10 @@ void CrayfishGDALReader::initElements(Mesh::Nodes& nodes, Mesh::Elements& elemen
    Q_ASSERT(reconnected == 0);
 }
 
+QString CrayfishGDALReader::GDALFileName(const QString& fileName) {
+    return fileName;
+}
+
 float CrayfishGDALReader::parseMetadataTime(const QString& time_s)
 {
    QString time_trimmed = time_s.trimmed();
@@ -400,11 +436,11 @@ float CrayfishGDALReader::parseMetadataTime(const QString& time_s)
    return times[0].toFloat();
 }
 
-CrayfishGDALReader::metadata_hash CrayfishGDALReader::parseMetadata(GDALRasterBandH gdalBand)
-{
+CrayfishGDALReader::metadata_hash CrayfishGDALReader::parseMetadata(GDALMajorObjectH gdalObject, const char* pszDomain /* = 0 */) {
     CrayfishGDALReader::metadata_hash meta;
+    char** GDALmetadata = 0;
+    GDALmetadata = GDALGetMetadata(gdalObject, pszDomain);
 
-    char** GDALmetadata = GDALGetMetadata( gdalBand, 0 );
     if ( GDALmetadata )
     {
         for ( int j = 0; GDALmetadata[j]; ++j )
@@ -422,12 +458,14 @@ CrayfishGDALReader::metadata_hash CrayfishGDALReader::parseMetadata(GDALRasterBa
     return meta;
 }
 
-void CrayfishGDALReader::parseRasterBands() {
-   for (uint i = 1; i <= mNBands; ++i ) // starts with 1 .... ehm....
+void CrayfishGDALReader::parseRasterBands(const CrayfishGDALDataset* cfGDALDataset){
+   for (uint i = 1; i <= cfGDALDataset->mNBands; ++i ) // starts with 1 .... ehm....
    {
        // Get Band
-       GDALRasterBandH gdalBand = GDALGetRasterBand( mHDataset, i );
-       if (!gdalBand) throw LoadStatus::Err_InvalidData;
+       GDALRasterBandH gdalBand = GDALGetRasterBand( cfGDALDataset->mHDataset, i );
+       if (!gdalBand) {
+           throw LoadStatus::Err_InvalidData;
+       }
 
 
        // Get metadata
@@ -435,13 +473,11 @@ void CrayfishGDALReader::parseRasterBands() {
 
        QString band_name;
        float time = std::numeric_limits<float>::min();
-       if (parseBandInfo(metadata, band_name, &time)) {
-           continue;
-       }
-
        bool is_vector;
        bool is_x;
-       determineBandVectorInfo(band_name, &is_vector, &is_x);
+       if (parseBandInfo(metadata, band_name, &time, &is_vector, &is_x)) {
+           continue;
+       }
 
        // Add to data structures
        int data_count = is_vector ? 2 : 1;
@@ -475,15 +511,13 @@ void CrayfishGDALReader::parseRasterBands() {
            }
        }
    }
-
-   if (mBands.empty()) throw LoadStatus::Err_InvalidData;
 }
 
 void CrayfishGDALReader::populateScaleForVector(NodeOutput* tos){
    // there are no scalar data associated with vectors, so
    // assign vector length as scalar data at least
    // see #134
-   for (uint idx=0; idx<mNPoints; ++idx)
+   for (uint idx=0; idx<meshGDALDataset()->mNPoints; ++idx)
    {
        if (is_nodata(tos->getValuesV()[idx].x) ||
            is_nodata(tos->getValuesV()[idx].y))
@@ -499,6 +533,8 @@ void CrayfishGDALReader::populateScaleForVector(NodeOutput* tos){
 
 void CrayfishGDALReader::addDataToOutput(GDALRasterBandH raster_band, NodeOutput* tos, bool is_vector, bool is_x) {
    float nodata = (float) (GDALGetRasterNoDataValue(raster_band, 0)); // in double
+   uint mXSize = meshGDALDataset()->mXSize;
+   uint mYSize = meshGDALDataset()->mYSize;
 
    for (uint y = 0; y < mYSize; ++y)
    {
@@ -513,11 +549,13 @@ void CrayfishGDALReader::addDataToOutput(GDALRasterBandH raster_band, NodeOutput
                    mPafScanline, //pData
                    mXSize, //nBufXSize
                    1, //nBufYSize
-                   GDT_Float32,
+                   GDT_Float32, //eBufType
                    0, //nPixelSpace
                    0 //nLineSpace
                    );
-       if (err != CE_None) throw LoadStatus::Err_InvalidData;
+       if (err != CE_None) {
+           throw LoadStatus::Err_InvalidData;
+       }
 
        for (uint x = 0; x < mXSize; ++x)
        {
@@ -544,13 +582,14 @@ void CrayfishGDALReader::addDataToOutput(GDALRasterBandH raster_band, NodeOutput
            }
        }
 
+       GDALFlushRasterCache(raster_band);
    }
 }
 
 void CrayfishGDALReader::activateElements(NodeOutput* tos){
    // Activate only elements that do all node's outputs with some data
    char* active = tos->getActive().data();
-   for (uint idx=0; idx<mNVolumes; ++idx)
+   for (uint idx=0; idx<meshGDALDataset()->mNVolumes; ++idx)
    {
        Element elem = mMesh->elements().at(idx);
 
@@ -587,7 +626,7 @@ void CrayfishGDALReader::addDatasets()
            }
 
            NodeOutput* tos = new NodeOutput;
-           tos->init(mNPoints, mNVolumes, is_vector);
+           tos->init(meshGDALDataset()->mNPoints, meshGDALDataset()->mNVolumes, is_vector);
            tos->time = time_step.key();
 
            for (int i=0; i<raster_bands.size(); ++i)
@@ -609,10 +648,10 @@ void CrayfishGDALReader::addDatasets()
 }
 
 void CrayfishGDALReader::createMesh() {
-   Mesh::Nodes nodes(mNPoints);
+   Mesh::Nodes nodes(meshGDALDataset()->mNPoints);
    bool is_longitude_shifted = initNodes(nodes);
 
-   Mesh::Elements elements(mNVolumes);
+   Mesh::Elements elements(meshGDALDataset()->mNVolumes);
    initElements(nodes, elements, is_longitude_shifted);
 
    mMesh = new Mesh(nodes, elements);
@@ -624,41 +663,99 @@ void CrayfishGDALReader::createMesh() {
 }
 
 bool CrayfishGDALReader::addSrcProj() {
-   char* proj = const_cast<char*> (GDALGetProjectionRef( mHDataset ));
-   if( proj != NULL ) {
-       QString proj_wkt(proj);
-       mMesh->setSourceCrsFromWKT(proj_wkt);
+   QString proj = meshGDALDataset()->mProj;
+   if( !proj.isEmpty() ) {
+       mMesh->setSourceCrsFromWKT(proj);
        return true;
    }
    return false;
+}
+
+QStringList CrayfishGDALReader::parseDatasetNames() {
+    QString gdal_name = GDALFileName(mFileName);
+    QStringList ret;
+
+    GDALDatasetH hDataset = GDALOpen( gdal_name.toAscii().data(), GA_ReadOnly );
+    if( hDataset == NULL ) throw LoadStatus::Err_UnknownFormat;
+
+    metadata_hash metadata = parseMetadata(hDataset, "SUBDATASETS");
+
+    foreach(const QString &key, metadata.keys()) {
+        if (key.endsWith("_name")) {
+            // skip subdataset desc keys, just register names
+            ret.append(metadata.value(key));
+        }
+    }
+
+    // there are no GDAL subdatasets
+    if (ret.isEmpty()) {
+        ret.append(gdal_name);
+    }
+
+    GDALClose( hDataset );
+    return ret;
+}
+
+void CrayfishGDALReader::registerDriver() {
+    // re-register all
+    GDALAllRegister();
+    // check that our driver exists
+    GDALDriverH hDriver = GDALGetDriverByName(mDriverName.toAscii().data());
+    if (!hDriver) throw LoadStatus::Err_MissingDriver;
+}
+
+const CrayfishGDALDataset* CrayfishGDALReader::meshGDALDataset()
+{
+    Q_ASSERT(gdal_datasets.size() > 0);
+    return gdal_datasets[0];
 }
 
 Mesh* CrayfishGDALReader::load(LoadStatus* status)
 {
    if (status) status->clear();
 
-   mHDataset = 0;
    mPafScanline = 0;
    mMesh = 0;
 
    try
    {
-       openFile();
+       registerDriver();
 
-       // Parse parameters
-       parseParameters();
+       // some formats like NETCFD has data stored in subdatasets
+       QStringList subdatasets = parseDatasetNames();
 
-       // Init memory
-       mPafScanline = (float *) malloc(sizeof(float)*mXSize);
-       if (!mPafScanline) throw LoadStatus::Err_NotEnoughMemory;
+       // First parse ALL datasets/bands to gather vector quantities
+       // if case they are splitted in different subdatasets
+       foreach (QString gdal_dataset_name, subdatasets)
+       {
+           // Parse dataset parameters and projection
+           CrayfishGDALDataset* cfGDALDataset = new CrayfishGDALDataset;
+           cfGDALDataset->init(gdal_dataset_name);
 
-       // Create mMesh
-       createMesh();
+           if (!mMesh) {
+               // If it is first dataset, create mesh from it
+               gdal_datasets.append(cfGDALDataset);
 
-       // Parse bands
-       parseRasterBands();
+               // Init memory for data reader
+               mPafScanline = new float [cfGDALDataset->mXSize];
 
-       // Create datasets
+               // Create mMesh
+               createMesh();
+
+               // Parse bands
+               parseRasterBands(cfGDALDataset);
+
+           } else if (meshes_equals(meshGDALDataset(), cfGDALDataset)) {
+                   gdal_datasets.append(cfGDALDataset);
+                   // Parse bands
+                   parseRasterBands(cfGDALDataset);
+           } else {
+                   // Do not use
+                   delete cfGDALDataset;
+           }
+       }
+
+       // Create CRAYFISH datasets
        addDatasets();
    }
    catch (LoadStatus::Error error)
@@ -668,9 +765,15 @@ Mesh* CrayfishGDALReader::load(LoadStatus* status)
        mMesh = 0;
    }
 
-   if (mHDataset) GDALClose( mHDataset );
-   if (mPafScanline) free(mPafScanline);
+   qDeleteAll(gdal_datasets);
+   if (mPafScanline) delete[] mPafScanline;
 
+   // do not allow mesh without any valid datasets
+   if (mMesh && (mMesh->dataSets().empty())) {
+       if (status) status->mLastError = LoadStatus::Err_InvalidData;
+       if (mMesh) delete mMesh;
+       mMesh = 0;
+   }
    return mMesh;
 }
 

@@ -26,6 +26,7 @@
 
 import os
 import glob
+import datetime
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -34,7 +35,7 @@ from qgis.utils import iface
 
 from .gui.utils import QgsMessageBar, qgis_message_bar, defaultColorRamp
 from .layer_renderer import CrayfishPluginLayerRenderer
-from .core import Err, last_load_status, Mesh, ColorMap, DataSet
+from .core import Err, last_load_status, Mesh, ColorMap, DataSet, DATETIME_FMT
 
 
 def qstring2int(s):
@@ -74,6 +75,16 @@ def qstring2rgb(s):
     else:
         raise ValueError, s
     return (int(r),int(g),int(b),int(a))
+
+
+def qstring2datetime(s):
+    try:
+        return datetime.datetime.strptime(s, DATETIME_FMT)
+    except Exception:
+        return None
+
+def qstring2string(s):
+    return str(s)
 
 def rgb2string(clr):
     if len(clr) == 3 or (len(clr) == 4 and clr[3] == 255):
@@ -133,9 +144,7 @@ class CrayfishPluginLayer(QgsPluginLayer):
         # store the final CRS in the mesh (it may have changed during validation)
         self.mesh.set_source_crs(crs.toProj4())
 
-
     def setupCRS(self):
-
         crs = QgsCoordinateReferenceSystem()
 
         # try to load from mesh projection if set (GDAL)
@@ -259,6 +268,7 @@ class CrayfishPluginLayer(QgsPluginLayer):
         if parent_ds:
             ds.config = parent_ds.config
             ds.custom = parent_ds.custom
+            ds.timeConfig = parent_ds.timeConfig
             # maybe also increase range?
             return
 
@@ -290,8 +300,14 @@ class CrayfishPluginLayer(QgsPluginLayer):
           "c_alpha" : 255,
           "c_advancedColorMap" : ColorMap(minZ, maxZ)
         }
+        ds.timeConfig = {
+            "dt_offset_hours": 0,
+            "dt_use_absolute_time": False,
+            "dt_reference_time": ds.ref_time(),
+            "dt_time_format": "%H:%M:%S",
+            "dt_datetime_format": "%d.%m.%Y %H:%M"
+        }
         self.updateColorMap(ds)  # make sure to apply the settings to form a color map
-
 
     def readXml(self, node):
         element = node.toElement()
@@ -437,6 +453,27 @@ class CrayfishPluginLayer(QgsPluginLayer):
 
         self.initCustomValues(ds)
 
+        # datetime options
+        dtElem = elem.firstChildElement("datetime-display")
+        if not dtElem.isNull():
+            useAbsTime = qstring2bool(dtElem.attribute("use-absolute-time"))
+            if useAbsTime is not None:
+                ds.timeConfig["dt_use_absolute_time"] = useAbsTime
+
+            offset_hours = qstring2float(dtElem.attribute("offset-hours"))
+            if offset_hours is not None:
+                ds.timeConfig["dt_offset_hours"] = offset_hours
+            timeFormat = qstring2string(dtElem.attribute("time-format"))
+            if timeFormat is not None:
+                ds.custom["dt_time_format"] = timeFormat
+
+            refTime = qstring2datetime(dtElem.attribute("reference-time"))
+            if refTime is not None:
+                ds.custom["dt_reference_time"] = refTime
+            dateTimeFormat = qstring2string(dtElem.attribute("datetime-format"))
+            if dateTimeFormat is not None:
+                ds.custom["dt_datetime_format"] = dateTimeFormat
+
         # contour options
         contElem = elem.firstChildElement("render-contour")
         if not contElem.isNull():
@@ -518,6 +555,13 @@ class CrayfishPluginLayer(QgsPluginLayer):
 
 
     def writeDataSetXml(self, ds, elem, doc):
+        # datetime options
+        dtElem = doc.createElement("datetime-display")
+        dtElem.setAttribute("use-absolute-time", "1" if ds.timeConfig["dt_use_absolute_time"] else "0")
+        dtElem.setAttribute("offset-hours", ds.timeConfig["dt_offset_hours"])
+        dtElem.setAttribute("time-format", ds.timeConfig["dt_time_format"])
+        dtElem.setAttribute("reference-time", ds.timeConfig["dt_reference_time"].strftime(DATETIME_FMT))
+        dtElem.setAttribute("datetime-format", ds.timeConfig["dt_datetime_format"])
 
         # contour options
         contElem = doc.createElement("render-contour")

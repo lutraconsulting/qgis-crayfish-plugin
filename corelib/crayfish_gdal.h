@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "gdal.h"
 
 #include <QString>
+#include <QStringList>
 #include <QVector>
 #include <QMap>
 #include <QHash>
@@ -85,13 +86,40 @@ public:
 
 /******************************************************************************************************/
 
+
+class CrayfishGDALDataset
+{
+public:
+
+    CrayfishGDALDataset():mHDataset(0){}
+    ~CrayfishGDALDataset(){
+        if (mHDataset) GDALClose( mHDataset );
+    }
+
+    void init(const QString& dsName);
+
+    QString mDatasetName;
+    QString mProj;
+    GDALDatasetH mHDataset;
+
+    uint mNBands; /* number of bands */
+    uint mXSize; /* number of x pixels */
+    uint mYSize; /* number of y pixels */
+    uint mNPoints; /* nodes count */
+    uint mNVolumes; /* elements count */
+    double mGT[6]; /* affine transform matrix */
+
+private:
+    void parseParameters();
+    void parseProj();
+};
+
 class CrayfishGDALReader
 {
 public:
     CrayfishGDALReader(const QString& fileName, const QString& driverName):
         mFileName(fileName),
         mDriverName(driverName),
-        mHDataset(0),
         mPafScanline(0),
         mMesh(0){}
 
@@ -102,40 +130,40 @@ protected:
     typedef QHash<QString, QString> metadata_hash; // KEY, VALUE
 
     /* return true on failure */
-    virtual bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time) = 0;
-    virtual void determineBandVectorInfo(QString& band_name, bool* is_vector, bool* is_x) = 0;
+    virtual bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time, bool* is_vector, bool* is_x) = 0;
     virtual float parseMetadataTime(const QString& time_s);
+    virtual QString GDALFileName(const QString& fileName); /* some formats require e.g. adding driver name at the beginning */
 
 private:
     typedef QMap<float, QVector<GDALRasterBandH> > timestep_map; //TIME (sorted), [X, Y]
     typedef QHash<QString, timestep_map > data_hash; //Data Type, TIME (sorted), [X, Y]
+    typedef QVector<CrayfishGDALDataset*> gdal_datasets_vector; //GDAL (Sub)Datasets,
 
-    void openFile();
+    void registerDriver();
+    QStringList parseDatasetNames();
+
     void initElements(Mesh::Nodes& nodes, Mesh::Elements& elements, bool is_longitude_shifted);
     bool initNodes(Mesh::Nodes& nodes); //returns is_longitude_shifted
-    void parseParameters();
-    metadata_hash parseMetadata(GDALRasterBandH gdalBand);
+
+    const CrayfishGDALDataset* meshGDALDataset();
+
+    bool meshes_equals(const CrayfishGDALDataset* ds1, const CrayfishGDALDataset* ds2) const;
+
+    metadata_hash parseMetadata(GDALMajorObjectH gdalBand, const char* pszDomain = 0);
     void populateScaleForVector(NodeOutput* tos);
     void addDataToOutput(GDALRasterBandH raster_band, NodeOutput* tos, bool is_vector, bool is_x);
     bool addSrcProj();
     void activateElements(NodeOutput* tos);
     void addDatasets();
     void createMesh();
-    void parseRasterBands();
+    void parseRasterBands(const CrayfishGDALDataset* cfGDALDataset);
 
     const QString mFileName;
     const QString mDriverName; /* GDAL driver name */
-    GDALDatasetH mHDataset;
     float *mPafScanline; /* temporary buffer for reading one raster line */
     Mesh* mMesh;
-    data_hash mBands; /* raster bands GDAL handlers ordered by layer name and time */
-
-    uint mNBands; /* number of bands */
-    uint mXSize; /* number of x pixels */
-    uint mYSize; /* number of y pixels */
-    uint mNPoints; /* nodes count */
-    uint mNVolumes; /* elements count */
-    double mGT[6]; /* affine transform matrix */
+    gdal_datasets_vector gdal_datasets;
+    data_hash mBands; /* raster bands GDAL handle */
 };
 
 #endif // CRAYFISH_GDAL_H

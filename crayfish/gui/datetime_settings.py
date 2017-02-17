@@ -24,35 +24,33 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os
+import datetime
 
-from PyQt4.QtGui import QIcon
-from qgis.core import *
 
-class CrayfishDataItemProvider(QgsDataItemProvider):
+class CrayfishDateTimeSettings():
+    
+    def __init__(self, ds):
+        """
+            Set defaults
+        """
+        self.ds = ds
 
-  extensions = [".nc", ".2dm", ".sww", ".grib", ".grib1", ".grib2", ".bin", ".grb", ".grb2", ".hdf", ".slf", "BASE.OUT"]
+        self.useAbsoluteTime = ds.timeConfig["dt_use_absolute_time"]
 
-  icon = QIcon(":/plugins/crayfish/images/crayfish.png")
+        self.offsetHours = ds.timeConfig["dt_offset_hours"]
+        self.timeFormat = ds.timeConfig["dt_time_format"]
 
-  def name(self):
-    return "Crayfish"
+        self.refTime = ds.timeConfig["dt_reference_time"]
+        self.dateTimeFormat = ds.timeConfig["dt_datetime_format"]
 
-  def capabilities(self):
-    return 1 # QgsDataProvider.File
+    def dataSet(self):
+        return self.ds
 
-  def createDataItem(self, path, parentItem):
-    if not self._supported_extension(path):
-      return None
+    def apply_to_dataset(self):
+        self.ds.timeConfig["dt_use_absolute_time"] = self.useAbsoluteTime
 
-    base = os.path.basename(path)
-    item = QgsLayerItem(parentItem, base, path, path, QgsLayerItem.Plugin, "crayfish_viewer")
-    item.setState(QgsDataItem.Populated) # make it non-expandable
-    item.setIcon(self.icon)
-    return item
+        self.ds.timeConfig["dt_offset_hours"] = self.offsetHours
+        self.ds.timeConfig["dt_time_format"] = self.timeFormat
 
-  def _supported_extension(self, path):
-    for ext in self.extensions:
-      if path.endswith(ext):
-        return True
-    return False
+        self.ds.timeConfig["dt_reference_time"] = self.refTime
+        self.ds.timeConfig["dt_datetime_format"] = self.dateTimeFormat

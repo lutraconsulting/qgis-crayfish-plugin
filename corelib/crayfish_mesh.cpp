@@ -248,6 +248,22 @@ bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const O
   }
 }
 
+float Mesh::valueAt(uint nodeIndex, const Output* output) const
+{
+  if (output->type() == Output::TypeNode)
+  {
+    const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
+    ScalarValueAccessor accessor(nodeOutput->loadedValues().constData());
+    return accessor.value(nodeIndex);
+  }
+  else
+  {
+    const ElementOutput* elemOutput = static_cast<const ElementOutput*>(output);
+    ScalarValueAccessor accessor(elemOutput->loadedValues().constData());
+    return accessor.value(nodeIndex);
+  }
+}
+
 bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, const NodeOutput* output, const ValueAccessor* accessor) const
 {
   const Mesh* mesh = output->dataSet->mesh();
@@ -608,6 +624,29 @@ void Mesh::setSourceCrs(const QString& srcProj4)
 
   mSrcProj4 = srcProj4;
   reprojectMesh();
+}
+
+static QString _setSourceCrsFromEPSG(int epsg) {
+    QString ret;
+
+    OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
+    if (OSRImportFromEPSG(hSRS, epsg) == OGRERR_NONE)
+    {
+        char * ppszReturn = 0;
+        if (OSRExportToProj4(hSRS, &ppszReturn) == OGRERR_NONE && ppszReturn != 0)
+        {
+            ret = ppszReturn;
+        }
+    }
+    OSRDestroySpatialReference(hSRS);
+
+    return ret;
+}
+
+void Mesh::setSourceCrsFromEPSG(int epsg)
+{
+    QString proj4 = _setSourceCrsFromEPSG(epsg);
+    setSourceCrs(proj4);
 }
 
 void Mesh::setDestinationCrs(const QString& destProj4)

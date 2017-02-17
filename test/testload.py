@@ -174,14 +174,26 @@ class TestCrayfishLoad(unittest.TestCase):
     self.assertEqual(o.value(3100), -9999.0)
 
   def test_load_netCFD_data_file(self):
-    m = crayfish.Mesh("NETCDF:\"" + TEST_DIR + "/indonesia.nc\":tcc")
-    self.assertEqual(m.dataset_count(), 1)
-    ds = m.dataset(0)
+    # we have some identical data in NC3 and NC4 format
+    for fname in ("indonesia_nc3.nc", "indonesia_nc4.nc"):
+      m = crayfish.Mesh(TEST_DIR + "/NetCDF/" + fname)
+      self.assertEqual(m.dataset_count(), 2)
+      ds = m.dataset(0)
+      self.assertEqual(ds.type(), crayfish.DS_Scalar)
+      self.assertEqual(ds.output_count(), 31)
+      o = ds.output(0)
+      self.assertEqual(o.time(), 1008072.0)
+      self.assertEqual(o.value(1), 22952.0)
+
+  def test_load_netCDF_UGRID_data_file(self):
+    m = crayfish.Mesh(TEST_DIR + "/NetCDF/simplebox_hex7_map.nc")
+    self.assertEqual(m.dataset_count(), 14)
+    ds = m.dataset(1)
     self.assertEqual(ds.type(), crayfish.DS_Scalar)
-    self.assertEqual(ds.output_count(), 31)
+    self.assertEqual(ds.output_count(), 13)
     o = ds.output(0)
-    self.assertEqual(o.time(), 1008072.0)
-    self.assertEqual(o.value(1), 22952.0)
+    self.assertEqual(o.time(), 0.0013888889225199819)
+    self.assertEqual(o.value(1), 0.0)
 
   def test_load_hec2d_file(self):
     m = crayfish.Mesh(TEST_DIR + "/test.p01.hdf")
