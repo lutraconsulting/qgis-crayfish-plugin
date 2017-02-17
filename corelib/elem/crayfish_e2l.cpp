@@ -30,24 +30,72 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QVector2D>
 #include <limits>
 
+// copied from QGIS
+inline bool qgsDoubleNear( double a, double b, double epsilon = 4 * std::numeric_limits<double>::min() )
+{
+   const double diff = a - b;
+   return diff > -epsilon && diff <= epsilon;
+}
+
+// copied from QGIS
+static double /*QgsGeometryUtils::*/sqrDistToLine( double ptX, double ptY, double x1, double y1, double x2, double y2, double& minDistX, double& minDistY, double epsilon )
+{
+   minDistX = x1;
+   minDistY = y1;
+
+   double dx = x2 - x1;
+   double dy = y2 - y1;
+
+   if ( !qgsDoubleNear( dx, 0.0 ) || !qgsDoubleNear( dy, 0.0 ) )
+   {
+     double t = (( ptX - x1 ) * dx + ( ptY - y1 ) * dy ) / ( dx * dx + dy * dy );
+     if ( t > 1 )
+     {
+       minDistX = x2;
+       minDistY = y2;
+     }
+     else if ( t > 0 )
+     {
+       minDistX += dx * t ;
+       minDistY += dy * t ;
+     }
+   }
+
+   dx = ptX - minDistX;
+   dy = ptY - minDistY;
+
+   double dist = dx * dx + dy * dy;
+
+   //prevent rounding errors if the point is directly on the segment
+   if ( qgsDoubleNear( dist, 0.0, epsilon ) )
+   {
+     minDistX = ptX;
+     minDistY = ptY;
+     return 0.0;
+   }
+
+    return dist;
+}
+
 bool E2L_physicalToLogical(QPointF pA, QPointF pB, QPointF pP, double& lam)
+// copied from double QgsGeometryUtils::sqrDistToLine()
 {
   if (pA == pB)
     return false; // this is not a valid line!
 
-  //distance from pA
   double vBA = QVector2D(pB-pA).length();
   double vPA = QVector2D(pP-pA).length();
   double vPB = QVector2D(pP-pB).length();
-  double eps = std::numeric_limits<double>::min();
+  double minx = vBA;
+  double miny = vBA;
+  double dist = sqrDistToLine(pP.x(), pP.y(), pA.x(), pA.y(), pB.x(), pB.y(), minx, miny, std::numeric_limits<double>::min());
 
-
-  if (fabs(vBA - vPA - vPB) > eps) {
+  if (dist > vBA*0.001) {
       // not on line
       return false;
   }
 
-  lam = vPA/vBA;
+  lam = vPA/(vPA+vPB);
   return true;
 }
 
