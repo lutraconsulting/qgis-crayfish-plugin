@@ -183,7 +183,7 @@ def time_to_string(time, ds=None):  # time is in hours
             res = ds.timeConfig["dt_reference_time"] + datetime.timedelta(hours=time)
             return res.strftime(ds.timeConfig["dt_datetime_format"])
         else:
-            hours = time - ds.timeConfig["dt_substract_hours"]
+            hours = time - ds.timeConfig["dt_subtract_hours"]
             if ds.timeConfig["dt_time_format"] == "%H:%M:%S":
                 return _hours_to_HHMMSS(hours)
             elif ds.timeConfig["dt_time_format"] == "%d %H":

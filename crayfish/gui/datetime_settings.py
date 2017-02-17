@@ -37,7 +37,7 @@ class CrayfishDateTimeSettings():
 
         self.useAbsoluteTime = ds.timeConfig["dt_use_absolute_time"]
 
-        self.substractHours = ds.timeConfig["dt_substract_hours"]
+        self.subtractHours = ds.timeConfig["dt_subtract_hours"]
         self.timeFormat = ds.timeConfig["dt_time_format"]
 
         self.refTime = ds.timeConfig["dt_reference_time"]
@@ -49,7 +49,7 @@ class CrayfishDateTimeSettings():
     def apply_to_dataset(self):
         self.ds.timeConfig["dt_use_absolute_time"] = self.useAbsoluteTime
 
-        self.ds.timeConfig["dt_substract_hours"] = self.substractHours
+        self.ds.timeConfig["dt_subtract_hours"] = self.subtractHours
         self.ds.timeConfig["dt_time_format"] = self.timeFormat
 
         self.ds.timeConfig["dt_reference_time"] = self.refTime
