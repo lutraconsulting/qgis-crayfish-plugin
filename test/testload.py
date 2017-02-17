@@ -187,7 +187,7 @@ class TestCrayfishLoad(unittest.TestCase):
 
   def test_load_netCDF_UGRID_data_file(self):
     m = crayfish.Mesh(TEST_DIR + "/NetCDF/simplebox_hex7_map.nc")
-    self.assertEqual(m.dataset_count(), 15)
+    self.assertEqual(m.dataset_count(), 14)
     ds = m.dataset(1)
     self.assertEqual(ds.type(), crayfish.DS_Scalar)
     self.assertEqual(ds.output_count(), 13)
