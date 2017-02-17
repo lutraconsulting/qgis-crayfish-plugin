@@ -737,8 +737,7 @@ Mesh* CrayfishGDALReader::load(LoadStatus* status)
                gdal_datasets.append(cfGDALDataset);
 
                // Init memory for data reader
-               mPafScanline = (float *) malloc(sizeof(float)*cfGDALDataset->mXSize);
-               if (!mPafScanline) throw LoadStatus::Err_NotEnoughMemory;
+               mPafScanline = new float [cfGDALDataset->mXSize];
 
                // Create mMesh
                createMesh();
@@ -767,7 +766,7 @@ Mesh* CrayfishGDALReader::load(LoadStatus* status)
    }
 
    qDeleteAll(gdal_datasets);
-   if (mPafScanline) free(mPafScanline);
+   if (mPafScanline) delete[] mPafScanline;
 
    // do not allow mesh without any valid datasets
    if (mMesh && (mMesh->dataSets().empty())) {
