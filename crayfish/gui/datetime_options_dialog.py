@@ -45,7 +45,7 @@ class CrayfishDatetimeOptionsDialog(qtBaseClass, uiDialog):
         self.repopulate_time_control_combo = repopulate_time_control_combo
 
         # Populate the various widgets
-        self.subtractHoursEdit.setText(str(self.ts.subtractHours))
+        self.offsetHoursEdit.setText(str(self.ts.offsetHours))
         self.refDateTimeEdit.setDateTime(self.ts.refTime)
 
         self._populate_cb_widget("Use absolute time" if self.ts.useAbsoluteTime else "Use relative time", self.useTimeCB)
@@ -55,10 +55,10 @@ class CrayfishDatetimeOptionsDialog(qtBaseClass, uiDialog):
         self.enable_groups()
 
         # set validators so that user cannot type text into numeric line edits
-        self.subtractHoursEdit.setValidator(QDoubleValidator(self.subtractHoursEdit))
+        self.offsetHoursEdit.setValidator(QDoubleValidator(self.offsetHoursEdit))
 
         # Connect each of the widgets to the redraw function
-        QObject.connect(self.subtractHoursEdit, SIGNAL('textEdited(QString)'), self.input_focus_changed)
+        QObject.connect(self.offsetHoursEdit, SIGNAL('textEdited(QString)'), self.input_focus_changed)
         QObject.connect(self.useTimeCB, SIGNAL('currentIndexChanged(int)'), self.input_focus_changed)
         QObject.connect(self.refDateTimeEdit, SIGNAL('dateTimeChanged(QDateTime)'), self.input_focus_changed)
         QObject.connect(self.timeFormatCB, SIGNAL('currentIndexChanged(int)'), self.input_focus_changed)
@@ -90,7 +90,7 @@ class CrayfishDatetimeOptionsDialog(qtBaseClass, uiDialog):
 
         # relative time
         try:
-            self.ts.subtractHours = float(self.subtractHoursEdit.text())
+            self.ts.offsetHours = float(self.offsetHoursEdit.text())
         except ValueError:
             pass
         self.ts.timeFormat = self.timeFormatCB.currentText()

@@ -301,7 +301,7 @@ class CrayfishPluginLayer(QgsPluginLayer):
           "c_advancedColorMap" : ColorMap(minZ, maxZ)
         }
         ds.timeConfig = {
-            "dt_subtract_hours": 0,
+            "dt_offset_hours": 0,
             "dt_use_absolute_time": False,
             "dt_reference_time": ds.ref_time(),
             "dt_time_format": "%H:%M:%S",
@@ -460,9 +460,9 @@ class CrayfishPluginLayer(QgsPluginLayer):
             if useAbsTime is not None:
                 ds.timeConfig["dt_use_absolute_time"] = useAbsTime
 
-            subtract_hours = qstring2float(dtElem.attribute("subtract-hours"))
-            if subtract_hours is not None:
-                ds.timeConfig["dt_subtract_hours"] = subtract_hours
+            offset_hours = qstring2float(dtElem.attribute("offset-hours"))
+            if offset_hours is not None:
+                ds.timeConfig["dt_offset_hours"] = offset_hours
             timeFormat = qstring2string(dtElem.attribute("time-format"))
             if timeFormat is not None:
                 ds.custom["dt_time_format"] = timeFormat
@@ -558,7 +558,7 @@ class CrayfishPluginLayer(QgsPluginLayer):
         # datetime options
         dtElem = doc.createElement("datetime-display")
         dtElem.setAttribute("use-absolute-time", "1" if ds.timeConfig["dt_use_absolute_time"] else "0")
-        dtElem.setAttribute("subtract-hours", ds.timeConfig["dt_subtract_hours"])
+        dtElem.setAttribute("offset-hours", ds.timeConfig["dt_offset_hours"])
         dtElem.setAttribute("time-format", ds.timeConfig["dt_time_format"])
         dtElem.setAttribute("reference-time", ds.timeConfig["dt_reference_time"].strftime(DATETIME_FMT))
         dtElem.setAttribute("datetime-format", ds.timeConfig["dt_datetime_format"])
