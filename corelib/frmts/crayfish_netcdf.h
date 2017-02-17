@@ -19,7 +19,7 @@ public:
     }
 
     int openFile(const QString& fileName) {
-        int ncid;
+        int ncid = 0;
         int res = nc_open(fileName.toUtf8().constData(), NC_NOWRITE, &mNcid);
         if (res != NC_NOERR)
         {

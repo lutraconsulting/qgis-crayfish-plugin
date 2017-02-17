@@ -124,6 +124,7 @@ public:
 
   double valueAt(const Output* output, double xCoord, double yCoord) const;
   bool valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const;
+  float valueAt(uint nodeIndex, const Output* output) const;
 
   bool vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const;
 

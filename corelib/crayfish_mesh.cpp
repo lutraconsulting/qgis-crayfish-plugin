@@ -248,6 +248,22 @@ bool Mesh::valueAt(uint elementIndex, double x, double y, double* value, const O
   }
 }
 
+float Mesh::valueAt(uint nodeIndex, const Output* output) const
+{
+  if (output->type() == Output::TypeNode)
+  {
+    const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
+    ScalarValueAccessor accessor(nodeOutput->loadedValues().constData());
+    return accessor.value(nodeIndex);
+  }
+  else
+  {
+    const ElementOutput* elemOutput = static_cast<const ElementOutput*>(output);
+    ScalarValueAccessor accessor(elemOutput->loadedValues().constData());
+    return accessor.value(nodeIndex);
+  }
+}
+
 bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, const NodeOutput* output, const ValueAccessor* accessor) const
 {
   const Mesh* mesh = output->dataSet->mesh();

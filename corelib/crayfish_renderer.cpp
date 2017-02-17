@@ -142,6 +142,7 @@ void Renderer::drawMeshFill()
     for (int i=0; i < elems.count(); ++i)
     {
       const Element& elem = elems[i];
+
       if( elem.isDummy() )
           continue;
 
@@ -251,15 +252,19 @@ void Renderer::drawContourData(const Output* output)
           continue;
       }
 
-      const BBox& bbox = mMesh->projectedBBox(i);
+      if (elem.eType() == Element::E2L) {
+          paintLine(elem, output);
+      } else {
+          const BBox& bbox = mMesh->projectedBBox(i);
 
-      // Get the BBox of the element in pixels
-      int topLim, bottomLim, leftLim, rightLim;
-      bbox2rect(bbox, leftLim, rightLim, topLim, bottomLim);
+          // Get the BBox of the element in pixels
+          int topLim, bottomLim, leftLim, rightLim;
+          bbox2rect(bbox, leftLim, rightLim, topLim, bottomLim);
 
-      for(int j=topLim; j<=bottomLim; j++)
-      {
-          paintRow(i, j, leftLim, rightLim, output);
+          for(int j=topLim; j<=bottomLim; j++)
+          {
+              paintRow(i, j, leftLim, rightLim, output);
+          }
       }
     } // for all elements
 
@@ -552,6 +557,38 @@ void Renderer::paintRow(uint elementIdx, int rowIdx, int leftLim, int rightLim, 
   }
 }
 
+void Renderer::paintLine(const Element &elem, const Output* output)
+{
+    Q_ASSERT(elem.eType() == Element::E2L);
+
+    QPoint pix0 = realToPixel( elem.p(0) );
+    QPoint pix1 = realToPixel( elem.p(1) );
+
+    // Gradient
+    double val0 = mMesh->valueAt(elem.p(0), output);
+    double val1 = mMesh->valueAt(elem.p(1), output);
+
+    QColor color0(Qt::transparent);
+    QColor color1(Qt::transparent);
+
+    if (val0 != -9999 && val1 != -9999) {
+        color0 = QColor(mCfg.ds.mColorMap.value(val0));
+        color1 = QColor(mCfg.ds.mColorMap.value(val1));
+    }
+
+    QLinearGradient gradient;
+    gradient.setStart(pix0);
+    gradient.setFinalStop(pix1);
+    gradient.setColorAt(0, color0);
+    gradient.setColorAt(1, color1);
+
+    // Painter
+    QPainter p(&mImage);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(QPen(QBrush(gradient), mCfg.mesh.mMeshBorderWidth));
+
+    p.drawLine(pix0, pix1);
+}
 
 bool Renderer::nodeInsideView(uint nodeIndex)
 {

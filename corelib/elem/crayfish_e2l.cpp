@@ -78,7 +78,6 @@ static double /*QgsGeometryUtils::*/sqrDistToLine( double ptX, double ptY, doubl
 }
 
 bool E2L_physicalToLogical(QPointF pA, QPointF pB, QPointF pP, double& lam)
-// copied from double QgsGeometryUtils::sqrDistToLine()
 {
   if (pA == pB)
     return false; // this is not a valid line!
@@ -90,7 +89,7 @@ bool E2L_physicalToLogical(QPointF pA, QPointF pB, QPointF pP, double& lam)
   double miny = vBA;
   double dist = sqrDistToLine(pP.x(), pP.y(), pA.x(), pA.y(), pB.x(), pB.y(), minx, miny, std::numeric_limits<double>::min());
 
-  if (dist > vBA*0.001) {
+  if (dist > vBA*0.05) {
       // not on line
       return false;
   }
