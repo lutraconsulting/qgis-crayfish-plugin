@@ -72,6 +72,8 @@ private:
     int mId;    //!< just a reference to the ID in the input file (internally we use indices)
 };
 
+uint qHash(const Node &key);
+
 struct BBox
 {
   double minX;
