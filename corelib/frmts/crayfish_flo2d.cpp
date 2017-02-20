@@ -394,7 +394,7 @@ static Mesh* createMesh(const QVector<CellCenter>& cells, float half_cell_size) 
 
         for (int position=0; position<4; ++position) {
             Node n = createNode(node_id, position, half_cell_size, cells[i]);
-            auto iter = unique_nodes.constFind(n);
+            QSet<Node>::const_iterator iter = unique_nodes.constFind(n);
             if (iter == unique_nodes.constEnd()) {
                 unique_nodes.insert(n);
                 nodes.append(n);
