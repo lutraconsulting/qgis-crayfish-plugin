@@ -41,6 +41,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define DEG2RAD   (3.14159265358979323846 / 180)
 #define RAD2DEG   (180 / 3.14159265358979323846)
 
+
+uint qHash(const Node &key) {
+   uint res = 0;
+   res += key.x * 1000000;
+   res += key.y * 1000;
+   return res;
+}
+
 void outputUpdater::checkMem(Output *addedOutput)
 {
     size += addedOutput->getSize();
