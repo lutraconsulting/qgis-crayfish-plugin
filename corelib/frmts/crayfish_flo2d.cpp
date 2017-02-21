@@ -334,6 +334,8 @@ static void parseVELFPVELOCFile(const QString&datFileName, Mesh* mesh) {
 }
 
 static float calcCellSize(const QVector<CellCenter>& cells) {
+    // find first cell that is not izolated from the others 
+    // and return its distance to the neighbor's cell center
     for (int i=0; i<cells.size(); ++i) {
         for (int j=0; j<4; ++j) {
             int idx = cells[i].conn[0];
@@ -381,7 +383,9 @@ static Node createNode(int& node_id, int position, float half_cell_size, const C
 }
 
 static Mesh* createMesh(const QVector<CellCenter>& cells, float half_cell_size) {
-    // create all elements
+    // Create all elements from cell centers.
+    // Nodes must be also created, they are not stored in FLO-2D files
+    // try to reuse nodes already created for other elements by usage of unique_nodes set.   
     Mesh::Elements elements;
     Mesh::Nodes nodes;
     QSet<Node> unique_nodes;
