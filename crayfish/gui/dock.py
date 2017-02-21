@@ -23,8 +23,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-from datetime import datetime
-
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
@@ -75,6 +73,8 @@ class CrayfishDock(qtBaseClass, uiDialog):
         self.advancedColorMapDialog = None
         self.meshPropsDialog = None
         self.timePropsDialog = None
+
+        self.timer = None
 
         # Ensure refresh() is called when the layer changes
         QObject.connect(self.cboTime, SIGNAL("currentIndexChanged(int)"), self.outputTimeChanged)
@@ -437,15 +437,31 @@ class CrayfishDock(qtBaseClass, uiDialog):
 
         #self.redrawCurrentLayer()
 
-
     def redrawCurrentLayer(self):
         l = self.currentCrayfishLayer()
         if l is None:
             return
+        l.dataChanged.emit()  # profile tool may use this signal to update itself
+
+        if self.timer:
+            self.timer.stop()
+            self.timer = None
+
         if hasattr(l, "setCacheImage"):
             l.setCacheImage(None)
-        l.dataChanged.emit()  # profile tool may use this signal to update itself
         self.iface.mapCanvas().refresh()
+
+        # auto-refresh for trace animation
+        ds = l.currentVectorDataSet()
+        if ds:
+            if ds.config["v_trace"]:
+                fps = ds.config["v_fps"]
+                time_ms = 1000.0/fps
+                l.enableAutoRefresh(time_ms)
+            else:
+                l.disableAutoRefresh()
+        else:
+            l.disableAutoRefresh()
 
     def contourColorMapChanged(self, idx):
         ds = self.currentDataSet()

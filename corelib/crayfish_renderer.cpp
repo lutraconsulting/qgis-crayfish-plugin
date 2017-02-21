@@ -24,6 +24,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <stdlib.h>
+#include <time.h>
 #include "crayfish_renderer.h"
 
 #include "crayfish_dataset.h"
@@ -35,6 +37,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QVector2D>
 #include <QPolygonF>
 #include <QPainterPath>
+
+int Renderer::sTraceIteration = 1;
 
 Renderer::Renderer(const Config& cfg, QImage& img)
   : mCfg(cfg)
@@ -298,27 +302,29 @@ void Renderer::drawVectorData(const Output* output)
   */
 
   // Set up the render configuration options
-  QPainter p(&mImage);
-  p.setRenderHint(QPainter::Antialiasing);
-  p.setBrush(QBrush(mCfg.ds.mVectorColor));
-  QPen pen = p.pen();
-  pen.setCapStyle(Qt::FlatCap);
-  pen.setJoinStyle(Qt::MiterJoin);
-  pen.setWidth(mCfg.ds.mLineWidth);
-  pen.setColor(mCfg.ds.mVectorColor);
-  p.setPen(pen);
+    QPainter p(&mImage);
+    p.setRenderHint(QPainter::Antialiasing);
+    QPen pen = p.pen();
+    pen.setCapStyle(Qt::FlatCap);
+    pen.setJoinStyle(Qt::MiterJoin);
+    pen.setWidth(mCfg.ds.mLineWidth);
+    pen.setColor(mCfg.ds.mVectorColor);
+    p.setPen(pen);
 
-  if (mCfg.ds.mVectorUserGrid)
-    drawVectorDataOnGrid(p, output);
-  else
-  {
-    if (output->type() == Output::TypeNode)
-      drawVectorDataOnNodes(p, static_cast<const NodeOutput*>(output));
-    else
-      drawVectorDataOnElements(p, static_cast<const ElementOutput*>(output));
+  if (mCfg.ds.mVectorTrace) {
+      drawVectorDataAsTrace(p, output);
+  } else {
+      if (mCfg.ds.mVectorUserGrid)
+        drawVectorDataOnGrid(p, output);
+      else
+      {
+        if (output->type() == Output::TypeNode)
+          drawVectorDataOnNodes(p, static_cast<const NodeOutput*>(output));
+        else
+          drawVectorDataOnElements(p, static_cast<const ElementOutput*>(output));
+      }
+      p.end();
   }
-
-  p.end();
 }
 
 
@@ -369,12 +375,162 @@ void Renderer::drawVectorDataOnGrid(QPainter& p, const Output* output)
         if (mMesh->vectorValueAt(i, pt.x(), pt.y(), &vx, &vy, output))
         {
           // The supplied point was inside the element
-          drawVectorArrow(p, output, QPointF(x,y), vx, vy, sqrt(vx*vx + vy*vy));
+          drawVectorArrow(p, output, QPointF(x,y), vx, vy);
         }
 
       }
     }
   } // for all elements
+}
+
+
+bool Renderer::calcVectorLineEnd(QPointF& lineEnd, float& vectorLength, double& cosAlpha, double& sinAlpha, //out
+                                 const Output* output, const QPointF& lineStart, float xVal, float yVal, float* V /*=0*/ //in
+                                 ) {
+    // return true on error
+
+    if (xVal == 0.0 && yVal == 0.0)
+      return true;
+
+    // do not render if magnitude is outside of the filtered range (if filtering is enabled)
+    float magnitude;
+    if (V)
+        magnitude = *V;
+    else
+        magnitude = sqrt(xVal*xVal + yVal*yVal);
+
+
+    if (mCfg.ds.mVectorFilterMin >= 0 && magnitude < mCfg.ds.mVectorFilterMin)
+      return true;
+    if (mCfg.ds.mVectorFilterMax >= 0 && magnitude > mCfg.ds.mVectorFilterMax)
+      return true;
+
+    // Determine the angle of the vector, counter-clockwise, from east
+    // (and associated trigs)
+    double vectorAngle = -1.0 * atan( (-1.0 * yVal) / xVal );
+    cosAlpha = cos( vectorAngle ) * mag(xVal);
+    sinAlpha = sin( vectorAngle ) * mag(xVal);
+
+    // Now determine the X and Y distances of the end of the line from the start
+    float xDist = 0.0;
+    float yDist = 0.0;
+    switch (mCfg.ds.mShaftLengthMethod)
+    {
+      case ConfigDataSet::MinMax:
+      {
+        float minShaftLength = mCfg.ds.mMinShaftLength;
+        float maxShaftLength = mCfg.ds.mMaxShaftLength;
+        float minVal = output->dataSet->minZValue();
+        float maxVal = output->dataSet->maxZValue();
+        double k = (magnitude - minVal) / (maxVal - minVal);
+        double L = minShaftLength + k * (maxShaftLength - minShaftLength);
+        xDist = cosAlpha * L;
+        yDist = sinAlpha * L;
+        break;
+      }
+      case ConfigDataSet::Scaled:
+      {
+        float scaleFactor = mCfg.ds.mScaleFactor;
+        xDist = scaleFactor * xVal;
+        yDist = scaleFactor * yVal;
+        break;
+      }
+      case ConfigDataSet::Fixed:
+      {
+        // We must be using a fixed length
+        float fixedShaftLength = mCfg.ds.mFixedShaftLength;
+        xDist = cosAlpha * fixedShaftLength;
+        yDist = sinAlpha * fixedShaftLength;
+        break;
+      }
+    }
+
+    // Flip the Y axis (pixel vs real-world axis)
+    yDist *= -1.0;
+
+    if (qAbs(xDist) < 1 && qAbs(yDist) < 1)
+      return true;
+
+    // Determine the line coords
+    lineEnd = QPointF( lineStart.x() + xDist,
+                       lineStart.y() + yDist);
+
+    vectorLength = sqrt(xDist*xDist + yDist*yDist);
+
+    // Check to see if any of the coords are outside the QImage area, if so, skip the whole vector
+    if( lineStart.x() < 0 || lineStart.x() > mOutputSize.width() ||
+        lineStart.y() < 0 || lineStart.y() > mOutputSize.height() ||
+        lineEnd.x() < 0   || lineEnd.x() > mOutputSize.width() ||
+        lineEnd.y() < 0   || lineEnd.y() > mOutputSize.height() )
+      return true;
+
+    return false; //success
+}
+
+void Renderer::drawVectorDataAsTrace(QPainter& p,const Output* output) {
+    sTraceIteration = sTraceIteration % 5 + 1;
+    int niterations = 5 + sTraceIteration;
+
+    /* initialize random seed: */
+    // srand (time(NULL));
+
+    for (int n=0; n<mMesh->nodes().size(); ++n) {
+
+        QPointF pt = QPointF(
+            mMesh->projectedNode(n).x,
+            mMesh->projectedNode(n).y
+        );
+
+        // float x = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        // x = mLlX + (mUrX - mLlX) * x;
+
+        // float y = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        // y = mLlY + (mUrY - mLlY) * y;
+
+        for (int j=0; j<niterations; ++j) {
+
+            if (!pointInsideView(pt.x(), pt.y()))
+                break;
+
+            double vx, vy;
+            if (mMesh->vectorValueAt(output, pt.x(), pt.y(), &vx, &vy))
+            {
+                QPointF lineStart = mtp.realToPixel(pt.x(), pt.y());
+                QPointF lineEnd;
+
+                float vectorLength;
+                double cosAlpha, sinAlpha;
+                if (calcVectorLineEnd(lineEnd, vectorLength, cosAlpha, sinAlpha, output, lineStart, vx, vy))
+                    break;
+
+                if (j > sTraceIteration) {
+                    int r = mCfg.ds.mVectorColor.red();
+                    int g = mCfg.ds.mVectorColor.green();
+                    int b = mCfg.ds.mVectorColor.blue();
+                    int a0 = 255 * (j - sTraceIteration)/5.0f;
+                    int a1 = 255 * (j - sTraceIteration + 1)/5.0f;
+                    QColor color0(r, g , b, a0);
+                    QColor color1(r, g , b, a1);
+
+                    QLinearGradient gradient;
+                    gradient.setStart(lineStart);
+                    gradient.setFinalStop(lineEnd);
+                    gradient.setColorAt(0, color0);
+                    gradient.setColorAt(1, color1);
+
+                    QPen pen = p.pen();
+                    pen.setBrush(QBrush(gradient));
+                    p.setPen(pen);
+
+                    p.drawLine(lineStart, lineEnd);
+                }
+
+                pt = mtp.pixelToReal(lineEnd.x(), lineEnd.y());
+            } else {
+                break;
+            }
+        }
+    }
 }
 
 
@@ -391,7 +547,7 @@ void Renderer::drawVectorDataOnNodes(QPainter& p, const NodeOutput* output)
     float V = output->loadedValues()[nodeIndex];  // pre-calculated magnitude
     QPointF lineStart = realToPixelF( nodeIndex );
 
-    drawVectorArrow(p, output, lineStart, xVal, yVal, V);
+    drawVectorArrow(p, output, lineStart, xVal, yVal, &V);
   }
 }
 
@@ -411,81 +567,18 @@ void Renderer::drawVectorDataOnElements(QPainter& p, const ElementOutput* output
     float V = output->loadedValues()[elemIndex];  // pre-calculated magnitude
     QPointF lineStart = mtp.realToPixel(cx, cy);
 
-    drawVectorArrow(p, output, lineStart, xVal, yVal, V);
+    drawVectorArrow(p, output, lineStart, xVal, yVal, &V);
   }
 }
 
 
-void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float V)
+void Renderer::drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float* V /*=0*/)
 {
-  if (xVal == 0.0 && yVal == 0.0)
-    return;
-
-  // do not render if magnitude is outside of the filtered range (if filtering is enabled)
-  float magnitude = sqrt(xVal*xVal + yVal*yVal);
-  if (mCfg.ds.mVectorFilterMin >= 0 && magnitude < mCfg.ds.mVectorFilterMin)
-    return;
-  if (mCfg.ds.mVectorFilterMax >= 0 && magnitude > mCfg.ds.mVectorFilterMax)
-    return;
-
-  // Determine the angle of the vector, counter-clockwise, from east
-  // (and associated trigs)
-  double vectorAngle = -1.0 * atan( (-1.0 * yVal) / xVal );
-  double cosAlpha = cos( vectorAngle ) * mag(xVal);
-  double sinAlpha = sin( vectorAngle ) * mag(xVal);
-
-  // Now determine the X and Y distances of the end of the line from the start
-  float xDist = 0.0;
-  float yDist = 0.0;
-  switch (mCfg.ds.mShaftLengthMethod)
-  {
-    case ConfigDataSet::MinMax:
-    {
-      float minShaftLength = mCfg.ds.mMinShaftLength;
-      float maxShaftLength = mCfg.ds.mMaxShaftLength;
-      float minVal = output->dataSet->minZValue();
-      float maxVal = output->dataSet->maxZValue();
-      double k = (V - minVal) / (maxVal - minVal);
-      double L = minShaftLength + k * (maxShaftLength - minShaftLength);
-      xDist = cosAlpha * L;
-      yDist = sinAlpha * L;
-      break;
-    }
-    case ConfigDataSet::Scaled:
-    {
-      float scaleFactor = mCfg.ds.mScaleFactor;
-      xDist = scaleFactor * xVal;
-      yDist = scaleFactor * yVal;
-      break;
-    }
-    case ConfigDataSet::Fixed:
-    {
-      // We must be using a fixed length
-      float fixedShaftLength = mCfg.ds.mFixedShaftLength;
-      xDist = cosAlpha * fixedShaftLength;
-      yDist = sinAlpha * fixedShaftLength;
-      break;
-    }
-  }
-
-  // Flip the Y axis (pixel vs real-world axis)
-  yDist *= -1.0;
-
-  if (qAbs(xDist) < 1 && qAbs(yDist) < 1)
-    return;
-
-  // Determine the line coords
-  QPointF lineEnd = QPointF( lineStart.x() + xDist,
-                             lineStart.y() + yDist);
-
-  float vectorLength = sqrt(xDist*xDist + yDist*yDist);
-
-  // Check to see if any of the coords are outside the QImage area, if so, skip the whole vector
-  if( lineStart.x() < 0 || lineStart.x() > mOutputSize.width() ||
-      lineStart.y() < 0 || lineStart.y() > mOutputSize.height() ||
-      lineEnd.x() < 0   || lineEnd.x() > mOutputSize.width() ||
-      lineEnd.y() < 0   || lineEnd.y() > mOutputSize.height() )
-    return;
+  QPointF lineEnd;
+  float vectorLength;
+  double cosAlpha, sinAlpha;
+  if (calcVectorLineEnd(lineEnd, vectorLength, cosAlpha, sinAlpha, output, lineStart, xVal, yVal, V))
+      return;
 
   // Make a set of vector head coordinates that we will place at the end of each vector,
   // scale, translate and rotate.
@@ -593,7 +686,11 @@ void Renderer::paintLine(const Element &elem, const Output* output)
 bool Renderer::nodeInsideView(uint nodeIndex)
 {
   const Node& n = mMesh->projectedNode(nodeIndex);
-  return n.x > mLlX && n.x < mUrX && n.y > mLlY && n.y < mUrY;
+  return pointInsideView(n.x, n.y);
+}
+
+bool Renderer::pointInsideView(double x, double y) {
+    return x > mLlX && x < mUrX && y > mLlY && y < mUrY;
 }
 
 bool Renderer::elemOutsideView(uint i)

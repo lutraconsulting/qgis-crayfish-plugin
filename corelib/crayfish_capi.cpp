@@ -438,6 +438,10 @@ void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
     cfg->ds.mVectorFilterMax = value->toFloat();
   else if (k == "v_color")
     cfg->ds.mVectorColor = value->value<QColor>();
+  else if (k == "v_trace")
+    cfg->ds.mVectorTrace = value->toBool();
+  else if (k == "v_fps")
+    cfg->ds.mVectorTraceFPS = value->toInt();
   else
     qDebug("[setParam] unknown key: %s", key);
 }

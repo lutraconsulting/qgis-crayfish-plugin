@@ -129,6 +129,7 @@ public:
   float valueAt(uint nodeIndex, const Output* output) const;
 
   bool vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const;
+  bool vectorValueAt(const Output* output, double xCoord, double yCoord, double* valueX, double* valueY) const;
 
   void setSourceCrs(const QString& srcProj4); // proj4
   void setSourceCrsFromWKT(const QString& wkt); // wkt

@@ -46,6 +46,7 @@ class CrayfishPluginLayerRenderer(QgsMapLayerRenderer):
         # And notify corelib to reproject if needed
         self._set_destination_crs(layer)
 
+
     def _calculate_extent(self):
         mapToPixel = self.rendererContext.mapToPixel()
         pixelSize = mapToPixel.mapUnitsPerPixel()

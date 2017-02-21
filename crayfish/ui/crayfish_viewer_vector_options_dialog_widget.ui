@@ -6,15 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>341</width>
-    <height>555</height>
+    <width>487</width>
+    <height>390</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Vector Rendering Options</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
+  <layout class="QFormLayout" name="formLayout_5">
+   <item row="0" column="0">
     <layout class="QFormLayout" name="formLayout_4">
      <item row="0" column="0">
       <widget class="QLabel" name="lineWidthLabel">
@@ -56,7 +56,7 @@
      </item>
     </layout>
    </item>
-   <item>
+   <item row="1" column="0">
     <widget class="QGroupBox" name="generalOptionsGroupBox">
      <property name="title">
       <string>Arrow Length</string>
@@ -152,95 +152,7 @@
      </layout>
     </widget>
    </item>
-   <item>
-    <widget class="QGroupBox" name="headOptionsGroupBox">
-     <property name="title">
-      <string>Head Options</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_4">
-      <item row="0" column="0">
-       <widget class="QLabel" name="headWidthLabel">
-        <property name="text">
-         <string>Width</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="headWidthLineEdit"/>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLabel" name="percShaftLenLabel">
-        <property name="text">
-         <string>% of Shaft Length</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="headLengthLabel">
-        <property name="text">
-         <string>Length</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="headLengthLineEdit"/>
-      </item>
-      <item row="1" column="2">
-       <widget class="QLabel" name="percShaftLenLabel_2">
-        <property name="text">
-         <string>% of Shaft Length</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="filterByMagGroupBox">
-     <property name="title">
-      <string>Filter by Magnitude</string>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_5">
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="maxMagLineEdit"/>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="minimumMagLabel">
-        <property name="text">
-         <string>Minimum</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="minMagLineEdit"/>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="maximumMagLabel">
-        <property name="text">
-         <string>Maximum</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
+   <item row="4" column="0">
     <widget class="QGroupBox" name="displayVectorsOnGridGroupBox">
      <property name="title">
       <string>Display Vectors on User Grid</string>
@@ -293,6 +205,124 @@
      </layout>
     </widget>
    </item>
+   <item row="0" column="1">
+    <widget class="QGroupBox" name="filterByMagGroupBox">
+     <property name="title">
+      <string>Filter by Magnitude</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="maxMagLineEdit"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="minimumMagLabel">
+        <property name="text">
+         <string>Minimum</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="minMagLineEdit"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="maximumMagLabel">
+        <property name="text">
+         <string>Maximum</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QGroupBox" name="headOptionsGroupBox">
+     <property name="title">
+      <string>Head Options</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <widget class="QLabel" name="headWidthLabel">
+        <property name="text">
+         <string>Width</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="headWidthLineEdit"/>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="percShaftLenLabel">
+        <property name="text">
+         <string>% of Shaft Length</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="headLengthLabel">
+        <property name="text">
+         <string>Length</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="headLengthLineEdit"/>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="percShaftLenLabel_2">
+        <property name="text">
+         <string>% of Shaft Length</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QGroupBox" name="traceGroupBox">
+     <property name="title">
+      <string>Trace Animation</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
+       <widget class="QLabel" name="refreshRateLabel">
+        <property name="text">
+         <string>Refresh rate</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QSpinBox" name="fpsSpinBox">
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="value">
+           <number>10</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="fpsLabel">
+          <property name="text">
+           <string>fps</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -312,7 +342,6 @@
   <tabstop>ySpacingLineEdit</tabstop>
   <tabstop>headWidthLineEdit</tabstop>
   <tabstop>headLengthLineEdit</tabstop>
-  <tabstop>filterByMagGroupBox</tabstop>
   <tabstop>minMagLineEdit</tabstop>
   <tabstop>maxMagLineEdit</tabstop>
  </tabstops>

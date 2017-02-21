@@ -211,6 +211,18 @@ double Mesh::valueAt(const Output* output, double xCoord, double yCoord) const
   return -9999.0;
 }
 
+bool Mesh::vectorValueAt(const Output* output, double xCoord, double yCoord, double* valueX, double* valueY) const
+{
+    if (!output)
+      return false;
+
+    for (int e=0; e<mElems.size(); ++e) {
+        if (vectorValueAt(e, xCoord, yCoord, valueX, valueY, output))
+            return true;
+    }
+
+    return false;
+}
 
 //! abstract class that provides values for interpolation
 struct ValueAccessor

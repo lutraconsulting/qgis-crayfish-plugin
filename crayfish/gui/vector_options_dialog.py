@@ -68,6 +68,9 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
         self.minMagLineEdit.setText( str(self.rs.filterMin) if self.rs.filterMin >= 0 else '' )
         self.maxMagLineEdit.setText( str(self.rs.filterMax) if self.rs.filterMax >= 0 else '' )
 
+        self.traceGroupBox.setChecked(self.rs.displayTrace)
+        self.fpsSpinBox.setValue(self.rs.fps)
+
         # set validators so that user cannot type text into numeric line edits
         doubleWidgets = [ self.minimumShaftLineEdit, self.maximumShaftLineEdit,
                           self.scaleByFactorOfLineEdit, self.lengthLineEdit,
@@ -92,6 +95,10 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
         QObject.connect( self.minMagLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.maxMagLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.colorButton, SIGNAL("colorChanged(QColor)"), self.inputFocusChanged )
+
+        QObject.connect(self.traceGroupBox, SIGNAL('toggled(bool)'), self.inputFocusChanged)
+        QObject.connect(self.fpsSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged)
+
 
     def inputFocusChanged(self, arg=None):
         self.saveRenderSettings()
@@ -125,6 +132,9 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
 
         clr = self.colorButton.color()
         self.rs.color = (clr.red(),clr.green(),clr.blue(),clr.alpha())
+
+        self.rs.displayTrace = self.traceGroupBox.isChecked()
+        self.rs.fps = self.fpsSpinBox.value()
 
         self.rs.applyToDataSet()
 

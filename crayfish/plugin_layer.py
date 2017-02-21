@@ -27,6 +27,7 @@
 import os
 import glob
 import datetime
+import threading
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -126,6 +127,10 @@ class CrayfishPluginLayer(QgsPluginLayer):
 
         self.renderer = None
 
+        # TODO remove in QGIS3
+        self.refreshTimer = QTimer()
+        QObject.connect(self.refreshTimer, SIGNAL("timeout()"), self.triggerRepaint)
+
         # cache dataset objects - we associate further properties to them
         # so we don't want the object to be deleted while this layer is alive
         self.cached_ds = set()
@@ -136,6 +141,16 @@ class CrayfishPluginLayer(QgsPluginLayer):
 
         if meshFileName is not None:
             self.loadMesh(meshFileName)
+
+    def disableAutoRefresh(self):
+        # TODO remove in QGIS3
+        self.refreshTimer.stop()
+
+    def enableAutoRefresh(self, interval):
+        # TODO remove in QGIS3
+        self.refreshTimer.stop()
+        self.refreshTimer.setInterval(interval);
+        self.refreshTimer.start()
 
     def setCrs(self, crs):
         """ overload of QgsPluginLayer.setCrs() that also sets source CRS of mesh """
@@ -288,7 +303,9 @@ class CrayfishPluginLayer(QgsPluginLayer):
           "v_grid_y" : 10,
           "v_filter_min": -1,
           "v_filter_max": -1,
-          "v_color": (0, 0, 0, 255)   # black
+          "v_color": (0, 0, 0, 255),   # black
+          "v_trace": 0,
+          "v_fps": 10
         }
         ds.custom = {
           "c_basic" : True,
@@ -553,6 +570,13 @@ class CrayfishPluginLayer(QgsPluginLayer):
             except ValueError:
                 pass
 
+            displayTrace = qstring2bool(vectElem.attribute("display-trace"))
+            if displayTrace is not None:
+                ds.config["v_trace"] = grid
+            fps = qstring2int(vectElem.attribute("display-trace-fps"))
+            if fps is not None:
+                ds.config["v_fps"] = fps
+
 
     def writeDataSetXml(self, ds, elem, doc):
         # datetime options
@@ -599,6 +623,8 @@ class CrayfishPluginLayer(QgsPluginLayer):
           vectElem.setAttribute("filter-min", str(ds.config["v_filter_min"]))
           vectElem.setAttribute("filter-max", str(ds.config["v_filter_max"]))
           vectElem.setAttribute("color", rgb2string(ds.config["v_color"]))
+          vectElem.setAttribute("display-trace", "1" if ds.config["v_trace"] else "0")
+          vectElem.setAttribute("display-trace-fps", str(ds.config["v_fps"]))
           elem.appendChild(vectElem)
 
 

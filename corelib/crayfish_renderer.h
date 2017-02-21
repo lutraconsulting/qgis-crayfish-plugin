@@ -130,6 +130,8 @@ public:
     float mVectorFilterMin;   //!< minimum vector magnitude in order to be drawn. negative value == no filter for minimum
     float mVectorFilterMax;   //!< maximum vector magnitude in order to be drawn. negative value == no filter for maximum
     QColor mVectorColor;      //!< color of arrows
+    bool mVectorTrace; //!< whether to render trace animation
+    int mVectorTraceFPS; //!< fps (frames per second) of trace animation
   };
 
   //! Master configuration for rendering
@@ -175,8 +177,12 @@ protected:
   void drawVectorDataOnGrid(QPainter& p, const Output* output);
   void drawVectorDataOnNodes(QPainter& p, const NodeOutput* output);
   void drawVectorDataOnElements(QPainter& p, const ElementOutput* output);
-  void drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float V);
+  void drawVectorDataAsTrace(QPainter& p, const Output* output);
+  void drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float* V=0);
+  bool calcVectorLineEnd(QPointF& lineEnd, float& vectorLength, double& cosAlpha, double& sinAlpha, //out
+                         const Output* output, const QPointF& lineStart, float xVal, float yVal, float* V=0);
 
+  bool pointInsideView(double x, double y);
   bool nodeInsideView(uint nodeIndex);
   bool elemOutsideView(uint);
   void paintRow(uint, int, int, int, const Output* output);
@@ -203,6 +209,7 @@ protected:
   const Output* mOutputVector;  //!< data to be rendered
   const Mesh* mMesh;
 
+  static int sTraceIteration; //!< iteration of trace rendering
 };
 
 #endif // CRAYFISH_RENDERER_H

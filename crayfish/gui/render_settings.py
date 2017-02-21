@@ -48,6 +48,8 @@ class CrayfishRenderSettings():
         self.filterMax = ds.config["v_filter_max"]
         self.color = ds.config["v_color"]
 
+        self.displayTrace = ds.config["v_trace"]
+        self.fps = ds.config["v_fps"]
 
     def applyToDataSet(self):
 
@@ -65,3 +67,5 @@ class CrayfishRenderSettings():
         self.ds.config["v_filter_min"] = self.filterMin
         self.ds.config["v_filter_max"] = self.filterMax
         self.ds.config["v_color"] = self.color
+        self.ds.config["v_trace"] = self.displayTrace
+        self.ds.config["v_fps"] = self.fps
