@@ -24,7 +24,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include <mutex>
+
 #include <stdlib.h>
 #include <time.h>
 #include "crayfish_renderer.h"
@@ -34,13 +34,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_output.h"
 #include "crayfish_trace.h"
 
+#include <QMutex>
 #include <QImage>
 #include <QPainter>
 #include <QVector2D>
 #include <QPolygonF>
 #include <QPainterPath>
 
-static std::mutex mutex;
+static QMutex mutex;
 
 Renderer::Renderer(const Config& cfg, QImage& img)
   : mCfg(cfg)
