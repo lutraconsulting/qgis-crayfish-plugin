@@ -40,6 +40,9 @@ public:
   MapToPixel(double llX, double llY, double mupp, int rows)
     : mLlX(llX), mLlY(llY), mMupp(mupp), mRows(rows) {}
 
+  MapToPixel(const MapToPixel &obj)
+  : mLlX(obj.mLlX), mLlY(obj.mLlY), mMupp(obj.mMupp), mRows(obj.mRows) {}
+
   QPointF realToPixel(double rx, double ry) const
   {
     double px = (rx - mLlX) / mMupp;
@@ -47,11 +50,20 @@ public:
     return QPointF(px, py);
   }
 
+
+  QPointF realToPixel(const QPointF& pt) const {
+      return realToPixel(pt.x(), pt.y());
+  }
+
   QPointF pixelToReal(double px, double py) const
   {
       double rx = mLlX + (px * mMupp);
       double ry = mLlY + mMupp * (mRows - py);
       return QPointF(rx,ry);
+  }
+
+  QPointF pixelToReal(const QPointF& pt) const {
+      return pixelToReal(pt.x(), pt.y());
   }
 
 private:
@@ -68,6 +80,7 @@ struct E4Qtmp;
 
 class Renderer
 {
+friend class TraceRendererCache;
 public:
 
   struct ConfigMesh
@@ -177,10 +190,13 @@ protected:
   void drawVectorDataOnGrid(QPainter& p, const Output* output);
   void drawVectorDataOnNodes(QPainter& p, const NodeOutput* output);
   void drawVectorDataOnElements(QPainter& p, const ElementOutput* output);
-  void drawVectorDataAsTrace(QPainter& p, const Output* output);
+  void drawVectorDataAsTrace(QPainter& p);
+  void drawVectorDataStreamLines(QPainter& p);
   void drawVectorArrow(QPainter& p, const Output* output, const QPointF& lineStart, float xVal, float yVal, float* V=0);
   bool calcVectorLineEnd(QPointF& lineEnd, float& vectorLength, double& cosAlpha, double& sinAlpha, //out
                          const Output* output, const QPointF& lineStart, float xVal, float yVal, float* V=0);
+
+  void validateCache(const Output* output);
 
   bool pointInsideView(double x, double y);
   bool nodeInsideView(uint nodeIndex);
@@ -208,8 +224,6 @@ protected:
   const Output* mOutputContour; //!< data to be rendered
   const Output* mOutputVector;  //!< data to be rendered
   const Mesh* mMesh;
-
-  static int sTraceIteration; //!< iteration of trace rendering
 };
 
 #endif // CRAYFISH_RENDERER_H

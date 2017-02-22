@@ -24,6 +24,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <mutex>
 #include <stdlib.h>
 #include <time.h>
 #include "crayfish_renderer.h"
@@ -31,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_dataset.h"
 #include "crayfish_mesh.h"
 #include "crayfish_output.h"
+#include "crayfish_trace.h"
 
 #include <QImage>
 #include <QPainter>
@@ -38,7 +40,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QPolygonF>
 #include <QPainterPath>
 
-int Renderer::sTraceIteration = 1;
+static std::mutex mutex;
 
 Renderer::Renderer(const Config& cfg, QImage& img)
   : mCfg(cfg)
@@ -94,7 +96,17 @@ Renderer::Renderer(const Config& cfg, QImage& img)
   }
 }
 
+void Renderer::validateCache(const Output* output) {
 
+    mutex.lock();
+
+    mMesh->getTraceCache()->validateCache(
+        output,
+        this
+    );
+
+    mutex.unlock();
+}
 
 void Renderer::draw()
 {
@@ -312,7 +324,13 @@ void Renderer::drawVectorData(const Output* output)
     p.setPen(pen);
 
   if (mCfg.ds.mVectorTrace) {
-      drawVectorDataAsTrace(p, output);
+      validateCache(output);
+
+      if (mCfg.ds.mVectorTraceFPS > 1)
+        drawVectorDataAsTrace(p);
+      else
+        drawVectorDataStreamLines(p);
+
   } else {
       if (mCfg.ds.mVectorUserGrid)
         drawVectorDataOnGrid(p, output);
@@ -467,68 +485,58 @@ bool Renderer::calcVectorLineEnd(QPointF& lineEnd, float& vectorLength, double& 
     return false; //success
 }
 
-void Renderer::drawVectorDataAsTrace(QPainter& p,const Output* output) {
-    sTraceIteration = sTraceIteration % 5 + 1;
-    int niterations = 5 + sTraceIteration;
+void Renderer::drawVectorDataStreamLines(QPainter& p) {
+    TraceRendererCache* cache = mMesh->getTraceCache();
+    for (int i=0; i<cache->getStreamLinesCount(); ++i) {
+        const TraceStreamLine& streamline = cache->getStreamLine(i);
+        for (int j=0; j<streamline.size(); ++j) {
+            const TraceIterationStep& step = streamline.at(j);
+            for (int k=0; k<step.size(); ++k) {
+                    QLineF line = step[k];
+                    p.drawLine(line);
+            }
+        }
+    }
+}
 
-    /* initialize random seed: */
-    // srand (time(NULL));
+void Renderer::drawVectorDataAsTrace(QPainter& p) {
+    QVector<QColor> colors;
+    for (int i=0; i<5; ++i) {
+        int r = mCfg.ds.mVectorColor.red();
+        int g = mCfg.ds.mVectorColor.green();
+        int b = mCfg.ds.mVectorColor.blue();
+        int a = 255 * i/5.0f;
+        colors.append(QColor(r, g , b, a));
+    }
+    for (int i=0; i<5; ++i)
+        colors.append(Qt::transparent);
 
-    for (int n=0; n<mMesh->nodes().size(); ++n) {
 
-        QPointF pt = QPointF(
-            mMesh->projectedNode(n).x,
-            mMesh->projectedNode(n).y
-        );
+    TraceRendererCache* cache = mMesh->getTraceCache();
 
-        // float x = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-        // x = mLlX + (mUrX - mLlX) * x;
+    int iter = cache->getNextIteration();
 
-        // float y = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-        // y = mLlY + (mUrY - mLlY) * y;
+    for (int i=0; i<cache->getStreamLinesCount(); ++i) {
+        const TraceStreamLine& streamline = cache->getStreamLine(i);
 
-        for (int j=0; j<niterations; ++j) {
+        for (int j=0; j<streamline.size(); ++j) {
+                    const TraceIterationStep& step = streamline.at(j);
 
-            if (!pointInsideView(pt.x(), pt.y()))
-                break;
-
-            double vx, vy;
-            if (mMesh->vectorValueAt(output, pt.x(), pt.y(), &vx, &vy))
-            {
-                QPointF lineStart = mtp.realToPixel(pt.x(), pt.y());
-                QPointF lineEnd;
-
-                float vectorLength;
-                double cosAlpha, sinAlpha;
-                if (calcVectorLineEnd(lineEnd, vectorLength, cosAlpha, sinAlpha, output, lineStart, vx, vy))
-                    break;
-
-                if (j > sTraceIteration) {
-                    int r = mCfg.ds.mVectorColor.red();
-                    int g = mCfg.ds.mVectorColor.green();
-                    int b = mCfg.ds.mVectorColor.blue();
-                    int a0 = 255 * (j - sTraceIteration)/5.0f;
-                    int a1 = 255 * (j - sTraceIteration + 1)/5.0f;
-                    QColor color0(r, g , b, a0);
-                    QColor color1(r, g , b, a1);
+                    // FIXME
+                    QLineF line = step[0];
 
                     QLinearGradient gradient;
-                    gradient.setStart(lineStart);
-                    gradient.setFinalStop(lineEnd);
-                    gradient.setColorAt(0, color0);
-                    gradient.setColorAt(1, color1);
+                    gradient.setStart(line.p1());
+                    gradient.setFinalStop(line.p2());
+                    gradient.setColorAt(0, colors.at((iter + j) % 9 + 1));
+                    gradient.setColorAt(1, colors.at((iter + j) % 9));
 
                     QPen pen = p.pen();
                     pen.setBrush(QBrush(gradient));
                     p.setPen(pen);
 
-                    p.drawLine(lineStart, lineEnd);
-                }
+                    p.drawLine(line);
 
-                pt = mtp.pixelToReal(lineEnd.x(), lineEnd.y());
-            } else {
-                break;
-            }
         }
     }
 }

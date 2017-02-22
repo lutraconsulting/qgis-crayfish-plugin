@@ -41,6 +41,7 @@ class DataSet;
 class ElementOutput;
 class Output;
 class NodeOutput;
+class TraceRendererCache;
 
 //Callback class to update an output
 class outputUpdater {
@@ -148,6 +149,8 @@ public:
   //! calculate centroid of given element (takes reprojection into account)
   void elementCentroid(int elemIndex, double& cx, double& cy) const;
 
+  TraceRendererCache* getTraceCache() const {return mTraceCache;}
+
   outputUpdater *updater;
 
 protected:
@@ -175,6 +178,7 @@ protected:
   int* mE4QtmpIndex; //!< for conversion from element index to mE4Qtmp indexes
   BBox* mBBoxes; //! bounding boxes of elements (non-projected)
   E4QNormalization* mE4Qnorm; //! normalization of coordinates
+  TraceRendererCache* mTraceCache; //! pre-computed trace rendering
 
   // reprojection support
 

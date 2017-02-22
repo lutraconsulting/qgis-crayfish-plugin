@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "elem/crayfish_eNp.h"
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
+#include "crayfish_trace.h"
 
 #include <QVector2D>
 
@@ -103,6 +104,8 @@ Mesh::Mesh(const BasicMesh::Nodes& nodes, const BasicMesh::Elements& elements)
   mExtent = computeMeshExtent(false);
 
   mE4Qnorm = new E4QNormalization(mExtent);
+  mTraceCache = new TraceRendererCache();
+
   computeTempRendererData();
   updater = NULL;
 }
@@ -131,6 +134,7 @@ Mesh::~Mesh()
   mProjBBoxes = 0;
 
   if (updater) delete updater;
+  if (mTraceCache) delete mTraceCache;
 }
 
 DataSet* Mesh::dataSet(const QString& name)
