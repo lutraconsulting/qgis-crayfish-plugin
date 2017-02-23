@@ -9,132 +9,141 @@
 
 
 TraceRendererCache::TraceRendererCache()
-    : mCachedOutput(0)
-    , mCachedLlX(0)
-    , mCachedLlY(0)
-    , mCachedUrX(0)
-    , mCachedUrY(0)
-    , mCachedPixelSize(0)
-    , mCachedNRows(0)
-    , mtp(0)
-{
-}
+  : mTraceIteration(0)
+  , mCfg(0)
+  , mtp(0)
+{}
 
 TraceRendererCache::~TraceRendererCache()
 {
     if (mtp) delete mtp;
+    if (mCfg) delete mCfg;
 }
 
 int TraceRendererCache::getNextIteration() {
-    mTraceIteration = mTraceIteration % 5 + 1;
+    mTraceIteration = mTraceIteration + 1;
+    mTraceIteration = mTraceIteration % mCfg->ds.mVectorTraceAnimationSteps;
     return mTraceIteration;
 }
 
-void TraceRendererCache::validateCache(const Output* o, const Renderer *r) {
-
-
-    if (!isUpToDate(o, r)) {
+void TraceRendererCache::validateCache(const RendererConfig &cfg) {
+    if (!isUpToDate(cfg)) {
 
         // set new input
-        mCachedOutput = o;
+        if (mCfg) delete mCfg;
+        mCfg = new RendererConfig(cfg);
+        if (mtp) delete mtp;
+        mtp = new MapToPixel(cfg.llX, cfg.llY, cfg.pixelSize, cfg.outputSize.height());
 
-        mCachedLlX = r->mLlX;
-        mCachedLlY = r->mLlY;
-        mCachedUrX = r->mUrX;
-        mCachedUrY = r->mUrY;
-        mCachedPixelSize = r->mPixelSize;
-        mCachedNRows = r->mOutputSize.height();
-        mCachedGridCellSize = r->mCfg.ds.mVectorUserGridCellSize;
-        mCachedMagnitudeMin = r->mCfg.ds.mVectorFilterMin;
-        mCachedMagnitudeMax = r->mCfg.ds.mVectorFilterMax;
-        mCachedScaleFactor = r->mCfg.ds.mScaleFactor;
+        mUrX = mCfg->llX + (mCfg->outputSize.width()*mCfg->pixelSize);
+        mUrY = mCfg->llY + (mCfg->outputSize.height()*mCfg->pixelSize);
 
         // delete old cache
         streamlines.clear();
 
         // refill the cache
-        calculate();
+        calculateStreamLines();
     }
-
-
 }
 
-
-bool TraceRendererCache::isUpToDate(const Output* o, const Renderer *r) const {
-    return ((o == mCachedOutput) &&
-            equals(r->mLlX, mCachedLlX) &&
-            equals(r->mLlY, mCachedLlY) &&
-            equals(r->mUrX, mCachedUrX) &&
-            equals(r->mUrY, mCachedUrY) &&
-            equals(r->mPixelSize, mCachedPixelSize) &&
-            equals(r->mOutputSize.height(), mCachedNRows) &&
-            equals(r->mCfg.ds.mVectorUserGridCellSize.width(), mCachedGridCellSize.width()) &&
-            equals(r->mCfg.ds.mVectorUserGridCellSize.height(), mCachedGridCellSize.height()) &&
-            equals(r->mCfg.ds.mVectorFilterMin, mCachedMagnitudeMin) &&
-            equals(r->mCfg.ds.mVectorFilterMax, mCachedMagnitudeMax) &&
-            equals(r->mCfg.ds.mScaleFactor, mCachedScaleFactor));
+bool TraceRendererCache::isUpToDate(const RendererConfig &cfg) const {
+    // check only variables from config that we use in the cache
+    return (mCfg &&
+            (mCfg->outputMesh == cfg.outputMesh) &&
+            (mCfg->outputVector == cfg.outputVector) &&
+            (mCfg->outputSize == cfg.outputSize) &&
+            (mCfg->ds.mVectorUserGrid == cfg.ds.mVectorUserGrid) &&
+            equals(mCfg->llX, cfg.llX) &&
+            equals(mCfg->llY, cfg.llY) &&
+            equals(mCfg->pixelSize, cfg.pixelSize) &&
+            (mCfg->ds.mVectorUserGridCellSize == cfg.ds.mVectorUserGridCellSize) &&
+            equals(mCfg->ds.mVectorFilterMin, cfg.ds.mVectorFilterMin) &&
+            equals(mCfg->ds.mVectorFilterMax, cfg.ds.mVectorFilterMax) &&
+            equals(mCfg->ds.mScaleFactor, cfg.ds.mScaleFactor) &&
+            equals(mCfg->ds.mVectorTraceCalculationSteps, cfg.ds.mVectorTraceCalculationSteps)
+            );
 }
 
 bool TraceRendererCache::pointInsideView(const QPointF& pt) const {
-    return pt.x() > mCachedLlX && pt.x() < mCachedUrX && pt.y() > mCachedLlY && pt.y() < mCachedUrY;
+    return pt.x() > mCfg->llX && pt.x() < mUrX && pt.y() > mCfg->llY && pt.y() < mUrY;
 }
 
-QPointF TraceRendererCache::randomPoint() const {
-    float x = mCachedLlX + (mCachedUrX - mCachedLlX) * ((rand() % 10 + 1) / 10.0f);
-    float y = mCachedLlY + (mCachedUrY - mCachedLlY) * ((rand() % 10 + 1) / 10.0f);
-    return QPointF(x, y);
-}
+void TraceRendererCache::calculateStreamLines() {
 
-void TraceRendererCache::calculate() {
+    // Calculate starting points for streamlines
+    QVector<QPointF> startPoints;
 
-    if (mtp) delete mtp;
-    mtp = new MapToPixel(mCachedLlX, mCachedLlY, mCachedPixelSize, mCachedNRows);
+    if (mCfg->ds.mVectorUserGrid) {
+        float x_plus = mCfg->ds.mVectorUserGridCellSize.width()*mCfg->pixelSize;
+        float y_plus = mCfg->ds.mVectorUserGridCellSize.height()*mCfg->pixelSize;
 
-    mMaxIterationSteps = 150; //FIXME - to config
+        for (float x = mCfg->llX; x < mUrX; x += x_plus) {
+            for (float y = mCfg->llY; y < mUrY; y += y_plus) {
+                startPoints.append(QPointF(x, y));
+            }
+        }
 
-    const Mesh* mesh = mCachedOutput->dataSet->mesh();
+    } else {
+        for (int i = 0; i<mCfg->outputMesh->nodes().size(); i++)
+            startPoints.append(mCfg->outputMesh->nodes().at(i).toPointF());
+    }
 
-    /* initialize random seed: */
-    srand (time(NULL));
+    // Calculate candidate element's
+    // TODO to be removed when spatial index is implemented
+    BBox bbox;
+    bbox.minX = mCfg->llX;
+    bbox.maxX = mUrX;
+    bbox.minY = mCfg->llY;
+    bbox.maxY = mUrY;
+    QSet<uint> candidateElementIds = mCfg->outputMesh->getCandidateElementIds(bbox);
 
-      for (float x = mCachedLlX; x < mCachedUrX; x += mCachedGridCellSize.width())
-      {
-        for (float y = mCachedLlY; y < mCachedUrY; y += mCachedGridCellSize.height())
-        {
-           QPointF pt(x, y);
-
-
-    //for (int n=0; n<mNStreamLines; ++n) {
-        //QPointF pt = randomPoint();
-
-        TraceStreamLine streamline;
-
-        for (int j=0; j<mMaxIterationSteps; ++j) {
+    // now calculate all streamlines
+    foreach (const QPointF& startPoint, startPoints) {
+            QPointF pt(startPoint);
 
             if (!pointInsideView(pt))
-                break;
+                continue;
 
-            TraceIterationStep step = calculateTraceIterationStep(pt);
+            TraceStreamLine streamline;
 
-            if (step.isEmpty())
-                break;
+            for (int j=0; j<mCfg->ds.mVectorTraceCalculationSteps; ++j) {
+                // calculate vector value at the point of interest
+                QPointF val;
+                if (!value(pt, val, candidateElementIds))
+                    break;
 
-            QPointF lineEnd = step.last().p2();
-            streamline.append(step);
+                // calculate line
+                QPointF lineStart = mtp->realToPixel(pt);
+                QPointF lineEnd;
+                float vectorLength;
+                double cosAlpha, sinAlpha;
+                if (calcVectorLineEnd(lineEnd, vectorLength, cosAlpha, sinAlpha,
+                                      mCfg, mCfg->outputVector, lineStart, val.x(), val.y()))
+                    break;
 
-            pt = mtp->pixelToReal(lineEnd.x(), lineEnd.y());
+                pt = mtp->pixelToReal(lineEnd);
+                if (!pointInsideView(pt))
+                    break;
+
+                // OK we have another valid point, add it to the streamline
+                if (j==0)
+                    streamline.append(lineStart);
+                streamline.append(lineEnd);
+            }
+
+            // add only non-empty streamlines
+            if (streamline.size() > 1) {
+                streamlines.append(streamline);
+            }
         }
-
-        if (!streamline.isEmpty()) {
-            streamlines.append(streamline);
-        }
-    }}
 }
 
-bool TraceRendererCache::value(const QPointF& pt, QPointF& val) const {
-    const Mesh* m = mCachedOutput->dataSet->mesh();
+bool TraceRendererCache::value(const QPointF& pt, QPointF& val, const QSet<uint> &candidateElementIds) const {
     double vx, vy;
-    bool res = m->vectorValueAt(mCachedOutput, pt.x(), pt.y(), &vx, &vy);
+    bool res = mCfg->outputMesh->vectorValueAt(candidateElementIds, mCfg->outputVector, pt.x(), pt.y(), &vx, &vy);
+
+    if (vx == -9999 || vy == -9999)
+        return false;
 
     if (res) {
         val.setX(vx);
@@ -143,29 +152,3 @@ bool TraceRendererCache::value(const QPointF& pt, QPointF& val) const {
     return res;
 }
 
-TraceIterationStep TraceRendererCache::calculateTraceIterationStep(QPointF pt) const {
-    TraceIterationStep step;
-
-    QPointF val;
-    if (!value(pt, val))
-        return step;
-
-    float magnitude = val.manhattanLength();
-    if (magnitude < mCachedMagnitudeMin || magnitude > mCachedMagnitudeMax)
-        return step;
-
-    QPointF lineStart = mtp->realToPixel(pt);
-    float xDist = mCachedScaleFactor * val.x();
-    float yDist = mCachedScaleFactor * val.y();
-    // Flip the Y axis (pixel vs real-world axis)
-    yDist *= -1.0;
-
-    // Determine the line coords
-    QPointF lineEnd(lineStart.x() + xDist,
-                    lineStart.y() + yDist);
-
-    QLineF line(lineStart, lineEnd);
-    step.append(line);
-
-    return step;
-}

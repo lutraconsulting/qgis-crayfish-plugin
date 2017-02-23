@@ -70,6 +70,8 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
 
         self.traceGroupBox.setChecked(self.rs.displayTrace)
         self.fpsSpinBox.setValue(self.rs.fps)
+        self.traceCalcStepsSpinBox.setValue(self.rs.calcSteps)
+        self.traceAnimStepsSpinBox.setValue(self.rs.animationSteps)
 
         # set validators so that user cannot type text into numeric line edits
         doubleWidgets = [ self.minimumShaftLineEdit, self.maximumShaftLineEdit,
@@ -95,10 +97,10 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
         QObject.connect( self.minMagLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.maxMagLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.colorButton, SIGNAL("colorChanged(QColor)"), self.inputFocusChanged )
-
         QObject.connect(self.traceGroupBox, SIGNAL('toggled(bool)'), self.inputFocusChanged)
         QObject.connect(self.fpsSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged)
-
+        QObject.connect(self.traceCalcStepsSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged)
+        QObject.connect(self.traceAnimStepsSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged)
 
     def inputFocusChanged(self, arg=None):
         self.saveRenderSettings()
@@ -135,6 +137,8 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
 
         self.rs.displayTrace = self.traceGroupBox.isChecked()
         self.rs.fps = self.fpsSpinBox.value()
+        self.rs.calcSteps = self.traceCalcStepsSpinBox.value()
+        self.rs.animationSteps = self.traceAnimStepsSpinBox.value()
 
         self.rs.applyToDataSet()
 
@@ -157,6 +161,9 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
         if shaftLengthMin < 0:
             return False
         if shaftLengthMin >= shaftLengthMax:
+            return False
+
+        if self.traceCalcStepsSpinBox.value() < self.traceAnimStepsSpinBox.value():
             return False
 
         try:

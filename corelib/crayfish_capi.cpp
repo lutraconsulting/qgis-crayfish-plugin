@@ -41,7 +41,7 @@ typedef const Node* NodeH;
 typedef const Element* ElementH;
 typedef DataSet* DataSetH;
 typedef const Output* OutputH;
-typedef Renderer::Config* RendererConfigH;
+typedef RendererConfig* RendererConfigH;
 typedef Renderer* RendererH;
 typedef QVariant* VariantH;
 typedef QImage* ImageH;
@@ -306,7 +306,7 @@ void CF_R_draw(RendererH rend)
 
 RendererConfigH CF_RC_create()
 {
-  RendererConfigH cfg = new Renderer::Config();
+  RendererConfigH cfg = new RendererConfig();
   return cfg;
 }
 
@@ -411,7 +411,7 @@ void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
   else if (k == "c_colormap")
     cfg->ds.mColorMap = value->value<ColorMap>();
   else if (k == "v_shaft_length_method")
-    cfg->ds.mShaftLengthMethod = (Renderer::ConfigDataSet::VectorLengthMethod) value->toInt();
+    cfg->ds.mShaftLengthMethod = (ConfigDataSet::VectorLengthMethod) value->toInt();
   else if (k == "v_shaft_length_min")
     cfg->ds.mMinShaftLength = value->toFloat();
   else if (k == "v_shaft_length_max")
@@ -442,6 +442,10 @@ void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
     cfg->ds.mVectorTrace = value->toBool();
   else if (k == "v_fps")
     cfg->ds.mVectorTraceFPS = value->toInt();
+  else if (k == "v_calc_steps")
+    cfg->ds.mVectorTraceCalculationSteps = value->toInt();
+  else if (k == "v_anim_steps")
+    cfg->ds.mVectorTraceAnimationSteps = value->toInt();
   else
     qDebug("[setParam] unknown key: %s", key);
 }
@@ -493,6 +497,14 @@ void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value)
     *value = QVariant(cfg->ds.mVectorFilterMax);
   else if (k == "v_color")
     *value = QVariant(cfg->ds.mVectorColor);
+  else if (k == "v_trace")
+    *value = QVariant(cfg->ds.mVectorTrace);
+  else if (k == "v_fps")
+    *value = QVariant(cfg->ds.mVectorTraceFPS);
+  else if (k == "v_calc_steps")
+    *value = QVariant(cfg->ds.mVectorTraceCalculationSteps);
+  else if (k == "v_anim_steps")
+    *value = QVariant(cfg->ds.mVectorTraceAnimationSteps);
   else
     qDebug("[getParam] unknown key: %s", key);
 }

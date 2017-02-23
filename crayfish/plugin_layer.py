@@ -149,8 +149,9 @@ class CrayfishPluginLayer(QgsPluginLayer):
     def enableAutoRefresh(self, interval):
         # TODO remove in QGIS3
         self.refreshTimer.stop()
-        self.refreshTimer.setInterval(interval);
-        self.refreshTimer.start()
+        if interval > 0:
+            self.refreshTimer.setInterval(interval);
+            self.refreshTimer.start()
 
     def setCrs(self, crs):
         """ overload of QgsPluginLayer.setCrs() that also sets source CRS of mesh """
@@ -305,7 +306,9 @@ class CrayfishPluginLayer(QgsPluginLayer):
           "v_filter_max": -1,
           "v_color": (0, 0, 0, 255),   # black
           "v_trace": 0,
-          "v_fps": 10
+          "v_fps": 0,
+          "v_calc_steps": 25,
+          "v_anim_steps": 5
         }
         ds.custom = {
           "c_basic" : True,
@@ -576,6 +579,12 @@ class CrayfishPluginLayer(QgsPluginLayer):
             fps = qstring2int(vectElem.attribute("display-trace-fps"))
             if fps is not None:
                 ds.config["v_fps"] = fps
+            calcSteps = qstring2int(vectElem.attribute("display-trace-calc-steps"))
+            if calcSteps is not None:
+                ds.config["v_calc_steps"] = calcSteps
+            animationSteps = qstring2int(vectElem.attribute("display-trace-anim-steps"))
+            if animationSteps is not None:
+                ds.config["v_anim_steps"] = animationSteps
 
 
     def writeDataSetXml(self, ds, elem, doc):
@@ -625,6 +634,10 @@ class CrayfishPluginLayer(QgsPluginLayer):
           vectElem.setAttribute("color", rgb2string(ds.config["v_color"]))
           vectElem.setAttribute("display-trace", "1" if ds.config["v_trace"] else "0")
           vectElem.setAttribute("display-trace-fps", str(ds.config["v_fps"]))
+          vectElem.setAttribute("display-trace-fps", str(ds.config["v_fps"]))
+          vectElem.setAttribute("display-trace-calc-steps", str(ds.config["v_calc_steps"]))
+          vectElem.setAttribute("display-trace-anim-steps", str(ds.config["v_anim_steps"]))
+
           elem.appendChild(vectElem)
 
 

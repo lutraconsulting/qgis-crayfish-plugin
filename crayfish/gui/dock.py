@@ -453,15 +453,13 @@ class CrayfishDock(qtBaseClass, uiDialog):
 
         # auto-refresh for trace animation
         ds = l.currentVectorDataSet()
+        l.disableAutoRefresh()
         if ds:
             if ds.config["v_trace"]:
                 fps = ds.config["v_fps"]
-                time_ms = 1000.0/fps
-                l.enableAutoRefresh(time_ms)
-            else:
-                l.disableAutoRefresh()
-        else:
-            l.disableAutoRefresh()
+                if fps>0:
+                    time_ms = 1000.0/fps
+                    l.enableAutoRefresh(time_ms)
 
     def contourColorMapChanged(self, idx):
         ds = self.currentDataSet()

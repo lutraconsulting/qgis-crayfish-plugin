@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QString>
 #include <QVector>
 #include <queue>
+#include <QSet>
 
 #include "crayfish_element.h"
 
@@ -83,6 +84,7 @@ struct BBox
   double maxY;
 
   bool isPointInside(double x, double y) const { return x >= minX && x <= maxX && y >= minY && y <= maxY; }
+  bool contains(const BBox& other) const { return other.minX >= minX && other.maxX <= maxX && other.minY >= minY && other.maxY <= maxY; }
 };
 
 /** core Mesh data structure: nodes + elements */
@@ -125,12 +127,16 @@ public:
 
   BBox extent() const { return mExtent; }
 
+  QSet<uint> getCandidateElementIds(const BBox& bbox) const;
+  QSet<uint> getCandidateElementIds(double xCoord, double yCoord) const;
+
+  double valueAt(const QSet<uint>& candidateElementIds, const Output* output, double xCoord, double yCoord) const;
   double valueAt(const Output* output, double xCoord, double yCoord) const;
   bool valueAt(uint elementIndex, double x, double y, double* value, const Output* output) const;
   float valueAt(uint nodeIndex, const Output* output) const;
 
   bool vectorValueAt(uint elementIndex, double x, double y, double* valueX, double* valueY, const Output* output) const;
-  bool vectorValueAt(const Output* output, double xCoord, double yCoord, double* valueX, double* valueY) const;
+  bool vectorValueAt(const QSet<uint>& candidateElementIds, const Output* output, double xCoord, double yCoord, double* valueX, double* valueY) const;
 
   void setSourceCrs(const QString& srcProj4); // proj4
   void setSourceCrsFromWKT(const QString& wkt); // wkt

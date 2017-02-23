@@ -8,18 +8,16 @@
 
 class Output;
 class MapToPixel;
-class Renderer;
+struct RendererConfig;
 
-typedef QVector<QLineF> TraceIterationStep;
-typedef QVector<TraceIterationStep> TraceStreamLine;
+typedef QVector<QPointF> TraceStreamLine;
 
 class TraceRendererCache {
 public:
     TraceRendererCache();
     ~TraceRendererCache();
     int getNextIteration();
-    void validateCache(const Output* o,
-                       const Renderer* r);
+    void validateCache(const RendererConfig& cfg);
 
     int getStreamLinesCount() {
         return streamlines.count();
@@ -30,32 +28,24 @@ public:
     }
 
 private:
-    bool isUpToDate(const Output* o, const Renderer *r) const;
-    void calculate();
+    bool isUpToDate(const RendererConfig& cfg) const;
+    void calculateStreamLines();
     bool pointInsideView(const QPointF& pt) const;
-    bool value(const QPointF& pt, QPointF &val) const;
+    bool value(const QPointF& pt, QPointF &val, const QSet<uint>& candidateElementIds) const;
 
+    //! iteration of trace rendering
+    //! to simulate the "flow" animation on canvas
+    //! we need to render different images
+    //! based on some counter
+    int mTraceIteration;
 
-    TraceIterationStep calculateTraceIterationStep(QPointF startPoint) const;
+    //! rendering configuration
+    RendererConfig* mCfg;
 
-
-    QPointF randomPoint() const;
-
-    int mTraceIteration; //!< iteration of trace rendering
-    int mNStreamLines; //!< number of streamlines
-    int mMaxIterationSteps; //!< maximum number of iterations
-    const Output* mCachedOutput; //!< vector output
-    double mCachedLlX; //!< X of current view's lower-left point (mesh coords)
-    double mCachedLlY; //!< Y of current view's lower-left point (mesh coords)
-    double mCachedUrX; //!< X of current view's upper-right point (mesh coords)
-    double mCachedUrY; //!< Y of current view's upper-right point (mesh coords)
-    double mCachedPixelSize;
-    int mCachedNRows;
-    QSize mCachedGridCellSize;
-    float mCachedMagnitudeMin;
-    float mCachedMagnitudeMax;
-    float mCachedScaleFactor;
-
+    //! cached values
+    double mUrX;
+    double mUrY;
+    float vectorScaleFactor;
     MapToPixel* mtp;
     QVector<TraceStreamLine> streamlines;
 };

@@ -6,55 +6,45 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>487</width>
-    <height>390</height>
+    <width>596</width>
+    <height>420</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Vector Rendering Options</string>
   </property>
   <layout class="QFormLayout" name="formLayout_5">
-   <item row="0" column="0">
-    <layout class="QFormLayout" name="formLayout_4">
-     <item row="0" column="0">
-      <widget class="QLabel" name="lineWidthLabel">
-       <property name="text">
-        <string>Line Width</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QSpinBox" name="lineWidthSpinBox">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>10000</number>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="pxLabel">
-         <property name="text">
-          <string>px</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Color</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QgsColorButton" name="colorButton"/>
-     </item>
-    </layout>
+   <item row="0" column="1">
+    <widget class="QGroupBox" name="filterByMagGroupBox">
+     <property name="title">
+      <string>Filter by Magnitude</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="maxMagLineEdit"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="minimumMagLabel">
+        <property name="text">
+         <string>Minimum</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="minMagLineEdit"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="maximumMagLabel">
+        <property name="text">
+         <string>Maximum</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
    <item row="1" column="0">
     <widget class="QGroupBox" name="generalOptionsGroupBox">
@@ -152,6 +142,49 @@
      </layout>
     </widget>
    </item>
+   <item row="1" column="1">
+    <widget class="QGroupBox" name="headOptionsGroupBox">
+     <property name="title">
+      <string>Head Options</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <widget class="QLabel" name="headWidthLabel">
+        <property name="text">
+         <string>Width</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="headWidthLineEdit"/>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="percShaftLenLabel">
+        <property name="text">
+         <string>% of Shaft Length</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="headLengthLabel">
+        <property name="text">
+         <string>Length</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="headLengthLineEdit"/>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="percShaftLenLabel_2">
+        <property name="text">
+         <string>% of Shaft Length</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item row="4" column="0">
     <widget class="QGroupBox" name="displayVectorsOnGridGroupBox">
      <property name="title">
@@ -205,85 +238,10 @@
      </layout>
     </widget>
    </item>
-   <item row="0" column="1">
-    <widget class="QGroupBox" name="filterByMagGroupBox">
-     <property name="title">
-      <string>Filter by Magnitude</string>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_5">
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="maxMagLineEdit"/>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="minimumMagLabel">
-        <property name="text">
-         <string>Minimum</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="minMagLineEdit"/>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="maximumMagLabel">
-        <property name="text">
-         <string>Maximum</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QGroupBox" name="headOptionsGroupBox">
-     <property name="title">
-      <string>Head Options</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_4">
-      <item row="0" column="0">
-       <widget class="QLabel" name="headWidthLabel">
-        <property name="text">
-         <string>Width</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="headWidthLineEdit"/>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLabel" name="percShaftLenLabel">
-        <property name="text">
-         <string>% of Shaft Length</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="headLengthLabel">
-        <property name="text">
-         <string>Length</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="headLengthLineEdit"/>
-      </item>
-      <item row="1" column="2">
-       <widget class="QLabel" name="percShaftLenLabel_2">
-        <property name="text">
-         <string>% of Shaft Length</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
    <item row="4" column="1">
     <widget class="QGroupBox" name="traceGroupBox">
      <property name="title">
-      <string>Trace Animation</string>
+      <string>Show Streamlines</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -292,6 +250,22 @@
       <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
+      <item row="1" column="1">
+       <widget class="QSpinBox" name="traceCalcStepsSpinBox">
+        <property name="minimum">
+         <number>2</number>
+        </property>
+        <property name="maximum">
+         <number>1000</number>
+        </property>
+        <property name="singleStep">
+         <number>20</number>
+        </property>
+        <property name="value">
+         <number>100</number>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="0">
        <widget class="QLabel" name="refreshRateLabel">
         <property name="text">
@@ -304,10 +278,13 @@
         <item>
          <widget class="QSpinBox" name="fpsSpinBox">
           <property name="minimum">
-           <number>1</number>
+           <number>0</number>
+          </property>
+          <property name="maximum">
+           <number>10</number>
           </property>
           <property name="value">
-           <number>10</number>
+           <number>0</number>
           </property>
          </widget>
         </item>
@@ -320,8 +297,77 @@
         </item>
        </layout>
       </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="traceCalcStepsLabel">
+        <property name="text">
+         <string>Calculation steps</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="traceAnimStepsLabel">
+        <property name="text">
+         <string>Animation steps</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QSpinBox" name="traceAnimStepsSpinBox">
+        <property name="minimum">
+         <number>2</number>
+        </property>
+        <property name="maximum">
+         <number>1000</number>
+        </property>
+        <property name="value">
+         <number>5</number>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
+   </item>
+   <item row="0" column="0">
+    <layout class="QFormLayout" name="formLayout_4">
+     <item row="0" column="0">
+      <widget class="QLabel" name="lineWidthLabel">
+       <property name="text">
+        <string>Line Width</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QSpinBox" name="lineWidthSpinBox">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>10000</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="pxLabel">
+         <property name="text">
+          <string>px</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Color</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QgsColorButton" name="colorButton"/>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
