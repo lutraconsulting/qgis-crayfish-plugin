@@ -493,47 +493,54 @@ void Renderer::drawVectorDataStreamLines(QPainter& p) {
     }
 }
 
+static void drawStreamLine(const RendererConfig& cfg, QPainter& p, const QVector<QColor>& colors, const TraceStreamLine& streamline, int start, int end, int color_idx) {
+    for (int j=start; j<end; ++j) {
+        const QPointF& startPoint = streamline.at(j-1);
+        const QPointF& endPoint = streamline.at(j);
+
+        QLinearGradient gradient;
+        gradient.setStart(startPoint);
+        gradient.setFinalStop(endPoint);
+        gradient.setColorAt(0, colors.at((color_idx + j - 1) % cfg.ds.mVectorTraceAnimationSteps));
+        gradient.setColorAt(1, colors.at((color_idx + j) % cfg.ds.mVectorTraceAnimationSteps));
+
+        QPen pen = p.pen();
+        pen.setBrush(QBrush(gradient));
+        p.setPen(pen);
+
+        p.drawLine(startPoint, endPoint);
+    }
+}
+
 void Renderer::drawVectorDataAsTrace(QPainter& p) {
     QVector<QColor> colors;
     colors.append(QColor(Qt::transparent));
 
-    int steps = mCfg.ds.mVectorTraceAnimationSteps;
-    for (int i=0; i<steps; ++i) {
+    for (int i=0; i<mCfg.ds.mVectorTraceAnimationSteps; ++i) {
         QColor c(mCfg.ds.mVectorColor);
-        c.setAlphaF(i/float(steps));
+        c.setAlphaF(i/float(mCfg.ds.mVectorTraceAnimationSteps));
         colors.append(c);
     }
 
     TraceRendererCache* cache = mMesh->getTraceCache();
     int iter = cache->getNextIteration();
-    int color_idx = mCfg.ds.mVectorTraceCalculationSteps - iter;
+    int color_iter = mCfg.ds.mVectorTraceAnimationSteps - iter % mCfg.ds.mVectorTraceAnimationSteps;
 
     for (int i=0; i<cache->getStreamLinesCount(); ++i) {
         const TraceStreamLine& streamline = cache->getStreamLine(i);
         int start, end;
         if (mCfg.ds.mVectorTraceParticles) {
-            start = iter % streamline.size() + 1;
-            end = std::min(start + mCfg.ds.mVectorTraceAnimationSteps, streamline.size());
+            start = iter % streamline.size();
+            end = start + mCfg.ds.mVectorTraceAnimationSteps;
+
+            if (end <= streamline.size())
+                drawStreamLine(mCfg, p, colors, streamline, start  + 1, end, color_iter);
+            else {
+                drawStreamLine(mCfg, p, colors, streamline, start  + 1, streamline.size(), color_iter);
+                drawStreamLine(mCfg, p, colors, streamline, 1, std::min(end - streamline.size(), streamline.size()), color_iter);
+            }
         } else {
-            start = 1;
-            end = streamline.size();
-        }
-
-        for (int j=start; j<end; ++j) {
-            const QPointF& startPoint = streamline.at(j-1);
-            const QPointF& endPoint = streamline.at(j);
-
-            QLinearGradient gradient;
-            gradient.setStart(startPoint);
-            gradient.setFinalStop(endPoint);
-            gradient.setColorAt(0, colors.at((color_idx + j - 1) % steps));
-            gradient.setColorAt(1, colors.at((color_idx + j) % steps));
-
-            QPen pen = p.pen();
-            pen.setBrush(QBrush(gradient));
-            p.setPen(pen);
-
-            p.drawLine(startPoint, endPoint);
+            drawStreamLine(mCfg, p, colors, streamline, 1, streamline.size(), color_iter);
         }
     }
 }

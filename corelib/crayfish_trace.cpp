@@ -1,5 +1,6 @@
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
+#include <climits>
 
 #include "crayfish_trace.h"
 #include "crayfish_dataset.h"
@@ -29,7 +30,9 @@ TraceRendererCache::~TraceRendererCache()
 
 int TraceRendererCache::getNextIteration() {
     mTraceIteration = mTraceIteration + 1;
-    mTraceIteration = mTraceIteration % mCfg->ds.mVectorTraceCalculationSteps;
+    if (mTraceIteration == INT_MAX - 1)
+        mTraceIteration = 0;
+
     return mTraceIteration;
 }
 
