@@ -27,7 +27,6 @@
 import os
 import glob
 import datetime
-import threading
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -308,7 +307,9 @@ class CrayfishPluginLayer(QgsPluginLayer):
           "v_trace": 0,
           "v_fps": 0,
           "v_calc_steps": 25,
-          "v_anim_steps": 5
+          "v_anim_steps": 5,
+          "v_show_particles": 0,
+          "v_n_particles": 1000
         }
         ds.custom = {
           "c_basic" : True,
@@ -585,7 +586,12 @@ class CrayfishPluginLayer(QgsPluginLayer):
             animationSteps = qstring2int(vectElem.attribute("display-trace-anim-steps"))
             if animationSteps is not None:
                 ds.config["v_anim_steps"] = animationSteps
-
+            displayParticles = qstring2bool(vectElem.attribute("display-particles"))
+            if displayParticles is not None:
+                ds.config["v_show_particles"] = displayParticles
+            particlesCount = qstring2int(vectElem.attribute("display-particles-count"))
+            if particlesCount is not None:
+                ds.config["v_n_particles"] = particlesCount
 
     def writeDataSetXml(self, ds, elem, doc):
         # datetime options
@@ -637,6 +643,8 @@ class CrayfishPluginLayer(QgsPluginLayer):
           vectElem.setAttribute("display-trace-fps", str(ds.config["v_fps"]))
           vectElem.setAttribute("display-trace-calc-steps", str(ds.config["v_calc_steps"]))
           vectElem.setAttribute("display-trace-anim-steps", str(ds.config["v_anim_steps"]))
+          vectElem.setAttribute("display-particles", "1" if ds.config["v_show_particles"] else "0")
+          vectElem.setAttribute("display-particles-count", str(ds.config["v_n_particles"]))
 
           elem.appendChild(vectElem)
 

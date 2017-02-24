@@ -78,6 +78,9 @@ uint qHash(const Node &key);
 
 struct BBox
 {
+  BBox() {}
+  BBox(double lx, double ux, double ly, double uy): minX(lx), maxX(ux), minY(ly), maxY(uy) {}
+
   double minX;
   double maxX;
   double minY;

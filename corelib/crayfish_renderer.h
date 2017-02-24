@@ -142,6 +142,8 @@ struct ConfigDataSet
   int mVectorTraceFPS; //!< fps (frames per second) of trace animation; if 0, we are showing steady streamlines (no animation)
   int mVectorTraceCalculationSteps; //! maximum number of calculation steps to in one streamline
   int mVectorTraceAnimationSteps; //! number of calculation steps to be animated by gradient from transparent color to mVectorColor
+  int mVectorTraceParticles; //!< whether to render particles instead of streamlines
+  int mVectorTraceParticlesCount; //!< number of particles to show
 };
 
 //! Master configuration for rendering
@@ -176,6 +178,8 @@ bool calcVectorLineEnd(
         QPointF& lineEnd, float& vectorLength, double& cosAlpha, double& sinAlpha, //out
         const RendererConfig* mCfg, const Output* output, const QPointF& lineStart, float xVal, float yVal, float* V=0 //in
         );
+
+void bbox2rect(const MapToPixel& mtp, const QSize& outputSize, const BBox& bbox, int& leftLim, int& rightLim, int& topLim, int& bottomLim);
 
 class Renderer
 {

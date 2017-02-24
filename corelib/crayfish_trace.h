@@ -4,13 +4,17 @@
 #include <QSize>
 #include <QVector>
 #include <QPointF>
+#include <QPoint>
 #include <QLineF>
+#include <QHash>
+#include <QSet>
 
 class Output;
 class MapToPixel;
 struct RendererConfig;
 
 typedef QVector<QPointF> TraceStreamLine;
+typedef QHash<QPoint, QPointF> ValuesCacheHash;
 
 class TraceRendererCache {
 public:
@@ -29,9 +33,12 @@ public:
 
 private:
     bool isUpToDate(const RendererConfig& cfg) const;
+    QVector<QPointF> calculateStartPoints();
     void calculateStreamLines();
+    ValuesCacheHash calculateValuesCache();
     bool pointInsideView(const QPointF& pt) const;
-    bool value(const QPointF& pt, QPointF &val, const QSet<uint>& candidateElementIds) const;
+    bool value(uint elementIndex, const QPointF& pt, QPointF& res) const;
+    QPointF randomPoint() const;
 
     //! iteration of trace rendering
     //! to simulate the "flow" animation on canvas

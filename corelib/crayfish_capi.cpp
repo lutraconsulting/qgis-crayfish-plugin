@@ -446,6 +446,10 @@ void CF_RC_setParam(RendererConfigH cfg, const char* key, VariantH value)
     cfg->ds.mVectorTraceCalculationSteps = value->toInt();
   else if (k == "v_anim_steps")
     cfg->ds.mVectorTraceAnimationSteps = value->toInt();
+  else if (k == "v_show_particles")
+    cfg->ds.mVectorTraceParticles = value->toBool();
+  else if (k == "v_n_particles")
+    cfg->ds.mVectorTraceParticlesCount = value->toInt();
   else
     qDebug("[setParam] unknown key: %s", key);
 }
@@ -505,6 +509,10 @@ void CF_RC_getParam(RendererConfigH cfg, const char* key, VariantH value)
     *value = QVariant(cfg->ds.mVectorTraceCalculationSteps);
   else if (k == "v_anim_steps")
     *value = QVariant(cfg->ds.mVectorTraceAnimationSteps);
+  else if (k == "v_show_particles")
+    *value = QVariant(cfg->ds.mVectorTraceParticles);
+  else if (k == "v_n_particles")
+    *value = QVariant(cfg->ds.mVectorTraceParticlesCount);
   else
     qDebug("[getParam] unknown key: %s", key);
 }

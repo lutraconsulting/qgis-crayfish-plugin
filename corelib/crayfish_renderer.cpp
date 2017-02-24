@@ -27,6 +27,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <stdlib.h>
 #include <time.h>
+#include <algorithm>
+
 #include "crayfish_renderer.h"
 
 #include "crayfish_dataset.h"
@@ -487,11 +489,7 @@ void Renderer::drawVectorDataStreamLines(QPainter& p) {
     TraceRendererCache* cache = mMesh->getTraceCache();
     for (int i=0; i<cache->getStreamLinesCount(); ++i) {
         const TraceStreamLine& streamline = cache->getStreamLine(i);
-        for (int j=1; j<streamline.size(); ++j) {
-            const QPointF& startPoint = streamline.at(j-1);
-            const QPointF& endPoint = streamline.at(j);
-            p.drawLine(startPoint, endPoint);
-        }
+        p.drawPolyline(streamline.data(), streamline.size());
     }
 }
 
@@ -506,22 +504,30 @@ void Renderer::drawVectorDataAsTrace(QPainter& p) {
         colors.append(c);
     }
 
-
     TraceRendererCache* cache = mMesh->getTraceCache();
     int iter = cache->getNextIteration();
+    int color_idx = mCfg.ds.mVectorTraceCalculationSteps - iter;
 
     for (int i=0; i<cache->getStreamLinesCount(); ++i) {
         const TraceStreamLine& streamline = cache->getStreamLine(i);
+        int start, end;
+        if (mCfg.ds.mVectorTraceParticles) {
+            start = iter % streamline.size() + 1;
+            end = std::min(start + mCfg.ds.mVectorTraceAnimationSteps, streamline.size());
+        } else {
+            start = 1;
+            end = streamline.size();
+        }
 
-        for (int j=1; j<streamline.size(); ++j) {
+        for (int j=start; j<end; ++j) {
             const QPointF& startPoint = streamline.at(j-1);
             const QPointF& endPoint = streamline.at(j);
 
             QLinearGradient gradient;
             gradient.setStart(startPoint);
             gradient.setFinalStop(endPoint);
-            gradient.setColorAt(0, colors.at((steps + j - iter - 1) % steps));
-            gradient.setColorAt(1, colors.at((steps + j - iter) % steps));
+            gradient.setColorAt(0, colors.at((color_idx + j - 1) % steps));
+            gradient.setColorAt(1, colors.at((color_idx + j) % steps));
 
             QPen pen = p.pen();
             pen.setBrush(QBrush(gradient));
@@ -711,12 +717,16 @@ QPointF Renderer::realToPixelF(int nodeIndex)
     return mtp.realToPixel(n.x, n.y);
 }
 
-void Renderer::bbox2rect(const BBox& bbox, int& leftLim, int& rightLim, int& topLim, int& bottomLim)
+void bbox2rect(const MapToPixel& mtp, const QSize& outputSize, const BBox& bbox, int& leftLim, int& rightLim, int& topLim, int& bottomLim)
 {
     QPoint ll = mtp.realToPixel(bbox.minX, bbox.minY).toPoint();
     QPoint ur = mtp.realToPixel(bbox.maxX, bbox.maxY).toPoint();
     topLim = std::max( ur.y(), 0 );
-    bottomLim = std::min( ll.y(), mOutputSize.height()-1 );
+    bottomLim = std::min( ll.y(), outputSize.height()-1 );
     leftLim = std::max( ll.x(), 0 );
-    rightLim = std::min( ur.x(), mOutputSize.width()-1 );
+    rightLim = std::min( ur.x(), outputSize.width()-1 );
+}
+
+void Renderer::bbox2rect(const BBox& bbox, int& leftLim, int& rightLim, int& topLim, int& bottomLim) {
+    ::bbox2rect(mtp, mOutputSize, bbox, leftLim, rightLim, topLim, bottomLim);
 }

@@ -72,6 +72,8 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
         self.fpsSpinBox.setValue(self.rs.fps)
         self.traceCalcStepsSpinBox.setValue(self.rs.calcSteps)
         self.traceAnimStepsSpinBox.setValue(self.rs.animationSteps)
+        self.particleTracingGroupBox.setChecked(self.rs.displayParticles)
+        self.particleCountSpinBox.setValue(self.rs.particlesCount)
 
         # set validators so that user cannot type text into numeric line edits
         doubleWidgets = [ self.minimumShaftLineEdit, self.maximumShaftLineEdit,
@@ -101,6 +103,8 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
         QObject.connect(self.fpsSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged)
         QObject.connect(self.traceCalcStepsSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged)
         QObject.connect(self.traceAnimStepsSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged)
+        QObject.connect(self.particleTracingGroupBox, SIGNAL('toggled(bool)'), self.inputFocusChanged)
+        QObject.connect(self.particleCountSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged)
 
     def inputFocusChanged(self, arg=None):
         self.saveRenderSettings()
@@ -139,6 +143,8 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
         self.rs.fps = self.fpsSpinBox.value()
         self.rs.calcSteps = self.traceCalcStepsSpinBox.value()
         self.rs.animationSteps = self.traceAnimStepsSpinBox.value()
+        self.rs.displayParticles = self.particleTracingGroupBox.isChecked()
+        self.rs.particlesCount = self.particleCountSpinBox.value()
 
         self.rs.applyToDataSet()
 
