@@ -68,6 +68,13 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
         self.minMagLineEdit.setText( str(self.rs.filterMin) if self.rs.filterMin >= 0 else '' )
         self.maxMagLineEdit.setText( str(self.rs.filterMax) if self.rs.filterMax >= 0 else '' )
 
+        self.traceGroupBox.setChecked(self.rs.displayTrace)
+        self.fpsSpinBox.setValue(self.rs.fps)
+        self.traceCalcStepsSpinBox.setValue(self.rs.calcSteps)
+        self.traceAnimStepsSpinBox.setValue(self.rs.animationSteps)
+        self.particleTracingGroupBox.setChecked(self.rs.displayParticles)
+        self.particleCountSpinBox.setValue(self.rs.particlesCount)
+
         # set validators so that user cannot type text into numeric line edits
         doubleWidgets = [ self.minimumShaftLineEdit, self.maximumShaftLineEdit,
                           self.scaleByFactorOfLineEdit, self.lengthLineEdit,
@@ -92,6 +99,12 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
         QObject.connect( self.minMagLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.maxMagLineEdit, SIGNAL('textEdited(QString)'), self.inputFocusChanged )
         QObject.connect( self.colorButton, SIGNAL("colorChanged(QColor)"), self.inputFocusChanged )
+        QObject.connect(self.traceGroupBox, SIGNAL('toggled(bool)'), self.inputFocusChanged)
+        QObject.connect(self.fpsSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged)
+        QObject.connect(self.traceCalcStepsSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged)
+        QObject.connect(self.traceAnimStepsSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged)
+        QObject.connect(self.particleTracingGroupBox, SIGNAL('toggled(bool)'), self.inputFocusChanged)
+        QObject.connect(self.particleCountSpinBox, SIGNAL('valueChanged(int)'), self.inputFocusChanged)
 
     def inputFocusChanged(self, arg=None):
         self.saveRenderSettings()
@@ -126,6 +139,13 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
         clr = self.colorButton.color()
         self.rs.color = (clr.red(),clr.green(),clr.blue(),clr.alpha())
 
+        self.rs.displayTrace = self.traceGroupBox.isChecked()
+        self.rs.fps = self.fpsSpinBox.value()
+        self.rs.calcSteps = self.traceCalcStepsSpinBox.value()
+        self.rs.animationSteps = self.traceAnimStepsSpinBox.value()
+        self.rs.displayParticles = self.particleTracingGroupBox.isChecked()
+        self.rs.particlesCount = self.particleCountSpinBox.value()
+
         self.rs.applyToDataSet()
 
     def shaftLengthMethodChanged(self, newIdx):
@@ -147,6 +167,9 @@ class CrayfishVectorOptionsDialog(qtBaseClass, uiDialog):
         if shaftLengthMin < 0:
             return False
         if shaftLengthMin >= shaftLengthMax:
+            return False
+
+        if self.traceCalcStepsSpinBox.value() < self.traceAnimStepsSpinBox.value():
             return False
 
         try:

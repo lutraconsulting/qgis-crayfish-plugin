@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "elem/crayfish_eNp.h"
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
+#include "crayfish_trace.h"
 
 #include <QVector2D>
 
@@ -103,6 +104,8 @@ Mesh::Mesh(const BasicMesh::Nodes& nodes, const BasicMesh::Elements& elements)
   mExtent = computeMeshExtent(false);
 
   mE4Qnorm = new E4QNormalization(mExtent);
+  mTraceCache = new TraceRendererCache();
+
   computeTempRendererData();
   updater = NULL;
 }
@@ -131,6 +134,7 @@ Mesh::~Mesh()
   mProjBBoxes = 0;
 
   if (updater) delete updater;
+  if (mTraceCache) delete mTraceCache;
 }
 
 DataSet* Mesh::dataSet(const QString& name)
@@ -175,31 +179,51 @@ BBox computeExtent(const Node* nodes, int size)
   return b;
 }
 
+QSet<uint> Mesh::getCandidateElementIds(const BBox& bbox) const
+{
+     QSet<uint> candidateElementIds;
+     for (int i = 0; i < mElems.count(); i++)
+     {
+       const BBox& elemBbox = projectedBBox(i);
+       if (bbox.contains(elemBbox))
+         candidateElementIds.insert(i);
+     }
 
-double Mesh::valueAt(const Output* output, double xCoord, double yCoord) const
+     return candidateElementIds;
+}
+
+QSet<uint> Mesh::getCandidateElementIds(double xCoord, double yCoord) const
+{
+     QSet<uint> candidateElementIds;
+     for (int i = 0; i < mElems.count(); i++)
+     {
+       const BBox& bbox = projectedBBox(i);
+       if (bbox.isPointInside(xCoord, yCoord))
+         candidateElementIds.insert(i);
+     }
+
+     return candidateElementIds;
+}
+
+double Mesh::valueAt(const Output* output, double xCoord, double yCoord) const {
+    return valueAt(getCandidateElementIds(xCoord, yCoord),
+                   output,
+                   xCoord,
+                   yCoord);
+}
+
+double Mesh::valueAt(const QSet<uint>& candidateElementIds, const Output* output, double xCoord, double yCoord) const
 {
   if (!output)
     return -9999.0;
-
- // We want to find the value at the given coordinate
- // Loop through all the elements in the dataset and make a list of those
-
-  std::vector<uint> candidateElementIds;
-  for (int i = 0; i < mElems.count(); i++)
-  {
-    const BBox& bbox = projectedBBox(i);
-    if (bbox.isPointInside(xCoord, yCoord))
-      candidateElementIds.push_back(i);
-  }
 
   if( candidateElementIds.size() == 0 )
       return -9999.0;
 
   double value;
 
-  for (uint i=0; i < candidateElementIds.size(); i++)
+  foreach (uint elemIndex, candidateElementIds)
   {
-    uint elemIndex = candidateElementIds.at(i);
     if (!output->isActive(elemIndex))
       continue;
 
@@ -211,6 +235,19 @@ double Mesh::valueAt(const Output* output, double xCoord, double yCoord) const
   return -9999.0;
 }
 
+bool Mesh::vectorValueAt(const QSet<uint>& candidateElementIds, const Output* output, double xCoord, double yCoord, double* valueX, double* valueY) const
+{
+    if (!output)
+      return false;
+
+    foreach (uint elemIndex, candidateElementIds)
+    {
+      if (vectorValueAt(elemIndex, xCoord, yCoord, valueX, valueY, output))
+        return true;
+    }
+
+    return false;
+}
 
 //! abstract class that provides values for interpolation
 struct ValueAccessor

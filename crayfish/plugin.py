@@ -600,6 +600,13 @@ class CrayfishPlugin:
             QMessageBox.warning(None, "Crayfish", "Please select a Crayfish layer for export")
             return
 
+        ds = layer.currentVectorDataSet()
+        if ds.config["v_trace"]:
+            fps = ds.config["v_fps"]
+            if fps > 0:
+                QMessageBox.warning(None, "Crayfish", """Export to animation for trace animation is not yet implemented (issue #280)""")
+                return
+
         if self.dock.currentDataSet().output_count() < 2:
             QMessageBox.warning(None, "Crayfish", "Please use time-varying dataset for animation export")
             return

@@ -98,7 +98,8 @@ SOURCES += crayfish.cpp \
     frmts/crayfish_netcdf.cpp \
     frmts/crayfish_mesh_2dm.cpp \
     frmts/crayfish_flo2d.cpp \
-    contrib/tinyxml2.cpp
+    contrib/tinyxml2.cpp \
+    crayfish_trace.cpp
 
 HEADERS += crayfish.h \
     crayfish_colormap.h \
@@ -116,7 +117,9 @@ HEADERS += crayfish.h \
     frmts/crayfish_mesh_2dm.h \
     frmts/crayfish_hdf5.h \
     contrib/tinyxml2.h \
-    frmts/crayfish_netcdf.h
+    frmts/crayfish_netcdf.h \
+    crayfish_trace.h \
+    crayfish_utils.h
 
 INCLUDEPATH += $$PWD
 
