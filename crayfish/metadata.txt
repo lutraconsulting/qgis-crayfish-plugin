@@ -13,6 +13,7 @@ about=The Crayfish plugin aspires to be a time explorer for various grid and vec
 
 ; start of optional metadata
 changelog=2.5.0 - New Features:
+ - Vector streamlines/particle traces animation
  - UGRID support (NetCDF)
  - NetCDF4 support
  - All NetCDF quantities loaded in one layer
