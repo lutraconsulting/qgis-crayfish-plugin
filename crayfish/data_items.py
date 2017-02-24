@@ -31,7 +31,9 @@ from qgis.core import *
 
 class CrayfishDataItemProvider(QgsDataItemProvider):
 
-  extensions = [".nc", ".2dm", ".sww", ".grib", ".grib1", ".grib2", ".bin", ".grb", ".grb2", ".hdf", ".slf", "BASE.OUT"]
+  extensions = [".nc", ".2dm", ".sww", ".grib", ".grib1", ".grib2", ".bin", ".grb", ".grb2", ".hdf", ".slf",
+                "BASE.OUT", "SUMMARY.OUT", "TIMDEP.HDF5" #FLO-2D
+                ]
 
   icon = QIcon(":/plugins/crayfish/images/crayfish.png")
 

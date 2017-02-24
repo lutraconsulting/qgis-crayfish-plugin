@@ -415,6 +415,21 @@ static Mesh* createMesh(const QVector<CellCenter>& cells, float half_cell_size) 
     return new Mesh(nodes, elements);
 }
 
+bool Crayfish::isFlo2DFile(const QString& fileName) {
+    QFileInfo fi(fileName);
+    QStringList required_files;
+    required_files.append("CADPTS.DAT");
+    required_files.append("FPLAIN.DAT");
+
+    foreach (const QString& str, required_files) {
+        QString fn(fi.dir().filePath(str));
+        QFileInfo check_file(fn);
+        if (!(check_file.exists() && check_file.isFile()))
+            return false;
+    }
+    return true;
+}
+
 Mesh* Crayfish::loadFlo2D( const QString& datFileName, LoadStatus* status )
 {
     if (status) status->clear();

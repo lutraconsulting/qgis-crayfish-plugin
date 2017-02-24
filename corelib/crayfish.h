@@ -90,6 +90,8 @@ protected:
   static Mesh* loadSerafin(const QString& fileName, LoadStatus* status = 0);
   static Mesh* loadUGRID(const QString& fileName, LoadStatus* status = 0);
 
+  static bool isFlo2DFile(const QString& fileName);
+
   static Mesh::DataSets loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
   static Mesh::DataSets loadAsciiDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);
   static Mesh::DataSets loadXmdfDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);

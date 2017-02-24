@@ -41,6 +41,13 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
       meshFile.endsWith(".grib2"))
     return loadGRIB(meshFile, status);
 
+  // FLO-2s
+  // needs to be called before check for .hdf AND .out files
+  // as FLO-2D format can be in HDF format or text format
+  // with .OUT extension
+  if (isFlo2DFile(meshFile))
+    return loadFlo2D(meshFile, status);
+
   if (meshFile.endsWith((".hdf")))
     return loadHec2D(meshFile, status);
 
@@ -57,9 +64,6 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
 
   if (meshFile.endsWith((".slf")))
     return loadSerafin(meshFile, status);
-
-  if (meshFile.endsWith(("BASE.OUT"))) //Flo-2s
-    return loadFlo2D(meshFile, status);
 
   return loadMesh2DM(meshFile, status);
 }
