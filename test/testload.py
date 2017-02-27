@@ -221,6 +221,19 @@ class TestCrayfishLoad(unittest.TestCase):
     self.assertEqual(o.time(), 0.5)
     self.assertEqual(o.value(1), 1.0)
 
+  def test_load_flo2d_hdf5_file(self):
+    m = crayfish.Mesh(TEST_DIR + "/flo2d/BarnHDF5/TIMDEP.HDF5")
+    self.assertEqual(m.dataset_count(), 5)
+
+    self.assertEqual(m.dataset(0).type(), crayfish.DS_Bed)
+    self.assertEqual(m.dataset(1).type(), crayfish.DS_Scalar)
+
+    ds = m.dataset(1)
+    self.assertEqual(ds.output_count(), 20)
+    o = ds.output(0)
+    self.assertEqual(o.time(), 0.10124753415584564)
+    self.assertEqual(o.value(1), 4262.8798828125)
+
   def test_load_flo2d_optional_file(self):
     m = crayfish.Mesh(TEST_DIR + "/flo2d/basic_required_files_only/BASE.OUT")
     self.assertEqual(m.dataset_count(), 1)

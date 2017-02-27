@@ -283,7 +283,7 @@ protected:
   QSharedDataPointer<Handle> d;
 };
 
-QStringList HdfFile::groups() const { return group("/").groups(); }
+inline QStringList HdfFile::groups() const { return group("/").groups(); }
 
 inline HdfGroup HdfFile::group(const QString& path) const { return HdfGroup(d->id, path); }
 

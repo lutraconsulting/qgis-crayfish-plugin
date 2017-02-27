@@ -37,6 +37,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_mesh_2dm.h"
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
+#include "crayfish_utils.h"
+#include "crayfish_hdf5.h"
 
 #include <iostream>
 
@@ -50,13 +52,22 @@ struct CellCenter
 
 static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
 
-static float getFloat(const QString& val) {
-    float valF = val.toFloat();
-    if (is_nodata(valF, 0.0f)) {
+static QString fileNameFromDir(const QString& mainFileName, const QString& name) {
+    QFileInfo fi(mainFileName);
+    return QString(fi.dir().filePath(name));
+}
+
+static float getFloat(float val) {
+    if (is_nodata(val, 0.0f)) {
         return -9999.0;
     } else {
-        return valF;
+        return val;
     }
+}
+
+static float getFloat(const QString& val) {
+    float valF = val.toFloat();
+    return getFloat(valF);
 }
 
 static void addStaticDataset(QVector<float>& vals, const QString& name, const DataSet::Type type, const QString& datFileName, Mesh* mesh) {
@@ -77,11 +88,8 @@ static void addStaticDataset(QVector<float>& vals, const QString& name, const Da
     mesh->addDataSet(ds);
 }
 
-
 static void parseCADPTSFile(const QString& datFileName, QVector<CellCenter>& cells) {
-    QFileInfo fi(datFileName);
-    QString cadptsFileName(fi.dir().filePath("CADPTS.DAT"));
-    QFile cadptsFile(cadptsFileName);
+    QFile cadptsFile(fileNameFromDir(datFileName, "CADPTS.DAT"));
     if (!cadptsFile.open(QIODevice::ReadOnly | QIODevice::Text)) throw LoadStatus::Err_FileNotFound;
     QTextStream cadptsStream(&cadptsFile);
 
@@ -104,9 +112,7 @@ static void parseCADPTSFile(const QString& datFileName, QVector<CellCenter>& cel
 
 static QVector<float> parseFPLAINFile(const QString& datFileName, QVector<CellCenter>& cells) {
     // FPLAIN.DAT - CONNECTIVITY (ELEM NUM, ELEM N, ELEM E, ELEM S, ELEM W, MANNING-N, BED ELEVATION)
-    QFileInfo fi(datFileName);
-    QString fplainFileName(fi.dir().filePath("FPLAIN.DAT"));
-    QFile fplainFile(fplainFileName);
+    QFile fplainFile(fileNameFromDir(datFileName, "FPLAIN.DAT"));
     if (!fplainFile.open(QIODevice::ReadOnly | QIODevice::Text)) throw LoadStatus::Err_FileNotFound;
     QTextStream fplainStream(&fplainFile);
 
@@ -136,8 +142,7 @@ static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh, const QVecto
     // For every node:
     // FLO2D: ELEM NUMber (indexed from 1), depth, velocity, velocity x, velocity y
     // FLO2DPro: ELEM NUMber (indexed from 1), depth, velocity, velocity x, velocity y, water surface elevation
-    QFileInfo fi(datFileName);
-    QFile inFile(fi.dir().filePath("TIMDEP.OUT"));
+    QFile inFile(fileNameFromDir(datFileName, "TIMDEP.OUT"));
     if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
     QTextStream in(&inFile);
 
@@ -233,9 +238,7 @@ static void parseTIMDEPFile(const QString& datFileName, Mesh* mesh, const QVecto
 
 static void parseDEPTHFile(const QString&datFileName, Mesh* mesh, const QVector<float>& elevations) {
     // this file is optional, so if not present, reading is skipped
-    QFileInfo fi(datFileName);
-    QString nodesFileName(fi.dir().filePath("DEPTH.OUT"));
-    QFile nodesFile(nodesFileName);
+    QFile nodesFile(fileNameFromDir(datFileName, "DEPTH.OUT"));
     if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
     QTextStream nodesStream(&nodesFile);
 
@@ -275,12 +278,10 @@ static void parseDEPTHFile(const QString&datFileName, Mesh* mesh, const QVector<
 static void parseVELFPVELOCFile(const QString&datFileName, Mesh* mesh) {
     // these files are optional, so if not present, reading is skipped
     int nnodes = mesh->nodes().size();
-    QFileInfo fi(datFileName);
     QVector<float> maxVel(nnodes);
 
     {
-        QString nodesFileName(fi.dir().filePath("VELFP.OUT"));
-        QFile nodesFile(nodesFileName);
+        QFile nodesFile(fileNameFromDir(datFileName, "VELFP.OUT"));
         if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
         QTextStream nodesStream(&nodesFile);
         int node_inx = 0;
@@ -304,8 +305,7 @@ static void parseVELFPVELOCFile(const QString&datFileName, Mesh* mesh) {
     }
 
     {
-        QString nodesFileName(fi.dir().filePath("VELOC.OUT"));
-        QFile nodesFile(nodesFileName);
+        QFile nodesFile(fileNameFromDir(datFileName, "VELOC.OUT"));
         if (!nodesFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
         QTextStream nodesStream(&nodesFile);
         int node_inx = 0;
@@ -416,18 +416,123 @@ static Mesh* createMesh(const QVector<CellCenter>& cells, float half_cell_size) 
 }
 
 bool Crayfish::isFlo2DFile(const QString& fileName) {
-    QFileInfo fi(fileName);
     QStringList required_files;
     required_files.append("CADPTS.DAT");
     required_files.append("FPLAIN.DAT");
 
     foreach (const QString& str, required_files) {
-        QString fn(fi.dir().filePath(str));
-        QFileInfo check_file(fn);
-        if (!(check_file.exists() && check_file.isFile()))
+        QString fn(fileNameFromDir(fileName, str));
+        if (!fileExists(fn))
             return false;
     }
     return true;
+}
+
+static bool parseHDF5Datasets(const QString&datFileName, Mesh* mesh) {
+    //return true on error
+
+    int nelem = mesh->elements().size();
+
+    QString timedepFileName = fileNameFromDir(datFileName, "TIMDEP.HDF5");
+    if (!fileExists(timedepFileName)) return true;
+
+    HdfFile file(timedepFileName);
+    if (!file.isValid()) return true;
+
+    HdfGroup timedataGroup = file.group("TIMDEP NETCDF OUTPUT RESULTS");
+    if (!timedataGroup.isValid()) return true;
+
+    QStringList groupNames = timedataGroup.groups();
+
+    foreach (const QString& grpName, groupNames) {
+        HdfGroup grp = timedataGroup.group(grpName);
+        if (!grp.isValid()) return true;
+
+        HdfAttribute groupType = grp.attribute("Grouptype");
+        if (!groupType.isValid()) return true;
+
+        /* Min and Max arrays in TIMDEP.HDF5 files have dimensions 1xntimesteps .
+           Hence it is unusable in crayfish.
+           We would need nelementsx1 array to get maximum/minimum variable accross all timesteps?
+
+            HdfDataset minDs = grp.dataset("Mins");
+            if (!minDs.isValid()) return true;
+
+            HdfDataset maxDs = grp.dataset("Maxs");
+            if (!maxDs.isValid()) return true;
+        */
+
+        HdfDataset timesDs = grp.dataset("Times");
+        if (!timesDs.isValid()) return true;
+        int timesteps = timesDs.elementCount();
+
+        HdfDataset valuesDs = grp.dataset("Values");
+        if (!valuesDs.isValid()) return true;
+
+        DataSet::Type dsType = groupType.readString().toLower().contains("vector") ? DataSet::Vector : DataSet::Scalar;
+
+        // Some sanity checks
+        int expectedSize = mesh->elements().size() * timesteps;
+        if (dsType == DataSet::Vector) expectedSize *= 2;
+        if (valuesDs.elementCount() != expectedSize) return true;
+
+        // Read data
+        QVector<double> times = timesDs.readArrayDouble();
+        QVector<float> values = valuesDs.readArray();
+
+        // Create dataset now
+        DataSet* ds = new DataSet(datFileName);
+        ds->setType(dsType);
+        ds->setName(grpName);
+
+
+        for (int ts=0; ts<timesteps; ++ts) {
+            ElementOutput* output = new ElementOutput;
+            output->init(mesh->elements().size(), dsType == DataSet::Vector);
+            output->time = times[ts];
+
+            if (groupType.readString().toLower().contains("vector")) {
+                // vector
+                for (int i=0; i<nelem; ++i) {
+                    int idx = 2 * (ts * nelem + i);
+                    float x = getFloat(values[idx]);
+                    float y = getFloat(values[idx + 1]);
+                    if (x == -9999 || y == -9999) {
+                        output->getValues()[i] = -9999;
+                    } else {
+                        output->getValues()[i] = sqrt(x*x + y*y);
+                    }
+                    output->getValuesV()[i].x = x;
+                    output->getValuesV()[i].y = y;
+                }
+            } else {
+                // scalar
+                for (int i=0; i<nelem; ++i) {
+                    int idx = ts * nelem + i;
+                    float val = getFloat(values[idx]);
+                    output->getValues()[i] = val;
+                }
+            }
+            ds->addOutput(output);
+        }
+
+        ds->setIsTimeVarying(timesteps>1);
+        ds->updateZRange();
+        mesh->addDataSet(ds);
+    }
+
+    return false;
+}
+
+static void parseOUTDatasets(const QString&datFileName, Mesh* mesh, const QVector<float>& elevations) {
+    // Create Depth and Velocity datasets Time varying datasets
+    parseTIMDEPFile(datFileName, mesh, elevations);
+
+    // Maximum Depth and Water Level
+    parseDEPTHFile(datFileName, mesh, elevations);
+
+    // Maximum Velocity
+    parseVELFPVELOCFile(datFileName, mesh);
 }
 
 Mesh* Crayfish::loadFlo2D( const QString& datFileName, LoadStatus* status )
@@ -450,15 +555,10 @@ Mesh* Crayfish::loadFlo2D( const QString& datFileName, LoadStatus* status )
         // create output for bed elevation
         addStaticDataset(elevations, "Bed Elevation", DataSet::Bed, datFileName, mesh);
 
-        // Create Depth and Velocity datasets Time varying datasets
-        parseTIMDEPFile(datFileName, mesh, elevations);
-
-        // Maximum Depth and Water Level
-        parseDEPTHFile(datFileName, mesh, elevations);
-
-        // Maximum Velocity
-        parseVELFPVELOCFile(datFileName, mesh);
-
+        if (parseHDF5Datasets(datFileName, mesh)) {
+            // some problem with HDF5 data, try text files
+            parseOUTDatasets(datFileName, mesh, elevations);
+        }
     }
 
     catch (LoadStatus::Error error)
