@@ -603,10 +603,10 @@ class CrayfishPlugin:
             return
 
         ds = layer.currentVectorDataSet()
-        if ds.config["v_trace"]:
-            fps = ds.config["v_fps"]
-            if fps > 0:
-                QMessageBox.warning(None, "Crayfish", """Export to animation for trace animation is not yet implemented (issue #280)""")
+        if (ds and # has vector dataset ON
+            ds.config["v_trace"] and # is styled by trace/streamlines
+            ds.config["v_fps"] > 0): # is automatically refreshing
+                QMessageBox.warning(None, "Crayfish", "Export to animation for trace animation is not yet implemented (issue #280)")
                 return
 
         if self.dock.currentDataSet().output_count() < 2:
