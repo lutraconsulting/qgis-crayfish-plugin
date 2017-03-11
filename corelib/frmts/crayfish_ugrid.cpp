@@ -158,15 +158,39 @@ struct DatasetInfo{
 typedef QMap<QString, DatasetInfo> dataset_info_map; // name -> DatasetInfo
 
 ////////////////////////////////////////////////////////////////
+static QString getCoordinateSystemVariableName(const NetCDFFile& ncFile) {
+    QString coordinate_system_variable;
+
+    // first try to get the coordinate system variable from grid definition
+    if (ncFile.hasVariable("mesh2d_node_z")) {
+        coordinate_system_variable = ncFile.getAttrStr("mesh2d_node_z", "grid_mapping");
+    }
+
+    // if automatic discovery fails, try to check some hardcoded common variables that store projection
+    if (coordinate_system_variable.isEmpty()) {
+        if (ncFile.hasVariable("projected_coordinate_system"))
+            coordinate_system_variable = "projected_coordinate_system";
+        else if (ncFile.hasVariable("wgs84"))
+            coordinate_system_variable = "wgs84";
+    }
+
+    // return, may be empty
+    return coordinate_system_variable;
+}
+
 static void setProjection(Mesh* m, const NetCDFFile& ncFile) {
-    QString wkt = ncFile.getAttrStr("projected_coordinate_system", "wkt");
-    if (wkt.isEmpty()) {
-        int epsg = ncFile.getAttrInt("projected_coordinate_system", "epsg");
-        if (epsg != 0) {
-            m->setSourceCrsFromEPSG(epsg);
+    QString coordinate_system_variable = getCoordinateSystemVariableName(ncFile);
+
+    if (!coordinate_system_variable.isEmpty()) {
+        QString wkt = ncFile.getAttrStr(coordinate_system_variable, "wkt");
+        if (wkt.isEmpty()) {
+            int epsg = ncFile.getAttrInt(coordinate_system_variable, "epsg");
+            if (epsg != 0) {
+                m->setSourceCrsFromEPSG(epsg);
+            }
+        } else {
+            m->setSourceCrsFromWKT(wkt);
         }
-    } else {
-        m->setSourceCrsFromWKT(wkt);
     }
 }
 

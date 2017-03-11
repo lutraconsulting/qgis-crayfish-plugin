@@ -29,6 +29,12 @@ public:
         return ncid;
     }
 
+    bool hasVariable(const QString& name) const {
+        Q_ASSERT(mNcid != 0);
+        int varid;
+        return (nc_inq_varid(mNcid, name.toStdString().c_str(), &varid) == NC_NOERR);
+    }
+
     QVector<int> readIntArr(const QString& name, size_t dim) const
     {
         Q_ASSERT(mNcid != 0);
