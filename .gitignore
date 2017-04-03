@@ -25,4 +25,5 @@ plugin/crayfish.lib
 *-swp
 .idea/
 .idea/*
+.vagrant/
 
