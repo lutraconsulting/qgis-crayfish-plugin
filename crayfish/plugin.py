@@ -26,6 +26,7 @@
 
 import os
 import sys
+import webbrowser
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -44,8 +45,6 @@ from .gui.install_helper import ensure_library_installed
 from .gui.utils import QgsMessageBar, qgis_message_bar
 from .illuvis import upload_dialog
 from .styles import style_with_black_lines, classified_style_from_colormap, classified_style_from_interval
-
-import webbrowser
 
 if 'QgsDataItemProvider' in globals():  # from QGIS 2.10
     from .data_items import CrayfishDataItemProvider
