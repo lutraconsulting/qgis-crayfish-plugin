@@ -45,6 +45,8 @@ from .gui.utils import QgsMessageBar, qgis_message_bar
 from .illuvis import upload_dialog
 from .styles import style_with_black_lines, classified_style_from_colormap, classified_style_from_interval
 
+import webbrowser
+
 if 'QgsDataItemProvider' in globals():  # from QGIS 2.10
     from .data_items import CrayfishDataItemProvider
 
@@ -94,6 +96,9 @@ class CrayfishPlugin:
 
         self.actionPlot = QAction(QgsApplication.getThemeIcon("/histogram.png"), "Plot", self.iface.mainWindow())
 
+        self.actionHelp = QAction(QgsApplication.getThemeIcon("/mActionHelpContents.svg"), "Help", self.iface.mainWindow())
+        QObject.connect(self.actionHelp, SIGNAL("triggered()"), self.help)
+
         # Add toolbar button and menu item
         layerTB = self.iface.layerToolBar()
         layerTB.insertAction(self.iface.actionAddPgLayer(), self.action)
@@ -104,6 +109,7 @@ class CrayfishPlugin:
         self.menu.addAction(self.actionExportContours)
         self.menu.addAction(self.actionExportAnimation)
         self.menu.addAction(self.actionPlot)
+        self.menu.addAction(self.actionHelp)
 
         # Register plugin layer type
         self.lt = CrayfishPluginLayerType()
@@ -437,6 +443,9 @@ class CrayfishPlugin:
     def upload(self):
         d = upload_dialog.UploadDialog(self.iface, self.dock.currentCrayfishLayer())
         d.exec_()
+
+    def help(self):
+        webbrowser.open('http://www.lutraconsulting.co.uk/products/crayfish/wiki')
 
 
     def getCrayfishLayers(self):
