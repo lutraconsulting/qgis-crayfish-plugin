@@ -196,6 +196,11 @@
            </item>
            <item>
             <property name="text">
+             <string>%d %H:%M:%S</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
              <string>%d %H</string>
             </property>
            </item>
