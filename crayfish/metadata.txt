@@ -5,14 +5,17 @@ qgisMinimumVersion=2.8
 qgisMaximumVersion=2.99
 description=Visualiser for temporal structured/unstructured grids in QGIS
 ; category=Raster ; Did not know what my available choices where
-version=2.5.1
+version=2.6.0
 author=Lutra Consulting
 email=info@lutraconsulting.co.uk
 about=The Crayfish plugin aspires to be a time explorer for various grid and vector datasets within QGIS. With Crayfish, users can load time varying mesh into QGIS. Currently, Crayfish supports a number of hydraulic modelling software packages which output results to XMDF, SMS DAT, GRIB, HEC2D, netCDF, Serafin, FLO-2D and SWW. Examples of the software packages are: TUFLOW, AnuGA, BASEMENT, ISIS 2D, HEC-RAS 2D, TELEMAC, FLO-2D and Hydro_AS 2D. Crayfish loads and renders results directly rather than converting them to GIS formats before viewing. This allows users to flick quickly through the various output steps in the result files and to create animations.
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=2.5.1 - New Features:
+changelog=2.6.0 - New features and bug fixes:
+ - Time formatting enhancements (#289)
+ - Link to manual page (#116)
+ <p>2.5.1 - New Features:
  - reading FLO-2D results in HDF5 format
  - Vector streamlines/particle traces animation
  - UGRID support (NetCDF)
