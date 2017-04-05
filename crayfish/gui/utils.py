@@ -186,6 +186,12 @@ def time_to_string(time, ds=None):  # time is in hours
             hours = time + ds.timeConfig["dt_offset_hours"]
             if ds.timeConfig["dt_time_format"] == "%H:%M:%S":
                 return _hours_to_HHMMSS(hours)
+            elif ds.timeConfig["dt_time_format"] == "%d %H:%M:%S":
+                seconds = round(hours * 3600.0, 2)
+                m, s = divmod(seconds, 60)
+                h, m = divmod(m, 60)
+                d, h = divmod(hours, 24)
+                return "%02d %02d:%02d:%05.2f" % (d, h, m, s)
             elif ds.timeConfig["dt_time_format"] == "%d %H":
                 d, h = divmod(hours, 24)
                 return "%02d %05.3f" % (d, h)
