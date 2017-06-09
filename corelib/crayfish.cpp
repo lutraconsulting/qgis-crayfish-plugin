@@ -62,6 +62,9 @@ Mesh* Crayfish::loadMesh(const QString& meshFile, LoadStatus* status)
     return m;
   }
 
+  if (meshFile.endsWith((".asc")))
+    return loadMultipleTifs(meshFile, status);
+
   if (meshFile.endsWith((".slf")))
     return loadSerafin(meshFile, status);
 

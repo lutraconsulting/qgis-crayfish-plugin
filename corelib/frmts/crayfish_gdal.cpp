@@ -475,7 +475,7 @@ void CrayfishGDALReader::parseRasterBands(const CrayfishGDALDataset* cfGDALDatas
        float time = std::numeric_limits<float>::min();
        bool is_vector;
        bool is_x;
-       if (parseBandInfo(metadata, band_name, &time, &is_vector, &is_x)) {
+       if (parseBandInfo(cfGDALDataset, metadata, band_name, &time, &is_vector, &is_x)) {
            continue;
        }
 
@@ -671,8 +671,8 @@ bool CrayfishGDALReader::addSrcProj() {
    return false;
 }
 
-QStringList CrayfishGDALReader::parseDatasetNames() {
-    QString gdal_name = GDALFileName(mFileName);
+QStringList CrayfishGDALReader::parseDatasetNames(const QString& fileName) {
+    QString gdal_name = GDALFileName(fileName);
     QStringList ret;
 
     GDALDatasetH hDataset = GDALOpen( gdal_name.toAscii().data(), GA_ReadOnly );
@@ -722,7 +722,7 @@ Mesh* CrayfishGDALReader::load(LoadStatus* status)
        registerDriver();
 
        // some formats like NETCFD has data stored in subdatasets
-       QStringList subdatasets = parseDatasetNames();
+       QStringList subdatasets = parseDatasetNames(mFileName);
 
        // First parse ALL datasets/bands to gather vector quantities
        // if case they are splitted in different subdatasets
