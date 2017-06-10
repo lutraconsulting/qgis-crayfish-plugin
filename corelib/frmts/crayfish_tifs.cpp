@@ -74,7 +74,7 @@ public:
 
        // we except filename to be <prefix><YYYYMMDD_HHMM><suffix>.asc
        // e.g. 5FQPE_20140819_0705_20140819020010_asc.asc
-       QRegExp rx("^(.*)(\\d{4})(\\d{2})(\\d{2})_(\\d{2})(\\d{2})_.*.asc$");
+       QRegExp rx("^(.*)(\\d{4})(\\d{2})(\\d{2})_(\\d{2})(\\d{2}).*.asc$");
        rx.indexIn(fi.fileName());
        QStringList matches = rx.capturedTexts();
        if (matches.length() !=  7) {
