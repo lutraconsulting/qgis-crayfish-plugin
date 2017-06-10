@@ -12,7 +12,10 @@ about=The Crayfish plugin aspires to be a time explorer for various grid and vec
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=2.6.0 - New features and bug fixes:
+changelog=2.6.1 New Features:
+ - Reading TIF directory (#246)
+ - Small GUI enhancements
+ <p>2.6.0 - New features and bug fixes:
  - Time formatting enhancements (#289)
  - Link to manual page (#116)
  <p>2.5.1 - New Features:

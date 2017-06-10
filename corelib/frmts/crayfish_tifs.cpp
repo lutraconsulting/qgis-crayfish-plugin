@@ -37,6 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QStringList>
 #include <QDir>
 #include <QRegExp>
+#include <QDateTime>
 
 class MultipleTifsReader: public CrayfishGDALReader
 {
@@ -82,18 +83,30 @@ public:
        } else {
            band_name = matches[1];
            // we need time in hours
-           *time = \
-              matches[2].toFloat()*8760.0 +  //year -> hours
-              matches[3].toFloat()*730.0 +  //month -> hours
-              matches[4].toFloat()*24.0 +  //day -> hours
-              matches[5].toFloat()*1.0 +  //hour -> hours
-              matches[6].toFloat()*0.0166667; //minute -> hours
+           QDate band_date(matches[2].toFloat(), matches[3].toFloat(), matches[4].toFloat());
+           QTime band_time(matches[5].toFloat(), matches[6].toFloat());
+
+           if (!refTime.isValid()) {
+               refTime.setDate(band_date);
+               refTime.setTime(band_time);
+               *time = 0;
+           } else {
+               int secs_to = refTime.secsTo(QDateTime(band_date, band_time));
+               *time = secs_to / 3600.0;
+            }
        }
 
        *is_vector = false; // vector
        *is_x =  true; //X-Axis
        return false; // SUCCESS
     }
+
+    QDateTime getRefTime() {
+        return refTime;
+    }
+
+private:
+    QDateTime refTime; //!< reference (base) time for output's times
 };
 
 Mesh* Crayfish::loadMultipleTifs(const QString& fileName, LoadStatus* status)

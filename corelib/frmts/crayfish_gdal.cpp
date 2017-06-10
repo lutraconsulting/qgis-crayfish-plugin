@@ -643,6 +643,8 @@ void CrayfishGDALReader::addDatasets()
            dsd->addOutput(tos);
        }
        dsd->updateZRange();
+       if (getRefTime().isValid())
+        dsd->setRefTime(getRefTime());
        mMesh->addDataSet(dsd);
    }
 }
