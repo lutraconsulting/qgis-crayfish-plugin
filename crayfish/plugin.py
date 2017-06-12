@@ -264,7 +264,7 @@ class CrayfishPlugin:
             fileType == '.nc' or
             fileType == '.hdf' or
             fileType == '.slf' or
-            fileType == '.asc' or
+            fileType == '.asc' or fileType == '.tif' or fileType == '.tiff' or
             'BASE.OUT' in inFileName or
             'SUMMARY.OUT' in inFileName or
             'TIMDEP.HDF5' in inFileName):
