@@ -43,7 +43,7 @@ class MultipleTifsReader: public CrayfishGDALReader
 {
 public:
     // We assume we have a directory with the multiple TIF files
-    // that have the same naming convention: filename_<timestamp>.asc
+    // that have the same naming convention: filename_<timestamp>.[asc|tif|tiff]
     // each file is readable by GDAL reader and has one band with data
     MultipleTifsReader(const QString& fileName): CrayfishGDALReader(fileName, "NETCDF"){}
 
@@ -54,7 +54,7 @@ public:
         QDir fd = fi.absoluteDir();
 
         QStringList filters;
-        filters << "*.asc";
+        filters << "*.asc" << "*.tif" << "*.tiff" << "*.ASC" << "*.TIF" << "*.TIFF" ;
 
         QStringList files = fd.entryList(filters, QDir::Files|QDir::NoSymLinks|QDir::NoDotAndDotDot|QDir::Readable, QDir::Name);
         foreach (QString file, files) {
@@ -72,9 +72,9 @@ public:
 
        QFileInfo fi = QFileInfo(cfGDALDataset->mDatasetName);
 
-       // we except filename to be <prefix><YYYYMMDD_HHMM><suffix>.asc
+       // we except filename to be <prefix><YYYYMMDD_HHMM><suffix>.[asc|tif|tiff]
        // e.g. 5FQPE_20140819_0705_20140819020010_asc.asc
-       QRegExp rx("^(.*)(\\d{4})(\\d{2})(\\d{2})_(\\d{2})(\\d{2}).*.asc$");
+       QRegExp rx("^(.*)(\\d{4})(\\d{2})(\\d{2})_(\\d{2})(\\d{2}).*$");
        rx.indexIn(fi.fileName());
        QStringList matches = rx.capturedTexts();
        if (matches.length() !=  7) {
