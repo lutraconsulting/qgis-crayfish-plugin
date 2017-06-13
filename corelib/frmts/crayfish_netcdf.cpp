@@ -50,7 +50,8 @@ public:
         #endif
     }
 
-    bool parseBandInfo(const metadata_hash& metadata, QString& band_name,
+    bool parseBandInfo(const CrayfishGDALDataset* cfGDALDataset,
+                       const metadata_hash& metadata, QString& band_name,
                        float* time, bool* is_vector, bool* is_x
                        ) {
        metadata_hash::const_iterator iter;

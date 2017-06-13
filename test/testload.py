@@ -339,6 +339,17 @@ class TestCrayfishLoad(unittest.TestCase):
     o = ds.output(2)
     self.assertEqual(o.time(), 0.1666666716337204)
     self.assertEqual(o.value(210), 0.0)
-    
+
+  def test_load_data_folder(self):
+    for filename in ["/MultiAscFiles/storm_20140819_1550.asc", "/MultiTifFiles/storm_20140819_1550.tiff"]:
+        m = crayfish.Mesh(TEST_DIR + filename)
+        self.assertEqual(m.dataset_count(), 1)
+        ds = m.dataset(0)
+        self.assertEqual(ds.type(), crayfish.DS_Scalar)
+        self.assertEqual(ds.output_count(), 3)
+        o = ds.output(0)
+        self.assertEqual(o.time(), 0.0)
+        self.assertEqual(o.value(133), -9999.0)
+
 if __name__ == '__main__':
   unittest.main()

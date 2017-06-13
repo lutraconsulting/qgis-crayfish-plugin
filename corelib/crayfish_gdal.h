@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QVector>
 #include <QMap>
 #include <QHash>
+#include <QDateTime>
 
 #include "crayfish_mesh.h"
 #include "crayfish_colormap.h"
@@ -130,9 +131,12 @@ protected:
     typedef QHash<QString, QString> metadata_hash; // KEY, VALUE
 
     /* return true on failure */
-    virtual bool parseBandInfo(const metadata_hash& metadata, QString& band_name, float* time, bool* is_vector, bool* is_x) = 0;
+    virtual bool parseBandInfo(const CrayfishGDALDataset* cfGDALDataset,
+                               const metadata_hash& metadata, QString& band_name, float* time, bool* is_vector, bool* is_x) = 0;
     virtual float parseMetadataTime(const QString& time_s);
     virtual QString GDALFileName(const QString& fileName); /* some formats require e.g. adding driver name at the beginning */
+    virtual QStringList parseDatasetNames(const QString& fileName);
+    virtual QDateTime getRefTime(){return QDateTime();}
 
 private:
     typedef QMap<float, QVector<GDALRasterBandH> > timestep_map; //TIME (sorted), [X, Y]
@@ -140,7 +144,6 @@ private:
     typedef QVector<CrayfishGDALDataset*> gdal_datasets_vector; //GDAL (Sub)Datasets,
 
     void registerDriver();
-    QStringList parseDatasetNames();
 
     void initElements(Mesh::Nodes& nodes, Mesh::Elements& elements, bool is_longitude_shifted);
     bool initNodes(Mesh::Nodes& nodes); //returns is_longitude_shifted

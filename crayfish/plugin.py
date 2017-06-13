@@ -230,6 +230,24 @@ class CrayfishPlugin:
             settings = QSettings()
             settings.setValue("crayfishViewer/lastFolder", path)
 
+    def _input_file_dialog_filters(self):
+        filters = [
+            ("2DM Mesh Files", "*.2dm"),
+            ("Results Files DAT", "*.dat"),
+            ("GDAL Raster Directory", "*.asc *.tif *.tiff"),
+            ("SOL", "*.sol "),
+            ("XMDF", "*.xmdf"),
+            ("XDMF", " *.xmf"),
+            ("SWW", " *.sww"),
+            ("GRIB", " *.grb *.grb2 *.bin *.grib *.grib1 *.grib2"),
+            ("HEC2D", " *.hdf"),
+            ("netCDF", "*.nc"),
+            ("Serafin", "*.slf"),
+            ("FLO-2D", "*BASE.OUT *SUMMARY.OUT *TIMDEP.HDF5")
+        ]
+        all_filter = [f[1] for f in filters]
+        filters.insert(0, ("All Supported Files", "  ".join(all_filter)))
+        return ";;".join(["{} ({})".format(f[0], f[1]) for f in filters])
 
     def addCrayfishLayer(self):
         """
@@ -243,10 +261,11 @@ class CrayfishPlugin:
         # First get the file name of the 'thing' the user wants to view
 
         # Get the file name
+
         inFileName = QFileDialog.getOpenFileName(self.iface.mainWindow(),
                                                  'Open Crayfish Dat File',
                                                  self.lastFolder(),
-                                                 "Results Files DAT, SOL, XMDF, XDMF, GRIB, HEC2D, netCDF, Serafin, HEC 2D, Flo-2D (*.dat *.sol *.xmdf *.xmf *.sww *.grb *.grb2 *.bin *.grib *.grib1 *.grib2 *.hdf *.nc *.hdf *.slf *BASE.OUT *SUMMARY.OUT *TIMDEP.HDF5);;2DM Mesh Files (*.2dm)")
+                                                 self._input_file_dialog_filters())
         inFileName = unicode(inFileName)
         if len(inFileName) == 0: # If the length is 0 the user pressed cancel
             return
@@ -264,6 +283,7 @@ class CrayfishPlugin:
             fileType == '.nc' or
             fileType == '.hdf' or
             fileType == '.slf' or
+            fileType == '.asc' or fileType == '.tif' or fileType == '.tiff' or
             'BASE.OUT' in inFileName or
             'SUMMARY.OUT' in inFileName or
             'TIMDEP.HDF5' in inFileName):

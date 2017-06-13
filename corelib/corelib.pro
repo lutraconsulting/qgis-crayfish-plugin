@@ -99,7 +99,8 @@ SOURCES += crayfish.cpp \
     frmts/crayfish_mesh_2dm.cpp \
     frmts/crayfish_flo2d.cpp \
     contrib/tinyxml2.cpp \
-    crayfish_trace.cpp
+    crayfish_trace.cpp \
+    frmts/crayfish_tifs.cpp
 
 HEADERS += crayfish.h \
     crayfish_colormap.h \
