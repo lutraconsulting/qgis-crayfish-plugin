@@ -359,8 +359,8 @@ class TestCrayfishLoad(unittest.TestCase):
     self.assertEqual(m.dataset_count(), 1)
     self.assertEqual(m.dataset(0).output_count(), 3)
     self.assertEqual(m.dataset(0).output(0).time(), 0.0)
-    self.assertEqual(m.dataset(0).output(0).time(), 1.0)
-    self.assertEqual(m.dataset(0).output(0).time(), 2.0)
+    self.assertEqual(m.dataset(0).output(1).time(), 1.0)
+    self.assertEqual(m.dataset(0).output(2).time(), 2.0)
 
 if __name__ == '__main__':
   unittest.main()
