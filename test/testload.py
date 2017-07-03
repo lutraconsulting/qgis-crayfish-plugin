@@ -348,8 +348,19 @@ class TestCrayfishLoad(unittest.TestCase):
         self.assertEqual(ds.type(), crayfish.DS_Scalar)
         self.assertEqual(ds.output_count(), 3)
         o = ds.output(0)
-        self.assertEqual(o.time(), 0.0)
         self.assertEqual(o.value(133), -9999.0)
+
+        self.assertEqual(ds.output(0).time(), 0.0)
+        self.assertTrue(abs(ds.output(1).time() - 40.0/60.0) < 0.00001)
+        self.assertTrue(abs(ds.output(2).time() - 2.0 - 55.0/60.0) < 0.00001)
+
+    # now test situation when you cannot parse times
+    m = crayfish.Mesh(TEST_DIR + "/MultiTifFilesNoTime/storm1.tiff")
+    self.assertEqual(m.dataset_count(), 1)
+    self.assertEqual(m.dataset(0).output_count(), 3)
+    self.assertEqual(m.dataset(0).output(0).time(), 0.0)
+    self.assertEqual(m.dataset(0).output(0).time(), 1.0)
+    self.assertEqual(m.dataset(0).output(0).time(), 2.0)
 
 if __name__ == '__main__':
   unittest.main()
