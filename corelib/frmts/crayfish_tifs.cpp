@@ -60,7 +60,6 @@ public:
         foreach (QString file, files) {
             ret.push_back(fd.filePath(file));
         }
-
         return ret;
     }
 
@@ -77,7 +76,7 @@ public:
        QRegExp rx("^(.*)(\\d{4})(\\d{2})(\\d{2})_(\\d{2})(\\d{2}).*$");
        rx.indexIn(fi.fileName());
        QStringList matches = rx.capturedTexts();
-       if (matches.length() !=  7) {
+       if (!rx.exactMatch(fi.fileName())) {
            *time = err_counter++;
            band_name = matches[0];
        } else {
@@ -85,7 +84,6 @@ public:
            // we need time in hours
            QDate band_date(matches[2].toFloat(), matches[3].toFloat(), matches[4].toFloat());
            QTime band_time(matches[5].toFloat(), matches[6].toFloat());
-
            if (!refTime.isValid()) {
                refTime.setDate(band_date);
                refTime.setTime(band_time);
