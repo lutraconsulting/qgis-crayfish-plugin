@@ -17,6 +17,7 @@ You can use Crayfish to load the following file formats in QGIS:
 - [Serafin files](http://www.gdal.org/drv_selafin.html): Outputs of the TELEMAC 2D hydrodynamic modelling package
 - [FLO-2D](http://www.flo-2d.com/): Outputs of the FLO-2D modelling package
 - XDMF: Generic format for scientific data.
+- [UGRID](https://github.com/ugrid-conventions/ugrid-conventions): [Delft3D Flexible Mesh Suite](https://www.deltares.nl/en/software/delft3d-flexible-mesh-suite)
 
 <img src="https://travis-ci.org/lutraconsulting/qgis-crayfish-plugin.svg?branch=master">
 
