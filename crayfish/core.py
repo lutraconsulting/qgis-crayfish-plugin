@@ -309,10 +309,11 @@ class Mesh:
   def set_destination_crs(self, dest_proj4):
     self.lib.CF_Mesh_setDestinationCrs(self.handle, ctypes.c_char_p(dest_proj4))
 
-  def parse_mesh_calc_string(self, expression):
-    error_string = None
-    return "TODO", error_string # return pointer to CrayfishMeshCalcNode
+  def calc_expression_is_valid(self, expression):
+    return True #TODO
 
+  def create_derived_dataset(self, expression, time_filter, spatial_filter, add_to_mesh, output_filename):
+    return True #TODO
 
 
 class DataSet(object):

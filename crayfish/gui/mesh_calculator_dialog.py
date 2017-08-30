@@ -48,13 +48,13 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
 
         self.insertAvailableDatasets()
 
-        self.mDatasetsListWidget.itemDoubleClicked.connect(self.on_mDatasetsListWidget_itemDoubleClicked)
-        self.mOutputDatasetLineEdit.textChanged.connect(self.on_mOutputDatasetLineEdit_textChanged)
-        self.mOutputDatasetPushButton.clicked.connect(self.on_mOutputDatasetPushButton_clicked)
+        self.mDatasetsListWidget.itemDoubleClicked.connect(self.on_datasets_item_double_clicked)
+        self.mOutputDatasetLineEdit.textChanged.connect(self.on_dataset_output_filename_changed)
+        self.mOutputDatasetPushButton.clicked.connect(self.on_select_output_filename_clicked)
 
-        self.mCurrentLayerExtentButton.clicked.connect(self.on_mCurrentLayerExtentButton_clicked)
-        self.mAllTimesButton.clicked.connect(self.on_mAllTimesButton_clicked)
-        self.mDatasetsListWidget.itemSelectionChanged.connect(self.on_mDatasetsListWidget_itemSelectionChanged)
+        self.mCurrentLayerExtentButton.clicked.connect(self.on_use_current_layer_extent_clicked)
+        self.mAllTimesButton.clicked.connect(self.on_use_current_dataset_times_clicked)
+        self.mDatasetsListWidget.itemSelectionChanged.connect(self.on_dataset_selected)
 
         for btn, text in [
             (self.mPlusPushButton, "+"),
@@ -95,11 +95,8 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
     def expressionValid(self):
         if not self.formula_string():
             return False
-
         # Returns true if mesh calculator expression has valid syntax
-        testNode, error_string = self.layer.mesh.parse_mesh_calc_string(self.formula_string())
-        # testNode deleted automatically
-        return testNode is not None
+        return self.layer.mesh.calc_expression_is_valid(self.formula_string())
 
     def time_filter(self):
         datasetName = self._dataset_name()
@@ -155,19 +152,19 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
     def add_dataset_to_layer(self):
         return self.mAddDatasetToLayerCheckBox.isChecked()
 
-    def on_mOutputDatasetLineEdit_textChanged(self, dummy):
+    def on_dataset_output_filename_changed(self, dummy):
         self.setAcceptButtonState()
 
     def on_mButtonBox_accepted(self):
-        print "times: ", self.time_filter()
-        print "spatial: ", self.spatial_filter()
-        print "expression: ", self.formula_string()
-        print "add to layer: ", self.add_dataset_to_layer()
-        print "filename: ", self.output_filename()
+        self.layer.mesh.create_derived_dataset(
+            expression=self.formula_string(),
+            time_filter=self.time_filter(),
+            spatial_filter=self.spatial_filter(),
+            add_to_mesh=self.add_dataset_to_layer(),
+            output_filename=self.output_filename()
+        )
 
-        # TODO do calculation
-
-    def on_mOutputDatasetPushButton_clicked(self):
+    def on_select_output_filename_clicked(self):
         s = QSettings()
         lastDir = s.value("crayfish/MeshCalculator/lastOutputDir", os.getcwd())
         saveFileName = QFileDialog.getSaveFileName(self, "Enter result file", lastDir)
@@ -178,10 +175,10 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
             s.setValue("crayfish/MeshCalculator/lastOutputDir", basedir)
             self.mOutputDatasetLineEdit.setText(saveFileName)
 
-    def on_mCurrentLayerExtentButton_clicked(self):
+    def on_use_current_layer_extent_clicked(self):
         self.set_full_extent()
 
-    def on_mAllTimesButton_clicked(self):
+    def on_use_current_dataset_times_clicked(self):
         self.set_all_times()
 
     def on_mExpressionTextEdit_textChanged(self):
@@ -245,10 +242,10 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
         datasetName = self._dataset_name()
         self._set_times_by_dataset_name(datasetName)
 
-    def on_mDatasetsListWidget_itemSelectionChanged(self):
+    def on_dataset_selected(self):
         self.repopulate_time_combos()
 
-    def on_mDatasetsListWidget_itemDoubleClicked(self, item): # QListWidgetItem
+    def on_datasets_item_double_clicked(self, item): # QListWidgetItem
         self.on_calc_button_clicked(self.quoteBandEntry(item.text() ))
 
     def on_calc_button_clicked(self, text):
