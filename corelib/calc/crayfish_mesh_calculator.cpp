@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 CrayfishMeshCalculator::CrayfishMeshCalculator( const QString &formulaString, const QString &outputFile,
     const BBox &outputExtent, float startTime, float endTime,
-    const Mesh &mesh, bool addToMesh )
+    Mesh &mesh, bool addToMesh )
   : mFormulaString( formulaString )
   , mOutputFile( outputFile )
   , mOutputExtent( outputExtent )
@@ -45,7 +45,7 @@ bool CrayfishMeshCalculator::expression_valid() {
     return true;
 }
 
-bool CrayfishMeshCalculator::processCalculation()
+int CrayfishMeshCalculator::processCalculation()
 {
 #if 0
   //prepare search string / tree
@@ -170,4 +170,4 @@ bool CrayfishMeshCalculator::processCalculation()
   return static_cast< int >( Success );
 }
 
-CrayfishMeshCalculator::CrayfishMeshCalculator(){} /* forbidden */
+// CrayfishMeshCalculator::CrayfishMeshCalculator():mMesh(){} /* forbidden */

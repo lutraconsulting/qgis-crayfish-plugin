@@ -53,9 +53,9 @@ class CrayfishMeshCalculator
       MemoryError = 5, //!< Error allocating memory for result
     };
 
-    CrayfishMeshCalculator( const QString &formulaString, const QString &outputFile,
+    CrayfishMeshCalculator(const QString &formulaString, const QString &outputFile,
                             const BBox &outputExtent, float startTime, float endTime,
-                            const Mesh &mesh, bool addToMesh);
+                            Mesh &mesh, bool addToMesh);
 
     /** Starts the calculation and writes new dataset to file, returns Result */
     int processCalculation();
@@ -69,7 +69,7 @@ class CrayfishMeshCalculator
     QString mOutputFile;
 
     //! Spatial filter
-    BBox mOutputRectangle;
+    BBox mOutputExtent;
 
     //! Time filter
     float mStartTime;
@@ -79,10 +79,10 @@ class CrayfishMeshCalculator
     bool mAddToMesh;
 
     //! Mesh
-    Mesh& mesh;
+    Mesh& mMesh;
 
     /***/
-    QVector<QgsRasterCalculatorEntry> mRasterEntries;
+    /* QVector<QgsRasterCalculatorEntry> mRasterEntries; */
 };
 
 #endif // CRAYFISH_MESH_CALCULATOR_H

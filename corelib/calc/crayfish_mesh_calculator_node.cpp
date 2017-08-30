@@ -32,7 +32,7 @@ CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode()
   , mLeft( nullptr )
   , mRight( nullptr )
   , mNumber( 0 )
-  , mMatrix( nullptr )
+  /* , mMatrix( nullptr ) */
   , mOperator( opNONE )
 {
 }
@@ -42,11 +42,12 @@ CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( double number )
   , mLeft( nullptr )
   , mRight( nullptr )
   , mNumber( number )
-  , mMatrix( nullptr )
+  /* , mMatrix( nullptr ) */
   , mOperator( opNONE )
 {
 }
 
+/*
 CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( QgsRasterMatrix *matrix )
   : mType( tMatrix )
   , mLeft( nullptr )
@@ -57,13 +58,14 @@ CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( QgsRasterMatrix *matrix 
 {
 
 }
+*/
 
 CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( Operator op, CrayfishMeshCalculatorNode *left, CrayfishMeshCalculatorNode *right )
   : mType( tOperator )
   , mLeft( left )
   , mRight( right )
   , mNumber( 0 )
-  , mMatrix( nullptr )
+  /* , mMatrix( nullptr ) */
   , mOperator( op )
 {
 }
@@ -74,7 +76,7 @@ CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( const QString &rasterNam
   , mRight( nullptr )
   , mNumber( 0 )
   , mRasterName( rasterName )
-  , mMatrix( nullptr )
+  /* , mMatrix( nullptr ) */
   , mOperator( opNONE )
 {
   if ( mRasterName.startsWith( '"' ) && mRasterName.endsWith( '"' ) )
@@ -93,8 +95,9 @@ CrayfishMeshCalculatorNode::~CrayfishMeshCalculatorNode()
   }
 }
 
-bool CrayfishMeshCalculatorNode::calculate( QMap<QString, QgsRasterBlock * > &rasterData, QgsRasterMatrix &result, int row ) const
+bool CrayfishMeshCalculatorNode::calculate( QMap<QString, DataSet * > &datasets, DataSet &result ) const
 {
+#if 0
   //if type is raster ref: return a copy of the corresponding matrix
 
   //if type is operator, call the proper matrix operations
@@ -239,6 +242,8 @@ bool CrayfishMeshCalculatorNode::calculate( QMap<QString, QgsRasterBlock * > &ra
     return true;
   }
   return false;
+#endif
+  return true;
 }
 
 CrayfishMeshCalculatorNode *CrayfishMeshCalculatorNode::parseMeshCalcString( const QString &str, QString &parserErrorMsg )

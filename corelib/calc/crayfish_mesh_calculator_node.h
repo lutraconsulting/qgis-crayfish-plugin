@@ -30,6 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QMap>
 #include <QString>
 
+#include "crayfish_dataset.h"
+
 class CrayfishMeshCalculatorNode {
   public:
     //! defines possible types of node
@@ -72,7 +74,7 @@ class CrayfishMeshCalculatorNode {
 
     CrayfishMeshCalculatorNode();
     CrayfishMeshCalculatorNode( double number );
-    CrayfishMeshCalculatorNode( QgsRasterMatrix *matrix );
+    /* CrayfishMeshCalculatorNode( QgsRasterMatrix *matrix ); */
     CrayfishMeshCalculatorNode( Operator op, CrayfishMeshCalculatorNode *left, CrayfishMeshCalculatorNode *right );
     CrayfishMeshCalculatorNode( const QString &rasterName );
     ~CrayfishMeshCalculatorNode();
@@ -88,15 +90,12 @@ class CrayfishMeshCalculatorNode {
     void setLeft( CrayfishMeshCalculatorNode *left ) { delete mLeft; mLeft = left; }
     void setRight( CrayfishMeshCalculatorNode *right ) { delete mRight; mRight = right; }
 
-    /** Calculates result of raster calculation (might be real matrix or single number).
-     * \param rasterData input raster data references, map of raster name to raster data block
-     * \param result destination raster matrix for calculation results
-     * \param row optional row number to calculate for calculating result by rows, or -1 to
-     * calculate entire result
-     * \since QGIS 2.10
-     * \note not available in Python bindings
+    /** Calculates result of mesh calculation
+     * \param datasetData input dataset references, map of raster name to raster data block
+     * \param result destination dataset for calculation results
      */
-    bool calculate( QMap<QString, QgsRasterBlock * > &rasterData, QgsRasterMatrix &result, int row = -1 ) const;
+    // TODO add spatial&time filters
+    bool calculate( QMap<QString, DataSet * > &datasets, DataSet &result ) const;
 
     static CrayfishMeshCalculatorNode *parseMeshCalcString( const QString &str, QString &parserErrorMsg );
 
@@ -106,7 +105,7 @@ class CrayfishMeshCalculatorNode {
     CrayfishMeshCalculatorNode *mRight = nullptr;
     double mNumber;
     QString mRasterName;
-    QgsRasterMatrix *mMatrix = nullptr;
+    /* QgsRasterMatrix *mMatrix = nullptr; */
     Operator mOperator;
 };
 
