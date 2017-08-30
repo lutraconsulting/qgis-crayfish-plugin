@@ -25,6 +25,19 @@
        </widget>
       </item>
       <item>
+       <widget class="QToolButton" name="btnMeshCalculator">
+        <property name="text">
+         <string>Calc</string>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonIconOnly</enum>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QToolButton" name="btnPlot">
         <property name="text">
          <string>Plot</string>

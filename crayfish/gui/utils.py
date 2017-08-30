@@ -87,6 +87,13 @@ if not hasattr(qgis.gui, "QgsColorRampComboBox"):
   qgis.gui.QgsColorRampComboBox.currentColorRamp = _currentColorRamp
 
 
+def repopulate_time_control_combo(cboTime, dataSet):
+    cboTime.blockSignals(True)  # make sure that currentIndexChanged(int) will not be emitted
+    cboTime.clear()
+    if dataSet.time_varying():
+        for output in dataSet.outputs():
+            cboTime.addItem(time_to_string(output.time(), dataSet), output.time())
+    cboTime.blockSignals(False)
 
 
 def defaultColorRamp():

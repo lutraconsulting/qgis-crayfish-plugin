@@ -309,6 +309,11 @@ class Mesh:
   def set_destination_crs(self, dest_proj4):
     self.lib.CF_Mesh_setDestinationCrs(self.handle, ctypes.c_char_p(dest_proj4))
 
+  def parse_mesh_calc_string(self, expression):
+    error_string = None
+    return "TODO", error_string # return pointer to CrayfishMeshCalcNode
+
+
 
 class DataSet(object):
   """ Datasets store data associated with mesh. One dataset represents
@@ -381,6 +386,12 @@ class DataSet(object):
     vmin,vmax = ctypes.c_float(), ctypes.c_float()
     self.lib.CF_DS_valueRange(self.handle, ctypes.byref(vmin), ctypes.byref(vmax))
     return (vmin.value, vmax.value)
+
+  def time_range(self):
+    # returns (float, float)
+    start = self.output(0)
+    end = self.output(self.output_count() - 1)
+    return start.time(), end.time()
 
   def time_varying(self):
     return self.output_count() > 1

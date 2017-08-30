@@ -37,6 +37,8 @@ from .datetime_settings import CrayfishDateTimeSettings
 from .utils import load_ui, initColorButton, initColorRampComboBox, name2ramp, time_to_string
 from .dataset_view import DataSetModel
 from .colormap_dialog import CrayfishColorMapDialog
+from .mesh_calculator_dialog import CrayfishMeshCalculatorDialog
+from .utils import repopulate_time_control_combo
 
 uiDialog, qtBaseClass = load_ui('crayfish_viewer_dock_widget')
 
@@ -65,6 +67,9 @@ class CrayfishDock(qtBaseClass, uiDialog):
         self.btnMeshOptions.setIcon(iconOptions)
         self.btnTimeOptions.setIcon(iconOptions)
 
+        iconCalc = QgsApplication.getThemeIcon( "/mActionCalculateField.svg" )
+        self.btnMeshCalculator.setIcon(iconCalc)
+
         self.btnPlot.setIcon(QgsApplication.getThemeIcon("/histogram.png"))
         self.btnLockCurrent.setIcon(QgsApplication.getThemeIcon("/locked.svg"))
 
@@ -73,6 +78,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
         self.advancedColorMapDialog = None
         self.meshPropsDialog = None
         self.timePropsDialog = None
+        self.meshCalculatorDialog = None
 
         self.timer = None
 
@@ -97,6 +103,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
         QObject.connect(self.btnMeshOptions, SIGNAL("clicked()"), self.displayMeshPropsDialog)
         QObject.connect(self.btnLockCurrent, SIGNAL("clicked()"), self.toggleLockCurrent)
         QObject.connect(self.btnPlot, SIGNAL("clicked()"), self.plot)
+        QObject.connect(self.btnMeshCalculator, SIGNAL("clicked()"), self.displayMeshCalculatorDialog)
         self.treeDataSets.contourClicked.connect(self.datasetContourClicked)
         self.treeDataSets.vectorClicked.connect(self.datasetVectorClicked)
 
@@ -155,6 +162,14 @@ class CrayfishDock(qtBaseClass, uiDialog):
             self.meshPropsDialog = CrayfishMeshOptionsDialog(self.currentCrayfishLayer(), self.redrawCurrentLayer, self)
             self.meshPropsDialog.show()
 
+    def displayMeshCalculatorDialog(self):
+        if self.meshCalculatorDialog is not None:
+            self.meshCalculatorDialog.close()
+
+        if self.currentCrayfishLayer():
+            self.meshCalculatorDialog = CrayfishMeshCalculatorDialog(self.currentCrayfishLayer(), self)
+            self.meshCalculatorDialog.show()
+
     def contourCustomRangeToggled(self, on):
         """ set provider's custom range """
 
@@ -208,12 +223,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
 
 
     def repopulate_time_control_combo(self, dataSet):
-        self.cboTime.blockSignals(True) # make sure that currentIndexChanged(int) will not be emitted
-        self.cboTime.clear()
-        if dataSet.time_varying():
-            for output in dataSet.outputs():
-                self.cboTime.addItem(time_to_string(output.time(), dataSet))
-        self.cboTime.blockSignals(False)
+        repopulate_time_control_combo(self.cboTime, dataSet)
 
     def dataSetChanged(self, index):
 
