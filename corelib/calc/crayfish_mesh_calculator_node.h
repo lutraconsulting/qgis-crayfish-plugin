@@ -79,9 +79,9 @@ class CrayfishMeshCalculatorNode {
     CrayfishMeshCalculatorNode( const QString &rasterName );
     ~CrayfishMeshCalculatorNode();
 
-    //! QgsRasterCalcNode cannot be copied
+    //! CrayfishMeshCalculatorNode cannot be copied
     CrayfishMeshCalculatorNode( const CrayfishMeshCalculatorNode &rh ) = delete;
-    //! QgsRasterCalcNode cannot be copied
+    //! CrayfishMeshCalculatorNode cannot be copied
     CrayfishMeshCalculatorNode &operator=( const CrayfishMeshCalculatorNode &rh ) = delete;
 
     Type type() const { return mType; }

@@ -91,6 +91,8 @@ def load_library():
     lib.CF_Mesh_dataSetAt.restype = ctypes.c_void_p
     lib.CF_Mesh_sourceCrs.restype = ctypes.c_char_p
     lib.CF_Mesh_destinationCrs.restype = ctypes.c_char_p
+    lib.CF_Mesh_calc_expression_is_valid.restype = ctypes.c_bool
+    lib.CF_Mesh_calc_expression_is_valid.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
     lib.CF_DS_name.restype = ctypes.c_char_p
     lib.CF_DS_fileName.restype = ctypes.c_char_p
     lib.CF_DS_refTime.restype = ctypes.c_char_p
@@ -310,7 +312,7 @@ class Mesh:
     self.lib.CF_Mesh_setDestinationCrs(self.handle, ctypes.c_char_p(dest_proj4))
 
   def calc_expression_is_valid(self, expression):
-    return True #TODO
+    return self.lib.CF_Mesh_calc_expression_is_valid(self.handle, ctypes.c_char_p(expression))
 
   def create_derived_dataset(self, expression, time_filter, spatial_filter, add_to_mesh, output_filename):
     return True #TODO

@@ -59,7 +59,8 @@ class CrayfishMeshCalculator
 
     /** Starts the calculation and writes new dataset to file, returns Result */
     int processCalculation();
-    bool expression_valid();
+
+    static Result expression_valid(const QString &formulaString, const Mesh &mesh);
 
   private:
     //default constructor forbidden. We need formula, output file, output format and output raster resolution obligatory
@@ -75,11 +76,11 @@ class CrayfishMeshCalculator
     float mStartTime;
     float mEndTime;
 
-    //! Whether to add to the mesh
-    bool mAddToMesh;
-
     //! Mesh
     Mesh& mMesh;
+
+    //! Whether to add to the mesh
+    bool mAddToMesh;
 
     /***/
     /* QVector<QgsRasterCalculatorEntry> mRasterEntries; */

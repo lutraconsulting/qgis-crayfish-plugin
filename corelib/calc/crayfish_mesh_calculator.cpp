@@ -41,8 +41,16 @@ CrayfishMeshCalculator::CrayfishMeshCalculator( const QString &formulaString, co
 {
 }
 
-bool CrayfishMeshCalculator::expression_valid() {
-    return true;
+CrayfishMeshCalculator::Result CrayfishMeshCalculator::expression_valid(const QString &formulaString, const Mesh &mesh) {
+    QString errorString;
+    CrayfishMeshCalculatorNode *calcNode = CrayfishMeshCalculatorNode::parseMeshCalcString( formulaString, errorString );
+    if ( !calcNode )
+    {
+      //error
+      return ParserError;
+    }
+
+    return Success;
 }
 
 int CrayfishMeshCalculator::processCalculation()
