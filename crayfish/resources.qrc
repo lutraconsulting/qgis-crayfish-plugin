@@ -8,5 +8,6 @@
         <file>images/icon_vectors.png</file>
         <file>images/icon_vectors_disabled.png</file>
         <file>images/icon_video.png</file>
+        <file>images/icon_plot.svg</file>
     </qresource>
 </RCC>

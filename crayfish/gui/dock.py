@@ -70,7 +70,7 @@ class CrayfishDock(qtBaseClass, uiDialog):
         iconCalc = QgsApplication.getThemeIcon( "/mActionCalculateField.svg" )
         self.btnMeshCalculator.setIcon(iconCalc)
 
-        self.btnPlot.setIcon(QgsApplication.getThemeIcon("/histogram.png"))
+        self.btnPlot.setIcon(QIcon(":/plugins/crayfish/images/icon_plot.svg"))
         self.btnLockCurrent.setIcon(QgsApplication.getThemeIcon("/locked.svg"))
 
         self.setEnabled(False)
