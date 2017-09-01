@@ -70,7 +70,7 @@
 #define yychar          meshchar
 
 /* Copy the first part of user declarations.  */
-#line 27 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:339  */
+#line 27 "crayfish_mesh_calculator_parser.yy" /* yacc.c:339  */
 
   #include "calc/crayfish_mesh_calculator_node.h"
 
@@ -97,13 +97,13 @@
 
   //! temporary list for nodes without parent (if parsing fails these nodes are removed)
   QList<CrayfishMeshCalculatorNode*> gTmpNodes;
-  void joinTmpNodes(CrayfishMeshCalculatorNode* parent, CrayfishMeshCalculatorNode* left, CrayfishMeshCalculatorNode* right);
+  void joinTmpNodes(CrayfishMeshCalculatorNode* parent, CrayfishMeshCalculatorNode* left, CrayfishMeshCalculatorNode* right, CrayfishMeshCalculatorNode* condition);
   void addToTmpNodes(CrayfishMeshCalculatorNode* node);
 
   // we want verbose error messages
   #define YYERROR_VERBOSE 1
 
-#line 107 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:339  */
+#line 107 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -123,8 +123,8 @@
 
 /* In a future release of Bison, this section will be replaced
    by #include "bison_crayfish_mesh_calculator_parser.hpp".  */
-#ifndef YY_MESH_HOME_PETER_REPO_L_QGIS_CRAYFISH_PLUGIN_SCRIPTS_CORELIB_CALC_BISON_CRAYFISH_MESH_CALCULATOR_PARSER_HPP_INCLUDED
-# define YY_MESH_HOME_PETER_REPO_L_QGIS_CRAYFISH_PLUGIN_SCRIPTS_CORELIB_CALC_BISON_CRAYFISH_MESH_CALCULATOR_PARSER_HPP_INCLUDED
+#ifndef YY_MESH_BISON_CRAYFISH_MESH_CALCULATOR_PARSER_HPP_INCLUDED
+# define YY_MESH_BISON_CRAYFISH_MESH_CALCULATOR_PARSER_HPP_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 1
@@ -138,15 +138,19 @@ extern int meshdebug;
 # define YYTOKENTYPE
   enum yytokentype
   {
-    DATASET_REF = 258,
-    NUMBER = 259,
-    FUNCTION = 260,
-    AND = 261,
-    OR = 262,
-    NE = 263,
-    GE = 264,
-    LE = 265,
-    UMINUS = 266
+    NODATA = 258,
+    DATASET_REF = 259,
+    NUMBER = 260,
+    FUNCTION = 261,
+    FUNCTION2 = 262,
+    AND = 263,
+    OR = 264,
+    NOT = 265,
+    NE = 266,
+    GE = 267,
+    LE = 268,
+    IF = 269,
+    UMINUS = 270
   };
 #endif
 
@@ -155,10 +159,10 @@ extern int meshdebug;
 
 union YYSTYPE
 {
-#line 60 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:355  */
+#line 60 "crayfish_mesh_calculator_parser.yy" /* yacc.c:355  */
  CrayfishMeshCalculatorNode* node; double number; CrayfishMeshCalculatorNode::Operator op;
 
-#line 162 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:355  */
+#line 166 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -171,11 +175,11 @@ extern YYSTYPE meshlval;
 
 int meshparse (void);
 
-#endif /* !YY_MESH_HOME_PETER_REPO_L_QGIS_CRAYFISH_PLUGIN_SCRIPTS_CORELIB_CALC_BISON_CRAYFISH_MESH_CALCULATOR_PARSER_HPP_INCLUDED  */
+#endif /* !YY_MESH_BISON_CRAYFISH_MESH_CALCULATOR_PARSER_HPP_INCLUDED  */
 
 /* Copy the second part of user declarations.  */
 
-#line 179 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:358  */
+#line 183 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -415,23 +419,23 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  13
+#define YYFINAL  20
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   132
+#define YYLAST   246
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  22
+#define YYNTOKENS  27
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  3
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  21
+#define YYNRULES  25
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  43
+#define YYNSTATES  62
 
 /* YYTRANSLATE[YYX] -- Symbol number corresponding to YYX as returned
    by yylex, with out-of-bounds checking.  */
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   266
+#define YYMAXUTOK   270
 
 #define YYTRANSLATE(YYX)                                                \
   ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
@@ -444,12 +448,12 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-      20,    21,    16,    14,     2,    15,     2,    17,     2,     2,
+      24,    25,    20,    18,    26,    19,     2,    21,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-      12,    11,    13,     2,     2,     2,     2,     2,     2,     2,
+      16,    15,    17,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,    18,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,    22,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -466,16 +470,17 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
-       5,     6,     7,     8,     9,    10,    19
+       5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
+      23
 };
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    85,    85,    89,    90,    91,    92,    93,    94,    95,
-      96,    97,    98,    99,   100,   101,   102,   103,   104,   105,
-     106,   107
+       0,    89,    89,    93,    94,    95,    96,    97,    98,    99,
+     100,   101,   102,   103,   104,   105,   106,   107,   108,   109,
+     110,   111,   112,   113,   114,   115
 };
 #endif
 
@@ -484,9 +489,10 @@ static const yytype_uint8 yyrline[] =
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
 {
-  "$end", "error", "$undefined", "DATASET_REF", "NUMBER", "FUNCTION",
-  "AND", "OR", "NE", "GE", "LE", "'='", "'<'", "'>'", "'+'", "'-'", "'*'",
-  "'/'", "'^'", "UMINUS", "'('", "')'", "$accept", "root", "mesh_exp", YY_NULLPTR
+  "$end", "error", "$undefined", "NODATA", "DATASET_REF", "NUMBER",
+  "FUNCTION", "FUNCTION2", "AND", "OR", "NOT", "NE", "GE", "LE", "IF",
+  "'='", "'<'", "'>'", "'+'", "'-'", "'*'", "'/'", "'^'", "UMINUS", "'('",
+  "')'", "','", "$accept", "root", "mesh_exp", YY_NULLPTR
 };
 #endif
 
@@ -496,15 +502,15 @@ static const char *const yytname[] =
 static const yytype_uint16 yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
-     265,    61,    60,    62,    43,    45,    42,    47,    94,   266,
-      40,    41
+     265,   266,   267,   268,   269,    61,    60,    62,    43,    45,
+      42,    47,    94,   270,    40,    41,    44
 };
 # endif
 
-#define YYPACT_NINF -18
+#define YYPACT_NINF -22
 
 #define yypact_value_is_default(Yystate) \
-  (!!((Yystate) == (-18)))
+  (!!((Yystate) == (-22)))
 
 #define YYTABLE_NINF -1
 
@@ -513,13 +519,15 @@ static const yytype_uint16 yytoknum[] =
 
   /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
      STATE-NUM.  */
-static const yytype_int8 yypact[] =
+static const yytype_int16 yypact[] =
 {
-      20,   -18,   -18,   -17,    20,    20,    20,     4,    67,    20,
-     -18,   -18,    35,   -18,    20,    20,    20,    20,    20,    20,
-      20,    20,    20,    20,    20,    20,    20,    51,   -18,    79,
-      90,   100,   109,    15,   114,   114,   114,   -10,   -10,    -9,
-      -9,   -18,   -18
+      24,   -22,   -22,   -22,   -21,   -20,   -12,     2,    24,    24,
+      24,    32,   164,    24,    24,    24,    24,   -22,   -22,    89,
+     -22,    24,    24,    24,    24,    24,    24,    24,    24,    24,
+      24,    24,    24,    24,   104,    41,   119,    57,   -22,   178,
+     190,   201,   211,   219,   224,   224,   224,   -11,   -11,    11,
+      11,   -22,   -22,    24,   -22,    24,   134,    73,   -22,    24,
+     149,   -22
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -527,23 +535,25 @@ static const yytype_int8 yypact[] =
      means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       0,    21,    20,     0,     0,     0,     0,     0,     2,     0,
-      18,    19,     0,     1,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,    17,     4,
-       5,     7,    10,    11,     6,     9,     8,    15,    16,    13,
-      14,    12,     3
+       0,    25,    24,    23,     0,     0,     0,     0,     0,     0,
+       0,     0,     2,     0,     0,     0,     0,    21,    22,     0,
+       1,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,    20,     7,
+       8,    10,    13,    14,     9,    12,    11,    18,    19,    16,
+      17,    15,     3,     0,     6,     0,     0,     0,     4,     0,
+       0,     5
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -18,   -18,    -4
+     -22,   -22,    -8
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,     7,     8
+      -1,    11,    12
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -551,65 +561,89 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_uint8 yytable[] =
 {
-      10,    11,    12,     9,    13,    27,    24,    25,    26,    26,
-      29,    30,    31,    32,    33,    34,    35,    36,    37,    38,
-      39,    40,    41,     1,     2,     3,    19,    20,    21,    22,
-      23,    24,    25,    26,     4,     5,     0,     0,     0,     0,
-       6,    14,    15,    16,    17,    18,    19,    20,    21,    22,
-      23,    24,    25,    26,     0,     0,    28,    14,    15,    16,
-      17,    18,    19,    20,    21,    22,    23,    24,    25,    26,
-       0,     0,    42,    14,    15,    16,    17,    18,    19,    20,
-      21,    22,    23,    24,    25,    26,    15,    16,    17,    18,
-      19,    20,    21,    22,    23,    24,    25,    26,    16,    17,
-      18,    19,    20,    21,    22,    23,    24,    25,    26,    17,
-      18,    19,    20,    21,    22,    23,    24,    25,    26,    18,
-      19,    20,    21,    22,    23,    24,    25,    26,    22,    23,
-      24,    25,    26
+      17,    18,    19,    13,    14,    34,    35,    36,    37,    31,
+      32,    33,    15,    39,    40,    41,    42,    43,    44,    45,
+      46,    47,    48,    49,    50,    51,    16,     1,     2,     3,
+       4,     5,    20,    33,     6,     0,     0,     0,     7,     0,
+       0,     0,     8,     9,     0,    56,     0,    57,    10,    21,
+      22,    60,    23,    24,    25,     0,    26,    27,    28,    29,
+      30,    31,    32,    33,     0,    21,    22,    53,    23,    24,
+      25,     0,    26,    27,    28,    29,    30,    31,    32,    33,
+       0,    21,    22,    55,    23,    24,    25,     0,    26,    27,
+      28,    29,    30,    31,    32,    33,     0,    21,    22,    59,
+      23,    24,    25,     0,    26,    27,    28,    29,    30,    31,
+      32,    33,    21,    22,    38,    23,    24,    25,     0,    26,
+      27,    28,    29,    30,    31,    32,    33,    21,    22,    52,
+      23,    24,    25,     0,    26,    27,    28,    29,    30,    31,
+      32,    33,    21,    22,    54,    23,    24,    25,     0,    26,
+      27,    28,    29,    30,    31,    32,    33,    21,    22,    58,
+      23,    24,    25,     0,    26,    27,    28,    29,    30,    31,
+      32,    33,    21,    22,    61,    23,    24,    25,     0,    26,
+      27,    28,    29,    30,    31,    32,    33,    22,     0,    23,
+      24,    25,     0,    26,    27,    28,    29,    30,    31,    32,
+      33,    23,    24,    25,     0,    26,    27,    28,    29,    30,
+      31,    32,    33,    24,    25,     0,    26,    27,    28,    29,
+      30,    31,    32,    33,    25,     0,    26,    27,    28,    29,
+      30,    31,    32,    33,    26,    27,    28,    29,    30,    31,
+      32,    33,    29,    30,    31,    32,    33
 };
 
 static const yytype_int8 yycheck[] =
 {
-       4,     5,     6,    20,     0,     9,    16,    17,    18,    18,
-      14,    15,    16,    17,    18,    19,    20,    21,    22,    23,
-      24,    25,    26,     3,     4,     5,    11,    12,    13,    14,
-      15,    16,    17,    18,    14,    15,    -1,    -1,    -1,    -1,
-      20,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    16,    17,    18,    -1,    -1,    21,     6,     7,     8,
-       9,    10,    11,    12,    13,    14,    15,    16,    17,    18,
-      -1,    -1,    21,     6,     7,     8,     9,    10,    11,    12,
-      13,    14,    15,    16,    17,    18,     7,     8,     9,    10,
-      11,    12,    13,    14,    15,    16,    17,    18,     8,     9,
-      10,    11,    12,    13,    14,    15,    16,    17,    18,     9,
-      10,    11,    12,    13,    14,    15,    16,    17,    18,    10,
-      11,    12,    13,    14,    15,    16,    17,    18,    14,    15,
-      16,    17,    18
+       8,     9,    10,    24,    24,    13,    14,    15,    16,    20,
+      21,    22,    24,    21,    22,    23,    24,    25,    26,    27,
+      28,    29,    30,    31,    32,    33,    24,     3,     4,     5,
+       6,     7,     0,    22,    10,    -1,    -1,    -1,    14,    -1,
+      -1,    -1,    18,    19,    -1,    53,    -1,    55,    24,     8,
+       9,    59,    11,    12,    13,    -1,    15,    16,    17,    18,
+      19,    20,    21,    22,    -1,     8,     9,    26,    11,    12,
+      13,    -1,    15,    16,    17,    18,    19,    20,    21,    22,
+      -1,     8,     9,    26,    11,    12,    13,    -1,    15,    16,
+      17,    18,    19,    20,    21,    22,    -1,     8,     9,    26,
+      11,    12,    13,    -1,    15,    16,    17,    18,    19,    20,
+      21,    22,     8,     9,    25,    11,    12,    13,    -1,    15,
+      16,    17,    18,    19,    20,    21,    22,     8,     9,    25,
+      11,    12,    13,    -1,    15,    16,    17,    18,    19,    20,
+      21,    22,     8,     9,    25,    11,    12,    13,    -1,    15,
+      16,    17,    18,    19,    20,    21,    22,     8,     9,    25,
+      11,    12,    13,    -1,    15,    16,    17,    18,    19,    20,
+      21,    22,     8,     9,    25,    11,    12,    13,    -1,    15,
+      16,    17,    18,    19,    20,    21,    22,     9,    -1,    11,
+      12,    13,    -1,    15,    16,    17,    18,    19,    20,    21,
+      22,    11,    12,    13,    -1,    15,    16,    17,    18,    19,
+      20,    21,    22,    12,    13,    -1,    15,    16,    17,    18,
+      19,    20,    21,    22,    13,    -1,    15,    16,    17,    18,
+      19,    20,    21,    22,    15,    16,    17,    18,    19,    20,
+      21,    22,    18,    19,    20,    21,    22
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
-       0,     3,     4,     5,    14,    15,    20,    23,    24,    20,
-      24,    24,    24,     0,     6,     7,     8,     9,    10,    11,
-      12,    13,    14,    15,    16,    17,    18,    24,    21,    24,
-      24,    24,    24,    24,    24,    24,    24,    24,    24,    24,
-      24,    24,    21
+       0,     3,     4,     5,     6,     7,    10,    14,    18,    19,
+      24,    28,    29,    24,    24,    24,    24,    29,    29,    29,
+       0,     8,     9,    11,    12,    13,    15,    16,    17,    18,
+      19,    20,    21,    22,    29,    29,    29,    29,    25,    29,
+      29,    29,    29,    29,    29,    29,    29,    29,    29,    29,
+      29,    29,    25,    26,    25,    26,    29,    29,    25,    26,
+      29,    25
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
-       0,    22,    23,    24,    24,    24,    24,    24,    24,    24,
-      24,    24,    24,    24,    24,    24,    24,    24,    24,    24,
-      24,    24
+       0,    27,    28,    29,    29,    29,    29,    29,    29,    29,
+      29,    29,    29,    29,    29,    29,    29,    29,    29,    29,
+      29,    29,    29,    29,    29,    29
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
-       0,     2,     1,     4,     3,     3,     3,     3,     3,     3,
-       3,     3,     3,     3,     3,     3,     3,     3,     2,     2,
-       1,     1
+       0,     2,     1,     4,     6,     8,     4,     3,     3,     3,
+       3,     3,     3,     3,     3,     3,     3,     3,     3,     3,
+       3,     2,     2,     1,     1,     1
 };
 
 
@@ -1286,127 +1320,151 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 85 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+#line 89 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
     {}
-#line 1292 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 1326 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 89 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode((yyvsp[-3].op), (yyvsp[-1].node), 0); joinTmpNodes((yyval.node), (yyvsp[-1].node), 0);}
-#line 1298 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 93 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode((yyvsp[-3].op), (yyvsp[-1].node), 0); joinTmpNodes((yyval.node), (yyvsp[-1].node), 0, 0);}
+#line 1332 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 90 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opAND, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1304 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 94 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode((yyvsp[-5].op), (yyvsp[-3].node), (yyvsp[-1].node)); joinTmpNodes((yyval.node), (yyvsp[-3].node), (yyvsp[-1].node), 0);}
+#line 1338 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 91 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opOR, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1310 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 95 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode((yyvsp[-5].node), (yyvsp[-3].node), (yyvsp[-1].node)); joinTmpNodes((yyval.node), (yyvsp[-5].node), (yyvsp[-3].node), (yyvsp[-1].node));}
+#line 1344 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 92 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opEQ, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1316 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 96 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opNOT, (yyvsp[-1].node), 0 ); joinTmpNodes((yyval.node),(yyvsp[-1].node), 0, 0); }
+#line 1350 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 93 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opNE, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1322 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 97 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opAND, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node), 0); }
+#line 1356 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 94 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opGT, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node), (yyvsp[-2].node), (yyvsp[0].node)); }
-#line 1328 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 98 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opOR, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node), 0); }
+#line 1362 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 95 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opLT, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node), (yyvsp[-2].node), (yyvsp[0].node)); }
-#line 1334 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 99 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opEQ, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node), 0); }
+#line 1368 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 96 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opGE, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node), (yyvsp[-2].node), (yyvsp[0].node)); }
-#line 1340 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 100 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opNE, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node), 0); }
+#line 1374 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 11:
-#line 97 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opLE, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node), (yyvsp[-2].node), (yyvsp[0].node)); }
-#line 1346 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 101 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opGT, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node), (yyvsp[-2].node), (yyvsp[0].node), 0); }
+#line 1380 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 98 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode(CrayfishMeshCalculatorNode::opPOW, (yyvsp[-2].node), (yyvsp[0].node)); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1352 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 102 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opLT, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node), (yyvsp[-2].node), (yyvsp[0].node), 0); }
+#line 1386 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 13:
-#line 99 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode(CrayfishMeshCalculatorNode::opMUL, (yyvsp[-2].node), (yyvsp[0].node)); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1358 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 103 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opGE, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node), (yyvsp[-2].node), (yyvsp[0].node), 0); }
+#line 1392 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 100 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode(CrayfishMeshCalculatorNode::opDIV, (yyvsp[-2].node), (yyvsp[0].node)); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1364 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 104 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opLE, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node), (yyvsp[-2].node), (yyvsp[0].node), 0); }
+#line 1398 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 101 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode(CrayfishMeshCalculatorNode::opPLUS, (yyvsp[-2].node), (yyvsp[0].node)); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1370 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 105 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opPOW, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node), 0); }
+#line 1404 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 102 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode(CrayfishMeshCalculatorNode::opMINUS, (yyvsp[-2].node), (yyvsp[0].node)); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1376 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 106 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opMUL, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node), 0); }
+#line 1410 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 103 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = (yyvsp[-1].node); }
-#line 1382 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 107 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opDIV, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node), 0); }
+#line 1416 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 104 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = (yyvsp[0].node); }
-#line 1388 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 108 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opPLUS, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node), 0); }
+#line 1422 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 105 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opSIGN, (yyvsp[0].node), 0 ); joinTmpNodes((yyval.node), (yyvsp[0].node), 0); }
-#line 1394 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 109 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opMINUS, (yyvsp[-2].node), (yyvsp[0].node) ); joinTmpNodes((yyval.node),(yyvsp[-2].node),(yyvsp[0].node), 0); }
+#line 1428 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 106 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
-    { (yyval.node) = new CrayfishMeshCalculatorNode((yyvsp[0].number)); addToTmpNodes((yyval.node)); }
-#line 1400 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 110 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = (yyvsp[-1].node); }
+#line 1434 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 107 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+#line 111 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = (yyvsp[0].node); }
+#line 1440 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 22:
+#line 112 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opSIGN, (yyvsp[0].node), 0 ); joinTmpNodes((yyval.node), (yyvsp[0].node), 0, 0); }
+#line 1446 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 23:
+#line 113 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode((yyvsp[0].number)); addToTmpNodes((yyval.node)); }
+#line 1452 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 24:
+#line 114 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
     { (yyval.node) = new CrayfishMeshCalculatorNode(QString::fromUtf8(meshtext)); addToTmpNodes((yyval.node)); }
-#line 1406 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 1458 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+    break;
+
+  case 25:
+#line 115 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1646  */
+    { (yyval.node) = new CrayfishMeshCalculatorNode(); addToTmpNodes((yyval.node)); }
+#line 1464 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
     break;
 
 
-#line 1410 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
+#line 1468 "bison_crayfish_mesh_calculator_parser.cpp" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1634,7 +1692,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 110 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1906  */
+#line 118 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1906  */
 
 
 void addToTmpNodes(CrayfishMeshCalculatorNode* node)
@@ -1643,23 +1701,23 @@ void addToTmpNodes(CrayfishMeshCalculatorNode* node)
 }
 
 
-void joinTmpNodes(CrayfishMeshCalculatorNode* parent, CrayfishMeshCalculatorNode* left, CrayfishMeshCalculatorNode* right)
+void removeTmpNode(CrayfishMeshCalculatorNode* node)
 {
   bool res;
   Q_UNUSED(res);
 
-  if (left)
+  if (node)
   {
-    res = gTmpNodes.removeAll(left) != 0;
+    res = gTmpNodes.removeAll(node) != 0;
     Q_ASSERT(res);
   }
+}
 
-  if (right)
-  {
-    res = gTmpNodes.removeAll(right) != 0;
-    Q_ASSERT(res);
-  }
-
+void joinTmpNodes(CrayfishMeshCalculatorNode* parent, CrayfishMeshCalculatorNode* left, CrayfishMeshCalculatorNode* right, CrayfishMeshCalculatorNode* condition)
+{
+  removeTmpNode(right);
+  removeTmpNode(left);
+  removeTmpNode(condition);
   gTmpNodes.append(parent);
 }
 

@@ -104,7 +104,8 @@ SOURCES += crayfish.cpp \
     calc/bison_crayfish_mesh_calculator_parser.cpp \
     calc/crayfish_mesh_calculator.cpp \
     calc/crayfish_mesh_calculator_node.cpp \
-    calc/flex_crayfish_mesh_calculator_lexer.cpp
+    calc/flex_crayfish_mesh_calculator_lexer.cpp \
+    calc/crayfish_dataset_utils.cpp
 
 HEADERS += crayfish.h \
     crayfish_colormap.h \
@@ -127,7 +128,8 @@ HEADERS += crayfish.h \
     crayfish_utils.h \
     calc/bison_crayfish_mesh_calculator_parser.hpp \
     calc/crayfish_mesh_calculator.h \
-    calc/crayfish_mesh_calculator_node.h
+    calc/crayfish_mesh_calculator_node.h \
+    calc/crayfish_dataset_utils.h
 
 INCLUDEPATH += $$PWD
 
@@ -136,4 +138,5 @@ DESTDIR = $$PWD/../crayfish
 unix {
   QMAKE_CXXFLAGS += -Wall -Wextra # -Wconversion
   QMAKE_CXXFLAGS += -fvisibility=hidden
+  QMAKE_CXXFLAGS += -std=c++0x
 }

@@ -55,29 +55,30 @@ number  {num1}|{num2}
 
 non_ascii    [\x80-\xFF]
 dataset_ref_char  [A-Za-z0-9_./:]|{non_ascii}|[-]
-dataset_ref ({dataset_ref_char}+)@{dig}+
+dataset_ref ({dataset_ref_char}+)
 dataset_ref_quoted  \"(\\.|[^"])*\"
 
 %%
 
-"sqrt" { meshlval.op = CrayfishMeshCalculatorNode::opSQRT; return FUNCTION;}
-"sin"  { meshlval.op = CrayfishMeshCalculatorNode::opSIN; return FUNCTION;}
-"cos"  { meshlval.op = CrayfishMeshCalculatorNode::opCOS; return FUNCTION;}
-"tan"  { meshlval.op = CrayfishMeshCalculatorNode::opTAN; return FUNCTION;}
-"asin" { meshlval.op = CrayfishMeshCalculatorNode::opASIN; return FUNCTION;}
-"acos" { meshlval.op = CrayfishMeshCalculatorNode::opACOS; return FUNCTION;}
-"atan" { meshlval.op = CrayfishMeshCalculatorNode::opATAN; return FUNCTION;}
-"ln" { meshlval.op = CrayfishMeshCalculatorNode::opLOG; return FUNCTION;}
-"log10" { meshlval.op = CrayfishMeshCalculatorNode::opLOG10; return FUNCTION;}
+"sum_aggr"      { meshlval.op = CrayfishMeshCalculatorNode::opSUM_AGGR; return FUNCTION; }
+"max_aggr"      { meshlval.op = CrayfishMeshCalculatorNode::opMAX_AGGR; return FUNCTION; }
+"min_aggr"      { meshlval.op = CrayfishMeshCalculatorNode::opMIN_AGGR; return FUNCTION; }
+"average_aggr"  { meshlval.op = CrayfishMeshCalculatorNode::opAVG_AGGR; return FUNCTION; }
+"abs"           { meshlval.op = CrayfishMeshCalculatorNode::opABS; return FUNCTION; }
 
-"AND" { return AND; }
-"OR" { return OR; }
-"!=" { return NE; }
-"<=" { return LE; }
-">=" { return GE; }
+"max"           { meshlval.op = CrayfishMeshCalculatorNode::opMAX; return FUNCTION2; }
+"min"           { meshlval.op = CrayfishMeshCalculatorNode::opMIN; return FUNCTION2; }
+
+"IF"     { return IF; }
+"AND"    { return AND; }
+"OR"     { return OR; }
+"NOT"    { return NOT; }
+"!="     { return NE; }
+"<="     { return LE; }
+">="     { return GE; }
+"NODATA" {return NODATA;}
 
 [=><+-/*^] { return yytext[0]; }
-
 
 [()] { return yytext[0]; }
 

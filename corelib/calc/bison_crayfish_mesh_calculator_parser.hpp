@@ -30,8 +30,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_MESH_HOME_PETER_REPO_L_QGIS_CRAYFISH_PLUGIN_SCRIPTS_CORELIB_CALC_BISON_CRAYFISH_MESH_CALCULATOR_PARSER_HPP_INCLUDED
-# define YY_MESH_HOME_PETER_REPO_L_QGIS_CRAYFISH_PLUGIN_SCRIPTS_CORELIB_CALC_BISON_CRAYFISH_MESH_CALCULATOR_PARSER_HPP_INCLUDED
+#ifndef YY_MESH_BISON_CRAYFISH_MESH_CALCULATOR_PARSER_HPP_INCLUDED
+# define YY_MESH_BISON_CRAYFISH_MESH_CALCULATOR_PARSER_HPP_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 1
@@ -45,15 +45,19 @@ extern int meshdebug;
 # define YYTOKENTYPE
   enum yytokentype
   {
-    DATASET_REF = 258,
-    NUMBER = 259,
-    FUNCTION = 260,
-    AND = 261,
-    OR = 262,
-    NE = 263,
-    GE = 264,
-    LE = 265,
-    UMINUS = 266
+    NODATA = 258,
+    DATASET_REF = 259,
+    NUMBER = 260,
+    FUNCTION = 261,
+    FUNCTION2 = 262,
+    AND = 263,
+    OR = 264,
+    NOT = 265,
+    NE = 266,
+    GE = 267,
+    LE = 268,
+    IF = 269,
+    UMINUS = 270
   };
 #endif
 
@@ -62,10 +66,10 @@ extern int meshdebug;
 
 union YYSTYPE
 {
-#line 60 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_parser.yy" /* yacc.c:1909  */
+#line 60 "crayfish_mesh_calculator_parser.yy" /* yacc.c:1909  */
  CrayfishMeshCalculatorNode* node; double number; CrayfishMeshCalculatorNode::Operator op;
 
-#line 69 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/bison_crayfish_mesh_calculator_parser.hpp" /* yacc.c:1909  */
+#line 73 "bison_crayfish_mesh_calculator_parser.hpp" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -78,4 +82,4 @@ extern YYSTYPE meshlval;
 
 int meshparse (void);
 
-#endif /* !YY_MESH_HOME_PETER_REPO_L_QGIS_CRAYFISH_PLUGIN_SCRIPTS_CORELIB_CALC_BISON_CRAYFISH_MESH_CALCULATOR_PARSER_HPP_INCLUDED  */
+#endif /* !YY_MESH_BISON_CRAYFISH_MESH_CALCULATOR_PARSER_HPP_INCLUDED  */

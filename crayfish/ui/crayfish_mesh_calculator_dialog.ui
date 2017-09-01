@@ -522,6 +522,13 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="mNoDataButton">
+            <property name="text">
+             <string>NODATA</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QTextEdit" name="mExpressionTextEdit"/>
           </item>
          </layout>

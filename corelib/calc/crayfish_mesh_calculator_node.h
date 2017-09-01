@@ -29,8 +29,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <QMap>
 #include <QString>
+#include <QStringList>
 
 #include "crayfish_dataset.h"
+#include "crayfish_mesh.h"
+#include "calc/crayfish_dataset_utils.h"
 
 class CrayfishMeshCalculatorNode {
   public:
@@ -39,8 +42,8 @@ class CrayfishMeshCalculatorNode {
     {
       tOperator = 1,
       tNumber,
-      tRasterRef,
-      tMatrix
+      tNoData,
+      tDatasetRef
     };
 
     //! possible operators
@@ -48,35 +51,37 @@ class CrayfishMeshCalculatorNode {
     {
       opPLUS,
       opMINUS,
-      opMUL,
-      opDIV,
-      opPOW,
-      opSQRT,
-      opSIN,
-      opCOS,
-      opTAN,
-      opASIN,
-      opACOS,
-      opATAN,
+      opMUL,        // *
+      opDIV,        // /
+      opPOW,        // ^
       opEQ,         // =
-      opNE,         //!=
+      opNE,         // !=
       opGT,         // >
       opLT,         // <
       opGE,         // >=
       opLE,         // <=
       opAND,
       opOR,
+      opNOT,
+      opIF,
       opSIGN,       // change sign
-      opLOG,
-      opLOG10,
+      opMIN,
+      opMAX,
+      opABS,
+      opSUM_AGGR,
+      opMAX_AGGR,
+      opMIN_AGGR,
+      opAVG_AGGR,
       opNONE,
     };
 
-    CrayfishMeshCalculatorNode();
+    CrayfishMeshCalculatorNode(); //NoDATA
     CrayfishMeshCalculatorNode( double number );
-    /* CrayfishMeshCalculatorNode( QgsRasterMatrix *matrix ); */
     CrayfishMeshCalculatorNode( Operator op, CrayfishMeshCalculatorNode *left, CrayfishMeshCalculatorNode *right );
-    CrayfishMeshCalculatorNode( const QString &rasterName );
+    CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode *left /*if true */,
+                                CrayfishMeshCalculatorNode *right /* if false */,
+                                CrayfishMeshCalculatorNode *condition /* bool condition */);
+    CrayfishMeshCalculatorNode( const QString &datasetName );
     ~CrayfishMeshCalculatorNode();
 
     //! CrayfishMeshCalculatorNode cannot be copied
@@ -95,7 +100,10 @@ class CrayfishMeshCalculatorNode {
      * \param result destination dataset for calculation results
      */
     // TODO add spatial&time filters
-    bool calculate( QMap<QString, DataSet * > &datasets, DataSet &result ) const;
+    bool calculate(const CrayfishDataSetUtils &dsu, DataSet &result, const DataSet& filter ) const;
+
+    // Get all dataset names used
+    QStringList usedDatasetNames() const;
 
     static CrayfishMeshCalculatorNode *parseMeshCalcString( const QString &str, QString &parserErrorMsg );
 
@@ -103,9 +111,9 @@ class CrayfishMeshCalculatorNode {
     Type mType;
     CrayfishMeshCalculatorNode *mLeft = nullptr;
     CrayfishMeshCalculatorNode *mRight = nullptr;
+    CrayfishMeshCalculatorNode *mCondition = nullptr;
     double mNumber;
-    QString mRasterName;
-    /* QgsRasterMatrix *mMatrix = nullptr; */
+    QString mDatasetName;
     Operator mOperator;
 };
 

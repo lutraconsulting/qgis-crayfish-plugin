@@ -126,7 +126,7 @@ public:
   void addDataSet(DataSet* ds);
 
   const DataSets& dataSets() const { return mDataSets; }
-  DataSet* dataSet(const QString& name);
+  DataSet* dataSet(const QString& name) const;
 
   BBox extent() const { return mExtent; }
 

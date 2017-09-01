@@ -1,6 +1,6 @@
-#line 2 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/flex_crayfish_mesh_calculator_lexer.cpp"
+#line 2 "flex_crayfish_mesh_calculator_lexer.cpp"
 
-#line 4 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/flex_crayfish_mesh_calculator_lexer.cpp"
+#line 4 "flex_crayfish_mesh_calculator_lexer.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -383,8 +383,8 @@ static void yynoreturn yy_fatal_error (yyconst char* msg  );
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
 
-#define YY_NUM_RULES 21
-#define YY_END_OF_BUFFER 22
+#define YY_NUM_RULES 22
+#define YY_END_OF_BUFFER 23
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -392,16 +392,17 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t yy_accept[75] =
+static yyconst flex_int16_t yy_accept[91] =
     {   0,
-        0,    0,   22,   21,   20,   21,   21,   16,   15,   15,
-       15,   17,   21,   15,   15,   21,   21,   21,   21,   21,
-       21,   20,   12,    0,   19,    0,    0,    0,   17,   17,
-       17,    0,   13,   14,    0,    0,    0,    0,    0,    8,
-        0,   11,    0,    0,    0,    0,   19,    0,   18,    0,
-        0,    0,   17,    0,   10,    0,    0,    3,    0,    2,
-        0,    4,    0,    0,   17,   17,    6,    5,    7,    0,
-        1,   17,    9,    0
+        0,    0,   23,   22,   21,   22,   22,   17,   16,   16,
+       16,   18,   19,   16,   16,   19,   19,   19,   19,   19,
+       19,   21,   12,    0,   20,    0,   19,   18,   18,   18,
+       19,   13,   14,   19,   19,   19,    8,   19,   19,   19,
+       10,   19,    0,   20,    0,   19,    0,   19,   18,    5,
+        9,   19,    6,    7,   19,   11,   19,    0,   19,   18,
+       18,   19,   19,   19,   19,   19,   18,   19,   19,   19,
+       19,   19,   19,   19,   19,   15,   19,   19,   19,   19,
+       19,   19,    2,    3,    1,   19,   19,   19,    4,    0
     } ;
 
 static yyconst YY_CHAR yy_ec[256] =
@@ -410,131 +411,132 @@ static yyconst YY_CHAR yy_ec[256] =
         1,    1,    2,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    2,    4,    5,    1,    1,    1,    1,    1,    6,
-        6,    7,    8,    7,    9,   10,   11,   12,   13,   14,
-       14,   14,   14,   14,   14,   14,   14,   15,    1,   16,
-       17,   18,    1,   19,   20,   15,   21,   22,   23,   15,
-       24,   15,   25,   15,   15,   26,   15,   27,   28,   15,
-       29,   30,   31,   32,   15,   15,   15,   15,   15,   15,
-        1,   33,    1,    7,   15,    1,   34,   15,   35,   36,
+        6,    7,    8,    7,    9,   10,   11,   12,   12,   12,
+       12,   12,   12,   12,   12,   12,   12,   13,    1,   14,
+       15,   16,    1,    1,   17,   18,   13,   19,   20,   21,
+       22,   13,   23,   13,   13,   13,   24,   25,   26,   13,
+       13,   27,   28,   29,   30,   31,   13,   32,   13,   13,
+        1,   33,    1,    7,   34,    1,   35,   36,   13,   37,
 
-       23,   15,   37,   15,   38,   15,   15,   39,   15,   40,
-       41,   15,   42,   43,   44,   45,   15,   15,   15,   15,
-       15,   15,    1,    1,    1,    1,    1,   46,   46,   46,
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
+       38,   39,   40,   13,   41,   13,   13,   13,   42,   43,
+       44,   13,   13,   45,   46,   47,   48,   49,   13,   50,
+       13,   13,    1,    1,    1,    1,    1,   51,   51,   51,
+       51,   51,   51,   51,   51,   51,   51,   51,   51,   51,
+       51,   51,   51,   51,   51,   51,   51,   51,   51,   51,
+       51,   51,   51,   51,   51,   51,   51,   51,   51,   51,
+       51,   51,   51,   51,   51,   51,   51,   51,   51,   51,
+       51,   51,   51,   51,   51,   51,   51,   51,   51,   51,
+       51,   51,   51,   51,   51,   51,   51,   51,   51,   51,
+       51,   51,   51,   51,   51,   51,   51,   51,   51,   51,
 
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   46,   46,   46,   46,   46,   46,   46,
-       46,   46,   46,   46,   46
+       51,   51,   51,   51,   51,   51,   51,   51,   51,   51,
+       51,   51,   51,   51,   51,   51,   51,   51,   51,   51,
+       51,   51,   51,   51,   51,   51,   51,   51,   51,   51,
+       51,   51,   51,   51,   51,   51,   51,   51,   51,   51,
+       51,   51,   51,   51,   51,   51,   51,   51,   51,   51,
+       51,   51,   51,   51,   51
     } ;
 
-static yyconst YY_CHAR yy_meta[47] =
+static yyconst YY_CHAR yy_meta[52] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    2,    2,
-        2,    2,    2,    2,    2,    1,    1,    1,    2,    2,
+        2,    2,    2,    1,    1,    1,    2,    2,    2,    2,
         2,    2,    2,    2,    2,    2,    2,    2,    2,    2,
         2,    2,    1,    2,    2,    2,    2,    2,    2,    2,
-        2,    2,    2,    2,    2,    2
+        2,    2,    2,    2,    2,    2,    2,    2,    2,    2,
+        2
     } ;
 
-static yyconst flex_uint16_t yy_base[78] =
+static yyconst flex_uint16_t yy_base[94] =
     {   0,
-        0,    0,  210,  233,   45,  192,   44,  233,  233,  188,
-       38,   46,  187,  187,  186,   59,   34,   44,   36,   45,
-       48,   86,  233,   68,  233,   90,  178,   84,   93,   96,
-      108,  116,  233,  233,   98,  114,  113,  121,  115,  175,
-      123,  158,   73,  118,  125,  138,  140,  151,  150,  166,
-      154,  169,  177,  167,  157,  130,  168,  153,  180,  150,
-      173,  139,  188,  200,  203,  211,  134,   95,   92,   42,
-       83,  214,   62,  233,  228,   74,  230
+        0,    0,  191,  192,   50,  175,   49,  192,  192,    0,
+      177,   45,    0,  173,  172,   38,   37,   43,   33,   34,
+       32,   65,  192,   59,  192,   67,    0,   73,   74,   78,
+       87,  192,  192,   43,   54,   77,    0,   69,   77,   84,
+        0,   80,  100,  101,  104,  115,  174,  173,  172,    0,
+        0,   81,  149,  148,   93,    0,  147,  168,  167,  166,
+      154,   97,  100,  101,   96,  112,  153,  108,  116,  117,
+      123,  119,  122,  122,  123,    0,  124,  127,  122,  123,
+      124,  135,    0,    0,    0,  131,  132,  128,    0,  192,
+      173,   73,  175
+
     } ;
 
-static yyconst flex_int16_t yy_def[78] =
+static yyconst flex_int16_t yy_def[94] =
     {   0,
-       74,    1,   74,   74,   74,   74,   75,   74,   74,   76,
-       76,   76,   76,   74,   74,   76,   76,   76,   76,   76,
-       76,   74,   74,   75,   74,   77,   76,   74,   76,   76,
-       76,   76,   74,   74,   76,   76,   76,   76,   76,   76,
-       76,   76,   76,   76,   76,   75,   75,   77,   74,   76,
-       74,   76,   76,   76,   76,   76,   76,   76,   76,   76,
-       76,   76,   74,   76,   76,   74,   76,   76,   76,   76,
-       76,   74,   76,    0,   74,   74,   74
+       90,    1,   90,   90,   90,   90,   91,   90,   90,   92,
+       92,   92,   92,   90,   90,   92,   92,   92,   92,   92,
+       92,   90,   90,   91,   90,   93,   92,   92,   92,   92,
+       92,   90,   90,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   91,   91,   93,   92,   90,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   90,   92,   92,
+       90,   92,   92,   92,   92,   92,   90,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,    0,
+       90,   90,   90
+
     } ;
 
-static yyconst flex_uint16_t yy_nxt[280] =
+static yyconst flex_uint16_t yy_nxt[244] =
     {   0,
         4,    5,    5,    6,    7,    8,    9,    9,   10,   11,
-       10,   12,   12,   12,   13,   14,    9,   15,    4,   16,
-       17,   13,   13,   13,   13,   18,   13,   19,   13,   13,
-       20,   21,    4,   16,   17,   13,   13,   13,   18,   13,
-       19,   13,   13,   20,   21,   13,   22,   22,   25,   29,
-       29,   29,   28,   73,   28,   30,   28,   31,   31,   31,
-       28,   39,   28,   28,   28,   42,   28,   45,   32,   43,
-       40,   41,   25,   44,   39,   27,   26,   28,   42,   35,
-       28,   45,   43,   40,   41,   36,   44,   22,   22,   37,
-       38,   28,   24,   35,   47,   49,   49,   49,   36,   60,
+       10,   12,   13,   14,    9,   15,   16,   13,   13,   13,
+       13,   13,   17,   18,   19,   20,   13,   21,   13,   13,
+       13,   13,    4,   13,   16,   13,   13,   13,   13,   13,
+       17,   18,   19,   20,   13,   21,   13,   13,   13,   13,
+       13,   22,   22,   25,   29,   34,   30,   37,   40,   38,
+       41,   42,   35,   25,   31,   39,   22,   22,   36,   24,
+       50,   44,   51,   34,   27,   37,   40,   38,   41,   42,
+       35,   26,   31,   39,   28,   28,   36,   29,   50,   30,
+       51,   26,   46,   31,   47,   48,   52,   31,   49,   45,
 
-       26,   28,   37,   38,   29,   29,   29,   29,   29,   29,
-       28,   28,   60,   28,   28,   50,   28,   30,   32,   31,
-       31,   31,   48,   51,   52,   54,   28,   53,   53,   53,
-       32,   28,   28,   28,   28,   55,   28,   56,   54,   28,
-       57,   28,   25,   28,   25,   58,   59,   61,   28,   55,
-       56,   62,   28,   24,   57,   47,   68,   28,   58,   59,
-       61,   49,   49,   49,   62,   66,   66,   66,   28,   68,
-       26,   28,   26,   63,   64,   28,   28,   65,   65,   65,
-       53,   53,   53,   48,   28,   28,   28,   28,   53,   53,
-       53,   28,   70,   28,   69,   28,   28,   67,   28,   72,
+       53,   54,   55,   57,   25,   25,   24,   62,   44,   65,
+       46,   31,   56,   68,   52,   31,   69,   70,   53,   54,
+       55,   57,   58,   59,   71,   62,   60,   65,   72,   73,
+       56,   68,   26,   26,   69,   70,   45,   74,   75,   76,
+       77,   78,   71,   79,   80,   81,   72,   73,   83,   84,
+       85,   86,   87,   88,   89,   74,   75,   76,   77,   78,
+       82,   79,   80,   81,   67,   61,   83,   84,   85,   86,
+       87,   88,   89,   24,   24,   43,   43,   60,   60,   67,
+       66,   64,   63,   49,   49,   61,   33,   32,   28,   23,
+       90,    3,   90,   90,   90,   90,   90,   90,   90,   90,
 
-       72,   72,   34,   33,   71,   28,   28,   69,   23,   74,
-       67,   65,   65,   65,   65,   65,   65,   71,   28,   74,
-       74,   28,   66,   66,   66,   72,   72,   72,   24,   24,
-       46,   46,    3,   74,   74,   74,   74,   74,   74,   74,
-       74,   74,   74,   74,   74,   74,   74,   74,   74,   74,
-       74,   74,   74,   74,   74,   74,   74,   74,   74,   74,
-       74,   74,   74,   74,   74,   74,   74,   74,   74,   74,
-       74,   74,   74,   74,   74,   74,   74,   74,   74
+       90,   90,   90,   90,   90,   90,   90,   90,   90,   90,
+       90,   90,   90,   90,   90,   90,   90,   90,   90,   90,
+       90,   90,   90,   90,   90,   90,   90,   90,   90,   90,
+       90,   90,   90,   90,   90,   90,   90,   90,   90,   90,
+       90,   90,   90
     } ;
 
-static yyconst flex_int16_t yy_chk[280] =
+static yyconst flex_int16_t yy_chk[244] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    5,    5,    7,   11,
-       11,   11,   17,   70,   19,   12,   11,   12,   12,   12,
-       70,   17,   18,   20,   12,   19,   21,   21,   12,   20,
-       18,   18,   24,   20,   17,   76,    7,   16,   19,   16,
-       73,   21,   20,   18,   18,   16,   20,   22,   22,   16,
-       16,   43,   26,   16,   26,   28,   28,   28,   16,   43,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    5,    5,    7,   12,   16,   12,   17,   19,   18,
+       20,   21,   16,   24,   12,   18,   22,   22,   16,   26,
+       34,   26,   35,   16,   92,   17,   19,   18,   20,   21,
+       16,    7,   12,   18,   28,   29,   16,   30,   34,   30,
+       35,   24,   28,   29,   31,   31,   36,   30,   31,   26,
 
-       24,   71,   16,   16,   29,   29,   29,   30,   30,   30,
-       69,   29,   43,   68,   30,   29,   35,   31,   30,   31,
-       31,   31,   26,   32,   32,   35,   31,   32,   32,   32,
-       31,   37,   36,   39,   32,   36,   44,   37,   35,   38,
-       38,   41,   46,   45,   47,   39,   41,   44,   56,   36,
-       37,   45,   67,   48,   38,   48,   56,   62,   39,   41,
-       44,   49,   49,   49,   45,   51,   51,   51,   60,   56,
-       46,   58,   47,   50,   50,   55,   42,   50,   50,   50,
-       52,   52,   52,   48,   50,   54,   57,   52,   53,   53,
-       53,   61,   59,   40,   57,   53,   27,   54,   59,   63,
+       38,   39,   40,   42,   43,   44,   45,   52,   45,   55,
+       28,   29,   40,   62,   36,   30,   63,   64,   38,   39,
+       40,   42,   46,   46,   65,   52,   46,   55,   66,   68,
+       40,   62,   43,   44,   63,   64,   45,   69,   70,   71,
+       72,   73,   65,   74,   75,   77,   66,   68,   79,   80,
+       81,   82,   86,   87,   88,   69,   70,   71,   72,   73,
+       78,   74,   75,   77,   67,   61,   79,   80,   81,   82,
+       86,   87,   88,   91,   91,   93,   93,   60,   59,   58,
+       57,   54,   53,   49,   48,   47,   15,   14,   11,    6,
+        3,   90,   90,   90,   90,   90,   90,   90,   90,   90,
 
-       63,   63,   15,   14,   61,   13,   10,   57,    6,    3,
-       54,   64,   64,   64,   65,   65,   65,   61,   64,    0,
-        0,   65,   66,   66,   66,   72,   72,   72,   75,   75,
-       77,   77,   74,   74,   74,   74,   74,   74,   74,   74,
-       74,   74,   74,   74,   74,   74,   74,   74,   74,   74,
-       74,   74,   74,   74,   74,   74,   74,   74,   74,   74,
-       74,   74,   74,   74,   74,   74,   74,   74,   74,   74,
-       74,   74,   74,   74,   74,   74,   74,   74,   74
+       90,   90,   90,   90,   90,   90,   90,   90,   90,   90,
+       90,   90,   90,   90,   90,   90,   90,   90,   90,   90,
+       90,   90,   90,   90,   90,   90,   90,   90,   90,   90,
+       90,   90,   90,   90,   90,   90,   90,   90,   90,   90,
+       90,   90,   90
     } ;
 
 static yy_state_type yy_last_accepting_state;
@@ -551,7 +553,7 @@ int mesh_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *meshtext;
-#line 1 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
+#line 1 "crayfish_mesh_calculator_lexer.ll"
 /*
 Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
 Copyright (C) 2017 Lutra Consulting
@@ -578,7 +580,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 // ensure that lexer will be 8-bit (and not just 7-bit)
-#line 36 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
+#line 36 "crayfish_mesh_calculator_lexer.ll"
   //directly included in the output program
   #include "calc/crayfish_mesh_calculator_node.h"
   #include "calc/bison_crayfish_mesh_calculator_parser.hpp"
@@ -590,7 +592,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   #ifdef _MSC_VER
   #define YY_NO_UNISTD_H
   #endif
-#line 594 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/flex_crayfish_mesh_calculator_lexer.cpp"
+#line 596 "flex_crayfish_mesh_calculator_lexer.cpp"
 
 #define INITIAL 0
 
@@ -806,10 +808,10 @@ YY_DECL
 		}
 
 	{
-#line 61 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
+#line 61 "crayfish_mesh_calculator_lexer.ll"
 
 
-#line 813 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/flex_crayfish_mesh_calculator_lexer.cpp"
+#line 815 "flex_crayfish_mesh_calculator_lexer.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -836,13 +838,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 75 )
+				if ( yy_current_state >= 91 )
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (flex_int16_t) yy_c];
 			++yy_cp;
 			}
-		while ( yy_current_state != 74 );
+		while ( yy_current_state != 90 );
 		yy_cp = (yy_last_accepting_cpos);
 		yy_current_state = (yy_last_accepting_state);
 
@@ -864,112 +866,117 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 63 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ meshlval.op = CrayfishMeshCalculatorNode::opSQRT; return FUNCTION;}
+#line 63 "crayfish_mesh_calculator_lexer.ll"
+{ meshlval.op = CrayfishMeshCalculatorNode::opSUM_AGGR; return FUNCTION; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 64 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ meshlval.op = CrayfishMeshCalculatorNode::opSIN; return FUNCTION;}
+#line 64 "crayfish_mesh_calculator_lexer.ll"
+{ meshlval.op = CrayfishMeshCalculatorNode::opMAX_AGGR; return FUNCTION; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 65 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ meshlval.op = CrayfishMeshCalculatorNode::opCOS; return FUNCTION;}
+#line 65 "crayfish_mesh_calculator_lexer.ll"
+{ meshlval.op = CrayfishMeshCalculatorNode::opMIN_AGGR; return FUNCTION; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 66 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ meshlval.op = CrayfishMeshCalculatorNode::opTAN; return FUNCTION;}
+#line 66 "crayfish_mesh_calculator_lexer.ll"
+{ meshlval.op = CrayfishMeshCalculatorNode::opAVG_AGGR; return FUNCTION; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 67 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ meshlval.op = CrayfishMeshCalculatorNode::opASIN; return FUNCTION;}
+#line 67 "crayfish_mesh_calculator_lexer.ll"
+{ meshlval.op = CrayfishMeshCalculatorNode::opABS; return FUNCTION; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 68 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ meshlval.op = CrayfishMeshCalculatorNode::opACOS; return FUNCTION;}
+#line 69 "crayfish_mesh_calculator_lexer.ll"
+{ meshlval.op = CrayfishMeshCalculatorNode::opMAX; return FUNCTION2; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 69 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ meshlval.op = CrayfishMeshCalculatorNode::opATAN; return FUNCTION;}
+#line 70 "crayfish_mesh_calculator_lexer.ll"
+{ meshlval.op = CrayfishMeshCalculatorNode::opMIN; return FUNCTION2; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 70 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ meshlval.op = CrayfishMeshCalculatorNode::opLOG; return FUNCTION;}
+#line 72 "crayfish_mesh_calculator_lexer.ll"
+{ return IF; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 71 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ meshlval.op = CrayfishMeshCalculatorNode::opLOG10; return FUNCTION;}
+#line 73 "crayfish_mesh_calculator_lexer.ll"
+{ return AND; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 73 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ return AND; }
+#line 74 "crayfish_mesh_calculator_lexer.ll"
+{ return OR; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 74 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ return OR; }
+#line 75 "crayfish_mesh_calculator_lexer.ll"
+{ return NOT; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 75 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
+#line 76 "crayfish_mesh_calculator_lexer.ll"
 { return NE; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 76 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
+#line 77 "crayfish_mesh_calculator_lexer.ll"
 { return LE; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 77 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
+#line 78 "crayfish_mesh_calculator_lexer.ll"
 { return GE; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 79 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ return meshtext[0]; }
+#line 79 "crayfish_mesh_calculator_lexer.ll"
+{return NODATA;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 82 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
+#line 81 "crayfish_mesh_calculator_lexer.ll"
 { return meshtext[0]; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 84 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ meshlval.number  = atof(meshtext); return NUMBER; }
+#line 83 "crayfish_mesh_calculator_lexer.ll"
+{ return meshtext[0]; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 86 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-{ return DATASET_REF; }
+#line 85 "crayfish_mesh_calculator_lexer.ll"
+{ meshlval.number  = atof(meshtext); return NUMBER; }
 	YY_BREAK
 case 19:
-/* rule 19 can match eol */
 YY_RULE_SETUP
-#line 88 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
+#line 87 "crayfish_mesh_calculator_lexer.ll"
 { return DATASET_REF; }
 	YY_BREAK
 case 20:
 /* rule 20 can match eol */
 YY_RULE_SETUP
-#line 90 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
-/* skip blanks and tabs */
+#line 89 "crayfish_mesh_calculator_lexer.ll"
+{ return DATASET_REF; }
 	YY_BREAK
 case 21:
+/* rule 21 can match eol */
 YY_RULE_SETUP
-#line 91 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
+#line 91 "crayfish_mesh_calculator_lexer.ll"
+/* skip blanks and tabs */
+	YY_BREAK
+case 22:
+YY_RULE_SETUP
+#line 92 "crayfish_mesh_calculator_lexer.ll"
 ECHO;
 	YY_BREAK
-#line 973 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/flex_crayfish_mesh_calculator_lexer.cpp"
+#line 980 "flex_crayfish_mesh_calculator_lexer.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1263,7 +1270,7 @@ static int yy_get_next_buffer (void)
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 75 )
+			if ( yy_current_state >= 91 )
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + (flex_int16_t) yy_c];
@@ -1291,11 +1298,11 @@ static int yy_get_next_buffer (void)
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 75 )
+		if ( yy_current_state >= 91 )
 			yy_c = yy_meta[(unsigned int) yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (flex_int16_t) yy_c];
-	yy_is_jam = (yy_current_state == 74);
+	yy_is_jam = (yy_current_state == 90);
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
@@ -1934,7 +1941,7 @@ void meshfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 91 "/home/peter/repo_L/qgis-crayfish-plugin/scripts/../corelib/calc/crayfish_mesh_calculator_lexer.ll"
+#line 92 "crayfish_mesh_calculator_lexer.ll"
 
 
 

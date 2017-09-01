@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QVector>
 #include "crayfish_mesh.h"
 
+
 struct CrayfishMeshCalculatorEntry
 {
   QString ref; //name
@@ -48,9 +49,10 @@ class CrayfishMeshCalculator
       Success = 0, //!< Calculation successful
       CreateOutputError = 1, //!< Error creating output data file
       InputLayerError = 2, //!< Error reading input layer
-      Canceled = 3, //!< User canceled calculation
-      ParserError = 4, //!< Error parsing formula
-      MemoryError = 5, //!< Error allocating memory for result
+      ParserError = 3, //!< Error parsing formula
+      InvalidDatasets = 4, //!< Datasets with different time outputs or not part of the mesh
+      EvaluateError = 5, //!< Error during evaluation
+      MemoryError = 6, //!< Error allocating memory for result
     };
 
     CrayfishMeshCalculator(const QString &formulaString, const QString &outputFile,
@@ -58,7 +60,7 @@ class CrayfishMeshCalculator
                             Mesh &mesh, bool addToMesh);
 
     /** Starts the calculation and writes new dataset to file, returns Result */
-    int processCalculation();
+    Result processCalculation();
 
     static Result expression_valid(const QString &formulaString, const Mesh &mesh);
 

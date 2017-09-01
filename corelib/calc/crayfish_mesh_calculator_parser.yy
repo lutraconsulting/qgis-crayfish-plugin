@@ -50,7 +50,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
   //! temporary list for nodes without parent (if parsing fails these nodes are removed)
   QList<CrayfishMeshCalculatorNode*> gTmpNodes;
-  void joinTmpNodes(CrayfishMeshCalculatorNode* parent, CrayfishMeshCalculatorNode* left, CrayfishMeshCalculatorNode* right);
+  void joinTmpNodes(CrayfishMeshCalculatorNode* parent, CrayfishMeshCalculatorNode* left, CrayfishMeshCalculatorNode* right, CrayfishMeshCalculatorNode* condition);
   void addToTmpNodes(CrayfishMeshCalculatorNode* node);
 
   // we want verbose error messages
@@ -61,18 +61,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 %start root
 
+%token NODATA
 %token DATASET_REF
 %token<number> NUMBER
 %token<op> FUNCTION
+%token<op> FUNCTION2
 
 %type <node> root
 %type <node> mesh_exp
 
 %left AND
 %left OR
+%left NOT
 %left NE
 %left GE
 %left LE
+%left IF
 
 %left '=' '<' '>'
 %left '+' '-'
@@ -86,25 +90,29 @@ root: mesh_exp{}
 ;
 
 mesh_exp:
-  FUNCTION '(' mesh_exp ')'   { $$ = new CrayfishMeshCalculatorNode($1, $3, 0); joinTmpNodes($$, $3, 0);}
-  | mesh_exp AND mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opAND, $1, $3 ); joinTmpNodes($$,$1,$3); }
-  | mesh_exp OR mesh_exp      { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opOR, $1, $3 ); joinTmpNodes($$,$1,$3); }
-  | mesh_exp '=' mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opEQ, $1, $3 ); joinTmpNodes($$,$1,$3); }
-  | mesh_exp NE mesh_exp      { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opNE, $1, $3 ); joinTmpNodes($$,$1,$3); }
-  | mesh_exp '>' mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opGT, $1, $3 ); joinTmpNodes($$, $1, $3); }
-  | mesh_exp '<' mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opLT, $1, $3 ); joinTmpNodes($$, $1, $3); }
-  | mesh_exp GE mesh_exp      { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opGE, $1, $3 ); joinTmpNodes($$, $1, $3); }
-  | mesh_exp LE mesh_exp      { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opLE, $1, $3 ); joinTmpNodes($$, $1, $3); }
-  | mesh_exp '^' mesh_exp     { $$ = new CrayfishMeshCalculatorNode(CrayfishMeshCalculatorNode::opPOW, $1, $3); joinTmpNodes($$,$1,$3); }
-  | mesh_exp '*' mesh_exp     { $$ = new CrayfishMeshCalculatorNode(CrayfishMeshCalculatorNode::opMUL, $1, $3); joinTmpNodes($$,$1,$3); }
-  | mesh_exp '/' mesh_exp     { $$ = new CrayfishMeshCalculatorNode(CrayfishMeshCalculatorNode::opDIV, $1, $3); joinTmpNodes($$,$1,$3); }
-  | mesh_exp '+' mesh_exp     { $$ = new CrayfishMeshCalculatorNode(CrayfishMeshCalculatorNode::opPLUS, $1, $3); joinTmpNodes($$,$1,$3); }
-  | mesh_exp '-' mesh_exp     { $$ = new CrayfishMeshCalculatorNode(CrayfishMeshCalculatorNode::opMINUS, $1, $3); joinTmpNodes($$,$1,$3); }
+  FUNCTION '(' mesh_exp ')'   { $$ = new CrayfishMeshCalculatorNode($1, $3, 0); joinTmpNodes($$, $3, 0, 0);}
+  | FUNCTION2 '(' mesh_exp ',' mesh_exp ')'   { $$ = new CrayfishMeshCalculatorNode($1, $3, $5); joinTmpNodes($$, $3, $5, 0);}
+  | IF '(' mesh_exp ',' mesh_exp ',' mesh_exp ')'   { $$ = new CrayfishMeshCalculatorNode($3, $5, $7); joinTmpNodes($$, $3, $5, $7);}
+  | NOT '(' mesh_exp ')'      { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opNOT, $3, 0 ); joinTmpNodes($$,$3, 0, 0); }
+  | mesh_exp AND mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opAND, $1, $3 ); joinTmpNodes($$,$1,$3, 0); }
+  | mesh_exp OR mesh_exp      { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opOR, $1, $3 ); joinTmpNodes($$,$1,$3, 0); }
+  | mesh_exp '=' mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opEQ, $1, $3 ); joinTmpNodes($$,$1,$3, 0); }
+  | mesh_exp NE mesh_exp      { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opNE, $1, $3 ); joinTmpNodes($$,$1,$3, 0); }
+  | mesh_exp '>' mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opGT, $1, $3 ); joinTmpNodes($$, $1, $3, 0); }
+  | mesh_exp '<' mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opLT, $1, $3 ); joinTmpNodes($$, $1, $3, 0); }
+  | mesh_exp GE mesh_exp      { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opGE, $1, $3 ); joinTmpNodes($$, $1, $3, 0); }
+  | mesh_exp LE mesh_exp      { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opLE, $1, $3 ); joinTmpNodes($$, $1, $3, 0); }
+  | mesh_exp '^' mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opPOW, $1, $3 ); joinTmpNodes($$,$1,$3, 0); }
+  | mesh_exp '*' mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opMUL, $1, $3 ); joinTmpNodes($$,$1,$3, 0); }
+  | mesh_exp '/' mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opDIV, $1, $3 ); joinTmpNodes($$,$1,$3, 0); }
+  | mesh_exp '+' mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opPLUS, $1, $3 ); joinTmpNodes($$,$1,$3, 0); }
+  | mesh_exp '-' mesh_exp     { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opMINUS, $1, $3 ); joinTmpNodes($$,$1,$3, 0); }
   | '(' mesh_exp ')'          { $$ = $2; }
   | '+' mesh_exp %prec UMINUS { $$ = $2; }
-  | '-' mesh_exp %prec UMINUS { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opSIGN, $2, 0 ); joinTmpNodes($$, $2, 0); }
+  | '-' mesh_exp %prec UMINUS { $$ = new CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode::opSIGN, $2, 0 ); joinTmpNodes($$, $2, 0, 0); }
   | NUMBER { $$ = new CrayfishMeshCalculatorNode($1); addToTmpNodes($$); }
   | DATASET_REF { $$ = new CrayfishMeshCalculatorNode(QString::fromUtf8(meshtext)); addToTmpNodes($$); }
+  | NODATA { $$ = new CrayfishMeshCalculatorNode(); addToTmpNodes($$); }
 ;
 
 %%
@@ -115,23 +123,23 @@ void addToTmpNodes(CrayfishMeshCalculatorNode* node)
 }
 
 
-void joinTmpNodes(CrayfishMeshCalculatorNode* parent, CrayfishMeshCalculatorNode* left, CrayfishMeshCalculatorNode* right)
+void removeTmpNode(CrayfishMeshCalculatorNode* node)
 {
   bool res;
   Q_UNUSED(res);
 
-  if (left)
+  if (node)
   {
-    res = gTmpNodes.removeAll(left) != 0;
+    res = gTmpNodes.removeAll(node) != 0;
     Q_ASSERT(res);
   }
+}
 
-  if (right)
-  {
-    res = gTmpNodes.removeAll(right) != 0;
-    Q_ASSERT(res);
-  }
-
+void joinTmpNodes(CrayfishMeshCalculatorNode* parent, CrayfishMeshCalculatorNode* left, CrayfishMeshCalculatorNode* right, CrayfishMeshCalculatorNode* condition)
+{
+  removeTmpNode(right);
+  removeTmpNode(left);
+  removeTmpNode(condition);
   gTmpNodes.append(parent);
 }
 

@@ -26,13 +26,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "calc/crayfish_mesh_calculator_node.h"
 #include <cfloat>
+#include "crayfish_output.h"
 
 CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode()
-  : mType( tNumber )
+  : mType( tNoData )
   , mLeft( nullptr )
   , mRight( nullptr )
+  , mCondition( nullptr )
   , mNumber( 0 )
-  /* , mMatrix( nullptr ) */
   , mOperator( opNONE )
 {
 }
@@ -41,46 +42,46 @@ CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( double number )
   : mType( tNumber )
   , mLeft( nullptr )
   , mRight( nullptr )
+  , mCondition( nullptr )
   , mNumber( number )
-  /* , mMatrix( nullptr ) */
   , mOperator( opNONE )
 {
 }
 
-/*
-CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( QgsRasterMatrix *matrix )
-  : mType( tMatrix )
-  , mLeft( nullptr )
-  , mRight( nullptr )
-  , mNumber( 0 )
-  , mMatrix( matrix )
-  , mOperator( opNONE )
-{
-
-}
-*/
 
 CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( Operator op, CrayfishMeshCalculatorNode *left, CrayfishMeshCalculatorNode *right )
   : mType( tOperator )
   , mLeft( left )
   , mRight( right )
+  , mCondition( nullptr )
   , mNumber( 0 )
-  /* , mMatrix( nullptr ) */
   , mOperator( op )
 {
 }
 
-CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( const QString &rasterName )
-  : mType( tRasterRef )
+CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode *left /*if true */,
+                            CrayfishMeshCalculatorNode *right /* if false */,
+                            CrayfishMeshCalculatorNode *condition /* bool condition */)
+    : mType( tOperator )
+    , mLeft( left )
+    , mRight( right )
+    , mCondition( condition )
+    , mNumber( 0 )
+    , mOperator( opIF )
+{
+}
+
+CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode(const QString &datasetName )
+  : mType( tDatasetRef )
   , mLeft( nullptr )
   , mRight( nullptr )
+  , mCondition( nullptr )
   , mNumber( 0 )
-  , mRasterName( rasterName )
-  /* , mMatrix( nullptr ) */
+  , mDatasetName( datasetName )
   , mOperator( opNONE )
 {
-  if ( mRasterName.startsWith( '"' ) && mRasterName.endsWith( '"' ) )
-    mRasterName = mRasterName.mid( 1, mRasterName.size() - 2 );
+  if ( mDatasetName.startsWith( '"' ) && mDatasetName.endsWith( '"' ) )
+    mDatasetName = mDatasetName.mid( 1, mDatasetName.size() - 2 );
 }
 
 CrayfishMeshCalculatorNode::~CrayfishMeshCalculatorNode()
@@ -95,155 +96,158 @@ CrayfishMeshCalculatorNode::~CrayfishMeshCalculatorNode()
   }
 }
 
-bool CrayfishMeshCalculatorNode::calculate( QMap<QString, DataSet * > &datasets, DataSet &result ) const
+QStringList CrayfishMeshCalculatorNode::usedDatasetNames() const
 {
-#if 0
-  //if type is raster ref: return a copy of the corresponding matrix
+    QStringList res;
 
-  //if type is operator, call the proper matrix operations
-  if ( mType == tRasterRef )
+    if (mType == tDatasetRef)
+    {
+        res.append(mDatasetName);
+    }
+
+    if ( mLeft )
+    {
+      res += mLeft->usedDatasetNames();
+    }
+
+    if ( mRight )
+    {
+      res += mRight->usedDatasetNames();
+    }
+
+    return res;
+}
+
+bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, DataSet& result, const DataSet& filter) const
+{
+  if ( mType == tDatasetRef )
   {
-    QMap<QString, QgsRasterBlock *>::iterator it = rasterData.find( mRasterName );
-    if ( it == rasterData.end() )
-    {
-      return false;
-    }
-
-    int nRows = ( row >= 0 ? 1 : ( *it )->height() );
-    int startRow = ( row >= 0 ? row : 0 );
-    int endRow = startRow + nRows;
-    int nCols = ( *it )->width();
-    int nEntries = nCols * nRows;
-    double *data = new double[nEntries];
-
-    //convert input raster values to double, also convert input no data to result no data
-
-    int outRow = 0;
-    for ( int dataRow = startRow; dataRow < endRow ; ++dataRow, ++outRow )
-    {
-      for ( int dataCol = 0; dataCol < nCols; ++dataCol )
-      {
-        data[ dataCol + nCols * outRow] = ( *it )->isNoData( dataRow, dataCol ) ? result.nodataValue() : ( *it )->value( dataRow, dataCol );
-      }
-    }
-    result.setData( nCols, nRows, data, result.nodataValue() );
-    return true;
+      result = dsu.copy(mDatasetName);
+      return true;
   }
   else if ( mType == tOperator )
   {
-    QgsRasterMatrix leftMatrix, rightMatrix;
-    leftMatrix.setNodataValue( result.nodataValue() );
-    rightMatrix.setNodataValue( result.nodataValue() );
+    DataSet leftDataset = dsu.nodata();
+    DataSet rightDataset = dsu.nodata();
 
-    if ( !mLeft || !mLeft->calculate( rasterData, leftMatrix, row ) )
-    {
-      return false;
-    }
-    if ( mRight && !mRight->calculate( rasterData, rightMatrix, row ) )
-    {
-      return false;
-    }
+    if (mOperator == opIF) {
+        DataSet true_condition("true_condition");
+        bool res = mCondition->calculate(dsu, true_condition, dsu.ones());
+        if (!res) {
+            // invalid boolean condition
+            return false;
+        }
 
-    switch ( mOperator )
-    {
-      case opPLUS:
-        leftMatrix.add( rightMatrix );
-        break;
-      case opMINUS:
-        leftMatrix.subtract( rightMatrix );
-        break;
-      case opMUL:
-        leftMatrix.multiply( rightMatrix );
-        break;
-      case opDIV:
-        leftMatrix.divide( rightMatrix );
-        break;
-      case opPOW:
-        leftMatrix.power( rightMatrix );
-        break;
-      case opEQ:
-        leftMatrix.equal( rightMatrix );
-        break;
-      case opNE:
-        leftMatrix.notEqual( rightMatrix );
-        break;
-      case opGT:
-        leftMatrix.greaterThan( rightMatrix );
-        break;
-      case opLT:
-        leftMatrix.lesserThan( rightMatrix );
-        break;
-      case opGE:
-        leftMatrix.greaterEqual( rightMatrix );
-        break;
-      case opLE:
-        leftMatrix.lesserEqual( rightMatrix );
-        break;
-      case opAND:
-        leftMatrix.logicalAnd( rightMatrix );
-        break;
-      case opOR:
-        leftMatrix.logicalOr( rightMatrix );
-        break;
-      case opSQRT:
-        leftMatrix.squareRoot();
-        break;
-      case opSIN:
-        leftMatrix.sinus();
-        break;
-      case opCOS:
-        leftMatrix.cosinus();
-        break;
-      case opTAN:
-        leftMatrix.tangens();
-        break;
-      case opASIN:
-        leftMatrix.asinus();
-        break;
-      case opACOS:
-        leftMatrix.acosinus();
-        break;
-      case opATAN:
-        leftMatrix.atangens();
-        break;
-      case opSIGN:
-        leftMatrix.changeSign();
-        break;
-      case opLOG:
-        leftMatrix.log();
-        break;
-      case opLOG10:
-        leftMatrix.log10();
-        break;
-      default:
-        return false;
+        DataSet false_condition = dsu.logicalNot(true_condition);
+
+        DataSet true_filter = dsu.logicalAnd(filter, true_condition);
+        DataSet false_filter = dsu.logicalAnd(filter, false_condition);
+
+        if ( !mLeft || !mLeft->calculate( dsu, leftDataset, true_filter ) )
+        {
+          return false;
+        }
+        if ( mRight && !mRight->calculate( dsu, rightDataset, false_filter ) )
+        {
+          return false;
+        }
+
+        result = dsu.add(leftDataset, rightDataset);
+        return true;
+
+    } else {
+        if ( !mLeft || !mLeft->calculate( dsu, leftDataset, filter ) )
+        {
+          return false;
+        }
+        if ( mRight && !mRight->calculate( dsu, rightDataset, filter ) )
+        {
+          return false;
+        }
+
+        switch ( mOperator )
+        {
+          case opPLUS:
+            result = dsu.add(leftDataset, rightDataset);
+            break;
+          case opMINUS:
+            result = dsu.subtract(leftDataset, rightDataset);
+            break;
+          case opMUL:
+            result = dsu.multiply(leftDataset, rightDataset);
+            break;
+          case opDIV:
+            result = dsu.divide(leftDataset, rightDataset);
+            break;
+          case opPOW:
+            result = dsu.power(leftDataset, rightDataset);
+            break;
+          case opEQ:
+            result = dsu.equal(leftDataset, rightDataset);
+            break;
+          case opNE:
+            result = dsu.notEqual(leftDataset, rightDataset);
+            break;
+          case opGT:
+            result = dsu.greaterThan(leftDataset, rightDataset);
+            break;
+          case opLT:
+            result = dsu.lesserThan(leftDataset, rightDataset);
+            break;
+          case opGE:
+            result = dsu.subtract(leftDataset, rightDataset);
+            break;
+          case opLE:
+            result = dsu.lesserEqual(leftDataset, rightDataset);
+            break;
+          case opAND:
+            result = dsu.logicalAnd(leftDataset, rightDataset);
+            break;
+          case opOR:
+            result = dsu.logicalOr(leftDataset, rightDataset);
+            break;
+          case opNOT:
+            result = dsu.logicalNot(leftDataset);
+            break;
+          case opMIN:
+            result = dsu.min(leftDataset, rightDataset);
+            break;
+          case opMAX:
+            result = dsu.max(leftDataset, rightDataset);
+            break;
+          case opABS:
+            result = dsu.abs(leftDataset);
+            break;
+          case opSUM_AGGR:
+            result = dsu.sum_aggr(leftDataset);
+            break;
+          case opMIN_AGGR:
+            result = dsu.min_aggr(leftDataset);
+            break;
+          case opMAX_AGGR:
+            result = dsu.max_aggr(leftDataset);
+            break;
+          case opAVG_AGGR:
+            result = dsu.avg_aggr(leftDataset);
+            break;
+          case opSIGN:
+            result = dsu.changeSign(leftDataset);
+            break;
+          default:
+            return false;
+        }
+        return true;
     }
-    int newNColumns = leftMatrix.nColumns();
-    int newNRows = leftMatrix.nRows();
-    result.setData( newNColumns, newNRows, leftMatrix.takeData(), leftMatrix.nodataValue() );
-    return true;
   }
   else if ( mType == tNumber )
   {
-    double *data = new double[1];
-    data[0] = mNumber;
-    result.setData( 1, 1, data, result.nodataValue() );
-    return true;
+    result = dsu.number(mNumber);
   }
-  else if ( mType == tMatrix )
+  else if ( mType == tNoData )
   {
-    int nEntries = mMatrix->nColumns() * mMatrix->nRows();
-    double *data = new double[nEntries];
-    for ( int i = 0; i < nEntries; ++i )
-    {
-      data[i] = mMatrix->data()[i] == mMatrix->nodataValue() ? result.nodataValue() : mMatrix->data()[i];
-    }
-    result.setData( mMatrix->nColumns(), mMatrix->nRows(), data, result.nodataValue() );
-    return true;
+    result = dsu.nodata();
   }
   return false;
-#endif
-  return true;
 }
 
 CrayfishMeshCalculatorNode *CrayfishMeshCalculatorNode::parseMeshCalcString( const QString &str, QString &parserErrorMsg )

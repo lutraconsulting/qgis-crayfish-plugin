@@ -69,18 +69,19 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
             (self.mCloseBracketPushButton, ")"),
             (self.mEqualButton, "="),
             (self.mNotEqualButton, "!="),
-            (self.mMinButton, "min ("),
-            (self.mMaxButton, "max ("),
+            (self.mMinButton, "min ( A , B )"),
+            (self.mMaxButton, "max ( A , B )"),
             (self.mAbsButton, "abs ("),
             (self.mPowButton, "^"),
-            (self.mIfButton, "if ("),
+            (self.mIfButton, "if ( 1 = 1 , NODATA , NODATA )"),
             (self.mAndButton, "and"),
             (self.mOrButton, "or"),
             (self.mNotButton, "not"),
             (self.mSumAggrButton, "sum_aggr ("),
             (self.mMaxAggrButton, "max_aggr ("),
             (self.mMinAggrButton, "min_aggr ("),
-            (self.mAverageAggrButton, "average_aggr (")
+            (self.mAverageAggrButton, "average_aggr ("),
+            (self.mNoDataButton, "NODATA")
         ]:
             btn.clicked.connect(partial(self.on_calc_button_clicked, text=text))
 
