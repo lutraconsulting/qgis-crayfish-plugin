@@ -44,6 +44,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   #ifdef _MSC_VER
   #define YY_NO_UNISTD_H
   #endif
+  
+  #ifndef _MSC_VER
+  #pragma GCC diagnostic ignored "-Wsign-compare"
+  #endif
 %}
 
 white       [ \t\r\n]+

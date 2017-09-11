@@ -592,7 +592,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   #ifdef _MSC_VER
   #define YY_NO_UNISTD_H
   #endif
-#line 596 "flex_crayfish_mesh_calculator_lexer.cpp"
+  
+  #ifndef _MSC_VER
+  #pragma GCC diagnostic ignored "-Wsign-compare"
+  #endif
+#line 600 "flex_crayfish_mesh_calculator_lexer.cpp"
 
 #define INITIAL 0
 
@@ -808,10 +812,10 @@ YY_DECL
 		}
 
 	{
-#line 61 "crayfish_mesh_calculator_lexer.ll"
+#line 65 "crayfish_mesh_calculator_lexer.ll"
 
 
-#line 815 "flex_crayfish_mesh_calculator_lexer.cpp"
+#line 819 "flex_crayfish_mesh_calculator_lexer.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -866,117 +870,117 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 63 "crayfish_mesh_calculator_lexer.ll"
+#line 67 "crayfish_mesh_calculator_lexer.ll"
 { meshlval.op = CrayfishMeshCalculatorNode::opSUM_AGGR; return FUNCTION; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 64 "crayfish_mesh_calculator_lexer.ll"
+#line 68 "crayfish_mesh_calculator_lexer.ll"
 { meshlval.op = CrayfishMeshCalculatorNode::opMAX_AGGR; return FUNCTION; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 65 "crayfish_mesh_calculator_lexer.ll"
+#line 69 "crayfish_mesh_calculator_lexer.ll"
 { meshlval.op = CrayfishMeshCalculatorNode::opMIN_AGGR; return FUNCTION; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 66 "crayfish_mesh_calculator_lexer.ll"
+#line 70 "crayfish_mesh_calculator_lexer.ll"
 { meshlval.op = CrayfishMeshCalculatorNode::opAVG_AGGR; return FUNCTION; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 67 "crayfish_mesh_calculator_lexer.ll"
+#line 71 "crayfish_mesh_calculator_lexer.ll"
 { meshlval.op = CrayfishMeshCalculatorNode::opABS; return FUNCTION; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 69 "crayfish_mesh_calculator_lexer.ll"
+#line 73 "crayfish_mesh_calculator_lexer.ll"
 { meshlval.op = CrayfishMeshCalculatorNode::opMAX; return FUNCTION2; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 70 "crayfish_mesh_calculator_lexer.ll"
+#line 74 "crayfish_mesh_calculator_lexer.ll"
 { meshlval.op = CrayfishMeshCalculatorNode::opMIN; return FUNCTION2; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 72 "crayfish_mesh_calculator_lexer.ll"
+#line 76 "crayfish_mesh_calculator_lexer.ll"
 { return IF; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 73 "crayfish_mesh_calculator_lexer.ll"
+#line 77 "crayfish_mesh_calculator_lexer.ll"
 { return AND; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 74 "crayfish_mesh_calculator_lexer.ll"
+#line 78 "crayfish_mesh_calculator_lexer.ll"
 { return OR; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 75 "crayfish_mesh_calculator_lexer.ll"
+#line 79 "crayfish_mesh_calculator_lexer.ll"
 { return NOT; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 76 "crayfish_mesh_calculator_lexer.ll"
+#line 80 "crayfish_mesh_calculator_lexer.ll"
 { return NE; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 77 "crayfish_mesh_calculator_lexer.ll"
+#line 81 "crayfish_mesh_calculator_lexer.ll"
 { return LE; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 78 "crayfish_mesh_calculator_lexer.ll"
+#line 82 "crayfish_mesh_calculator_lexer.ll"
 { return GE; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 79 "crayfish_mesh_calculator_lexer.ll"
+#line 83 "crayfish_mesh_calculator_lexer.ll"
 {return NODATA;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 81 "crayfish_mesh_calculator_lexer.ll"
+#line 85 "crayfish_mesh_calculator_lexer.ll"
 { return meshtext[0]; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 83 "crayfish_mesh_calculator_lexer.ll"
+#line 87 "crayfish_mesh_calculator_lexer.ll"
 { return meshtext[0]; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 85 "crayfish_mesh_calculator_lexer.ll"
+#line 89 "crayfish_mesh_calculator_lexer.ll"
 { meshlval.number  = atof(meshtext); return NUMBER; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 87 "crayfish_mesh_calculator_lexer.ll"
+#line 91 "crayfish_mesh_calculator_lexer.ll"
 { return DATASET_REF; }
 	YY_BREAK
 case 20:
 /* rule 20 can match eol */
 YY_RULE_SETUP
-#line 89 "crayfish_mesh_calculator_lexer.ll"
+#line 93 "crayfish_mesh_calculator_lexer.ll"
 { return DATASET_REF; }
 	YY_BREAK
 case 21:
 /* rule 21 can match eol */
 YY_RULE_SETUP
-#line 91 "crayfish_mesh_calculator_lexer.ll"
+#line 95 "crayfish_mesh_calculator_lexer.ll"
 /* skip blanks and tabs */
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 92 "crayfish_mesh_calculator_lexer.ll"
+#line 96 "crayfish_mesh_calculator_lexer.ll"
 ECHO;
 	YY_BREAK
-#line 980 "flex_crayfish_mesh_calculator_lexer.cpp"
+#line 984 "flex_crayfish_mesh_calculator_lexer.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1941,7 +1945,7 @@ void meshfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 92 "crayfish_mesh_calculator_lexer.ll"
+#line 96 "crayfish_mesh_calculator_lexer.ll"
 
 
 
