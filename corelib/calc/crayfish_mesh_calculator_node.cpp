@@ -122,37 +122,38 @@ bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, Data
 {
   if ( mType == tDatasetRef )
   {
-      result = dsu.copy(mDatasetName);
+      dsu.copy(result, mDatasetName);
       return true;
   }
   else if ( mType == tOperator )
   {
-    DataSet leftDataset = dsu.nodata();
-    DataSet rightDataset = dsu.nodata();
+    DataSet leftDataset("left");
+    DataSet rightDataset("right");
 
     if (mOperator == opIF) {
-        DataSet true_condition("true_condition");
-        bool res = mCondition->calculate(dsu, true_condition, dsu.ones());
+        DataSet condition("condition");
+
+        bool res = mCondition->calculate(dsu, condition, filter);
         if (!res) {
             // invalid boolean condition
             return false;
         }
 
-        DataSet false_condition = dsu.logicalNot(true_condition);
-
-        DataSet true_filter = dsu.logicalAnd(filter, true_condition);
-        DataSet false_filter = dsu.logicalAnd(filter, false_condition);
-
-        if ( !mLeft || !mLeft->calculate( dsu, leftDataset, true_filter ) )
-        {
-          return false;
-        }
-        if ( mRight && !mRight->calculate( dsu, rightDataset, false_filter ) )
+        // TRUE branch
+        if ( !mLeft || !mLeft->calculate( dsu, leftDataset, condition ) )
         {
           return false;
         }
 
-        result = dsu.add(leftDataset, rightDataset);
+        // FALSE branch
+        dsu.logicalNot(condition);
+        if ( mRight && !mRight->calculate( dsu, rightDataset, condition ) )
+        {
+          return false;
+        }
+
+        dsu.add(leftDataset, rightDataset);
+        dsu.copy(result, leftDataset);
         return true;
 
     } else {
@@ -168,85 +169,90 @@ bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, Data
         switch ( mOperator )
         {
           case opPLUS:
-            result = dsu.add(leftDataset, rightDataset);
+            dsu.add(leftDataset, rightDataset);
             break;
           case opMINUS:
-            result = dsu.subtract(leftDataset, rightDataset);
+            dsu.subtract(leftDataset, rightDataset);
             break;
           case opMUL:
-            result = dsu.multiply(leftDataset, rightDataset);
+            dsu.multiply(leftDataset, rightDataset);
             break;
           case opDIV:
-            result = dsu.divide(leftDataset, rightDataset);
+            dsu.divide(leftDataset, rightDataset);
             break;
           case opPOW:
-            result = dsu.power(leftDataset, rightDataset);
+            dsu.power(leftDataset, rightDataset);
             break;
           case opEQ:
-            result = dsu.equal(leftDataset, rightDataset);
+            dsu.equal(leftDataset, rightDataset);
             break;
           case opNE:
-            result = dsu.notEqual(leftDataset, rightDataset);
+            dsu.notEqual(leftDataset, rightDataset);
             break;
           case opGT:
-            result = dsu.greaterThan(leftDataset, rightDataset);
+            dsu.greaterThan(leftDataset, rightDataset);
             break;
           case opLT:
-            result = dsu.lesserThan(leftDataset, rightDataset);
+            dsu.lesserThan(leftDataset, rightDataset);
             break;
           case opGE:
-            result = dsu.subtract(leftDataset, rightDataset);
+            dsu.subtract(leftDataset, rightDataset);
             break;
           case opLE:
-            result = dsu.lesserEqual(leftDataset, rightDataset);
+            dsu.lesserEqual(leftDataset, rightDataset);
             break;
           case opAND:
-            result = dsu.logicalAnd(leftDataset, rightDataset);
+            dsu.logicalAnd(leftDataset, rightDataset);
             break;
           case opOR:
-            result = dsu.logicalOr(leftDataset, rightDataset);
+            dsu.logicalOr(leftDataset, rightDataset);
             break;
           case opNOT:
-            result = dsu.logicalNot(leftDataset);
+            dsu.logicalNot(leftDataset);
             break;
           case opMIN:
-            result = dsu.min(leftDataset, rightDataset);
+            dsu.min(leftDataset, rightDataset);
             break;
           case opMAX:
-            result = dsu.max(leftDataset, rightDataset);
+            dsu.max(leftDataset, rightDataset);
             break;
           case opABS:
-            result = dsu.abs(leftDataset);
+            dsu.abs(leftDataset);
             break;
           case opSUM_AGGR:
-            result = dsu.sum_aggr(leftDataset);
+            dsu.sum_aggr(leftDataset);
             break;
           case opMIN_AGGR:
-            result = dsu.min_aggr(leftDataset);
+            dsu.min_aggr(leftDataset);
             break;
           case opMAX_AGGR:
-            result = dsu.max_aggr(leftDataset);
+            dsu.max_aggr(leftDataset);
             break;
           case opAVG_AGGR:
-            result = dsu.avg_aggr(leftDataset);
+            dsu.avg_aggr(leftDataset);
             break;
           case opSIGN:
-            result = dsu.changeSign(leftDataset);
+            dsu.changeSign(leftDataset);
             break;
           default:
             return false;
         }
+        dsu.copy(result, leftDataset);
         return true;
     }
   }
   else if ( mType == tNumber )
   {
-    result = dsu.number(mNumber);
+    dsu.number(result, mNumber);
+    return true;
   }
   else if ( mType == tNoData )
   {
-    result = dsu.nodata();
+    dsu.nodata(result);
+    return true;
   }
+
+  // invalid type
   return false;
 }
 

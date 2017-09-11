@@ -169,6 +169,11 @@ class CrayfishDock(qtBaseClass, uiDialog):
         if self.currentCrayfishLayer():
             self.meshCalculatorDialog = CrayfishMeshCalculatorDialog(self.currentCrayfishLayer(), self)
             self.meshCalculatorDialog.show()
+            self.meshCalculatorDialog.dataset_added.connect(self.calculated_dataset_added)
+
+    def calculated_dataset_added(self, layer):
+        if self.currentCrayfishLayer() == layer:
+            self.currentLayerChanged() # reload
 
     def contourCustomRangeToggled(self, on):
         """ set provider's custom range """

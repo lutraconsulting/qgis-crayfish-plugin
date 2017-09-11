@@ -380,7 +380,28 @@ const char* CF_Mesh_destinationCrs(MeshH mesh)
 bool CF_Mesh_calc_expression_is_valid(MeshH mesh, const char* expression)
 {
     QString exp = QString::fromAscii(expression);
-    CrayfishMeshCalculator::Result res = CrayfishMeshCalculator::expression_valid(exp, *mesh);
+    CrayfishMeshCalculator::Result res = CrayfishMeshCalculator::expression_valid(exp, mesh);
+    if (res == CrayfishMeshCalculator::Success) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool CF_Mesh_calc_derived_dataset(MeshH mesh,
+                                  const char* expression,
+                                  float startTime, float endTime,
+                                  double xmin, double ymin, double xmax, double ymax,
+                                  bool addToMesh, const char* output_filename)
+{
+    QString exp = QString::fromAscii(expression);
+    QString outputFile = QString::fromAscii(output_filename);
+    BBox extent(xmin, ymin, xmax, ymax);
+
+    CrayfishMeshCalculator cc(exp, outputFile, extent, startTime, endTime, mesh, addToMesh);
+
+    /** Starts the calculation and writes new dataset to file, returns Result */
+    CrayfishMeshCalculator::Result res = cc.processCalculation();
     if (res == CrayfishMeshCalculator::Success) {
         return true;
     } else {

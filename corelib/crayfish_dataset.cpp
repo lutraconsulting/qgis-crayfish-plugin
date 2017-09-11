@@ -65,6 +65,18 @@ void DataSet::addOutput(Output* output)
   output->dataSet = this;
 }
 
+void DataSet::removeOutput(Output* output) {
+    int i = outputs.indexOf(output);
+    if (i != -1)
+    {
+        outputs.remove(i);updateZRange();
+    }
+}
+
+void DataSet::removeAllOutputs() {
+    outputs.clear();
+    updateZRange();
+}
 
 const Output* DataSet::constOutput(int outputTime) const
 {

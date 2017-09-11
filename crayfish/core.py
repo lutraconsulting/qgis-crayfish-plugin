@@ -93,6 +93,13 @@ def load_library():
     lib.CF_Mesh_destinationCrs.restype = ctypes.c_char_p
     lib.CF_Mesh_calc_expression_is_valid.restype = ctypes.c_bool
     lib.CF_Mesh_calc_expression_is_valid.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    lib.CF_Mesh_calc_derived_dataset.restype = ctypes.c_bool
+    lib.CF_Mesh_calc_derived_dataset.argtypes = [ctypes.c_void_p, # mesh
+                                                 ctypes.c_void_p, # expression
+                                                 ctypes.c_float, ctypes.c_float, # times
+                                                 ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, # bbox
+                                                 ctypes.c_bool, # add to mesh
+                                                 ctypes.c_char_p] # output filename
     lib.CF_DS_name.restype = ctypes.c_char_p
     lib.CF_DS_fileName.restype = ctypes.c_char_p
     lib.CF_DS_refTime.restype = ctypes.c_char_p
@@ -315,7 +322,17 @@ class Mesh:
     return self.lib.CF_Mesh_calc_expression_is_valid(self.handle, ctypes.c_char_p(expression))
 
   def create_derived_dataset(self, expression, time_filter, spatial_filter, add_to_mesh, output_filename):
-    return True #TODO
+    return self.lib.CF_Mesh_calc_derived_dataset(self.handle,
+                                                 ctypes.c_char_p(expression),
+                                                 ctypes.c_float(time_filter[0]), #min time
+                                                 ctypes.c_float(time_filter[1] if time_filter[1] else 0.0), #max time
+                                                 ctypes.c_double(spatial_filter[0]), # xmin
+                                                 ctypes.c_double(spatial_filter[1]), # ymin
+                                                 ctypes.c_double(spatial_filter[2]), # xmax
+                                                 ctypes.c_double(spatial_filter[3]), # ymax
+                                                 ctypes.c_double(add_to_mesh),
+                                                 ctypes.c_char_p(output_filename)
+    )
 
 
 class DataSet(object):

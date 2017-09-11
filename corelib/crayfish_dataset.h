@@ -72,6 +72,8 @@ public:
     int outputCount() const { return outputs.size(); }
 
     void addOutput(Output* output);
+    void removeOutput(Output* output);
+    void removeAllOutputs();
 
     const Output* constOutput(int outputTime) const;
     const NodeOutput* constNodeOutput(int outputTime) const;

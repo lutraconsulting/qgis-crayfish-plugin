@@ -5,7 +5,7 @@
 #include "crayfish_capi.h"
 
 void help() {
-    std::cout << "crayfishinfo mesh_file [-dDataset_file] [-eExpression] [-h]" << std::endl;
+    std::cout << "crayfishinfo mesh_file [-dDataset_file] [-eExpression] [-oOutputExpressionFilename] [-h]" << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     QString mesh_file = cmdline_args.takeFirst();
     QString dataset_file;
     QString expression;
+    QString outputFilename;
 
     foreach (QString arg, cmdline_args) {
         if (arg.startsWith("-h")) {
@@ -37,6 +38,10 @@ int main(int argc, char *argv[]) {
         if (arg.startsWith("-e")) {
             expression = arg;
             expression.remove(0, 2);
+        }
+        if (arg.startsWith("-o")) {
+            outputFilename = arg;
+            outputFilename.remove(0, 2);
         }
     }
 
@@ -84,6 +89,23 @@ int main(int argc, char *argv[]) {
         std::cout << "Expression: " << expression.toStdString() << std::endl;
         bool is_valid = CF_Mesh_calc_expression_is_valid(m, expression.toAscii());
         std::cout << "Is Valid: " << std::boolalpha << is_valid << std::endl;
+
+        if (is_valid) {
+            if (!outputFilename.isEmpty()) {
+                double xmin, ymin, xmax, ymax;
+                CF_Mesh_extent(m, &xmin, &ymin, &xmax, &ymax);
+                double startTime = 0; //TODO
+                double endTime = 0; // TODO
+                bool add_to_dataset = false; //TODO
+                bool res = CF_Mesh_calc_derived_dataset(m,
+                                                        expression.toAscii(),
+                                                        startTime, endTime,
+                                                        xmin, ymin, xmax, ymax,
+                                                        add_to_dataset,  outputFilename.toAscii());
+
+                std::cout << "Exported " << std::boolalpha << res << " to " << outputFilename.toStdString() << std::endl;
+            }
+        }
     }
 
     return EXIT_SUCCESS;

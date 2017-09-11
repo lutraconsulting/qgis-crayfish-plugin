@@ -28,11 +28,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "calc/crayfish_mesh_calculator_node.h"
 #include "crayfish_dataset.h"
 #include "calc/crayfish_dataset_utils.h"
+#include "crayfish.h"
 
-
-CrayfishMeshCalculator::CrayfishMeshCalculator( const QString &formulaString, const QString &outputFile,
+CrayfishMeshCalculator::CrayfishMeshCalculator(const QString &formulaString, const QString &outputFile,
     const BBox &outputExtent, float startTime, float endTime,
-    Mesh &mesh, bool addToMesh )
+    Mesh *mesh, bool addToMesh )
   : mFormulaString( formulaString )
   , mOutputFile( outputFile )
   , mOutputExtent( outputExtent )
@@ -43,7 +43,7 @@ CrayfishMeshCalculator::CrayfishMeshCalculator( const QString &formulaString, co
 {
 }
 
-CrayfishMeshCalculator::Result CrayfishMeshCalculator::expression_valid(const QString &formulaString, const Mesh &mesh) {
+CrayfishMeshCalculator::Result CrayfishMeshCalculator::expression_valid(const QString &formulaString, const Mesh *mesh) {
     QString errorString;
     CrayfishMeshCalculatorNode *calcNode = CrayfishMeshCalculatorNode::parseMeshCalcString( formulaString, errorString );
     if ( !calcNode )
@@ -75,18 +75,41 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
   }
 
   //open output dataset
-  DataSet outputDataset(mOutputFile);
-  DataSet filter = dsu.ones(); // TODO use spatial&time flter
+  DataSet* outputDataset = new DataSet(mOutputFile);
+
+  DataSet filter("filter");
+  dsu.ones(filter); // TODO use spatial&time flter
 
   // calculate
-  bool ok = calcNode->calculate(dsu, outputDataset, filter);
+  bool ok = calcNode->calculate(dsu, *outputDataset, filter);
   if (!ok) {
+      delete outputDataset;
+      outputDataset = 0;
       return EvaluateError;
   }
 
+  // Finalize dataset
+  outputDataset->setMesh(mMesh);
+  outputDataset->setType(DataSet::Scalar);
+
   // store to file
+  if (!mOutputFile.isEmpty()) {
+      bool success = Crayfish::saveDataSet(mOutputFile, outputDataset);
+      if (!success) {
+          delete outputDataset;
+          outputDataset = 0;
+
+          return CreateOutputError;
+      }
+  }
 
   // optionally add to the mesh
+  if (mAddToMesh) {
+      mMesh->addDataSet(outputDataset);
+  } else {
+      delete outputDataset;
+      outputDataset = 0;
+  }
 
   return Success;
 }

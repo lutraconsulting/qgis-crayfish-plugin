@@ -122,3 +122,8 @@ Mesh::DataSets Crayfish::loadDataSet(const QString& fileName, const Mesh* mesh, 
   return lst;
 }
 
+bool Crayfish::saveDataSet(const QString& fileName, const DataSet* dataset)
+{
+    // We do not have anything else implemented
+    return saveBinaryDataSet(fileName, dataset);
+}

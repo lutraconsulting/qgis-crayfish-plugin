@@ -38,6 +38,8 @@ ALLOWED_SUFFIX = ".dat"
 
 class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
 
+    dataset_added = pyqtSignal(object) # layer
+
     def __init__(self, layer, parent=None):
         qtBaseClass.__init__(self)
         uiDialog.__init__(self, parent)
@@ -157,13 +159,18 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
         self.setAcceptButtonState()
 
     def on_mButtonBox_accepted(self):
-        self.layer.mesh.create_derived_dataset(
+        success = self.layer.mesh.create_derived_dataset(
             expression=self.formula_string(),
             time_filter=self.time_filter(),
             spatial_filter=self.spatial_filter(),
             add_to_mesh=self.add_dataset_to_layer(),
             output_filename=self.output_filename()
         )
+        if success:
+            self.dataset_added.emit(self.layer)
+        else:
+            #what to do?
+            pass
 
     def on_select_output_filename_clicked(self):
         s = QSettings()
