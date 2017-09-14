@@ -49,6 +49,8 @@ private:
   const Mesh* mMesh;
   bool mIsValid; // all used datasets (in datasetMap) do have outputs for same times.
                  // all used dataset names are present in mesh
+  Output::Type mOutputType; // mesh can work only with one output types, so you cannot mix
+                            // e.g. one dataset with element outputs and one with node outputs
   QVector<float> mTimes;
   QMap < QString, const DataSet* > mDatasetMap;
 
@@ -63,6 +65,7 @@ public:
     void nodata( DataSet& dataset1) const;
     void copy( DataSet& dataset1, const QString& datasetName ) const;
     void copy( DataSet& dataset1, const DataSet& dataset2 ) const;
+    void tranferOutputs( DataSet& dataset1, DataSet& dataset2 ) const;
     void number( DataSet& dataset1, float val) const;
 
     void logicalNot(DataSet& dataset1) const {return func1(dataset1, std::bind(&CrayfishDataSetUtils::flogicalNot, this, std::placeholders::_1));}

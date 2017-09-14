@@ -4,6 +4,7 @@
 CrayfishDataSetUtils::CrayfishDataSetUtils(const Mesh *mesh, const QStringList& usedDatasetNames)
     : mMesh(mesh)
     , mIsValid(false)
+    , mOutputType(Output::TypeNode) // right now we support only NodeOutputs
 {
     // First populate datasetMap and see if we have all datasets present
     foreach (const QString& datasetName, usedDatasetNames )
@@ -56,6 +57,18 @@ CrayfishDataSetUtils::CrayfishDataSetUtils(const Mesh *mesh, const QStringList& 
         mTimes.push_back(0.0f);
     }
 
+    // check that all outputs are of the same type
+    // right now we support only NodeOutputs,
+    // because also SMS .dat files support only NodeOutputs
+    foreach (const DataSet* ds, mDatasetMap.values()) {
+        for(int output_index=0; output_index < ds->outputCount(); ++output_index) {
+            const Output* o = ds->constOutput(output_index);
+            if (o->type() != mOutputType)
+                return;
+        }
+    }
+
+    // All is valid!
     mIsValid = true;
 }
 
@@ -66,15 +79,22 @@ bool CrayfishDataSetUtils::isValid()
 
 void CrayfishDataSetUtils::number(DataSet& dataset1, float val) const
 {
-    NodeOutput* o = new NodeOutput();
-    o->init(mMesh->nodes().size(),
-            mMesh->elements().size(),
-            DataSet::Scalar);
+    dataset1.deleteOutputs();
+    if (mOutputType == Output::TypeNode) {
+        NodeOutput* output = new NodeOutput();
+        output->init(mMesh->nodes().size(),
+                mMesh->elements().size(),
+                DataSet::Scalar);
 
-    memset(o->getActive().data(), val == -9999, mMesh->elements().size()); // All cells active
-    memset(o->getValues().data(), val, mMesh->elements().size()); // All values val
-
-    dataset1.addOutput(o);
+        memset(output->getActive().data(), val == -9999, mMesh->elements().size()); // All cells active
+        memset(output->getValues().data(), val, mMesh->nodes().size()); // All values val
+        dataset1.addOutput(output);
+    } else {
+        ElementOutput* output = new ElementOutput();
+        output->init(mMesh->elements().size(), false);
+        memset(output->getValues().data(), val, mMesh->elements().size()); // All values val
+        dataset1.addOutput(output);
+    }
 }
 
 void CrayfishDataSetUtils::ones(DataSet& dataset1) const {
@@ -87,6 +107,8 @@ void CrayfishDataSetUtils::nodata(DataSet& dataset1) const {
 
 
 void CrayfishDataSetUtils::copy( DataSet& dataset1, const DataSet& dataset2 ) const {
+    dataset1.deleteOutputs();
+
     for(int output_index=0; output_index < dataset2.outputCount(); ++output_index) {
         const Output* o0 = dataset2.constOutput(output_index);
 
@@ -127,6 +149,16 @@ void CrayfishDataSetUtils::copy(DataSet& dataset1, const QString& datasetName) c
     copy(dataset1, *ds0);
 }
 
+
+void CrayfishDataSetUtils::tranferOutputs( DataSet& dataset1, DataSet& dataset2 ) const {
+    dataset1.deleteOutputs();
+    for (int i=0; i<dataset2.outputCount(); ++i) {
+        Output* o = dataset2.output(i);
+        Q_ASSERT(o != 0);
+        dataset1.addOutput(o);
+    }
+    dataset2.dispatchOutputs();
+}
 
 
 Output* CrayfishDataSetUtils::canditateOutput(DataSet& dataset, int time_index) const {
@@ -199,7 +231,10 @@ void CrayfishDataSetUtils::func2(DataSet& dataset1, const DataSet& dataset2, std
         Output* o1 = canditateOutput(dataset1, time_index);
         const Output* o2 = constCanditateOutput(dataset2, time_index);
 
-        if ((o1->type() == o2->type()) && (o1->type() == Output::TypeNode )) {
+        Q_ASSERT(o1->type() == o2->type()); // we do not support mixed output types
+
+        if (o1->type() == Output::TypeNode ) {
+
             NodeOutput* nodeOutput = static_cast<NodeOutput*>(o1);
 
             for (int n=0; n<mMesh->nodes().size(); ++n)
@@ -217,7 +252,8 @@ void CrayfishDataSetUtils::func2(DataSet& dataset1, const DataSet& dataset2, std
             // TODO activate
             memset(nodeOutput->getActive().data(), 1, mMesh->elements().size()); // All cells active
 
-        } else if ((o1->type() == o2->type()) && (o1->type() == Output::TypeElement )) {
+        } else // o1->type() == Output::TypeElement
+        {
             ElementOutput* elemOutput = static_cast<ElementOutput*>(o1);
 
             for (int n=0; n<mMesh->elements().size(); ++n)
@@ -231,30 +267,6 @@ void CrayfishDataSetUtils::func2(DataSet& dataset1, const DataSet& dataset2, std
 
                 elemOutput->getValues()[n] = res_val;
             }
-
-        } else {
-            // mixture, do element-output since we have interpolation functions for that
-            ElementOutput* output = new ElementOutput();
-            output->init(mMesh->elements().size(), false);
-
-            for (int n=0; n<mMesh->elements().size(); ++n)
-            {
-                double val1, val2;
-                double cx, cy;
-                mMesh->elementCentroid(n, cx, cy);
-                bool res1 = mMesh->valueAt(n, cx, cy, &val1, o1);
-                bool res2 = mMesh->valueAt(n, cx, cy, &val2, o2);
-                float res_val = -9999.0;
-
-                if (res1 && res2) {
-                    if ((val1 != -9999.0) && (val2 != -9999.0) ) {
-                        res_val = func(float(val1), float(val2));
-                    }
-                }
-                output->getValues()[n] = res_val;
-            }
-            dataset1.removeOutput(o1);
-            dataset1.addOutput(output);
         }
     }
 }
@@ -289,8 +301,9 @@ void CrayfishDataSetUtils::funcAggr(DataSet& dataset1, std::function<float(QVect
         }
 
         memset(output->getActive().data(), 1, mMesh->elements().size()); // All cells active
-        dataset1.removeAllOutputs();
+        dataset1.deleteOutputs();
         dataset1.addOutput(output);
+
     } else {
         QVector < float > vals;
         ElementOutput* output = new ElementOutput();
@@ -314,7 +327,8 @@ void CrayfishDataSetUtils::funcAggr(DataSet& dataset1, std::function<float(QVect
 
             output->getValues()[n] = res_val;
         }
-        dataset1.removeAllOutputs();
+
+        dataset1.deleteOutputs();
         dataset1.addOutput(output);
     }
 }

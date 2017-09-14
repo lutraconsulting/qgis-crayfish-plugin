@@ -24,6 +24,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <QFileInfo>
+
 #include "calc/crayfish_mesh_calculator.h"
 #include "calc/crayfish_mesh_calculator_node.h"
 #include "crayfish_dataset.h"
@@ -61,6 +63,11 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::expression_valid(const QS
 
 CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
 {
+  // check input
+  if (mOutputFile.isEmpty()) {
+        return CreateOutputError;
+  }
+
   //prepare search string / tree
   QString errorString;
   CrayfishMeshCalculatorNode *calcNode = CrayfishMeshCalculatorNode::parseMeshCalcString( mFormulaString, errorString );
@@ -91,16 +98,16 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
   // Finalize dataset
   outputDataset->setMesh(mMesh);
   outputDataset->setType(DataSet::Scalar);
+  outputDataset->setName(QFileInfo(mOutputFile).baseName());
+  outputDataset->updateZRange();
 
   // store to file
-  if (!mOutputFile.isEmpty()) {
-      bool success = Crayfish::saveDataSet(mOutputFile, outputDataset);
-      if (!success) {
-          delete outputDataset;
-          outputDataset = 0;
+  bool success = Crayfish::saveDataSet(mOutputFile, outputDataset);
+  if (!success) {
+    delete outputDataset;
+    outputDataset = 0;
 
-          return CreateOutputError;
-      }
+    return CreateOutputError;
   }
 
   // optionally add to the mesh

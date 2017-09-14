@@ -153,7 +153,7 @@ bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, Data
         }
 
         dsu.add(leftDataset, rightDataset);
-        dsu.copy(result, leftDataset);
+        dsu.tranferOutputs(result, leftDataset);
         return true;
 
     } else {
@@ -237,7 +237,7 @@ bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, Data
           default:
             return false;
         }
-        dsu.copy(result, leftDataset);
+        dsu.tranferOutputs(result, leftDataset);
         return true;
     }
   }

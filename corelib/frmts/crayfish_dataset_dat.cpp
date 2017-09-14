@@ -598,13 +598,13 @@ bool Crayfish::saveBinaryDataSet(const QString& datFileName, const DataSet *data
         const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
 
         if (out.writeRawData((char*)&CT_TS, 4) != 4) return false;
-        if (out.writeRawData((char*)&istat, 4) != 4) return false;
+        if (out.writeRawData((char*)&istat, 1) != 1) return false;
         if (out.writeRawData((char*)&output->time, 4) != 4) return false;
 
         if (istat)
         {
           // Write status flags
-          for (int i=0; i < elemCount; i++)
+          for (int i=0; i<elemCount; i++)
           {
               bool active = nodeOutput->isActive(i);
               if( out.writeRawData( (char*)&active, 1) != 1 ) return false;
@@ -628,6 +628,8 @@ bool Crayfish::saveBinaryDataSet(const QString& datFileName, const DataSet *data
           }
         }
     }
+
+    if (out.writeRawData((char*)&CT_ENDDS, 4) != 4) return false;
 
     return true;
 }
