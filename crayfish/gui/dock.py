@@ -168,8 +168,8 @@ class CrayfishDock(qtBaseClass, uiDialog):
 
         if self.currentCrayfishLayer():
             self.meshCalculatorDialog = CrayfishMeshCalculatorDialog(self.currentCrayfishLayer(), self)
-            self.meshCalculatorDialog.show()
             self.meshCalculatorDialog.dataset_added.connect(self.calculated_dataset_added)
+            self.meshCalculatorDialog.show()
 
     def calculated_dataset_added(self, layer):
         if self.currentCrayfishLayer() == layer:

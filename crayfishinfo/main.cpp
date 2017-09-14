@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
     cmdline_args.takeFirst(); //Executable
 
     // parse arguments
-    if (cmdline_args.length() < 2) {
+    if (cmdline_args.length() < 1) {
         std::cout << "Missing mesh file argument" << std::endl;
         help();
         return 1;
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
                 CF_Mesh_extent(m, &xmin, &ymin, &xmax, &ymax);
                 double startTime = 0; //TODO
                 double endTime = 0; // TODO
-                bool add_to_dataset = false; //TODO
+                bool add_to_dataset = false;
                 bool res = CF_Mesh_calc_derived_dataset(m,
                                                         expression.toAscii(),
                                                         startTime, endTime,

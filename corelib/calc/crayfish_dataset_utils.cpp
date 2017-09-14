@@ -25,7 +25,7 @@ CrayfishDataSetUtils::CrayfishDataSetUtils(const Mesh *mesh, const QStringList& 
             return;
         }
 
-        if (ds->isTimeVarying()) {
+        if (ds->outputCount() > 1) {
 
             if (times_populated)
             {
@@ -168,9 +168,8 @@ void CrayfishDataSetUtils::tranferOutputs( DataSet& dataset1, DataSet& dataset2 
 
 
 Output* CrayfishDataSetUtils::canditateOutput(DataSet& dataset, int time_index) const {
-    if (dataset.isTimeVarying()) {
+    if (dataset.outputCount() > 1) {
         Q_ASSERT(dataset.outputCount() > time_index);
-
         return dataset.output(time_index);
     } else {
         Q_ASSERT(dataset.outputCount() == 1);
@@ -179,9 +178,8 @@ Output* CrayfishDataSetUtils::canditateOutput(DataSet& dataset, int time_index) 
 }
 
 const Output* CrayfishDataSetUtils::constCanditateOutput(const DataSet& dataset, int time_index) const {
-    if (dataset.isTimeVarying()) {
+    if (dataset.outputCount() > 1) {
         Q_ASSERT(dataset.outputCount() > time_index);
-
         return dataset.constOutput(time_index);
     } else {
         Q_ASSERT(dataset.outputCount() == 1);
@@ -190,7 +188,7 @@ const Output* CrayfishDataSetUtils::constCanditateOutput(const DataSet& dataset,
 }
 
 int CrayfishDataSetUtils::outputTimesCount(const DataSet& dataset1, const DataSet& dataset2) const {
-    if (dataset1.isTimeVarying() && dataset2.isTimeVarying()) {
+    if ( (dataset1.outputCount() > 1) || ( dataset2.outputCount() > 1 )) {
         return mTimes.size();
     } else {
         return 1;
@@ -281,7 +279,6 @@ void CrayfishDataSetUtils::funcAggr(DataSet& dataset1, std::function<float(QVect
     Output* o0 = canditateOutput(dataset1, 0);
 
     if (o0->type() == Output::TypeNode ) {
-        QVector < float > vals;
         NodeOutput* output = new NodeOutput();
         output->init(mMesh->nodes().size(),
                 mMesh->elements().size(),
@@ -289,6 +286,7 @@ void CrayfishDataSetUtils::funcAggr(DataSet& dataset1, std::function<float(QVect
 
         for (int n=0; n<mMesh->nodes().size(); ++n)
         {
+            QVector < float > vals;
             for (int time_index=0; time_index<dataset1.outputCount(); ++time_index) {
                 const Output* o1 = canditateOutput(dataset1, time_index);
                 Q_ASSERT(o1->type() == o0->type());
@@ -311,12 +309,12 @@ void CrayfishDataSetUtils::funcAggr(DataSet& dataset1, std::function<float(QVect
         dataset1.addOutput(output);
 
     } else {
-        QVector < float > vals;
         ElementOutput* output = new ElementOutput();
         output->init(mMesh->elements().size(), false);
 
         for (int n=0; n<mMesh->elements().size(); ++n)
         {
+            QVector < float > vals;
             for (int time_index=0; time_index<dataset1.outputCount(); ++time_index) {
                 const Output* o1 = canditateOutput(dataset1, time_index);
                 Q_ASSERT(o1->type() == o0->type());

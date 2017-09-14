@@ -100,6 +100,7 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
   outputDataset->setType(DataSet::Scalar);
   outputDataset->setName(QFileInfo(mOutputFile).baseName());
   outputDataset->updateZRange();
+  outputDataset->setIsTimeVarying(outputDataset->outputCount() > 1);
 
   // store to file
   bool success = Crayfish::saveDataSet(mOutputFile, outputDataset);

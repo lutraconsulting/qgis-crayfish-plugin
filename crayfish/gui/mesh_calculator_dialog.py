@@ -172,17 +172,22 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
         )
 
         if success:
+            QMessageBox.information(self,
+                                    'Mesh Calculator',
+                                    'New dataset created successfully {}'.format(self.output_filename()))
             if self.add_dataset_to_layer():
                 new_dataset_index = mesh.dataset_count() - 1
                 self.layer.initCustomValues(mesh.dataset(new_dataset_index))
                 self.dataset_added.emit(self.layer)
+
         else:
             QMessageBox.critical(self,
-                                 'Could Not Calculate Dataset',
+                                 'Mesh Calculator',
                                  "Unable to calculate new dataset. \n" +
                                  "Please check the output location if writtable and" +
                                  " that expression references existing datasets")
-            return False
+
+        self.close()
 
     def on_select_output_filename_clicked(self):
         s = QSettings()
