@@ -78,9 +78,9 @@ class CrayfishMeshCalculatorNode {
     CrayfishMeshCalculatorNode(); //NoDATA
     CrayfishMeshCalculatorNode( double number );
     CrayfishMeshCalculatorNode( Operator op, CrayfishMeshCalculatorNode *left, CrayfishMeshCalculatorNode *right );
-    CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode *left /*if true */,
-                                CrayfishMeshCalculatorNode *right /* if false */,
-                                CrayfishMeshCalculatorNode *condition /* bool condition */);
+    CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode *condition /* bool condition */,
+                                CrayfishMeshCalculatorNode *left /*if true */,
+                                CrayfishMeshCalculatorNode *right /* if false */);
     CrayfishMeshCalculatorNode( const QString &datasetName );
     ~CrayfishMeshCalculatorNode();
 

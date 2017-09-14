@@ -103,6 +103,7 @@ void CrayfishDataSetUtils::number(DataSet& dataset1, float val) const
     }
 }
 
+
 void CrayfishDataSetUtils::ones(DataSet& dataset1) const {
     number(dataset1, 1.0f);
 }
@@ -152,6 +153,7 @@ void CrayfishDataSetUtils::copy( DataSet& dataset1, const DataSet& dataset2 ) co
 
 void CrayfishDataSetUtils::copy(DataSet& dataset1, const QString& datasetName) const {
     const DataSet* ds0 = dataset(datasetName);
+    Q_ASSERT(ds0 != 0);
     copy(dataset1, *ds0);
 }
 
@@ -165,7 +167,6 @@ void CrayfishDataSetUtils::tranferOutputs( DataSet& dataset1, DataSet& dataset2 
     }
     dataset2.dispatchOutputs();
 }
-
 
 Output* CrayfishDataSetUtils::canditateOutput(DataSet& dataset, int time_index) const {
     if (dataset.outputCount() > 1) {
@@ -336,3 +337,26 @@ void CrayfishDataSetUtils::funcAggr(DataSet& dataset1, std::function<float(QVect
         dataset1.addOutput(output);
     }
 }
+
+float CrayfishDataSetUtils::ffilter(float val1, float filter) const {if (filter > 0) {return val1;} else {return -9999;}}
+float CrayfishDataSetUtils::fadd(float val1, float val2) const {return val1 + val2;}
+float CrayfishDataSetUtils::fsubtract(float val1, float val2) const {return val1 - val2;}
+float CrayfishDataSetUtils::fmultiply(float val1, float val2) const {return val1 * val2;}
+float CrayfishDataSetUtils::fdivide(float val1, float val2) const {if (val2 == 0) return -9999; return val1 / val2;}
+float CrayfishDataSetUtils::fpower(float val1, float val2) const {return pow(val1,val2);}
+float CrayfishDataSetUtils::fequal(float val1, float val2) const {return val1 == val2;}
+float CrayfishDataSetUtils::fnotEqual(float val1, float val2) const {return val1 != val2;}
+float CrayfishDataSetUtils::fgreaterThan(float val1, float val2) const {return val1 > val2;}
+float CrayfishDataSetUtils::flesserThan(float val1, float val2) const {return val1 < val2;}
+float CrayfishDataSetUtils::flesserEqual(float val1, float val2) const {return val1 <= val2;}
+float CrayfishDataSetUtils::flogicalAnd(float val1, float val2) const {return bool(val1) && bool(val2);}
+float CrayfishDataSetUtils::flogicalOr(float val1, float val2) const {return bool(val1) || bool(val2);}
+float CrayfishDataSetUtils::flogicalNot(float val1) const {return ! bool(val1);}
+float CrayfishDataSetUtils::fchangeSign(float val1) const {return -val1;}
+float CrayfishDataSetUtils::fmin(float val1, float val2) const {if (val1 > val2) {return val2;} else {return val1;}}
+float CrayfishDataSetUtils::fmax(float val1, float val2) const {if (val1 < val2) {return val2;} else {return val1;}}
+float CrayfishDataSetUtils::fabs(float val1) const {if (val1 > 0) {return val1;} else {return -val1;}}
+float CrayfishDataSetUtils::fsum_aggr(QVector<float> vals) const {return std::accumulate(vals.begin(), vals.end(), 0.0);}
+float CrayfishDataSetUtils::fmin_aggr(QVector<float> vals) const {return *std::min_element(vals.begin(), vals.end());}
+float CrayfishDataSetUtils::fmax_aggr(QVector<float> vals) const {return *std::max_element(vals.begin(), vals.end());}
+float CrayfishDataSetUtils::favg_aggr(QVector<float> vals) const {return fsum_aggr(vals) / vals.size();}

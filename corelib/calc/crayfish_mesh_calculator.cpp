@@ -96,6 +96,7 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
   }
 
   // Finalize dataset
+  dsu.filter(*outputDataset, filter);
   outputDataset->setMesh(mMesh);
   outputDataset->setType(DataSet::Scalar);
   outputDataset->setName(QFileInfo(mOutputFile).baseName());

@@ -16,27 +16,28 @@
 class CrayfishDataSetUtils
 {
 private:
-  float fadd(float val1, float val2) const {return val1 + val2;}
-  float fsubtract(float val1, float val2) const {return val1 - val2;}
-  float fmultiply(float val1, float val2) const {return val1 * val2;}
-  float fdivide(float val1, float val2) const {if (val2 == 0) return -9999; return val1 / val2;}
-  float fpower(float val1, float val2) const {return pow(val1,val2);}
-  float fequal(float val1, float val2) const {return val1 == val2;}
-  float fnotEqual(float val1, float val2) const {return val1 != val2;}
-  float fgreaterThan(float val1, float val2) const {return val1 > val2;}
-  float flesserThan(float val1, float val2) const {return val1 < val2;}
-  float flesserEqual(float val1, float val2) const {return val1 <= val2;}
-  float flogicalAnd(float val1, float val2) const {return bool(val1) && bool(val2);}
-  float flogicalOr(float val1, float val2) const {return bool(val1) || bool(val2);}
-  float flogicalNot(float val1) const {return ! bool(val1);}
-  float fchangeSign(float val1) const {return -val1;}
-  float fmin(float val1, float val2) const {if (val1 > val2) {return val2;} else {return val1;}}
-  float fmax(float val1, float val2) const {if (val1 < val2) {return val2;} else {return val1;}}
-  float fabs(float val1) const {if (val1 > 0) {return val1;} else {return -val1;}}
-  float fsum_aggr(QVector<float> vals) const {return std::accumulate(vals.begin(), vals.end(), 0.0);}
-  float fmin_aggr(QVector<float> vals) const {return *std::min_element(vals.begin(), vals.end());}
-  float fmax_aggr(QVector<float> vals) const {return *std::max_element(vals.begin(), vals.end());}
-  float favg_aggr(QVector<float> vals) const {return fsum_aggr(vals) / vals.size();}
+  float ffilter(float val1, float filter) const;
+  float fadd(float val1, float val2) const;
+  float fsubtract(float val1, float val2) const;
+  float fmultiply(float val1, float val2) const;
+  float fdivide(float val1, float val2) const;
+  float fpower(float val1, float val2) const;
+  float fequal(float val1, float val2) const;
+  float fnotEqual(float val1, float val2) const;
+  float fgreaterThan(float val1, float val2) const;
+  float flesserThan(float val1, float val2) const;
+  float flesserEqual(float val1, float val2) const;
+  float flogicalAnd(float val1, float val2) const;
+  float flogicalOr(float val1, float val2) const;
+  float flogicalNot(float val1) const;
+  float fchangeSign(float val1) const;
+  float fmin(float val1, float val2) const;
+  float fmax(float val1, float val2) const;
+  float fabs(float val1) const;
+  float fsum_aggr(QVector<float> vals) const;
+  float fmin_aggr(QVector<float> vals) const;
+  float fmax_aggr(QVector<float> vals) const;
+  float favg_aggr(QVector<float> vals) const;
 
   Output* canditateOutput(DataSet &dataset, int time_index) const;
   const Output* constCanditateOutput(const DataSet& dataset, int time_index) const;
@@ -60,12 +61,13 @@ public:
     const Mesh* mesh() const { return mMesh; }
     const DataSet* dataset( const QString& datasetName ) const {const DataSet* ds = mDatasetMap[datasetName]; return ds;}
 
-    // TODO FILTERS! 
     void ones( DataSet& dataset1) const;
     void nodata( DataSet& dataset1) const;
     void copy( DataSet& dataset1, const QString& datasetName ) const;
     void copy( DataSet& dataset1, const DataSet& dataset2 ) const;
     void tranferOutputs( DataSet& dataset1, DataSet& dataset2 ) const;
+
+
     void number( DataSet& dataset1, float val) const;
 
     void logicalNot(DataSet& dataset1) const {return func1(dataset1, std::bind(&CrayfishDataSetUtils::flogicalNot, this, std::placeholders::_1));}
@@ -86,6 +88,7 @@ public:
     void logicalOr(DataSet& dataset1, const DataSet& dataset2) const {return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::flogicalOr, this, std::placeholders::_1, std::placeholders::_2));}
     void min(DataSet& dataset1, const DataSet& dataset2) const {return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fmin, this, std::placeholders::_1, std::placeholders::_2));}
     void max(DataSet& dataset1, const DataSet& dataset2) const {return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fmax, this, std::placeholders::_1, std::placeholders::_2));}
+    void filter( DataSet& dataset1, const DataSet& filter ) const {return func2(dataset1, filter, std::bind(&CrayfishDataSetUtils::ffilter, this, std::placeholders::_1, std::placeholders::_2));}
 
     void sum_aggr(DataSet& dataset1) const {return funcAggr(dataset1, std::bind(&CrayfishDataSetUtils::fsum_aggr, this, std::placeholders::_1));}
     void min_aggr(DataSet& dataset1) const {return funcAggr(dataset1, std::bind(&CrayfishDataSetUtils::fmin_aggr, this, std::placeholders::_1));}

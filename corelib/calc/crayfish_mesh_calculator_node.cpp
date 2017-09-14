@@ -59,9 +59,9 @@ CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( Operator op, CrayfishMes
 {
 }
 
-CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode *left /*if true */,
-                            CrayfishMeshCalculatorNode *right /* if false */,
-                            CrayfishMeshCalculatorNode *condition /* bool condition */)
+CrayfishMeshCalculatorNode::CrayfishMeshCalculatorNode( CrayfishMeshCalculatorNode *condition /* bool condition */,
+                                                        CrayfishMeshCalculatorNode *left /*if true */,
+                                                        CrayfishMeshCalculatorNode *right /* if false */)
     : mType( tOperator )
     , mLeft( left )
     , mRight( right )
@@ -115,11 +115,20 @@ QStringList CrayfishMeshCalculatorNode::usedDatasetNames() const
       res += mRight->usedDatasetNames();
     }
 
+    if (mCondition)
+    {
+      res += mCondition->usedDatasetNames();
+    }
+
     return res;
 }
 
 bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, DataSet& result, const DataSet& filter) const
 {
+  // note that filtering is done only when it affects the following operation.
+  // final filtering of the result is done in the processCalculation()
+  // to save some computation time
+
   if ( mType == tDatasetRef )
   {
       dsu.copy(result, mDatasetName);
@@ -130,116 +139,118 @@ bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, Data
     DataSet leftDataset("left");
     DataSet rightDataset("right");
 
-    if (mOperator == opIF) {
-        DataSet condition("condition");
 
-        bool res = mCondition->calculate(dsu, condition, filter);
-        if (!res) {
-            // invalid boolean condition
-            return false;
-        }
+    if ( !mLeft || !mLeft->calculate( dsu, leftDataset, filter ) )
+    {
+        return false;
+    }
+    if ( mRight && !mRight->calculate( dsu, rightDataset, filter ) )
+    {
+        return false;
+    }
 
-        // TRUE branch
-        if ( !mLeft || !mLeft->calculate( dsu, leftDataset, condition ) )
-        {
-          return false;
-        }
+    bool res;
+    DataSet condition("condition");
 
-        // FALSE branch
-        dsu.logicalNot(condition);
-        if ( mRight && !mRight->calculate( dsu, rightDataset, condition ) )
-        {
-          return false;
-        }
+    switch ( mOperator )
+    {
+        case opIF:
+            // Evaluate boolean condition
+            res = mCondition->calculate(dsu, condition, filter);
+            if (!res) {
+                // invalid boolean condition
+                return false;
+            }
 
-        dsu.add(leftDataset, rightDataset);
-        dsu.tranferOutputs(result, leftDataset);
-        return true;
+            // TRUE branch
+            dsu.filter(leftDataset, condition);
 
-    } else {
-        if ( !mLeft || !mLeft->calculate( dsu, leftDataset, filter ) )
-        {
-          return false;
-        }
-        if ( mRight && !mRight->calculate( dsu, rightDataset, filter ) )
-        {
-          return false;
-        }
+            // FALSE branch
+            dsu.logicalNot(condition);
+            dsu.filter(rightDataset, condition);
 
-        switch ( mOperator )
-        {
-          case opPLUS:
+            // Not SUM it up
             dsu.add(leftDataset, rightDataset);
             break;
-          case opMINUS:
+        case opPLUS:
+            dsu.add(leftDataset, rightDataset);
+            break;
+        case opMINUS:
             dsu.subtract(leftDataset, rightDataset);
             break;
-          case opMUL:
+        case opMUL:
             dsu.multiply(leftDataset, rightDataset);
             break;
-          case opDIV:
+        case opDIV:
             dsu.divide(leftDataset, rightDataset);
             break;
-          case opPOW:
+        case opPOW:
             dsu.power(leftDataset, rightDataset);
             break;
-          case opEQ:
+        case opEQ:
             dsu.equal(leftDataset, rightDataset);
             break;
-          case opNE:
+        case opNE:
             dsu.notEqual(leftDataset, rightDataset);
             break;
-          case opGT:
+        case opGT:
             dsu.greaterThan(leftDataset, rightDataset);
             break;
-          case opLT:
+        case opLT:
             dsu.lesserThan(leftDataset, rightDataset);
             break;
-          case opGE:
+        case opGE:
             dsu.subtract(leftDataset, rightDataset);
             break;
-          case opLE:
+        case opLE:
             dsu.lesserEqual(leftDataset, rightDataset);
             break;
-          case opAND:
+        case opAND:
             dsu.logicalAnd(leftDataset, rightDataset);
             break;
-          case opOR:
+        case opOR:
             dsu.logicalOr(leftDataset, rightDataset);
             break;
-          case opNOT:
+        case opNOT:
             dsu.logicalNot(leftDataset);
             break;
-          case opMIN:
+        case opMIN:
             dsu.min(leftDataset, rightDataset);
             break;
-          case opMAX:
+        case opMAX:
             dsu.max(leftDataset, rightDataset);
             break;
-          case opABS:
+        case opABS:
             dsu.abs(leftDataset);
             break;
-          case opSUM_AGGR:
+        case opSUM_AGGR:
+            // for aggr functions we need to filter before doing aggregation
+            dsu.filter(leftDataset, filter);
             dsu.sum_aggr(leftDataset);
             break;
-          case opMIN_AGGR:
+        case opMIN_AGGR:
+            // for aggr functions we need to filter before doing aggregation
+            dsu.filter(leftDataset, filter);
             dsu.min_aggr(leftDataset);
             break;
-          case opMAX_AGGR:
+        case opMAX_AGGR:
+            // for aggr functions we need to filter before doing aggregation
+            dsu.filter(leftDataset, filter);
             dsu.max_aggr(leftDataset);
             break;
-          case opAVG_AGGR:
+        case opAVG_AGGR:
+            // for aggr functions we need to filter before doing aggregation
+            dsu.filter(leftDataset, filter);
             dsu.avg_aggr(leftDataset);
             break;
-          case opSIGN:
+        case opSIGN:
             dsu.changeSign(leftDataset);
             break;
-          default:
+        default:
             return false;
-        }
-        dsu.tranferOutputs(result, leftDataset);
-        return true;
     }
+    dsu.tranferOutputs(result, leftDataset);
+    return true;
   }
   else if ( mType == tNumber )
   {

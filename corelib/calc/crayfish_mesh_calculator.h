@@ -83,9 +83,6 @@ class CrayfishMeshCalculator
 
     //! Whether to add to the mesh
     bool mAddToMesh;
-
-    /***/
-    /* QVector<QgsRasterCalculatorEntry> mRasterEntries; */
 };
 
 #endif // CRAYFISH_MESH_CALCULATOR_H
