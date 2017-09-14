@@ -87,12 +87,18 @@ void CrayfishDataSetUtils::number(DataSet& dataset1, float val) const
                 DataSet::Scalar);
 
         memset(output->getActive().data(), val == -9999, mMesh->elements().size()); // All cells active
-        memset(output->getValues().data(), val, mMesh->nodes().size()); // All values val
+        for (int i = 0; i < mMesh->nodes().size(); ++i) // Using for loop we are initializing
+        {
+            output->getValues()[i] = val;
+        }
         dataset1.addOutput(output);
     } else {
         ElementOutput* output = new ElementOutput();
         output->init(mMesh->elements().size(), false);
-        memset(output->getValues().data(), val, mMesh->elements().size()); // All values val
+        for (int i = 0; i < mMesh->elements().size(); ++i) // Using for loop we are initializing
+        {
+            output->getValues()[i] = val;
+        }
         dataset1.addOutput(output);
     }
 }
