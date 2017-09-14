@@ -58,6 +58,9 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
         self.mAllTimesButton.clicked.connect(self.on_use_current_dataset_times_clicked)
         self.mDatasetsListWidget.itemSelectionChanged.connect(self.on_dataset_selected)
 
+        self.mExpressionTextEdit.textChanged.connect(self._on_expression_changed)
+        self.mButtonBox.accepted.connect(self.on_accept_clicked)
+
         for btn, text in [
             (self.mPlusPushButton, "+"),
             (self.mMinusPushButton, "-"),
@@ -156,21 +159,30 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
         return self.mAddDatasetToLayerCheckBox.isChecked()
 
     def on_dataset_output_filename_changed(self, dummy):
-        self.setAcceptButtonState()
+        self.set_accept_button_state()
 
-    def on_mButtonBox_accepted(self):
-        success = self.layer.mesh.create_derived_dataset(
+    def on_accept_clicked(self):
+        mesh = self.layer.mesh
+        success = mesh.create_derived_dataset(
             expression=self.formula_string(),
             time_filter=self.time_filter(),
             spatial_filter=self.spatial_filter(),
             add_to_mesh=self.add_dataset_to_layer(),
             output_filename=self.output_filename()
         )
+
         if success:
-            self.dataset_added.emit(self.layer)
+            if self.add_dataset_to_layer():
+                new_dataset_index = mesh.dataset_count() - 1
+                self.layer.initCustomValues(mesh.dataset(new_dataset_index))
+                self.dataset_added.emit(self.layer)
         else:
-            #what to do?
-            pass
+            QMessageBox.critical(self,
+                                 'Could Not Calculate Dataset',
+                                 "Unable to calculate new dataset. \n" +
+                                 "Please check the output location if writtable and" +
+                                 " that expression references existing datasets")
+            return False
 
     def on_select_output_filename_clicked(self):
         s = QSettings()
@@ -189,7 +201,7 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
     def on_use_current_dataset_times_clicked(self):
         self.set_all_times()
 
-    def on_mExpressionTextEdit_textChanged(self):
+    def _on_expression_changed(self):
         if self.expressionValid():
             self.mExpressionValidLabel.setText("Expression Valid")
             if self.filePathValid():
@@ -199,7 +211,7 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
             self.mExpressionValidLabel.setText("Expression invalid")
         self.mButtonBox.button(QDialogButtonBox.Ok).setEnabled(False)
 
-    def setAcceptButtonState(self):
+    def set_accept_button_state(self):
         # Enables OK button if calculator expression is valid and output file path exists
         if self.expressionValid() and self.filePathValid():
             self.mButtonBox.button(QDialogButtonBox.Ok).setEnabled(True)
