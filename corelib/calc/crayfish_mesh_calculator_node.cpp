@@ -163,10 +163,12 @@ bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, Data
             }
 
             // TRUE branch
+            dsu.expand(leftDataset, condition);
             dsu.filter(leftDataset, condition);
 
             // FALSE branch
             dsu.logicalNot(condition);
+            dsu.expand(rightDataset, condition);
             dsu.filter(rightDataset, condition);
 
             // Not SUM it up
@@ -200,7 +202,7 @@ bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, Data
             dsu.lesserThan(leftDataset, rightDataset);
             break;
         case opGE:
-            dsu.subtract(leftDataset, rightDataset);
+            dsu.greaterEqual(leftDataset, rightDataset);
             break;
         case opLE:
             dsu.lesserEqual(leftDataset, rightDataset);
