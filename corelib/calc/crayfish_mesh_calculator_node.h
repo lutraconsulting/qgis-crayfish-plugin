@@ -84,11 +84,6 @@ class CrayfishMeshCalculatorNode {
     CrayfishMeshCalculatorNode( const QString &datasetName );
     ~CrayfishMeshCalculatorNode();
 
-    //! CrayfishMeshCalculatorNode cannot be copied
-    CrayfishMeshCalculatorNode( const CrayfishMeshCalculatorNode &rh ) = delete;
-    //! CrayfishMeshCalculatorNode cannot be copied
-    CrayfishMeshCalculatorNode &operator=( const CrayfishMeshCalculatorNode &rh ) = delete;
-
     Type type() const { return mType; }
 
     //set left node
@@ -108,10 +103,12 @@ class CrayfishMeshCalculatorNode {
     static CrayfishMeshCalculatorNode *parseMeshCalcString( const QString &str, QString &parserErrorMsg );
 
   private:
+    Q_DISABLE_COPY(CrayfishMeshCalculatorNode)
+
     Type mType;
-    CrayfishMeshCalculatorNode *mLeft = nullptr;
-    CrayfishMeshCalculatorNode *mRight = nullptr;
-    CrayfishMeshCalculatorNode *mCondition = nullptr;
+    CrayfishMeshCalculatorNode *mLeft;
+    CrayfishMeshCalculatorNode *mRight;
+    CrayfishMeshCalculatorNode *mCondition;
     double mNumber;
     QString mDatasetName;
     Operator mOperator;
