@@ -72,7 +72,7 @@ public:
     void tranferOutputs( DataSet& dataset1, DataSet& dataset2 ) const;
     void expand( DataSet& dataset1, const DataSet& dataset2 ) const;
     void number( DataSet& dataset1, float val) const;
-
+    void add_if(DataSet& true_dataset, const DataSet& false_dataset, const DataSet& condition) const;
 
     void logicalNot(DataSet& dataset1) const {return func1(dataset1, std::bind(&CrayfishDataSetUtils::flogicalNot, this, std::placeholders::_1));}
     void changeSign(DataSet& dataset1) const {return func1(dataset1, std::bind(&CrayfishDataSetUtils::fchangeSign, this, std::placeholders::_1));}
@@ -94,7 +94,6 @@ public:
     void min(DataSet& dataset1, const DataSet& dataset2) const {return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fmin, this, std::placeholders::_1, std::placeholders::_2));}
     void max(DataSet& dataset1, const DataSet& dataset2) const {return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fmax, this, std::placeholders::_1, std::placeholders::_2));}
     void filter( DataSet& dataset1, const DataSet& filter ) const {return func2(dataset1, filter, std::bind(&CrayfishDataSetUtils::ffilter, this, std::placeholders::_1, std::placeholders::_2));}
-
 
     void sum_aggr(DataSet& dataset1) const {return funcAggr(dataset1, std::bind(&CrayfishDataSetUtils::fsum_aggr, this, std::placeholders::_1));}
     void min_aggr(DataSet& dataset1) const {return funcAggr(dataset1, std::bind(&CrayfishDataSetUtils::fmin_aggr, this, std::placeholders::_1));}

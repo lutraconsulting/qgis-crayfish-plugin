@@ -161,19 +161,9 @@ bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, Data
                 // invalid boolean condition
                 return false;
             }
-
-            // TRUE branch
-            dsu.expand(leftDataset, condition);
-            dsu.filter(leftDataset, condition);
-
-            // FALSE branch
-            dsu.logicalNot(condition);
-            dsu.expand(rightDataset, condition);
-            dsu.filter(rightDataset, condition);
-
-            // Not SUM it up
-            dsu.add(leftDataset, rightDataset);
+            dsu.add_if(leftDataset, rightDataset, condition);
             break;
+
         case opPLUS:
             dsu.add(leftDataset, rightDataset);
             break;
