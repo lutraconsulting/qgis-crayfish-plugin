@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QStringList>
 #include "crayfish_capi.h"
+#include <limits>
 
 void help() {
     std::cout << "crayfishinfo mesh_file [-dDataset_file] [-eExpression] [-oOutputExpressionFilename] [-h]" << std::endl;
@@ -94,13 +95,13 @@ int main(int argc, char *argv[]) {
             if (!outputFilename.isEmpty()) {
                 double xmin, ymin, xmax, ymax;
                 CF_Mesh_extent(m, &xmin, &ymin, &xmax, &ymax);
-                double startTime = 0; //TODO
-                double endTime = 0; // TODO
+                double startTime = -std::numeric_limits<float>::max();
+                double endTime = std::numeric_limits<float>::max();
                 bool add_to_dataset = false;
                 bool res = CF_Mesh_calc_derived_dataset(m,
                                                         expression.toAscii(),
                                                         startTime, endTime,
-                                                        xmin, ymin, xmax, ymax,
+                                                        xmin, xmax, ymin, ymax,
                                                         add_to_dataset,  outputFilename.toAscii());
 
                 std::cout << "Exported " << std::boolalpha << res << " to " << outputFilename.toStdString() << std::endl;

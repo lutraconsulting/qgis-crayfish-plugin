@@ -5,7 +5,7 @@ static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::n
 
 const float F_TRUE = 1.0f;
 const float F_FALSE = 0.0f;
-
+const float F_NODATA = -9999.0f;
 
 CrayfishDataSetUtils::CrayfishDataSetUtils(const Mesh *mesh, const QStringList& usedDatasetNames)
     : mMesh(mesh)
@@ -78,52 +78,120 @@ CrayfishDataSetUtils::CrayfishDataSetUtils(const Mesh *mesh, const QStringList& 
     mIsValid = true;
 }
 
-bool CrayfishDataSetUtils::isValid()
+bool CrayfishDataSetUtils::isValid() const
 {
     return mIsValid;
 }
 
-void CrayfishDataSetUtils::number(DataSet& dataset1, float val) const
+void CrayfishDataSetUtils::populateFilter(DataSet& filter, const BBox& outputExtent, float startTime, float endTime) const
 {
-    dataset1.deleteOutputs();
+    filter.deleteOutputs();
+
+    // simple case when we do not need time-dimension in the filter
+    int max_time_index = mTimes.size();
+    if ((mTimes[0] >= startTime) && (mTimes[mTimes.size()-1]<=endTime)) {
+        max_time_index = 1;
+    }
+
+    for (int time_index=0; time_index<max_time_index; ++time_index) {
+        float time = mTimes[time_index];
+        if ((time >= startTime) && (time<=endTime)) {
+            if (mOutputType == Output::TypeNode) {
+                NodeOutput* output = new NodeOutput();
+                output->init(mMesh->nodes().size(),
+                        mMesh->elements().size(),
+                        DataSet::Scalar);
+                output->time = time;
+                for (int i = 0; i < mMesh->nodes().size(); ++i)
+                {
+                    QPointF point = mMesh->projectedNode(i).toPointF();
+                    if (outputExtent.isPointInside(point)) {
+                        output->getValues()[i] = F_TRUE;
+                    } else {
+                        output->getValues()[i] = F_FALSE;
+                    }
+                }
+                memset(output->getActive().data(), 1, mMesh->elements().size());
+                filter.addOutput(output);
+            } else {
+                ElementOutput* output = new ElementOutput();
+                output->init(mMesh->elements().size(), false);
+                output->time = time;
+
+                for (int i = 0; i < mMesh->elements().size(); ++i) {
+                    const BBox& box = mMesh->projectedBBox(i);
+                    if (outputExtent.contains(box)) {
+                        output->getValues()[i] = F_TRUE;
+                    } else {
+                        output->getValues()[i] = F_FALSE;
+                    }
+                }
+                filter.addOutput(output);
+            }
+        } else {
+            Output * output = number(F_FALSE, time);
+            filter.addOutput(output);
+        }
+    }
+    activate(filter);
+}
+
+Output* CrayfishDataSetUtils::number(float val, float time) const {
+    Q_ASSERT(isValid());
+
     if (mOutputType == Output::TypeNode) {
         NodeOutput* output = new NodeOutput();
         output->init(mMesh->nodes().size(),
                 mMesh->elements().size(),
                 DataSet::Scalar);
-        output->time = mTimes[0];
+        output->time = time;
 
         memset(output->getActive().data(), !is_nodata(val), mMesh->elements().size());
         for (int i = 0; i < mMesh->nodes().size(); ++i) // Using for loop we are initializing
         {
             output->getValues()[i] = val;
         }
-        dataset1.addOutput(output);
+        return output;
     } else {
         ElementOutput* output = new ElementOutput();
         output->init(mMesh->elements().size(), false);
-        output->time = mTimes[0];
+        output->time = time;
 
         for (int i = 0; i < mMesh->elements().size(); ++i) // Using for loop we are initializing
         {
             output->getValues()[i] = val;
         }
-        dataset1.addOutput(output);
+        return output;
     }
+}
+
+void CrayfishDataSetUtils::number(DataSet& dataset1, float val) const
+{
+    Q_ASSERT(isValid());
+
+    dataset1.deleteOutputs();
+    Output * output = number(val, mTimes[0]);
+    dataset1.addOutput(output);
 }
 
 
 void CrayfishDataSetUtils::ones(DataSet& dataset1) const {
+    Q_ASSERT(isValid());
+
     number(dataset1, 1.0f);
 }
 
 void CrayfishDataSetUtils::nodata(DataSet& dataset1) const {
-    number(dataset1, -9999.0f);
+    Q_ASSERT(isValid());
+
+    number(dataset1, F_NODATA);
 }
 
 
 Output* CrayfishDataSetUtils::copy(const Output* o0 ) const {
+    Q_ASSERT(isValid());
     Q_ASSERT(o0 != 0);
+
     if (o0->type() == Output::TypeNode) {
         const NodeOutput* node_o0 = static_cast<const NodeOutput*>(o0);
 
@@ -159,6 +227,8 @@ Output* CrayfishDataSetUtils::copy(const Output* o0 ) const {
 }
 
 void CrayfishDataSetUtils::copy( DataSet& dataset1, const DataSet& dataset2 ) const {
+    Q_ASSERT(isValid());
+
     dataset1.deleteOutputs();
 
     for(int output_index=0; output_index < dataset2.outputCount(); ++output_index) {
@@ -170,6 +240,8 @@ void CrayfishDataSetUtils::copy( DataSet& dataset1, const DataSet& dataset2 ) co
 
 
 void CrayfishDataSetUtils::copy(DataSet& dataset1, const QString& datasetName) const {
+    Q_ASSERT(isValid());
+
     const DataSet* ds0 = dataset(datasetName);
     Q_ASSERT(ds0 != 0);
     copy(dataset1, *ds0);
@@ -177,6 +249,8 @@ void CrayfishDataSetUtils::copy(DataSet& dataset1, const QString& datasetName) c
 
 
 void CrayfishDataSetUtils::tranferOutputs( DataSet& dataset1, DataSet& dataset2 ) const {
+    Q_ASSERT(isValid());
+
     dataset1.deleteOutputs();
     for (int i=0; i<dataset2.outputCount(); ++i) {
         Output* o = dataset2.output(i);
@@ -187,6 +261,8 @@ void CrayfishDataSetUtils::tranferOutputs( DataSet& dataset1, DataSet& dataset2 
 }
 
 void CrayfishDataSetUtils::expand( DataSet& dataset1, const DataSet& dataset2 ) const {
+    Q_ASSERT(isValid());
+
     if (dataset2.outputCount() > 1) {
         if (dataset1.outputCount() == 1) {
             const Output* o0 = dataset1.output(0);
@@ -202,6 +278,8 @@ void CrayfishDataSetUtils::expand( DataSet& dataset1, const DataSet& dataset2 ) 
 
 
 Output* CrayfishDataSetUtils::canditateOutput(DataSet& dataset, int time_index) const {
+    Q_ASSERT(isValid());
+
     if (dataset.outputCount() > 1) {
         Q_ASSERT(dataset.outputCount() > time_index);
         return dataset.output(time_index);
@@ -212,6 +290,8 @@ Output* CrayfishDataSetUtils::canditateOutput(DataSet& dataset, int time_index) 
 }
 
 const Output* CrayfishDataSetUtils::constCanditateOutput(const DataSet& dataset, int time_index) const {
+    Q_ASSERT(isValid());
+
     if (dataset.outputCount() > 1) {
         Q_ASSERT(dataset.outputCount() > time_index);
         return dataset.constOutput(time_index);
@@ -222,6 +302,8 @@ const Output* CrayfishDataSetUtils::constCanditateOutput(const DataSet& dataset,
 }
 
 int CrayfishDataSetUtils::outputTimesCount(const DataSet& dataset1, const DataSet& dataset2) const {
+    Q_ASSERT(isValid());
+
     if ( (dataset1.outputCount() > 1) || ( dataset2.outputCount() > 1 )) {
         return mTimes.size();
     } else {
@@ -230,6 +312,8 @@ int CrayfishDataSetUtils::outputTimesCount(const DataSet& dataset1, const DataSe
 }
 
 void CrayfishDataSetUtils::func1(DataSet& dataset1, std::function<float(float)> func) const {
+    Q_ASSERT(isValid());
+
     for (int time_index=0; time_index<dataset1.outputCount(); ++time_index) {
         Output* output = canditateOutput(dataset1, time_index);
         if (output->type() == Output::TypeNode ) {
@@ -238,7 +322,7 @@ void CrayfishDataSetUtils::func1(DataSet& dataset1, std::function<float(float)> 
             for (int n=0; n<mMesh->nodes().size(); ++n)
             {
                 float val1 = mMesh->valueAt(n, nodeOutput);
-                float res_val = -9999.0f;
+                float res_val = F_NODATA;
                 if (!is_nodata(val1))
                     res_val = func(val1);
                 nodeOutput->getValues()[n] = res_val;
@@ -251,7 +335,7 @@ void CrayfishDataSetUtils::func1(DataSet& dataset1, std::function<float(float)> 
             for (int n=0; n<mMesh->elements().size(); ++n)
             {
                 float val1 = mMesh->valueAt(n, elemOutput);               
-                float res_val = -9999.0f;
+                float res_val = F_NODATA;
                 if (!is_nodata(val1))
                     res_val = func(val1);
                 elemOutput->getValues()[n] = res_val;
@@ -262,6 +346,7 @@ void CrayfishDataSetUtils::func1(DataSet& dataset1, std::function<float(float)> 
 
 
 void CrayfishDataSetUtils::func2(DataSet& dataset1, const DataSet& dataset2, std::function<float(float,float)> func) const {
+    Q_ASSERT(isValid());
 
     expand(dataset1, dataset2);
 
@@ -279,7 +364,7 @@ void CrayfishDataSetUtils::func2(DataSet& dataset1, const DataSet& dataset2, std
             {
                 float val1 = mMesh->valueAt(n, o1);
                 float val2 = mMesh->valueAt(n, o2);
-                float res_val = -9999.0f;
+                float res_val = F_NODATA;
                 if (!is_nodata(val1) && !is_nodata(val2))
                     res_val = func(val1, val2);
                 nodeOutput->getValues()[n] = res_val;
@@ -295,7 +380,7 @@ void CrayfishDataSetUtils::func2(DataSet& dataset1, const DataSet& dataset2, std
             {
                 float val1 = mMesh->valueAt(n, o1);
                 float val2 = mMesh->valueAt(n, o2);
-                float res_val = -9999.0f;
+                float res_val = F_NODATA;
                 if (!is_nodata(val1) && !is_nodata(val2))
                     res_val = func(val1, val2);
                 elemOutput->getValues()[n] = res_val;
@@ -305,6 +390,8 @@ void CrayfishDataSetUtils::func2(DataSet& dataset1, const DataSet& dataset2, std
 }
 
 void CrayfishDataSetUtils::funcAggr(DataSet& dataset1, std::function<float(QVector<float>&)> func) const {
+    Q_ASSERT(isValid());
+
     Output* o0 = canditateOutput(dataset1, 0);
 
     if (o0->type() == Output::TypeNode ) {
@@ -326,7 +413,7 @@ void CrayfishDataSetUtils::funcAggr(DataSet& dataset1, std::function<float(QVect
                 }
             }
 
-            float res_val = -9999;
+            float res_val = F_NODATA;
             if (!vals.isEmpty()) {
                 res_val = func(vals);
             }
@@ -350,12 +437,12 @@ void CrayfishDataSetUtils::funcAggr(DataSet& dataset1, std::function<float(QVect
                 const Output* o1 = canditateOutput(dataset1, time_index);
                 Q_ASSERT(o1->type() == o0->type());
                 float val1 = mMesh->valueAt(n, o1);
-                if (val1 != -9999) {
+                if (!is_nodata(val1)) {
                     vals.push_back(val1);
                 }
             }
 
-            float res_val = -9999;
+            float res_val = F_NODATA;
             if (!vals.isEmpty()) {
                 res_val = func(vals);
             }
@@ -372,6 +459,8 @@ void CrayfishDataSetUtils::add_if( DataSet& true_dataset,
                                    const DataSet& false_dataset,
                                    const DataSet& condition) const
 {
+    Q_ASSERT(isValid());
+
     // Make sure we have enough outputs in the resulting dataset
     expand(true_dataset, condition);
     expand(true_dataset, false_dataset);
@@ -392,7 +481,7 @@ void CrayfishDataSetUtils::add_if( DataSet& true_dataset,
             for (int n=0; n<mMesh->nodes().size(); ++n)
             {
                 float cond_val = mMesh->valueAt(n, condition_o);
-                float res_val = -9999.0f;
+                float res_val = F_NODATA;
                 if (!is_nodata(cond_val)) {
                     if (equals(cond_val, F_TRUE))
                         res_val = mMesh->valueAt(n, true_o);
@@ -411,7 +500,7 @@ void CrayfishDataSetUtils::add_if( DataSet& true_dataset,
             for (int n=0; n<mMesh->elements().size(); ++n)
             {
                 float cond_val = mMesh->valueAt(n, condition_o);
-                float res_val = -9999.0f;
+                float res_val = F_NODATA;
                 if (!is_nodata(cond_val)) {
                     if (equals(cond_val, F_TRUE))
                         res_val = mMesh->valueAt(n, true_o);
@@ -427,6 +516,8 @@ void CrayfishDataSetUtils::add_if( DataSet& true_dataset,
 
 void CrayfishDataSetUtils::activate(DataSet& dataset1) const
 {
+    Q_ASSERT(isValid());
+
     if (mOutputType == Output::TypeNode) {
         for (int time_index=0; time_index<dataset1.outputCount(); ++time_index) {
             Output* o1 = canditateOutput(dataset1, time_index);
@@ -440,22 +531,25 @@ void CrayfishDataSetUtils::activate(DataSet& dataset1) const
 
 void CrayfishDataSetUtils::activate(NodeOutput* tos) const
 {
-       // Activate only elements that do all node's outputs with some data
-       for (int idx=0; idx<mMesh->elements().size(); ++idx)
-       {
-           Element elem = mMesh->elements().at(idx);
 
-           bool is_active = true; //ACTIVE
+    Q_ASSERT(isValid());
 
-           for (int j=0; j<elem.nodeCount(); ++j)
-           {
-               if (is_nodata(tos->getValues()[elem.p(0)]))
-                   is_active = false; //NOT ACTIVE
-               break;
-           }
+    // Activate only elements that do all node's outputs with some data
+    for (int idx=0; idx<mMesh->elements().size(); ++idx)
+    {
+        Element elem = mMesh->elements().at(idx);
 
-           tos->getActive()[idx] = is_active;
-       }
+        bool is_active = true; //ACTIVE
+
+        for (int j=0; j<elem.nodeCount(); ++j)
+        {
+            if (is_nodata(tos->getValues()[elem.p(0)]))
+                is_active = false; //NOT ACTIVE
+            break;
+        }
+
+        tos->getActive()[idx] = is_active;
+    }
 }
 
 float CrayfishDataSetUtils::ffilter(float val1, float filter) const {
@@ -464,7 +558,7 @@ float CrayfishDataSetUtils::ffilter(float val1, float filter) const {
     if (equals(filter, F_TRUE))
         return val1;
     else
-        return -9999.9f;
+        return F_NODATA;
 }
 
 float CrayfishDataSetUtils::fadd(float val1, float val2) const {
@@ -492,7 +586,7 @@ float CrayfishDataSetUtils::fdivide(float val1, float val2) const {
     Q_ASSERT(!is_nodata(val1));
     Q_ASSERT(!is_nodata(val2));
     if (equals(val2, 0.0f))
-        return -9999;
+        return F_NODATA;
     else
         return val1 / val2;
 
@@ -648,25 +742,25 @@ float CrayfishDataSetUtils::fabs(float val1) const {
 }
 
 float CrayfishDataSetUtils::fsum_aggr(QVector<float>& vals) const {
-    Q_ASSERT(!vals.contains(-9999));
+    Q_ASSERT(!vals.contains(F_NODATA));
     Q_ASSERT(!vals.isEmpty());
     return std::accumulate(vals.begin(), vals.end(), 0.0);
 }
 
 float CrayfishDataSetUtils::fmin_aggr(QVector<float>& vals) const {
-    Q_ASSERT(!vals.contains(-9999));
+    Q_ASSERT(!vals.contains(F_NODATA));
     Q_ASSERT(!vals.isEmpty());
     return *std::min_element(vals.begin(), vals.end());
 }
 
 float CrayfishDataSetUtils::fmax_aggr(QVector<float>& vals) const {
-    Q_ASSERT(!vals.contains(-9999));
+    Q_ASSERT(!vals.contains(F_NODATA));
     Q_ASSERT(!vals.isEmpty());
     return *std::max_element(vals.begin(), vals.end());
 }
 
 float CrayfishDataSetUtils::favg_aggr(QVector<float>& vals) const {
-    Q_ASSERT(!vals.contains(-9999));
+    Q_ASSERT(!vals.contains(F_NODATA));
     Q_ASSERT(!vals.isEmpty());
     return fsum_aggr(vals) / vals.size();
 }

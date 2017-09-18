@@ -103,7 +103,7 @@ CF_EXPORT const char* CF_Mesh_destinationCrs(MeshH mesh);
 CF_EXPORT bool CF_Mesh_calc_expression_is_valid(MeshH mesh, const char* expression);
 CF_EXPORT bool CF_Mesh_calc_derived_dataset(MeshH mesh, const char* expression,
                                             float startTime, float endTime,
-                                            double xmin, double ymin, double xmax, double ymax,
+                                            double xmin, double xmax, double ymin, double ymax,
                                             bool addToMesh, const char* output_filename);
 
 // DataSet functions

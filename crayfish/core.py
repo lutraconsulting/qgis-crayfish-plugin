@@ -26,6 +26,7 @@
 
 import ctypes
 import os
+import sys
 import platform
 import weakref
 import datetime
@@ -322,14 +323,22 @@ class Mesh:
     return self.lib.CF_Mesh_calc_expression_is_valid(self.handle, ctypes.c_char_p(expression))
 
   def create_derived_dataset(self, expression, time_filter, spatial_filter, add_to_mesh, output_filename):
+    bigfloat = 1e30
+    xmin = spatial_filter[0] if spatial_filter[0] is not None else -bigfloat
+    xmax = spatial_filter[1] if spatial_filter[1] is not None else bigfloat
+    ymin = spatial_filter[2] if spatial_filter[2] is not None else -bigfloat
+    ymax = spatial_filter[3] if spatial_filter[3] is not None else bigfloat
+    min_time = time_filter[0] if time_filter[0] is not None else -bigfloat
+    max_time = time_filter[1] if time_filter[1] is not None else bigfloat
+
     return self.lib.CF_Mesh_calc_derived_dataset(self.handle,
                                                  ctypes.c_char_p(expression),
-                                                 ctypes.c_float(time_filter[0]), #min time
-                                                 ctypes.c_float(time_filter[1] if time_filter[1] else 0.0), #max time
-                                                 ctypes.c_double(spatial_filter[0]), # xmin
-                                                 ctypes.c_double(spatial_filter[1]), # ymin
-                                                 ctypes.c_double(spatial_filter[2]), # xmax
-                                                 ctypes.c_double(spatial_filter[3]), # ymax
+                                                 ctypes.c_float(min_time),
+                                                 ctypes.c_float(max_time),
+                                                 ctypes.c_double(xmin),
+                                                 ctypes.c_double(xmax),
+                                                 ctypes.c_double(ymin),
+                                                 ctypes.c_double(ymax),
                                                  ctypes.c_double(add_to_mesh),
                                                  ctypes.c_char_p(output_filename)
     )

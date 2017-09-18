@@ -84,8 +84,9 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
   //open output dataset
   DataSet* outputDataset = new DataSet(mOutputFile);
 
+  // Create filter from input
   DataSet filter("filter");
-  dsu.ones(filter); // TODO use spatial&time flter
+  dsu.populateFilter(filter, mOutputExtent, mStartTime, mEndTime);
 
   // calculate
   bool ok = calcNode->calculate(dsu, *outputDataset, filter);

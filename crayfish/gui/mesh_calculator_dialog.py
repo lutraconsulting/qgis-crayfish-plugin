@@ -27,8 +27,6 @@
 import os
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from qgis.core import *
-from qgis.gui import *
 from functools import partial
 from .utils import load_ui, repopulate_time_control_combo
 
@@ -48,7 +46,7 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
 
         self.layer = layer
 
-        self.insertAvailableDatasets()
+        self.insert_available_datasets()
 
         self.mDatasetsListWidget.itemDoubleClicked.connect(self.on_datasets_item_double_clicked)
         self.mOutputDatasetLineEdit.textChanged.connect(self.on_dataset_output_filename_changed)
@@ -98,50 +96,40 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
     def formula_string(self):
         return self.mExpressionTextEdit.toPlainText()
 
-    def expressionValid(self):
+    def expression_valid(self):
         if not self.formula_string():
             return False
         # Returns true if mesh calculator expression has valid syntax
         return self.layer.mesh.calc_expression_is_valid(self.formula_string())
 
     def time_filter(self):
-        datasetName = self._dataset_name()
-        dataset = self.layer.mesh.dataset_from_name(datasetName)
-        start_time, end_time = dataset.time_range()
-
-        if self.mStartTimeComboBox.currentIndex():
-            min_t = max(start_time, self.mStartTimeComboBox.itemData(self.mStartTimeComboBox.currentIndex()))
+        if self.mStartTimeComboBox.currentIndex() > -1:
+            min_t = self.mStartTimeComboBox.itemData(self.mStartTimeComboBox.currentIndex())
         else:
-            min_t = start_time
+            min_t = None
 
-        if self.mEndTimeComboBox.currentIndex():
-            max_t = min(end_time, self.mEndTimeComboBox.itemData(self.mEndTimeComboBox.currentIndex()))
+        if self.mEndTimeComboBox.currentIndex() > -1:
+            max_t = self.mEndTimeComboBox.itemData(self.mEndTimeComboBox.currentIndex())
         else:
-            max_t = end_time
+            max_t = None
         return min_t, max_t
 
     def spatial_filter(self):
-        layerExtent = self.layer.extent()
-        self.mXMinSpinBox.value()
-        self.mXMaxSpinBox.value()
-        self.mYMinSpinBox.value()
-        self.mYMaxSpinBox.value()
-
         return (
-            max(self.mXMinSpinBox.value(), layerExtent.xMinimum()),
-            max(self.mYMinSpinBox.value(), layerExtent.yMinimum()),
-            min(self.mXMaxSpinBox.value(), layerExtent.xMaximum()),
-            min(self.mYMaxSpinBox.value(), layerExtent.yMaximum())
+            self.mXMinSpinBox.value(),
+            self.mXMaxSpinBox.value(),
+            self.mYMinSpinBox.value(),
+            self.mYMaxSpinBox.value()
         )
 
     def output_filename(self):
-        outputFileName = self.mOutputDatasetLineEdit.text()
-        if not outputFileName:
+        output_file_name = self.mOutputDatasetLineEdit.text()
+        if not output_file_name:
             return None
 
-        return self._add_suffix(outputFileName)
+        return self._add_suffix(output_file_name)
 
-    def filePathValid(self):
+    def file_path_valid(self):
         outputPath = self.mOutputDatasetLineEdit.text()
         if not outputPath:
             return False
@@ -207,9 +195,9 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
         self.set_all_times()
 
     def _on_expression_changed(self):
-        if self.expressionValid():
+        if self.expression_valid():
             self.mExpressionValidLabel.setText("Expression Valid")
-            if self.filePathValid():
+            if self.file_path_valid():
                 self.mButtonBox.button( QDialogButtonBox.Ok).setEnabled(True)
                 return
         else:
@@ -218,7 +206,7 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
 
     def set_accept_button_state(self):
         # Enables OK button if calculator expression is valid and output file path exists
-        if self.expressionValid() and self.filePathValid():
+        if self.expression_valid() and self.file_path_valid():
             self.mButtonBox.button(QDialogButtonBox.Ok).setEnabled(True)
         else:
             self.mButtonBox.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -226,7 +214,7 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
     def add_dataset_to_layer(self):
         return self.mAddDatasetToLayerCheckBox.isChecked()
 
-    def insertAvailableDatasets(self):
+    def insert_available_datasets(self):
         mesh = self.layer.mesh
         for dataset in mesh.datasets():
             self.mDatasetsListWidget.addItem(dataset.name())
@@ -258,8 +246,8 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
                 self.mEndTimeComboBox.setCurrentIndex(idx)
 
     def repopulate_time_combos(self):
-        datasetName = self._dataset_name()
-        dataset = self.layer.mesh.dataset_from_name(datasetName)
+        dataset_name = self._dataset_name()
+        dataset = self.layer.mesh.dataset_from_name(dataset_name)
         repopulate_time_control_combo(self.mStartTimeComboBox, dataset)
         repopulate_time_control_combo(self.mEndTimeComboBox, dataset)
 
@@ -271,10 +259,10 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
         self.repopulate_time_combos()
 
     def on_datasets_item_double_clicked(self, item): # QListWidgetItem
-        self.on_calc_button_clicked(self.quoteBandEntry(item.text() ))
+        self.on_calc_button_clicked(self.quote_band_entry(item.text()))
 
     def on_calc_button_clicked(self, text):
         self.mExpressionTextEdit.insertPlainText(" " + text + " ")
 
-    def quoteBandEntry(self, datasetName):
+    def quote_band_entry(self, datasetName):
         return '\"' + datasetName.replace('\"', "\\\"") + '\"'

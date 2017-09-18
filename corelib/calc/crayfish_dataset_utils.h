@@ -60,12 +60,13 @@ private:
 
 public:
     CrayfishDataSetUtils(const Mesh* mesh, const QStringList& usedDatasetNames);
-    bool isValid();
+    bool isValid() const;
     const Mesh* mesh() const { return mMesh; }
     const DataSet* dataset( const QString& datasetName ) const {const DataSet* ds = mDatasetMap[datasetName]; return ds;}
 
     void ones( DataSet& dataset1) const;
     void nodata( DataSet& dataset1) const;
+    Output* number(float val, float time) const;
     void copy( DataSet& dataset1, const QString& datasetName ) const;
     void copy( DataSet& dataset1, const DataSet& dataset2 ) const;
     Output* copy(const Output* o0 ) const;
@@ -73,6 +74,8 @@ public:
     void expand( DataSet& dataset1, const DataSet& dataset2 ) const;
     void number( DataSet& dataset1, float val) const;
     void add_if(DataSet& true_dataset, const DataSet& false_dataset, const DataSet& condition) const;
+    void populateFilter(DataSet& filter, const BBox& outputExtent, float startTime, float endTime) const;
+
 
     void logicalNot(DataSet& dataset1) const {return func1(dataset1, std::bind(&CrayfishDataSetUtils::flogicalNot, this, std::placeholders::_1));}
     void changeSign(DataSet& dataset1) const {return func1(dataset1, std::bind(&CrayfishDataSetUtils::fchangeSign, this, std::placeholders::_1));}
