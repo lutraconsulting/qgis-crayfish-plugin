@@ -99,7 +99,6 @@ class CrayfishMeshCalculatorNode {
      * \param datasetData input dataset references, map of raster name to raster data block
      * \param result destination dataset for calculation results
      */
-    // TODO add spatial&time filters
     bool calculate(const CrayfishDataSetUtils &dsu, DataSet &result, const DataSet& filter ) const;
 
     // Get all dataset names used

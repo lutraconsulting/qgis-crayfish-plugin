@@ -29,15 +29,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <QString>
 #include <QVector>
+
 #include "crayfish_mesh.h"
-
-
-struct CrayfishMeshCalculatorEntry
-{
-  QString ref; //name
-  // QgsRasterLayer *raster; //pointer to rasterlayer
-  int bandNumber; //raster band number
-};
 
 class CrayfishMeshCalculator
 {
@@ -61,14 +54,12 @@ class CrayfishMeshCalculator
 
     /** Starts the calculation and writes new dataset to file, returns Result */
     Result processCalculation();
-
     static Result expression_valid(const QString &formulaString, const Mesh *mesh);
 
   private:
-    //default constructor forbidden. We need formula, output file, output format and output raster resolution obligatory
     CrayfishMeshCalculator();
 
-    QString mFormulaString;
+    QString mFormulaString; // expression
     QString mOutputFile;
 
     //! Spatial filter
