@@ -28,11 +28,13 @@ import os
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from functools import partial
-from .utils import load_ui, repopulate_time_control_combo
+from .utils import load_ui, time_to_string
+from collections import OrderedDict
 
 uiDialog, qtBaseClass = load_ui('crayfish_mesh_calculator_dialog')
 
 ALLOWED_SUFFIX = ".dat"
+
 
 class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
 
@@ -54,7 +56,6 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
 
         self.mCurrentLayerExtentButton.clicked.connect(self.on_use_current_layer_extent_clicked)
         self.mAllTimesButton.clicked.connect(self.on_use_current_dataset_times_clicked)
-        self.mDatasetsListWidget.itemSelectionChanged.connect(self.on_dataset_selected)
 
         self.mExpressionTextEdit.textChanged.connect(self._on_expression_changed)
         self.mButtonBox.accepted.connect(self.on_accept_clicked)
@@ -90,7 +91,6 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
 
         self.set_full_extent()
         self.repopulate_time_combos()
-        self.set_all_times()
         self.mButtonBox.button(QDialogButtonBox.Ok).setEnabled(False)
 
     def formula_string(self):
@@ -246,17 +246,27 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
                 self.mEndTimeComboBox.setCurrentIndex(idx)
 
     def repopulate_time_combos(self):
-        dataset_name = self._dataset_name()
-        dataset = self.layer.mesh.dataset_from_name(dataset_name)
-        repopulate_time_control_combo(self.mStartTimeComboBox, dataset)
-        repopulate_time_control_combo(self.mEndTimeComboBox, dataset)
+        times = {None: None}
+        for dataSet in self.layer.mesh.datasets():
+            for output in dataSet.outputs():
+                str_time = time_to_string(output.time(), dataSet)
+                times[str_time] = output.time()
+
+        times = OrderedDict(sorted(times.items(), key=lambda t: t[1]))
+        for cboTime in [self.mStartTimeComboBox, self.mEndTimeComboBox]:
+            cboTime.blockSignals(True)  # make sure that currentIndexChanged(int) will not be emitted
+            cboTime.clear()
+            for str_time, time in times.iteritems():
+                cboTime.addItem(str_time, time)
+            cboTime.blockSignals(False)
+
+        if len(times) > 1:
+            self.mStartTimeComboBox.setCurrentIndex(1)
+            self.mEndTimeComboBox.setCurrentIndex(len(times)-1)
 
     def set_all_times(self):
         datasetName = self._dataset_name()
         self._set_times_by_dataset_name(datasetName)
-
-    def on_dataset_selected(self):
-        self.repopulate_time_combos()
 
     def on_datasets_item_double_clicked(self, item): # QListWidgetItem
         self.on_calc_button_clicked(self.quote_band_entry(item.text()))
