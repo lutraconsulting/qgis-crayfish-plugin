@@ -65,11 +65,13 @@ CrayfishDataSetUtils::CrayfishDataSetUtils(const Mesh *mesh, const QStringList& 
         // filter out times we do not need to speed up calculations
         for (QVector<float>::iterator it=mTimes.begin();it!=mTimes.end();)
         {
-           if(*it < startTime || *it > endTime)
-              it = mTimes.erase(it);
+           if (equals(*it, startTime) ||
+               equals(*it, endTime) ||
+               ((*it >= startTime) && (*it <= endTime)))
+                   ++it;
            else
-              ++it;
-         }
+                   it = mTimes.erase(it);
+        }
     }
 
     // check that all outputs are of the same type
