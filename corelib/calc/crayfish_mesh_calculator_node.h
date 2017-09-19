@@ -94,7 +94,7 @@ class CrayfishMeshCalculatorNode {
      * \param datasetData input dataset references, map of raster name to raster data block
      * \param result destination dataset for calculation results
      */
-    bool calculate(const CrayfishDataSetUtils &dsu, DataSet &result, const DataSet& filter ) const;
+    bool calculate(const CrayfishDataSetUtils &dsu, DataSet &result) const;
 
     // Get all dataset names used
     QStringList usedDatasetNames() const;

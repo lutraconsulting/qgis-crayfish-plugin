@@ -62,10 +62,12 @@ class TestCrayfishMeshCalculator(unittest.TestCase):
         m.load_data(path)
         ds = m.dataset(m.dataset_count() - 1)
 
-        self.assertEqual(ds0.output_count(), ds.output_count())
-        for i in range(ds0.output_count()):
+        # output 0 in calculated dataset should match output 1 in original one
+        self.assertEqual(ds0.output_count() - 1, ds.output_count())
+        for i in range(ds0.output_count() - 1):
             o = ds.output(i)
-            o0 = ds0.output(i)
+            o0 = ds0.output(i + 1)
+
             self.assertEqual(o.time(), o0.time())
             j = 0
             for val, val0 in zip(o.values(), o0.values()):

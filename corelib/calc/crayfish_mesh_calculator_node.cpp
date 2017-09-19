@@ -123,12 +123,8 @@ QStringList CrayfishMeshCalculatorNode::usedDatasetNames() const
     return res;
 }
 
-bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, DataSet& result, const DataSet& filter) const
+bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, DataSet& result) const
 {
-  // note that filtering is done only when it affects the following operation.
-  // final filtering of the result is done in the processCalculation()
-  // to save some computation time
-
   if ( mType == tDatasetRef )
   {
       dsu.copy(result, mDatasetName);
@@ -140,11 +136,11 @@ bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, Data
     DataSet rightDataset("right");
 
 
-    if ( !mLeft || !mLeft->calculate( dsu, leftDataset, filter ) )
+    if ( !mLeft || !mLeft->calculate( dsu, leftDataset ) )
     {
         return false;
     }
-    if ( mRight && !mRight->calculate( dsu, rightDataset, filter ) )
+    if ( mRight && !mRight->calculate( dsu, rightDataset ) )
     {
         return false;
     }
@@ -156,7 +152,7 @@ bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, Data
     {
         case opIF:
             // Evaluate boolean condition
-            res = mCondition->calculate(dsu, condition, filter);
+            res = mCondition->calculate(dsu, condition);
             if (!res) {
                 // invalid boolean condition
                 return false;
@@ -216,23 +212,15 @@ bool CrayfishMeshCalculatorNode::calculate(const CrayfishDataSetUtils &dsu, Data
             dsu.abs(leftDataset);
             break;
         case opSUM_AGGR:
-            // for aggr functions we need to filter before doing aggregation
-            dsu.filter(leftDataset, filter);
             dsu.sum_aggr(leftDataset);
             break;
         case opMIN_AGGR:
-            // for aggr functions we need to filter before doing aggregation
-            dsu.filter(leftDataset, filter);
             dsu.min_aggr(leftDataset);
             break;
         case opMAX_AGGR:
-            // for aggr functions we need to filter before doing aggregation
-            dsu.filter(leftDataset, filter);
             dsu.max_aggr(leftDataset);
             break;
         case opAVG_AGGR:
-            // for aggr functions we need to filter before doing aggregation
-            dsu.filter(leftDataset, filter);
             dsu.avg_aggr(leftDataset);
             break;
         case opSIGN:

@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_dataset.h"
 #include "calc/crayfish_dataset_utils.h"
 #include "crayfish.h"
+#include <limits>
 
 CrayfishMeshCalculator::CrayfishMeshCalculator(const QString &formulaString, const QString &outputFile,
     const BBox &outputExtent, float startTime, float endTime,
@@ -53,7 +54,9 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::expression_valid(const QS
       return ParserError;
     }
 
-    CrayfishDataSetUtils dsu(mesh, calcNode->usedDatasetNames());
+    double startTime = -std::numeric_limits<float>::max();
+    double endTime = std::numeric_limits<float>::max();
+    CrayfishDataSetUtils dsu(mesh, calcNode->usedDatasetNames(), startTime, endTime);
     if (!dsu.isValid()) {
         return InvalidDatasets;
     }
@@ -76,7 +79,7 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
     return ParserError;
   }
 
-  CrayfishDataSetUtils dsu(mMesh, calcNode->usedDatasetNames());
+  CrayfishDataSetUtils dsu(mMesh, calcNode->usedDatasetNames(), mStartTime, mEndTime);
   if (!dsu.isValid()) {
       return InvalidDatasets;
   }
@@ -84,12 +87,8 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
   //open output dataset
   DataSet* outputDataset = new DataSet(mOutputFile);
 
-  // Create filter from input
-  DataSet filter("filter");
-  dsu.populateFilter(filter, mOutputExtent, mStartTime, mEndTime);
-
   // calculate
-  bool ok = calcNode->calculate(dsu, *outputDataset, filter);
+  bool ok = calcNode->calculate(dsu, *outputDataset);
   if (!ok) {
       delete outputDataset;
       outputDataset = 0;
@@ -97,7 +96,7 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
   }
 
   // Finalize dataset
-  dsu.filter(*outputDataset, filter);
+  dsu.filter(*outputDataset, mOutputExtent);
   outputDataset->setMesh(mMesh);
   outputDataset->setType(DataSet::Scalar);
   outputDataset->setName(QFileInfo(mOutputFile).baseName());

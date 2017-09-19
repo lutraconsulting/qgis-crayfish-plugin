@@ -7,7 +7,7 @@ const float F_TRUE = 1.0f;
 const float F_FALSE = 0.0f;
 const float F_NODATA = -9999.0f;
 
-CrayfishDataSetUtils::CrayfishDataSetUtils(const Mesh *mesh, const QStringList& usedDatasetNames)
+CrayfishDataSetUtils::CrayfishDataSetUtils(const Mesh *mesh, const QStringList& usedDatasetNames, float startTime, float endTime)
     : mMesh(mesh)
     , mIsValid(false)
     , mOutputType(Output::TypeNode) // right now we support only NodeOutputs
@@ -61,6 +61,15 @@ CrayfishDataSetUtils::CrayfishDataSetUtils(const Mesh *mesh, const QStringList& 
     // case of all datasets not time varying of usedDatasetNames is empty
     if (mTimes.isEmpty()) {
         mTimes.push_back(0.0f);
+    } else {
+        // filter out times we do not need to speed up calculations
+        for (QVector<float>::iterator it=mTimes.begin();it!=mTimes.end();)
+        {
+           if(*it < startTime || *it > endTime)
+              it = mTimes.erase(it);
+           else
+              ++it;
+         }
     }
 
     // check that all outputs are of the same type
@@ -83,55 +92,39 @@ bool CrayfishDataSetUtils::isValid() const
     return mIsValid;
 }
 
-void CrayfishDataSetUtils::populateFilter(DataSet& filter, const BBox& outputExtent, float startTime, float endTime) const
+void CrayfishDataSetUtils::populateSpatialFilter(DataSet& filter, const BBox& outputExtent) const
 {
     filter.deleteOutputs();
-
-    // simple case when we do not need time-dimension in the filter
-    int max_time_index = mTimes.size();
-    if ((mTimes[0] >= startTime) && (mTimes[mTimes.size()-1]<=endTime)) {
-        max_time_index = 1;
-    }
-
-    for (int time_index=0; time_index<max_time_index; ++time_index) {
-        float time = mTimes[time_index];
-        if ((time >= startTime) && (time<=endTime)) {
-            if (mOutputType == Output::TypeNode) {
-                NodeOutput* output = new NodeOutput();
-                output->init(mMesh->nodes().size(),
-                        mMesh->elements().size(),
-                        DataSet::Scalar);
-                output->time = time;
-                for (int i = 0; i < mMesh->nodes().size(); ++i)
-                {
-                    QPointF point = mMesh->projectedNode(i).toPointF();
-                    if (outputExtent.isPointInside(point)) {
-                        output->getValues()[i] = F_TRUE;
-                    } else {
-                        output->getValues()[i] = F_FALSE;
-                    }
-                }
-                memset(output->getActive().data(), 1, mMesh->elements().size());
-                filter.addOutput(output);
+    if (mOutputType == Output::TypeNode) {
+        NodeOutput* output = new NodeOutput();
+        output->init(mMesh->nodes().size(),
+                     mMesh->elements().size(),
+                     DataSet::Scalar);
+        output->time = mTimes[0];
+        for (int i = 0; i < mMesh->nodes().size(); ++i)
+        {
+            QPointF point = mMesh->projectedNode(i).toPointF();
+            if (outputExtent.isPointInside(point)) {
+                output->getValues()[i] = F_TRUE;
             } else {
-                ElementOutput* output = new ElementOutput();
-                output->init(mMesh->elements().size(), false);
-                output->time = time;
-
-                for (int i = 0; i < mMesh->elements().size(); ++i) {
-                    const BBox& box = mMesh->projectedBBox(i);
-                    if (outputExtent.contains(box)) {
-                        output->getValues()[i] = F_TRUE;
-                    } else {
-                        output->getValues()[i] = F_FALSE;
-                    }
-                }
-                filter.addOutput(output);
+                output->getValues()[i] = F_FALSE;
             }
-        } else {
-            Output * output = number(F_FALSE, time);
-            filter.addOutput(output);
         }
+        memset(output->getActive().data(), 1, mMesh->elements().size());
+        filter.addOutput(output);
+    } else {
+        ElementOutput* output = new ElementOutput();
+        output->init(mMesh->elements().size(), false);
+        output->time = mTimes[0];
+        for (int i = 0; i < mMesh->elements().size(); ++i) {
+            const BBox& box = mMesh->projectedBBox(i);
+            if (outputExtent.contains(box)) {
+                output->getValues()[i] = F_TRUE;
+            } else {
+                output->getValues()[i] = F_FALSE;
+            }
+        }
+        filter.addOutput(output);
     }
 }
 
@@ -225,27 +218,31 @@ Output* CrayfishDataSetUtils::copy(const Output* o0 ) const {
 
 }
 
-void CrayfishDataSetUtils::copy( DataSet& dataset1, const DataSet& dataset2 ) const {
-    Q_ASSERT(isValid());
-
-    dataset1.deleteOutputs();
-
-    for(int output_index=0; output_index < dataset2.outputCount(); ++output_index) {
-        const Output* o0 = dataset2.constOutput(output_index);
-        Output* output = copy(o0);
-        dataset1.addOutput(output);
-    }
-}
-
-
 void CrayfishDataSetUtils::copy(DataSet& dataset1, const QString& datasetName) const {
     Q_ASSERT(isValid());
 
-    const DataSet* ds0 = dataset(datasetName);
-    Q_ASSERT(ds0 != 0);
-    copy(dataset1, *ds0);
-}
+    const DataSet* dataset2 = dataset(datasetName);
+    Q_ASSERT(dataset2 != 0);
 
+    if (dataset2->outputCount() == 1) {
+        // Always copy
+        const Output* o0 = dataset2->constOutput(0);
+        Output* output = copy(o0);
+        dataset1.addOutput(output);
+    } else {
+        for(int output_index=0; output_index < dataset2->outputCount(); ++output_index) {
+            const Output* o0 = dataset2->constOutput(output_index);
+            if (equals(o0->time, mTimes.first()) ||
+                equals(o0->time, mTimes.last()) ||
+                ((o0->time >= mTimes.first()) && (o0->time <= mTimes.last()))
+               )
+            {
+                Output* output = copy(o0);
+                dataset1.addOutput(output);
+            }
+        }
+    }
+}
 
 void CrayfishDataSetUtils::tranferOutputs( DataSet& dataset1, DataSet& dataset2 ) const {
     Q_ASSERT(isValid());
@@ -784,3 +781,96 @@ float CrayfishDataSetUtils::favg_aggr(QVector<float>& vals) const {
     return fsum_aggr(vals) / vals.size();
 }
 
+void CrayfishDataSetUtils::logicalNot(DataSet &dataset1) const {
+    return func1(dataset1, std::bind(&CrayfishDataSetUtils::flogicalNot, this, std::placeholders::_1));
+}
+
+void CrayfishDataSetUtils::changeSign(DataSet &dataset1) const {
+    return func1(dataset1, std::bind(&CrayfishDataSetUtils::fchangeSign, this, std::placeholders::_1));
+}
+
+void CrayfishDataSetUtils::abs(DataSet &dataset1) const {
+    return func1(dataset1, std::bind(&CrayfishDataSetUtils::fabs, this, std::placeholders::_1));
+}
+
+void CrayfishDataSetUtils::add(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fadd, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::subtract(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fsubtract, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::multiply(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fmultiply, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::divide(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fdivide, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::power(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fpower, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::equal(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fequal, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::notEqual(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fnotEqual, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::greaterThan(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fgreaterThan, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::lesserThan(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::flesserThan, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::lesserEqual(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::flesserEqual, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::greaterEqual(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fgreaterEqual, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::logicalAnd(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::flogicalAnd, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::logicalOr(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::flogicalOr, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::min(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fmin, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::max(DataSet &dataset1, const DataSet &dataset2) const {
+    return func2(dataset1, dataset2, std::bind(&CrayfishDataSetUtils::fmax, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::filter(DataSet &dataset1, const BBox &outputExtent) const {
+    DataSet filter("filter");
+    populateSpatialFilter(filter, outputExtent);
+    return func2(dataset1, filter, std::bind(&CrayfishDataSetUtils::ffilter, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::sum_aggr(DataSet &dataset1) const {
+    return funcAggr(dataset1, std::bind(&CrayfishDataSetUtils::fsum_aggr, this, std::placeholders::_1));
+}
+
+void CrayfishDataSetUtils::min_aggr(DataSet &dataset1) const {
+    return funcAggr(dataset1, std::bind(&CrayfishDataSetUtils::fmin_aggr, this, std::placeholders::_1));
+}
+
+void CrayfishDataSetUtils::max_aggr(DataSet &dataset1) const {
+    return funcAggr(dataset1, std::bind(&CrayfishDataSetUtils::fmax_aggr, this, std::placeholders::_1));
+}
+
+void CrayfishDataSetUtils::avg_aggr(DataSet &dataset1) const {
+    return funcAggr(dataset1, std::bind(&CrayfishDataSetUtils::favg_aggr, this, std::placeholders::_1));
+}
