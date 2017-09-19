@@ -133,7 +133,6 @@ void CrayfishDataSetUtils::populateFilter(DataSet& filter, const BBox& outputExt
             filter.addOutput(output);
         }
     }
-    activate(filter);
 }
 
 Output* CrayfishDataSetUtils::number(float val, float time) const {
@@ -359,6 +358,7 @@ void CrayfishDataSetUtils::func2(DataSet& dataset1, const DataSet& dataset2, std
         if (o1->type() == Output::TypeNode ) {
 
             NodeOutput* nodeOutput = static_cast<NodeOutput*>(o1);
+            const NodeOutput* nodeOutput2 = static_cast<const NodeOutput*>(o2);
 
             for (int n=0; n<mMesh->nodes().size(); ++n)
             {
@@ -370,7 +370,7 @@ void CrayfishDataSetUtils::func2(DataSet& dataset1, const DataSet& dataset2, std
                 nodeOutput->getValues()[n] = res_val;
             }
 
-            activate(nodeOutput);
+            activate(nodeOutput, nodeOutput2);
 
         } else // o1->type() == Output::TypeElement
         {
@@ -400,7 +400,6 @@ void CrayfishDataSetUtils::funcAggr(DataSet& dataset1, std::function<float(QVect
                 mMesh->elements().size(),
                 DataSet::Scalar);
         output->time = mTimes[0];
-
         for (int n=0; n<mMesh->nodes().size(); ++n)
         {
             QVector < float > vals;
@@ -408,6 +407,9 @@ void CrayfishDataSetUtils::funcAggr(DataSet& dataset1, std::function<float(QVect
                 const Output* o1 = canditateOutput(dataset1, time_index);
                 Q_ASSERT(o1->type() == o0->type());
                 float val1 = mMesh->valueAt(n, o1);
+                // ideally we should take only values from cells that are active.
+                // but the problem is that the node can be part of multiple cells,
+                // few active and few not, ...
                 if (!is_nodata(val1)) {
                     vals.push_back(val1);
                 }
@@ -421,7 +423,10 @@ void CrayfishDataSetUtils::funcAggr(DataSet& dataset1, std::function<float(QVect
             output->getValues()[n] = res_val;
         }
 
+        // lets do activation purely on NODATA values as we did aggregation here
+        memset(output->getActive().data(), 1, mMesh->elements().size());
         activate(output);
+
         dataset1.deleteOutputs();
         dataset1.addOutput(output);
 
@@ -477,6 +482,7 @@ void CrayfishDataSetUtils::add_if( DataSet& true_dataset,
         if (true_o->type() == Output::TypeNode ) {
 
             NodeOutput* nodeOutput = static_cast<NodeOutput*>(true_o);
+            const NodeOutput* nodeConditionOutput = static_cast<const NodeOutput*>(condition_o);
 
             for (int n=0; n<mMesh->nodes().size(); ++n)
             {
@@ -491,7 +497,10 @@ void CrayfishDataSetUtils::add_if( DataSet& true_dataset,
                 nodeOutput->getValues()[n] = res_val;
             }
 
-            activate(nodeOutput);
+            // This is not ideal, as we do not check for true/false branch here in activate
+            // problem is that activate is on elements, but condition is on nodes...
+            memset(nodeOutput->getActive().data(), 1, mMesh->elements().size());
+            activate(nodeOutput, nodeConditionOutput);
 
         } else // o1->type() == Output::TypeElement
         {
@@ -529,25 +538,35 @@ void CrayfishDataSetUtils::activate(DataSet& dataset1) const
     // Element outputs do not have activate array
 }
 
-void CrayfishDataSetUtils::activate(NodeOutput* tos) const
+void CrayfishDataSetUtils::activate(NodeOutput* tos, const NodeOutput *ref_output /*=0*/) const
 {
 
     Q_ASSERT(isValid());
+    Q_ASSERT(tos != 0);
 
     // Activate only elements that do all node's outputs with some data
+    // And are not deactivated from the beginning
     for (int idx=0; idx<mMesh->elements().size(); ++idx)
     {
+        if (ref_output != 0 && (!ref_output->loadedActive()[idx])) {
+            tos->getActive()[idx] = false;
+            continue;
+        }
+
+        if (!tos->getActive()[idx]) {
+            continue;
+        }
+
         Element elem = mMesh->elements().at(idx);
 
         bool is_active = true; //ACTIVE
-
         for (int j=0; j<elem.nodeCount(); ++j)
         {
-            if (is_nodata(tos->getValues()[elem.p(0)]))
+            if (is_nodata(tos->getValues()[elem.p(0)])) {
                 is_active = false; //NOT ACTIVE
-            break;
+                break;
+            }
         }
-
         tos->getActive()[idx] = is_active;
     }
 }

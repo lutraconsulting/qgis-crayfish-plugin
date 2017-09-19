@@ -46,7 +46,11 @@ private:
   Output* canditateOutput(DataSet &dataset, int time_index) const;
   const Output* constCanditateOutput(const DataSet& dataset, int time_index) const;
   int outputTimesCount(const DataSet& dataset1, const DataSet& dataset2) const;
-  void activate(NodeOutput *output) const;
+  /* Set active property for nodes in output based on:
+   * if given node is active in output and ref_output
+   * if all values in nodes that are referenced by the output are not NODATA
+   */
+  void activate(NodeOutput *output, const NodeOutput *ref_output = 0) const;
   void activate(DataSet& dataset1) const;
 
   void func1(DataSet& dataset1, std::function<float(float)> func) const;
