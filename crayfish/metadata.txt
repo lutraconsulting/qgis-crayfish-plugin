@@ -14,6 +14,7 @@ about=The Crayfish plugin aspires to be a time explorer for various grid and vec
 ; start of optional metadata
 changelog=2.7.0 Feature release
  - Add mesh calculator (#87)
+ - Remove Illuvis (#300)
  <p>2.6.2. Bug Fixes
  - Fix for reading of TIF files not in YYYYMMDD_HHMM format (#299)
  <p>2.6.1 New Features:
