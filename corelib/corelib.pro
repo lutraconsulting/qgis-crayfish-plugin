@@ -83,7 +83,6 @@ SOURCES += crayfish.cpp \
     crayfish_export_grid.cpp \
     crayfish_element.cpp \
     elem/crayfish_eNp.cpp \
-    elem/crayfish_e4q.cpp \
     elem/crayfish_e3t.cpp \
     elem/crayfish_e2l.cpp \
     frmts/crayfish_gdal.cpp \
@@ -100,7 +99,12 @@ SOURCES += crayfish.cpp \
     frmts/crayfish_flo2d.cpp \
     contrib/tinyxml2.cpp \
     crayfish_trace.cpp \
-    frmts/crayfish_tifs.cpp
+    frmts/crayfish_tifs.cpp \
+    calc/bison_crayfish_mesh_calculator_parser.cpp \
+    calc/crayfish_mesh_calculator.cpp \
+    calc/crayfish_mesh_calculator_node.cpp \
+    calc/flex_crayfish_mesh_calculator_lexer.cpp \
+    calc/crayfish_dataset_utils.cpp
 
 HEADERS += crayfish.h \
     crayfish_colormap.h \
@@ -112,7 +116,6 @@ HEADERS += crayfish.h \
     crayfish_renderer.h \
     crayfish_element.h\
     elem/crayfish_eNp.h \
-    elem/crayfish_e4q.h \
     elem/crayfish_e3t.h \
     elem/crayfish_e2l.h \
     frmts/crayfish_mesh_2dm.h \
@@ -120,7 +123,11 @@ HEADERS += crayfish.h \
     contrib/tinyxml2.h \
     frmts/crayfish_netcdf.h \
     crayfish_trace.h \
-    crayfish_utils.h
+    crayfish_utils.h \
+    calc/bison_crayfish_mesh_calculator_parser.hpp \
+    calc/crayfish_mesh_calculator.h \
+    calc/crayfish_mesh_calculator_node.h \
+    calc/crayfish_dataset_utils.h
 
 INCLUDEPATH += $$PWD
 
@@ -129,4 +136,5 @@ DESTDIR = $$PWD/../crayfish
 unix {
   QMAKE_CXXFLAGS += -Wall -Wextra # -Wconversion
   QMAKE_CXXFLAGS += -fvisibility=hidden
+  QMAKE_CXXFLAGS += -std=c++0x
 }

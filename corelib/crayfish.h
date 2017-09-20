@@ -76,6 +76,7 @@ public:
   static Mesh* loadMesh(const QString& meshFile, LoadStatus* status = 0);
 
   static Mesh::DataSets loadDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);
+  static bool saveDataSet(const QString& fileName, const DataSet* dataset);
 
   static bool exportRawDataToTIF(const Output* output, double mupp, const QString& outFilename, const QString& projWkt);
   static bool exportContoursToSHP(const Output* output, double mupp, double interval, const QString& outFilename, const QString& projWkt, bool useLines, ColorMap* cm);
@@ -97,6 +98,8 @@ protected:
   static Mesh::DataSets loadAsciiDataSet(const QString& fileName, const Mesh* mesh, LoadStatus* status = 0);
   static Mesh::DataSets loadXmdfDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
   static Mesh::DataSets loadXdmfDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status = 0);
+
+  static bool saveBinaryDataSet(const QString& datFileName, const DataSet* dataset);
 };
 
 #endif // CRAYFISH_H

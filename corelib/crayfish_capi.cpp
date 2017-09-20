@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
 #include "crayfish_renderer.h"
+#include "calc/crayfish_mesh_calculator.h"
 
 #define CF_TYPES
 typedef Mesh* MeshH;
@@ -54,7 +55,7 @@ static LoadStatus sLastLoadStatus;
 
 int CF_Version()
 {
-  return 0x020602; // 2.6.2
+  return 0x020700; // 2.7.0
 }
 
 
@@ -376,6 +377,37 @@ const char* CF_Mesh_destinationCrs(MeshH mesh)
   return _return_str(mesh->destinationCrs());
 }
 
+bool CF_Mesh_calc_expression_is_valid(MeshH mesh, const char* expression)
+{
+    QString exp = QString::fromAscii(expression);
+    CrayfishMeshCalculator::Result res = CrayfishMeshCalculator::expression_valid(exp, mesh);
+    if (res == CrayfishMeshCalculator::Success) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool CF_Mesh_calc_derived_dataset(MeshH mesh,
+                                  const char* expression,
+                                  float startTime, float endTime,
+                                  double xmin, double xmax, double ymin, double ymax,
+                                  bool addToMesh, const char* output_filename)
+{
+    QString exp = QString::fromAscii(expression);
+    QString outputFile = QString::fromAscii(output_filename);
+    BBox extent(xmin, xmax, ymin, ymax);
+
+    CrayfishMeshCalculator cc(exp, outputFile, extent, startTime, endTime, mesh, addToMesh);
+
+    /** Starts the calculation and writes new dataset to file, returns Result */
+    CrayfishMeshCalculator::Result res = cc.processCalculation();
+    if (res == CrayfishMeshCalculator::Success) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 void CF_DS_valueRange(DataSetH ds, float* vMin, float* vMax)
 {

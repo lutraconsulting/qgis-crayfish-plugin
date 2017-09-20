@@ -53,14 +53,13 @@ install_files = ['metadata.txt']
 install_files += glob.glob("*.py")
 install_files += glob.glob("*.png")
 install_files += glob.glob("gui/*.py")
-install_files += glob.glob("illuvis/*.py")
 install_files += glob.glob("doc/*")
 install_files += glob.glob("ui/*")
 install_files += glob.glob("examples/*")
 install_files += glob.glob("algs/*")
 install_files += glob.glob("images/*")
 install_files.remove("install.py")  # exclude this file!
-install_dirs = ['illuvis', 'doc', 'ui', 'gui', 'examples', 'algs', 'images']
+install_dirs = ['doc', 'ui', 'gui', 'examples', 'algs', 'images']
 
 # add pyqtgraph
 for entry in os.walk('pyqtgraph'):

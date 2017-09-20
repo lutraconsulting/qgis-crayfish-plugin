@@ -28,7 +28,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "elem/crayfish_e2l.h"
 #include "elem/crayfish_e3t.h"
-#include "elem/crayfish_e4q.h"
 #include "elem/crayfish_eNp.h"
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
@@ -93,17 +92,12 @@ int BasicMesh::elementCountForType(Element::Type type)
 
 Mesh::Mesh(const BasicMesh::Nodes& nodes, const BasicMesh::Elements& elements)
   : BasicMesh(nodes, elements)
-  , mE4Qtmp(0)
-  , mE4QtmpIndex(0)
   , mBBoxes(0)
-  , mE4Qnorm(0)
   , mProjection(false)
   , mProjNodes(0)
   , mProjBBoxes(0)
 {
   mExtent = computeMeshExtent(false);
-
-  mE4Qnorm = new E4QNormalization(mExtent);
   mTraceCache = new TraceRendererCache();
 
   computeTempRendererData();
@@ -118,15 +112,6 @@ Mesh::~Mesh()
   delete[] mBBoxes;
   mBBoxes = 0;
 
-  delete[] mE4Qtmp;
-  mE4Qtmp = 0;
-
-  delete mE4Qnorm;
-  mE4Qnorm = 0;
-
-  delete [] mE4QtmpIndex;
-  mE4QtmpIndex = 0;
-
   delete[] mProjNodes;
   mProjNodes = 0;
 
@@ -137,7 +122,7 @@ Mesh::~Mesh()
   if (mTraceCache) delete mTraceCache;
 }
 
-DataSet* Mesh::dataSet(const QString& name)
+DataSet* Mesh::dataSet(const QString& name) const
 {
     DataSets sets = dataSets();
     foreach (DataSet* ds, sets)
@@ -309,6 +294,37 @@ float Mesh::valueAt(uint nodeIndex, const Output* output) const
   }
 }
 
+bool Mesh::interpolateE3T(int node1_idx, int node2_idx, int node3_idx, double x, double y, double* value, const ValueAccessor* accessor) const {
+    /*
+        So - we're interpoalting a 3-noded triangle
+        The query point must be within the bounding box of this triangl but not nessisarily
+        within the triangle itself.
+      */
+
+    /*
+      First determine if the point of interest lies within the triangle using Barycentric techniques
+      described here:  http://www.blackpawn.com/texts/pointinpoly/
+      */
+
+    const Node* nodes = projectedNodes();
+
+    double lam1, lam2, lam3;
+    if (!E3T_physicalToBarycentric(nodes[node1_idx].toPointF(),
+                                   nodes[node2_idx].toPointF(),
+                                   nodes[node3_idx].toPointF(),
+                                   QPointF(x, y),
+                                   lam1, lam2, lam3))
+      return false;
+
+    // Now interpolate
+
+    double z1 = accessor->value( node1_idx );
+    double z2 = accessor->value( node2_idx );
+    double z3 = accessor->value( node3_idx );
+    *value = lam1 * z3 + lam2 * z2 + lam3 * z1;
+    return true;
+}
+
 bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, const NodeOutput* output, const ValueAccessor* accessor) const
 {
   const Mesh* mesh = output->dataSet->mesh();
@@ -336,58 +352,14 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
   }
   else if (elem.eType() == Element::E4Q)
   {
-    int e4qIndex = mE4QtmpIndex[elementIndex];
-    E4Qtmp& e4q = mE4Qtmp[e4qIndex];
-
-    double Lx, Ly;
-    if (!E4Q_mapPhysicalToLogical(e4q, x, y, Lx, Ly, *mE4Qnorm))
-      return false;
-
-    if (Lx < 0 || Ly < 0 || Lx > 1 || Ly > 1)
-      return false;
-
-    double q11 = accessor->value( elem.p(2) );
-    double q12 = accessor->value( elem.p(1) );
-    double q21 = accessor->value( elem.p(3) );
-    double q22 = accessor->value( elem.p(0) );
-
-    *value = q11*Lx*Ly + q21*(1-Lx)*Ly + q12*Lx*(1-Ly) + q22*(1-Lx)*(1-Ly);
-
-    return true;
-
+     bool ret = interpolateE3T(elem.p(0), elem.p(1), elem.p(2), x, y, value, accessor);
+     if (!ret)
+          ret = interpolateE3T(elem.p(2), elem.p(3), elem.p(0), x, y, value, accessor);
+     return ret;
   }
   else if (elem.eType() == Element::E3T)
   {
-
-    /*
-        So - we're interpoalting a 3-noded triangle
-        The query point must be within the bounding box of this triangl but not nessisarily
-        within the triangle itself.
-      */
-
-    /*
-      First determine if the point of interest lies within the triangle using Barycentric techniques
-      described here:  http://www.blackpawn.com/texts/pointinpoly/
-      */
-
-    const Node* nodes = projectedNodes();
-
-    double lam1, lam2, lam3;
-    if (!E3T_physicalToBarycentric(nodes[elem.p(0)].toPointF(),
-                                   nodes[elem.p(1)].toPointF(),
-                                   nodes[elem.p(2)].toPointF(),
-                                   QPointF(x, y),
-                                   lam1, lam2, lam3))
-      return false;
-
-    // Now interpolate
-
-    double z1 = accessor->value( elem.p(0));
-    double z2 = accessor->value( elem.p(1));
-    double z3 = accessor->value( elem.p(2));
-    *value = lam1 * z3 + lam2 * z2 + lam3 * z1;
-    return true;
-
+    return interpolateE3T(elem.p(0), elem.p(1), elem.p(2), x, y, value, accessor);
   }
   else if (elem.eType() == Element::E2L)
   {
@@ -420,6 +392,21 @@ bool Mesh::interpolate(uint elementIndex, double x, double y, double* value, con
   }
 }
 
+bool Mesh::interpolateElementCenteredE3T(int elem_idx, int node1_idx, int node2_idx, int node3_idx, double x, double y, double* value, const ValueAccessor* accessor) const {
+    const Node* nodes = projectedNodes();
+
+    double lam1, lam2, lam3;
+    if (!E3T_physicalToBarycentric(nodes[node1_idx].toPointF(),
+                                   nodes[node2_idx].toPointF(),
+                                   nodes[node3_idx].toPointF(),
+                                   QPointF(x, y),
+                                   lam1, lam2, lam3))
+      return false;
+
+    // Now interpolate
+    *value = accessor->value(elem_idx);
+    return true;
+}
 
 bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, double* value, const ElementOutput* output, const ValueAccessor* accessor) const
 {
@@ -444,36 +431,14 @@ bool Mesh::interpolateElementCentered(uint elementIndex, double x, double y, dou
     }
   else if (elem.eType() == Element::E4Q)
   {
-    int e4qIndex = mE4QtmpIndex[elementIndex];
-    E4Qtmp& e4q = mE4Qtmp[e4qIndex];
-
-    double Lx, Ly;
-    if (!E4Q_mapPhysicalToLogical(e4q, x, y, Lx, Ly, *mE4Qnorm))
-      return false;
-
-    if (Lx < 0 || Ly < 0 || Lx > 1 || Ly > 1)
-      return false;
-
-    *value = accessor->value(elementIndex);
-    return true;
+    bool ret = interpolateElementCenteredE3T(elementIndex, elem.p(0), elem.p(1), elem.p(2), x, y, value, accessor);
+    if (!ret)
+        ret = interpolateElementCenteredE3T(elementIndex, elem.p(2), elem.p(3), elem.p(0), x, y, value, accessor);
+    return ret;
   }
   else if (elem.eType() == Element::E3T)
   {
-    const Node* nodes = projectedNodes();
-
-    double lam1, lam2, lam3;
-    if (!E3T_physicalToBarycentric(nodes[elem.p(0)].toPointF(),
-                                   nodes[elem.p(1)].toPointF(),
-                                   nodes[elem.p(2)].toPointF(),
-                                   QPointF(x, y),
-                                   lam1, lam2, lam3))
-      return false;
-
-    // Now interpolate
-
-    *value = accessor->value(elementIndex);
-    return true;
-
+    return interpolateElementCenteredE3T(elementIndex, elem.p(0), elem.p(1), elem.p(2), x, y, value, accessor);
   }
   else if (elem.eType() == Element::E2L)
   {
@@ -559,32 +524,13 @@ void Mesh::computeTempRendererData()
   // Element bounding box (xmin, xmax and friends)
 
   mBBoxes = new BBox[mElems.count()];
-
-  int E4Qcount = elementCountForType(Element::E4Q);
-  mE4Qtmp = new E4Qtmp[E4Qcount];
-  mE4QtmpIndex = new int[mElems.count()];
-  memset(mE4QtmpIndex, -1, sizeof(int)*mElems.count());
-  int e4qIndex = 0;
-
   int i = 0;
   for (Mesh::Elements::const_iterator it = mElems.constBegin(); it != mElems.constEnd(); ++it, ++i)
   {
     if (it->isDummy())
       continue;
-
     const Element& elem = *it;
-
     updateBBox(mBBoxes[i], elem, mNodes.constData());
-
-    if (elem.eType() == Element::E4Q)
-    {
-      // cache some temporary data for faster rendering
-      mE4QtmpIndex[i] = e4qIndex;
-      E4Qtmp& e4q = mE4Qtmp[e4qIndex];
-
-      E4Q_computeMapping(elem, e4q, mNodes.constData(), *mE4Qnorm);
-      e4qIndex++;
-    }
   }
 }
 
@@ -598,19 +544,6 @@ void Mesh::setNoProjection()
   mProjNodes = 0;
   delete [] mProjBBoxes;
   mProjBBoxes = 0;
-
-  mE4Qnorm->init(mExtent);
-
-  for (int i = 0; i < mElems.count(); ++i)
-  {
-    const Element& elem = mElems[i];
-    if (elem.eType() == Element::E4Q)
-    {
-      int e4qIndex = mE4QtmpIndex[i];
-      E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mNodes.constData(), *mE4Qnorm);
-    }
-  }
-
   mProjection = false;
 }
 
@@ -769,7 +702,6 @@ bool Mesh::reprojectMesh()
   pj_free(projDst);
 
   mProjExtent = computeMeshExtent(true);
-  mE4Qnorm->init(mProjExtent);
 
   if (mProjBBoxes == 0)
     mProjBBoxes = new BBox[mElems.count()];
@@ -778,12 +710,6 @@ bool Mesh::reprojectMesh()
   {
     const Element& elem = mElems[i];
     updateBBox(mProjBBoxes[i], elem, mProjNodes);
-
-    if (elem.eType() == Element::E4Q)
-    {
-      int e4qIndex = mE4QtmpIndex[i];
-      E4Q_computeMapping(elem, mE4Qtmp[e4qIndex], mProjNodes, *mE4Qnorm); // update interpolation coefficients
-    }
   }
 
   return true;
@@ -799,7 +725,7 @@ void Mesh::elementCentroid(int elemIndex, double& cx, double& cy) const
 {
   const Element& e = mElems[elemIndex];
 
-  if (e.eType() == Element::ENP)
+  if ((e.eType() == Element::ENP) || (e.eType() == Element::E4Q))
   {
     const Node* nodes = projectedNodes();
     QPolygonF pX(e.nodeCount());
@@ -807,12 +733,6 @@ void Mesh::elementCentroid(int elemIndex, double& cx, double& cy) const
         pX[i] = nodes[e.p(i)].toPointF();
     }
     ENP_centroid(pX, cx, cy);
-  }
-  else if (e.eType() == Element::E4Q)
-  {
-    int e4qIndex = mE4QtmpIndex[elemIndex];
-    E4Qtmp& e4q = mE4Qtmp[e4qIndex];
-    E4Q_centroid(e4q, cx, cy, *mE4Qnorm);
   }
   else if (e.eType() == Element::E3T)
   {

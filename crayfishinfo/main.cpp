@@ -2,25 +2,52 @@
 
 #include <QCoreApplication>
 #include <QStringList>
-
 #include "crayfish_capi.h"
+#include <limits>
+
+void help() {
+    std::cout << "crayfishinfo mesh_file [-dDataset_file] [-eExpression] [-oOutputExpressionFilename] [-h]" << std::endl;
+}
 
 int main(int argc, char *argv[]) {
 
     QCoreApplication app(argc, argv);
     QStringList cmdline_args = QCoreApplication::arguments();
     std::cout << "Crayfish loader " << CF_Version() << std::endl;
+    cmdline_args.takeFirst(); //Executable
 
-    if (cmdline_args.length() < 2) {
+    // parse arguments
+    if (cmdline_args.length() < 1) {
         std::cout << "Missing mesh file argument" << std::endl;
-        std::cout << "crayfish mesh_file [dataset_file]" << std::endl;
+        help();
         return 1;
+    }   
+    QString mesh_file = cmdline_args.takeFirst();
+    QString dataset_file;
+    QString expression;
+    QString outputFilename;
+
+    foreach (QString arg, cmdline_args) {
+        if (arg.startsWith("-h")) {
+            help();
+            return 1;
+        }
+        if (arg.startsWith("-d")) {
+            dataset_file = arg;
+            dataset_file.remove(0, 2);
+        }
+        if (arg.startsWith("-e")) {
+            expression = arg;
+            expression.remove(0, 2);
+        }
+        if (arg.startsWith("-o")) {
+            outputFilename = arg;
+            outputFilename.remove(0, 2);
+        }
     }
 
     // MESH
-    QString mesh_file = cmdline_args[1];
     std::cout << "Mesh File: " << mesh_file.toStdString() << std::endl;
-
     MeshH m = CF_LoadMesh(mesh_file.toStdString().c_str());
     if (m) {
         std::cout << "Mesh loaded: OK" << std::endl;       
@@ -32,8 +59,7 @@ int main(int argc, char *argv[]) {
     }
 
     // DATASET
-    if (cmdline_args.length() > 2) {
-        QString dataset_file = cmdline_args[2];
+    if (!dataset_file.isEmpty()) {
         std::cout << "Dataset File: " << dataset_file.toStdString() << std::endl;
 
         bool ok = CF_Mesh_loadDataSet(m, dataset_file.toStdString().c_str());
@@ -58,5 +84,30 @@ int main(int argc, char *argv[]) {
         DataSetH ds = CF_Mesh_dataSetAt(m, i);
         std::cout << "    " << CF_DS_name(ds) << " (" <<  CF_DS_outputCount(ds) << ")" << std::endl;
     }
+
+    // Expression
+    if (!expression.isEmpty()) {
+        std::cout << "Expression: " << expression.toStdString() << std::endl;
+        bool is_valid = CF_Mesh_calc_expression_is_valid(m, expression.toAscii());
+        std::cout << "Is Valid: " << std::boolalpha << is_valid << std::endl;
+
+        if (is_valid) {
+            if (!outputFilename.isEmpty()) {
+                double xmin, ymin, xmax, ymax;
+                CF_Mesh_extent(m, &xmin, &ymin, &xmax, &ymax);
+                double startTime = -std::numeric_limits<float>::max();
+                double endTime = std::numeric_limits<float>::max();
+                bool add_to_dataset = false;
+                bool res = CF_Mesh_calc_derived_dataset(m,
+                                                        expression.toAscii(),
+                                                        startTime, endTime,
+                                                        xmin, xmax, ymin, ymax,
+                                                        add_to_dataset,  outputFilename.toAscii());
+
+                std::cout << "Exported " << std::boolalpha << res << " to " << outputFilename.toStdString() << std::endl;
+            }
+        }
+    }
+
     return EXIT_SUCCESS;
 }

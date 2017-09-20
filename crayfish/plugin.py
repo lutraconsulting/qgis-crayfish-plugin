@@ -43,7 +43,6 @@ from .gui.export_contours_config_dialog import CrayfishExportContoursConfigDialo
 from .gui.animation_dialog import CrayfishAnimationDialog
 from .gui.install_helper import ensure_library_installed
 from .gui.utils import QgsMessageBar, qgis_message_bar
-from .illuvis import upload_dialog
 from .styles import style_with_black_lines, classified_style_from_colormap, classified_style_from_interval
 
 if 'QgsDataItemProvider' in globals():  # from QGIS 2.10
@@ -66,14 +65,9 @@ class CrayfishPlugin:
         self.aboutAction = QAction(QIcon(":/plugins/crayfish/images/crayfish.png"), "About", self.iface.mainWindow())
         QObject.connect(self.aboutAction, SIGNAL("triggered()"), self.about)
 
-        # Create action for upload
-        self.uploadAction = QAction(QIcon(":/plugins/illuvis/illuvis_u_32w.png"), "Upload to illuvis ...", self.iface.mainWindow())
-        QObject.connect(self.uploadAction, SIGNAL("triggered()"), self.upload)
-
         # Add menu items
         self.menu = self.iface.pluginMenu().addMenu(QIcon(":/plugins/crayfish/images/crayfish.png"), "Crayfish")
         self.menu.addAction(self.aboutAction)
-        self.menu.addAction(self.uploadAction)
 
         if not ensure_library_installed():
           return
@@ -117,7 +111,6 @@ class CrayfishPlugin:
         # Register actions for context menu
         self.iface.legendInterface().addLegendLayerAction(self.actionExportGrid, '', '', QgsMapLayer.PluginLayer, False)
         self.iface.legendInterface().addLegendLayerAction(self.actionExportContours, '', '', QgsMapLayer.PluginLayer, False)
-        self.iface.legendInterface().addLegendLayerAction(self.uploadAction, '', '', QgsMapLayer.PluginLayer, False)
         self.iface.legendInterface().addLegendLayerAction(self.actionExportAnimation, '', '', QgsMapLayer.PluginLayer, False)
 
         # Make connections
@@ -130,7 +123,7 @@ class CrayfishPlugin:
         self.iface.addDockWidget( Qt.LeftDockWidgetArea, self.dock )
         self.dock.hide()   # do not show the dock by default
         QObject.connect(self.dock, SIGNAL("visibilityChanged(bool)"), self.dockVisibilityChanged)
-        custom_actions = [self.actionExportGrid, self.actionExportContours, self.uploadAction, self.actionExportAnimation]
+        custom_actions = [self.actionExportGrid, self.actionExportContours, self.actionExportAnimation]
         self.dock.treeDataSets.setCustomActions(custom_actions)
 
         self.actionPlot.triggered.connect(self.dock.plot)
@@ -173,7 +166,6 @@ class CrayfishPlugin:
             self.iface.removeDockWidget(self.dock)
 
         self.menu.removeAction(self.aboutAction)
-        self.menu.removeAction(self.uploadAction)
 
         if not self.crayfishLibFound:
             self.iface.pluginMenu().removeAction(self.menu.menuAction())
@@ -181,7 +173,6 @@ class CrayfishPlugin:
 
         self.iface.legendInterface().removeLegendLayerAction(self.actionExportGrid)
         self.iface.legendInterface().removeLegendLayerAction(self.actionExportContours)
-        self.iface.legendInterface().removeLegendLayerAction(self.uploadAction)
         self.iface.legendInterface().removeLegendLayerAction(self.actionExportAnimation)
 
         # Remove the plugin menu item and icon
@@ -452,16 +443,10 @@ class CrayfishPlugin:
         # mesh file is ready, now load the .dat file
         self.loadDatFile(datFileName, layerWith2dm)
 
-
     def about(self):
         d = CrayfishAboutDialog(self.iface)
         d.show()
         res = d.exec_()
-
-
-    def upload(self):
-        d = upload_dialog.UploadDialog(self.iface, self.dock.currentCrayfishLayer())
-        d.exec_()
 
     def help(self):
         webbrowser.open('http://www.lutraconsulting.co.uk/products/crayfish/wiki')
@@ -517,7 +502,6 @@ class CrayfishPlugin:
         # Add custom legend actions
         self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportGrid, layer)
         self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportContours, layer)
-        self.iface.legendInterface().addLegendLayerActionForLayer(self.uploadAction, layer)
         self.iface.legendInterface().addLegendLayerActionForLayer(self.actionExportAnimation, layer)
 
         # make sure the dock is visible and up-to-date
