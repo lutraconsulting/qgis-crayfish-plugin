@@ -1,10 +1,11 @@
-
 call c:\osgeo4w\osgeo4w.bat echo OSGEO4W
-call "c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\vcvars32.bat"
+# call vs2010_64bit.bat
+call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat"
+path %path%;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin
 
 cd ..\corelib
 nmake distclean
-qmake -spec win32-msvc2010 "CONFIG+=release"
+qmake -spec win32-msvc2012 "CONFIG+=release"
 nmake
 
 set /p CFVER=Crayfish package version:

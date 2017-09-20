@@ -1,0 +1,848 @@
+Grammar
+
+    0 $accept: root $end
+
+    1 root: mesh_exp
+
+    2 mesh_exp: FUNCTION '(' mesh_exp ')'
+    3         | mesh_exp AND mesh_exp
+    4         | mesh_exp OR mesh_exp
+    5         | mesh_exp '=' mesh_exp
+    6         | mesh_exp NE mesh_exp
+    7         | mesh_exp '>' mesh_exp
+    8         | mesh_exp '<' mesh_exp
+    9         | mesh_exp GE mesh_exp
+   10         | mesh_exp LE mesh_exp
+   11         | mesh_exp '^' mesh_exp
+   12         | mesh_exp '*' mesh_exp
+   13         | mesh_exp '/' mesh_exp
+   14         | mesh_exp '+' mesh_exp
+   15         | mesh_exp '-' mesh_exp
+   16         | '(' mesh_exp ')'
+   17         | '+' mesh_exp
+   18         | '-' mesh_exp
+   19         | NUMBER
+   20         | DATASET_REF
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+'(' (40) 2 16
+')' (41) 2 16
+'*' (42) 12
+'+' (43) 14 17
+'-' (45) 15 18
+'/' (47) 13
+'<' (60) 8
+'=' (61) 5
+'>' (62) 7
+'^' (94) 11
+error (256)
+DATASET_REF (258) 20
+NUMBER (259) 19
+FUNCTION (260) 2
+AND (261) 3
+OR (262) 4
+NE (263) 6
+GE (264) 9
+LE (265) 10
+UMINUS (266)
+
+
+Nonterminals, with rules where they appear
+
+$accept (22)
+    on left: 0
+root (23)
+    on left: 1, on right: 0
+mesh_exp (24)
+    on left: 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20, on right:
+    1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+
+
+State 0
+
+    0 $accept: . root $end
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    root      go to state 7
+    mesh_exp  go to state 8
+
+
+State 1
+
+   20 mesh_exp: DATASET_REF .
+
+    $default  reduce using rule 20 (mesh_exp)
+
+
+State 2
+
+   19 mesh_exp: NUMBER .
+
+    $default  reduce using rule 19 (mesh_exp)
+
+
+State 3
+
+    2 mesh_exp: FUNCTION . '(' mesh_exp ')'
+
+    '('  shift, and go to state 9
+
+
+State 4
+
+   17 mesh_exp: '+' . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 10
+
+
+State 5
+
+   18 mesh_exp: '-' . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 11
+
+
+State 6
+
+   16 mesh_exp: '(' . mesh_exp ')'
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 12
+
+
+State 7
+
+    0 $accept: root . $end
+
+    $end  shift, and go to state 13
+
+
+State 8
+
+    1 root: mesh_exp .
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    AND  shift, and go to state 14
+    OR   shift, and go to state 15
+    NE   shift, and go to state 16
+    GE   shift, and go to state 17
+    LE   shift, and go to state 18
+    '='  shift, and go to state 19
+    '<'  shift, and go to state 20
+    '>'  shift, and go to state 21
+    '+'  shift, and go to state 22
+    '-'  shift, and go to state 23
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 1 (root)
+
+
+State 9
+
+    2 mesh_exp: FUNCTION '(' . mesh_exp ')'
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 27
+
+
+State 10
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+   17         | '+' mesh_exp .
+
+    $default  reduce using rule 17 (mesh_exp)
+
+
+State 11
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+   18         | '-' mesh_exp .
+
+    $default  reduce using rule 18 (mesh_exp)
+
+
+State 12
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+   16         | '(' mesh_exp . ')'
+
+    AND  shift, and go to state 14
+    OR   shift, and go to state 15
+    NE   shift, and go to state 16
+    GE   shift, and go to state 17
+    LE   shift, and go to state 18
+    '='  shift, and go to state 19
+    '<'  shift, and go to state 20
+    '>'  shift, and go to state 21
+    '+'  shift, and go to state 22
+    '-'  shift, and go to state 23
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+    ')'  shift, and go to state 28
+
+
+State 13
+
+    0 $accept: root $end .
+
+    $default  accept
+
+
+State 14
+
+    3 mesh_exp: mesh_exp AND . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 29
+
+
+State 15
+
+    4 mesh_exp: mesh_exp OR . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 30
+
+
+State 16
+
+    6 mesh_exp: mesh_exp NE . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 31
+
+
+State 17
+
+    9 mesh_exp: mesh_exp GE . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 32
+
+
+State 18
+
+   10 mesh_exp: mesh_exp LE . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 33
+
+
+State 19
+
+    5 mesh_exp: mesh_exp '=' . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 34
+
+
+State 20
+
+    8 mesh_exp: mesh_exp '<' . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 35
+
+
+State 21
+
+    7 mesh_exp: mesh_exp '>' . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 36
+
+
+State 22
+
+   14 mesh_exp: mesh_exp '+' . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 37
+
+
+State 23
+
+   15 mesh_exp: mesh_exp '-' . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 38
+
+
+State 24
+
+   12 mesh_exp: mesh_exp '*' . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 39
+
+
+State 25
+
+   13 mesh_exp: mesh_exp '/' . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 40
+
+
+State 26
+
+   11 mesh_exp: mesh_exp '^' . mesh_exp
+
+    DATASET_REF  shift, and go to state 1
+    NUMBER       shift, and go to state 2
+    FUNCTION     shift, and go to state 3
+    '+'          shift, and go to state 4
+    '-'          shift, and go to state 5
+    '('          shift, and go to state 6
+
+    mesh_exp  go to state 41
+
+
+State 27
+
+    2 mesh_exp: FUNCTION '(' mesh_exp . ')'
+    3         | mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    AND  shift, and go to state 14
+    OR   shift, and go to state 15
+    NE   shift, and go to state 16
+    GE   shift, and go to state 17
+    LE   shift, and go to state 18
+    '='  shift, and go to state 19
+    '<'  shift, and go to state 20
+    '>'  shift, and go to state 21
+    '+'  shift, and go to state 22
+    '-'  shift, and go to state 23
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+    ')'  shift, and go to state 42
+
+
+State 28
+
+   16 mesh_exp: '(' mesh_exp ')' .
+
+    $default  reduce using rule 16 (mesh_exp)
+
+
+State 29
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    3         | mesh_exp AND mesh_exp .
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    OR   shift, and go to state 15
+    NE   shift, and go to state 16
+    GE   shift, and go to state 17
+    LE   shift, and go to state 18
+    '='  shift, and go to state 19
+    '<'  shift, and go to state 20
+    '>'  shift, and go to state 21
+    '+'  shift, and go to state 22
+    '-'  shift, and go to state 23
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 3 (mesh_exp)
+
+
+State 30
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    4         | mesh_exp OR mesh_exp .
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    NE   shift, and go to state 16
+    GE   shift, and go to state 17
+    LE   shift, and go to state 18
+    '='  shift, and go to state 19
+    '<'  shift, and go to state 20
+    '>'  shift, and go to state 21
+    '+'  shift, and go to state 22
+    '-'  shift, and go to state 23
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 4 (mesh_exp)
+
+
+State 31
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    6         | mesh_exp NE mesh_exp .
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    GE   shift, and go to state 17
+    LE   shift, and go to state 18
+    '='  shift, and go to state 19
+    '<'  shift, and go to state 20
+    '>'  shift, and go to state 21
+    '+'  shift, and go to state 22
+    '-'  shift, and go to state 23
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 6 (mesh_exp)
+
+
+State 32
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+    9         | mesh_exp GE mesh_exp .
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    LE   shift, and go to state 18
+    '='  shift, and go to state 19
+    '<'  shift, and go to state 20
+    '>'  shift, and go to state 21
+    '+'  shift, and go to state 22
+    '-'  shift, and go to state 23
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 9 (mesh_exp)
+
+
+State 33
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   10         | mesh_exp LE mesh_exp .
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    '='  shift, and go to state 19
+    '<'  shift, and go to state 20
+    '>'  shift, and go to state 21
+    '+'  shift, and go to state 22
+    '-'  shift, and go to state 23
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 10 (mesh_exp)
+
+
+State 34
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    5         | mesh_exp '=' mesh_exp .
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    '+'  shift, and go to state 22
+    '-'  shift, and go to state 23
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 5 (mesh_exp)
+
+
+State 35
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    8         | mesh_exp '<' mesh_exp .
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    '+'  shift, and go to state 22
+    '-'  shift, and go to state 23
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 8 (mesh_exp)
+
+
+State 36
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    7         | mesh_exp '>' mesh_exp .
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    '+'  shift, and go to state 22
+    '-'  shift, and go to state 23
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 7 (mesh_exp)
+
+
+State 37
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   14         | mesh_exp '+' mesh_exp .
+   15         | mesh_exp . '-' mesh_exp
+
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 14 (mesh_exp)
+
+
+State 38
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+   15         | mesh_exp '-' mesh_exp .
+
+    '*'  shift, and go to state 24
+    '/'  shift, and go to state 25
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 15 (mesh_exp)
+
+
+State 39
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   12         | mesh_exp '*' mesh_exp .
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 12 (mesh_exp)
+
+
+State 40
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   13         | mesh_exp '/' mesh_exp .
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    '^'  shift, and go to state 26
+
+    $default  reduce using rule 13 (mesh_exp)
+
+
+State 41
+
+    3 mesh_exp: mesh_exp . AND mesh_exp
+    4         | mesh_exp . OR mesh_exp
+    5         | mesh_exp . '=' mesh_exp
+    6         | mesh_exp . NE mesh_exp
+    7         | mesh_exp . '>' mesh_exp
+    8         | mesh_exp . '<' mesh_exp
+    9         | mesh_exp . GE mesh_exp
+   10         | mesh_exp . LE mesh_exp
+   11         | mesh_exp . '^' mesh_exp
+   11         | mesh_exp '^' mesh_exp .
+   12         | mesh_exp . '*' mesh_exp
+   13         | mesh_exp . '/' mesh_exp
+   14         | mesh_exp . '+' mesh_exp
+   15         | mesh_exp . '-' mesh_exp
+
+    $default  reduce using rule 11 (mesh_exp)
+
+
+State 42
+
+    2 mesh_exp: FUNCTION '(' mesh_exp ')' .
+
+    $default  reduce using rule 2 (mesh_exp)

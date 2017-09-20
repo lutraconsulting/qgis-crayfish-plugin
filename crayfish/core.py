@@ -91,6 +91,8 @@ def load_library():
     lib.CF_Mesh_dataSetAt.restype = ctypes.c_void_p
     lib.CF_Mesh_sourceCrs.restype = ctypes.c_char_p
     lib.CF_Mesh_destinationCrs.restype = ctypes.c_char_p
+    lib.CF_Mesh_calc_expression_is_valid.restype = ctypes.c_bool
+    lib.CF_Mesh_calc_expression_is_valid.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
     lib.CF_DS_name.restype = ctypes.c_char_p
     lib.CF_DS_fileName.restype = ctypes.c_char_p
     lib.CF_DS_refTime.restype = ctypes.c_char_p
@@ -309,6 +311,12 @@ class Mesh:
   def set_destination_crs(self, dest_proj4):
     self.lib.CF_Mesh_setDestinationCrs(self.handle, ctypes.c_char_p(dest_proj4))
 
+  def calc_expression_is_valid(self, expression):
+    return self.lib.CF_Mesh_calc_expression_is_valid(self.handle, ctypes.c_char_p(expression))
+
+  def create_derived_dataset(self, expression, time_filter, spatial_filter, add_to_mesh, output_filename):
+    return True #TODO
+
 
 class DataSet(object):
   """ Datasets store data associated with mesh. One dataset represents
@@ -381,6 +389,12 @@ class DataSet(object):
     vmin,vmax = ctypes.c_float(), ctypes.c_float()
     self.lib.CF_DS_valueRange(self.handle, ctypes.byref(vmin), ctypes.byref(vmax))
     return (vmin.value, vmax.value)
+
+  def time_range(self):
+    # returns (float, float)
+    start = self.output(0)
+    end = self.output(self.output_count() - 1)
+    return start.time(), end.time()
 
   def time_varying(self):
     return self.output_count() > 1

@@ -100,6 +100,9 @@ CF_EXPORT void CF_Mesh_setDestinationCrs(MeshH mesh, const char* destProj4);
 CF_EXPORT const char* CF_Mesh_sourceCrs(MeshH mesh);
 CF_EXPORT const char* CF_Mesh_destinationCrs(MeshH mesh);
 
+CF_EXPORT bool CF_Mesh_calc_expression_is_valid(MeshH mesh, const char* expression);
+
+
 // DataSet functions
 
 CF_EXPORT int CF_DS_type(DataSetH ds);
