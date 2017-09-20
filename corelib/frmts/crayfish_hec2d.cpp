@@ -31,8 +31,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_mesh.h"
 
 #include "frmts/crayfish_hdf5.h"
-#include "elem/crayfish_e4q.h"
-
 #include <algorithm>
 
 static HdfFile openHdfFile(const QString& fileName)
@@ -389,14 +387,6 @@ static Mesh* parseMesh(HdfGroup gGeom2DFlowAreas, QVector<int>& areaElemStartInd
             else if (nValidVertexes == 4) { // RECTANGLE
                 elements[eIdx].setEType(Element::E4Q);
                 elements[eIdx].setP(idx.data());
-
-                // It seems that some polygons with 4 vertexes
-                // are triangles. In this case the E4Q elements
-                // are not properly working
-                if (! E4Q_isValid(elements[eIdx], nodes.data())) {
-                    elements[eIdx].setEType(Element::ENP, nValidVertexes);
-                    elements[eIdx].setP(idx.data());
-                }
             }
             else {
                 elements[eIdx].setEType(Element::ENP, nValidVertexes);
