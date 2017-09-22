@@ -34,7 +34,7 @@ win32 {
   }
 
   INCLUDEPATH += $${OSGEO_PATH}/include
-  LIBS += -L$${OSGEO_PATH}/lib -lproj_i -lgdal_i -lhdf5 -lnetcdf
+  LIBS += -L$${OSGEO_PATH}/lib -lproj_i -lgdal_i -lhdf5 -lnetcdf -lgeos_c
 
   # use delayed loading of GDAL. If the requested library version is not available
   # (e.g. due to older QGIS installation), the loading of Crayfish library will not fail,
@@ -45,7 +45,7 @@ win32 {
 
 unix:!macx {
   INCLUDEPATH += /usr/include/gdal
-  LIBS += -lproj -lgdal -lnetcdf
+  LIBS += -lproj -lgdal -lnetcdf -lgeos_c
 
   contains(QMAKE_HOST.arch, x86_64) {
     ARCH = x86_64
@@ -65,7 +65,7 @@ unix:!macx {
 }
 
 macx {
-  LIBS += -lproj -lgdal -lnetcdf
+  LIBS += -lproj -lgdal -lnetcdf -lgeos_c
   LIBS += -lhdf5
 }
 
@@ -100,7 +100,12 @@ SOURCES += crayfish.cpp \
     frmts/crayfish_flo2d.cpp \
     contrib/tinyxml2.cpp \
     crayfish_trace.cpp \
-    frmts/crayfish_tifs.cpp
+    frmts/crayfish_tifs.cpp \
+    calc/bison_crayfish_mesh_calculator_parser.cpp \
+    calc/crayfish_mesh_calculator.cpp \
+    calc/crayfish_mesh_calculator_node.cpp \
+    calc/flex_crayfish_mesh_calculator_lexer.cpp \
+    calc/crayfish_dataset_utils.cpp
 
 HEADERS += crayfish.h \
     crayfish_colormap.h \
@@ -120,7 +125,11 @@ HEADERS += crayfish.h \
     contrib/tinyxml2.h \
     frmts/crayfish_netcdf.h \
     crayfish_trace.h \
-    crayfish_utils.h
+    crayfish_utils.h \
+    calc/bison_crayfish_mesh_calculator_parser.hpp \
+    calc/crayfish_mesh_calculator.h \
+    calc/crayfish_mesh_calculator_node.h \
+    calc/crayfish_dataset_utils.h
 
 INCLUDEPATH += $$PWD
 
@@ -129,4 +138,5 @@ DESTDIR = $$PWD/../crayfish
 unix {
   QMAKE_CXXFLAGS += -Wall -Wextra # -Wconversion
   QMAKE_CXXFLAGS += -fvisibility=hidden
+  QMAKE_CXXFLAGS += -std=c++0x
 }

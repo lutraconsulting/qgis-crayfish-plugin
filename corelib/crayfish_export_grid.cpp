@@ -147,7 +147,14 @@ bool Crayfish::exportContoursToSHP(const Output* output, double mupp, double int
   if (!rd)
     return false;
 
-  bool res = CrayfishGDAL::writeContoursSHP(outFilename, interval, rd, projWkt, useLines, cm);
+  bool res;
+  if (useLines) {
+      // lines
+      res = CrayfishGDAL::writeContourLinesSHP(outFilename, interval, rd, projWkt, cm);
+  } else {
+      //areas
+      res = CrayfishGDAL::writeContourAreasSHP(outFilename, interval, rd, projWkt, cm, output);
+  }
   delete rd;
 
   return res;

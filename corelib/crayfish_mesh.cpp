@@ -137,7 +137,7 @@ Mesh::~Mesh()
   if (mTraceCache) delete mTraceCache;
 }
 
-DataSet* Mesh::dataSet(const QString& name)
+DataSet* Mesh::dataSet(const QString& name) const
 {
     DataSets sets = dataSets();
     foreach (DataSet* ds, sets)

@@ -65,6 +65,18 @@ void DataSet::addOutput(Output* output)
   output->dataSet = this;
 }
 
+void DataSet::deleteOutputs() {
+    qDeleteAll(outputs);
+    outputs.clear();
+    updateZRange();
+}
+
+void DataSet::dispatchOutputs() {
+    // Do not delete them, just dispatch from this dataset
+    outputs.clear();
+    updateZRange();
+}
+
 
 const Output* DataSet::constOutput(int outputTime) const
 {

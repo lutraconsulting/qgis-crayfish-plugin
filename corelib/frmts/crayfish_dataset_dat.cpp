@@ -54,6 +54,10 @@ static const int CT_ENDDS     = 210;
 static const int CT_RT_JULIAN = 240;
 static const int CT_TIMEUNITS = 250;
 
+static const int CT_2D_MESHES = 3;
+static const int CT_FLOAT_SIZE = 4;
+static const int CF_FLAG_SIZE = 1;
+
 #define EXIT_WITH_ERROR(error)       {  if (status) status->mLastError = (error); return Mesh::DataSets(); }
 
 static NodeOutput* _readTimestep(float t, bool isVector, bool hasStatus, QTextStream& stream, int nodeCount, int elemCount, QVector<int>& nodeIDToIndex);
@@ -114,19 +118,19 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
 
     case CT_OBJTYPE:
       // Object type
-      if( in.readRawData( (char*)&objecttype, 4) != 4 || objecttype != 3 )
+      if( in.readRawData( (char*)&objecttype, 4) != 4 || objecttype != CT_2D_MESHES )
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
       break;
 
     case CT_SFLT:
       // Float size
-      if( in.readRawData( (char*)&sflt, 4) != 4 || sflt != 4 )
+      if( in.readRawData( (char*)&sflt, 4) != 4 || sflt != CT_FLOAT_SIZE )
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
       break;
 
     case CT_SFLG:
       // Flag size
-      if( in.readRawData( (char*)&sflg, 4) != 4 || sflg != 1 )
+      if( in.readRawData( (char*)&sflg, 4) != 4 || sflg != CF_FLAG_SIZE )
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
       break;
 
@@ -529,4 +533,103 @@ static ElementOutput* _readTimestampElementCentered(float t, bool isVector, QTex
   }
 
   return o;
+}
+
+
+bool Crayfish::saveBinaryDataSet(const QString& datFileName, const DataSet *dataset) {
+    QFile file(datFileName);
+    if (!file.open(QIODevice::WriteOnly)) return false;  // Couldn't open the file
+
+    const Mesh* mesh = dataset->mesh();
+    int nodeCount = mesh->nodes().count();
+    int elemCount = mesh->elements().count();
+
+    QDataStream out(&file);
+
+    // version card
+    if (out.writeRawData((char*)&CT_VERSION, 4) != 4) return false;
+
+    // objecttype
+    if (out.writeRawData((char*)&CT_OBJTYPE, 4) != 4) return false;
+    if (out.writeRawData((char*)&CT_2D_MESHES, 4) != 4) return false;
+
+    // float size
+    if (out.writeRawData((char*)&CT_SFLT, 4) != 4) return false;
+    if (out.writeRawData((char*)&CT_FLOAT_SIZE, 4) != 4) return false;
+
+    // Flag size
+    if (out.writeRawData((char*)&CT_SFLG, 4) != 4) return false;
+    if (out.writeRawData((char*)&CF_FLAG_SIZE, 4) != 4) return false;
+
+    // Dataset Type
+    if (dataset->type() == DataSet::Scalar) {
+        if (out.writeRawData((char*)&CT_BEGSCL, 4) != 4) return false;
+    } else if (dataset->type() == DataSet::Vector) {
+        if (out.writeRawData((char*)&CT_BEGVEC, 4) != 4) return false;
+    } else {
+        return false;
+    }
+
+    // Object id (ignored)
+    int ignored_val = 1;
+    if (out.writeRawData((char*)&CT_OBJID, 4) != 4) return false;
+    if (out.writeRawData((char*)&ignored_val, 4) != 4) return false;
+
+    // Num nodes
+    if (out.writeRawData((char*)&CT_NUMDATA, 4) != 4) return false;
+    if (out.writeRawData((char*)&nodeCount, 4) != 4) return false;
+
+    // Num cells
+    if (out.writeRawData((char*)&CT_NUMCELLS, 4) != 4) return false;
+    if (out.writeRawData((char*)&elemCount, 4) != 4) return false;
+
+    // Name
+    if (out.writeRawData((char*)&CT_NAME, 4) != 4) return false;
+    if (out.writeRawData(dataset->name().leftJustified(39, ' ', true).toStdString().c_str(), 40) != 40) return false;
+
+    // Time steps
+    int istat = 1; // include if elements are active
+
+    for (int time_index=0; time_index<dataset->outputCount(); ++ time_index ) {
+        const Output* output = dataset->constOutput(time_index);
+
+        if (output->type() != Output::TypeNode) return false; // Element outputs not supported in the format
+
+        const NodeOutput* nodeOutput = static_cast<const NodeOutput*>(output);
+
+        if (out.writeRawData((char*)&CT_TS, 4) != 4) return false;
+        if (out.writeRawData((char*)&istat, 1) != 1) return false;
+        if (out.writeRawData((char*)&output->time, 4) != 4) return false;
+
+        if (istat)
+        {
+          // Write status flags
+          for (int i=0; i<elemCount; i++)
+          {
+              bool active = nodeOutput->isActive(i);
+              if( out.writeRawData( (char*)&active, 1) != 1 ) return false;
+          }
+        }
+
+        for (int i=0; i<nodeCount; i++)
+        {
+          // Read values flags
+          if (dataset->type() == DataSet::Vector)
+          {
+            float x = nodeOutput->loadedValuesV()[i].x;
+            float y = nodeOutput->loadedValuesV()[i].y;
+            if( out.writeRawData( (char*)&x, 4) != 4 ) return false;
+            if( out.writeRawData( (char*)&y, 4) != 4 ) return false;
+          }
+          else
+          {
+            float val = nodeOutput->loadedValues()[i];
+            if( out.writeRawData( (char*)&val, 4) != 4 ) return false;
+          }
+        }
+    }
+
+    if (out.writeRawData((char*)&CT_ENDDS, 4) != 4) return false;
+
+    return true;
 }

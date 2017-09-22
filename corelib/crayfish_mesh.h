@@ -87,6 +87,7 @@ struct BBox
   double maxY;
 
   bool isPointInside(double x, double y) const { return x >= minX && x <= maxX && y >= minY && y <= maxY; }
+  bool isPointInside(const QPointF& point) const { return isPointInside(point.x(), point.y()); }
   bool contains(const BBox& other) const { return other.minX >= minX && other.maxX <= maxX && other.minY >= minY && other.maxY <= maxY; }
 };
 
@@ -126,7 +127,7 @@ public:
   void addDataSet(DataSet* ds);
 
   const DataSets& dataSets() const { return mDataSets; }
-  DataSet* dataSet(const QString& name);
+  DataSet* dataSet(const QString& name) const;
 
   BBox extent() const { return mExtent; }
 
