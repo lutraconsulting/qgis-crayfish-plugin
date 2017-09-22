@@ -1,5 +1,6 @@
 import sys
 sys.path.append('..')
+import qgis.core # Fix sip.setapi(api, 2)
 import crayfish
 import crayfish.plot
 import unittest

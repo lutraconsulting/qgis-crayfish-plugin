@@ -36,8 +36,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_element.h"
 
 struct BBox;
-struct E4Qtmp;
-struct E4QNormalization;
 class DataSet;
 class ElementOutput;
 class Output;
@@ -183,11 +181,7 @@ protected:
   DataSets mDataSets;  //!< pointers to datasets are owned by this class
 
   // cached data for rendering
-
-  E4Qtmp* mE4Qtmp;   //!< contains rendering information for quads
-  int* mE4QtmpIndex; //!< for conversion from element index to mE4Qtmp indexes
   BBox* mBBoxes; //! bounding boxes of elements (non-projected)
-  E4QNormalization* mE4Qnorm; //! normalization of coordinates
   TraceRendererCache* mTraceCache; //! pre-computed trace rendering
 
   // reprojection support
@@ -199,6 +193,10 @@ protected:
   Node* mProjNodes; //!< reprojected nodes
   BBox* mProjBBoxes; //!< reprojected bounding boxes of elements
   BBox mProjExtent;
+
+private:
+  bool interpolateE3T(int node1_idx, int node2_idx, int node3_idx, double x, double y, double* value, const ValueAccessor* accessor) const;
+  bool interpolateElementCenteredE3T(int elem_idx, int node1_idx, int node2_idx, int node3_idx, double x, double y, double* value, const ValueAccessor* accessor) const;
 };
 
 BBox computeExtent(const Node* nodes, int size);
