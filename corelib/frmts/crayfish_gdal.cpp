@@ -45,6 +45,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
 
+#define GDAL_NODATA -999
+#define CRAYFISH_NODATA -9999
 #define CONTOURS_LAYER_NAME "contours"
 #define CONTOURS_ATTR_NAME "CVAL"
 
@@ -63,7 +65,7 @@ static QVector<double>  generateClassification(const RawData* rd, double interva
 
         for (int i=0; i<rd->size(); ++i) {
             double val =rd->dataAt(i);
-            if (val != -999) {
+            if (val != GDAL_NODATA) {
                 if (val < minv) minv = val;
                 if (val > maxv) maxv = val;
             }
@@ -84,10 +86,30 @@ static void classifyRawData(RawData* rd) {
 
     // assign 1 to all non-NODATA values
     for (int i=0; i<rd->size(); ++i) {
-        if (d[i] != -999) {
+        if (d[i] != GDAL_NODATA) {
             d[i] = 1.0;
         }
     }
+}
+
+static double findClassVal(double val, QVector<double>& classes) {
+    Q_ASSERT(classes.size() > 1);
+    Q_ASSERT(val != CRAYFISH_NODATA);
+
+    if (val > classes[classes.size() - 1]) {
+        return classes[classes.size() - 1];
+    }
+    else if (val < classes[0]) {
+        return classes[0];
+    } else {
+        for (int j=classes.size() - 1; j>=1; j--) {
+            if (val > classes[j]) {
+                return classes[j];
+            }
+        }
+    }
+
+    return CRAYFISH_NODATA;
 }
 
 static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const QString& wkt, bool in_memory=false, bool add_mask_band=false) {
@@ -126,7 +148,7 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
     GDALSetProjection( hDstDS, wkt.toAscii().data() );
 
     GDALRasterBandH hBand = GDALGetRasterBand( hDstDS, 1 );
-    GDALSetRasterNoDataValue(hBand, -999);
+    GDALSetRasterNoDataValue(hBand, GDAL_NODATA);
     CPLErr err = GDALRasterIO(hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
                               rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0);
 
@@ -193,7 +215,7 @@ static bool contourLinesDataset(OGRLayerH hLayer, GDALRasterBandH hBand, QVector
                 classes.size(), //nFixedLevelCount
                 classes.data(), //padfFixedLevels
                 TRUE, //bUseNoData
-                -999, //dfNoDataValue
+                GDAL_NODATA, //dfNoDataValue
                 hLayer,
                 -1, // ID attribute index
                 OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), CONTOURS_ATTR_NAME ),
@@ -317,7 +339,7 @@ static bool addBoundaryLines(const QString& outFilename, OGRGeometryH hMultiLine
 
     classifyRawData(rd);
 
-    GDALDatasetH hRasterDS = rasterDataset(outFilename, rd, wkt, true, true);
+    GDALDatasetH hRasterDS = rasterDataset(outFilename, rd, wkt, false, true);
     if (!hRasterDS) {
         return false;
     }
@@ -363,8 +385,7 @@ static bool addBoundaryLines(const QString& outFilename, OGRGeometryH hMultiLine
         OGRGeometryH hGeom = OGR_G_ForceToMultiLineString(hAreaGeom);
         for (int i=0; i< OGR_G_GetGeometryCount(hGeom); ++i) {
             OGRGeometryH hGeomIntern = OGR_G_GetGeometryRef(hGeom, i);
-            OGRwkbGeometryType gtype = OGR_G_GetGeometryType(hGeomIntern);
-            Q_ASSERT(gtype == wkbLineString);
+            Q_ASSERT(OGR_G_GetGeometryType(hGeomIntern) == wkbLineString);
             OGR_G_AddGeometry(hMultiLinesGeom, OGR_G_Clone(hGeomIntern));
         }
     }
@@ -373,13 +394,73 @@ static bool addBoundaryLines(const QString& outFilename, OGRGeometryH hMultiLine
     return true;
 }
 
+static bool outputPolygonsToFile(const QString& outFilename, OGRGeometryH hContoursMultiPolygon, const QString& wkt, const Output* output, QVector<double>& classes) {
+    GDALDatasetH hVectorDS = vectorDataset(outFilename, wkt, wkbPolygon, false);
+    if (!hVectorDS) {
+        return false;
+    }
+    OGRLayerH hLayer = OGR_DS_GetLayer( hVectorDS, 0);
+    if (!hLayer) {
+        GDALClose( hVectorDS );
+        return false;
+    }
+
+    int nfeatures = 0;
+    for (int i=0; i< OGR_G_GetGeometryCount(hContoursMultiPolygon); ++i) {
+        OGRGeometryH hGeom = OGR_G_Clone(OGR_G_GetGeometryRef(hContoursMultiPolygon, i));
+
+        OGRGeometryH hSurfacePointGeom = OGR_G_PointOnSurface(hGeom);
+        double x,y,z;
+        OGR_G_GetPoint(hSurfacePointGeom, 0, &x, &y, &z);
+        OGR_G_DestroyGeometry(hSurfacePointGeom);
+        double val = output->dataSet->mesh()->valueAt(output, x, y); //very slow, but fortunately only one point per area
+        if (val != CRAYFISH_NODATA)
+        {
+            ++nfeatures;
+            val = findClassVal(val, classes);
+            OGRFeatureH hFeature = OGR_F_Create( OGR_L_GetLayerDefn( hLayer ) );
+            OGR_F_SetFieldDouble(hFeature, OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME  ), val );
+            OGR_F_SetGeometry( hFeature, hGeom );
+            OGR_G_DestroyGeometry(hGeom);
+            if( OGR_L_CreateFeature( hLayer, hFeature ) != OGRERR_NONE )
+            {
+                GDALClose( hVectorDS );
+                return false;
+            }
+            OGR_F_Destroy( hFeature );
+        }
+    }
+
+    GDALClose( hVectorDS );
+    if (nfeatures == 0) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+static OGRGeometryH unionGeom(OGRGeometryH hMultiLinesGeom) {
+    OGRGeometryH hMultiLinesGeomUnion = 0;
+    int n = OGR_G_GetGeometryCount(hMultiLinesGeom);
+    if (n < 1) {
+        return hMultiLinesGeomUnion;
+    }
+    hMultiLinesGeomUnion = OGR_G_GetGeometryRef(hMultiLinesGeom, 0);
+    for (int i=1; i< n; ++i) {
+        hMultiLinesGeomUnion = OGR_G_Union(hMultiLinesGeomUnion, OGR_G_GetGeometryRef(hMultiLinesGeom, i));
+    }
+
+    return hMultiLinesGeomUnion;
+}
+
 bool CrayfishGDAL::writeContourAreasSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm, const Output* output)
 {
     OGRGeometryH hMultiLinesGeom = OGR_G_CreateGeometry(wkbMultiLineString);
     QVector<double> classes = generateClassification(rd, interval, cm);
 
     /*** 1) Add contour Lines to hMultiLinesGeom ***/
-    if (!addContourLines(outFilename, hMultiLinesGeom, classes, rd, wkt)) {
+    if (!addContourLines(outFilename, hMultiLinesGeom, classes, rd, wkt))
+    {
         OGR_G_DestroyGeometry(hMultiLinesGeom);
         return false;
     }
@@ -390,64 +471,20 @@ bool CrayfishGDAL::writeContourAreasSHP(const QString& outFilename, double inter
         return false;
     }
 
-    /*** 3) Create polygons from hMultiLinesGeom ***/
+    /*** 3) Make union of hMultiLinesGeom and create polygons from it ***/
+    hMultiLinesGeom = unionGeom(hMultiLinesGeom);
+    if (hMultiLinesGeom == 0){
+        return false;
+    }
     OGRGeometryH hContoursMultiPolygon = OGR_G_Polygonize(hMultiLinesGeom);
     OGR_G_DestroyGeometry(hMultiLinesGeom);
 
     /*** 4) Assign range to polygons and Store to the file ***/
-    GDALDatasetH hVectorDS = vectorDataset(outFilename, wkt, wkbPolygon, false);
-    if (!hVectorDS) {
+    if (!outputPolygonsToFile(outFilename, hContoursMultiPolygon, wkt, output, classes)) {
         OGR_G_DestroyGeometry(hContoursMultiPolygon);
         return false;
     }
-    OGRLayerH hLayer = OGR_DS_GetLayer( hVectorDS, 0);
-    if (!hLayer) {
-        OGR_G_DestroyGeometry(hContoursMultiPolygon);
-        GDALClose( hVectorDS );
-        return false;
-    }
-
-    for (int i=0; i< OGR_G_GetGeometryCount(hContoursMultiPolygon); ++i) {
-        OGRGeometryH hGeom = OGR_G_Clone(OGR_G_GetGeometryRef(hContoursMultiPolygon, i));
-
-        OGRGeometryH hSurfacePointGeom = OGR_G_PointOnSurface(hGeom);
-        double x,y,z;
-        OGR_G_GetPoint(hSurfacePointGeom, 0, &x, &y, &z);
-        OGR_G_DestroyGeometry(hSurfacePointGeom);
-        double val = output->dataSet->mesh()->valueAt(output, x, y); //very slow
-
-        // find to which class it belongs
-        bool found;
-        if (classes.isEmpty() || val < classes[0])
-            found = false;
-        else {
-            for (int j=0; j< classes.size(); ++j) {
-                double class_val = classes[j];
-                if (val < class_val) {
-                    val = class_val;
-                    found = true;
-                    break;
-                }
-            }
-        }
-
-        if (found) {
-            OGRFeatureH hFeature = OGR_F_Create( OGR_L_GetLayerDefn( hLayer ) );
-            OGR_F_SetFieldDouble(hFeature, OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME  ), val );
-            OGR_F_SetGeometry( hFeature, hGeom );
-            OGR_G_DestroyGeometry(hGeom);
-            if( OGR_L_CreateFeature( hLayer, hFeature ) != OGRERR_NONE )
-            {
-               OGR_G_DestroyGeometry(hContoursMultiPolygon);
-               GDALClose( hVectorDS );
-               return false;
-            }
-            OGR_F_Destroy( hFeature );
-        }
-    }
-
     OGR_G_DestroyGeometry(hContoursMultiPolygon);
-    GDALClose( hVectorDS );
     return true;
 }
 
@@ -684,7 +721,7 @@ void CrayfishGDALReader::populateScaleForVector(NodeOutput* tos){
        if (is_nodata(tos->getValuesV()[idx].x) ||
            is_nodata(tos->getValuesV()[idx].y))
        {
-           tos->getValues()[idx] = -9999.0;
+           tos->getValues()[idx] = CRAYFISH_NODATA;
        }
        else {
            tos->getValues()[idx] = tos->getValuesV()[idx].length();
@@ -726,7 +763,7 @@ void CrayfishGDALReader::addDataToOutput(GDALRasterBandH raster_band, NodeOutput
 
            if (is_nodata(val, nodata)) {
                // store all nodata value as this hardcoded number
-               val = -9999.0;
+               val = CRAYFISH_NODATA;
            }
 
            if (is_vector)
