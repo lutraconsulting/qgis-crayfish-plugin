@@ -102,13 +102,13 @@ static double findClassVal(double val, QVector<double>& classes) {
         return CRAYFISH_NODATA;
     }
 
-    for (int j=classes.size() - 1; j>=1; j--) {
+    for (int j=classes.size() - 2; j>=1; j--) {
         if (val > classes[j]) {
             return classes[j];
         }
     }
 
-    return CRAYFISH_NODATA;
+    return classes[0];
 }
 
 static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const QString& wkt, bool in_memory=false, bool add_mask_band=false) {
