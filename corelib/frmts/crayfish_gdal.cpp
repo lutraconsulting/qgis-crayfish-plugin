@@ -94,18 +94,17 @@ static void classifyRawData(RawData* rd) {
 
 static double findClassVal(double val, QVector<double>& classes) {
     Q_ASSERT(classes.size() > 1);
-    Q_ASSERT(val != CRAYFISH_NODATA);
 
-    if (val > classes[classes.size() - 1]) {
-        return classes[classes.size() - 1];
+    if ((is_nodata(val, CRAYFISH_NODATA)) ||
+        (val < classes[0]) ||
+        (val > classes[classes.size() - 1]))
+    {
+        return CRAYFISH_NODATA;
     }
-    else if (val < classes[0]) {
-        return classes[0];
-    } else {
-        for (int j=classes.size() - 1; j>=1; j--) {
-            if (val > classes[j]) {
-                return classes[j];
-            }
+
+    for (int j=classes.size() - 1; j>=1; j--) {
+        if (val > classes[j]) {
+            return classes[j];
         }
     }
 
@@ -414,10 +413,10 @@ static bool outputPolygonsToFile(const QString& outFilename, OGRGeometryH hConto
         OGR_G_GetPoint(hSurfacePointGeom, 0, &x, &y, &z);
         OGR_G_DestroyGeometry(hSurfacePointGeom);
         double val = output->dataSet->mesh()->valueAt(output, x, y); //very slow, but fortunately only one point per area
+        val = findClassVal(val, classes);
         if (val != CRAYFISH_NODATA)
         {
             ++nfeatures;
-            val = findClassVal(val, classes);
             OGRFeatureH hFeature = OGR_F_Create( OGR_L_GetLayerDefn( hLayer ) );
             OGR_F_SetFieldDouble(hFeature, OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME  ), val );
             OGR_F_SetGeometry( hFeature, hGeom );
