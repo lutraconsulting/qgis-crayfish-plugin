@@ -433,26 +433,27 @@ static bool outputPolygonsToFile(const QString& outFilename, OGRGeometryH hConto
     int nfeatures = 0;
     for (int i=0; i< OGR_G_GetGeometryCount(hContoursMultiPolygon); ++i) {
         OGRGeometryH hGeom = OGR_G_Clone(OGR_G_GetGeometryRef(hContoursMultiPolygon, i));
-
         OGRGeometryH hSurfacePointGeom = OGR_G_PointOnSurface(hGeom);
-        double x,y,z;
-        OGR_G_GetPoint(hSurfacePointGeom, 0, &x, &y, &z);
-        OGR_G_DestroyGeometry(hSurfacePointGeom);
-        double val = output->dataSet->mesh()->valueAt(output, x, y); //very slow, but fortunately only one point per area
-        val = findClassVal(val*FLOAT_TO_INT, classes);
-        if (val != CRAYFISH_NODATA)
-        {
-            ++nfeatures;
-            OGRFeatureH hFeature = OGR_F_Create( OGR_L_GetLayerDefn( hLayer ) );
-            OGR_F_SetFieldDouble(hFeature, OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME  ), val/FLOAT_TO_INT);
-            OGR_F_SetGeometry( hFeature, hGeom );
-            OGR_G_DestroyGeometry(hGeom);
-            if( OGR_L_CreateFeature( hLayer, hFeature ) != OGRERR_NONE )
+        if (hSurfacePointGeom != 0) {
+            double x,y,z;
+            OGR_G_GetPoint(hSurfacePointGeom, 0, &x, &y, &z);
+            OGR_G_DestroyGeometry(hSurfacePointGeom);
+            double val = output->dataSet->mesh()->valueAt(output, x, y); //very slow, but fortunately only one point per area
+            val = findClassVal(val*FLOAT_TO_INT, classes);
+            if (val != CRAYFISH_NODATA)
             {
-                GDALClose( hVectorDS );
-                return false;
+                ++nfeatures;
+                OGRFeatureH hFeature = OGR_F_Create( OGR_L_GetLayerDefn( hLayer ) );
+                OGR_F_SetFieldDouble(hFeature, OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME  ), val/FLOAT_TO_INT);
+                OGR_F_SetGeometry( hFeature, hGeom );
+                OGR_G_DestroyGeometry(hGeom);
+                if( OGR_L_CreateFeature( hLayer, hFeature ) != OGRERR_NONE )
+                {
+                    GDALClose( hVectorDS );
+                    return false;
+                }
+                OGR_F_Destroy( hFeature );
             }
-            OGR_F_Destroy( hFeature );
         }
     }
 
