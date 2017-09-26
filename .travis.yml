@@ -28,6 +28,6 @@ after_failure:
  - mkdir -p ./crash
  - sudo apport-unpack /var/crash/*.crash ./crash
  - ls -la ./crash/
- - COREFILE=$(find ./crash/ -maxdepth 1 -name "*ore*" | head -n 1) # find core file
+ - COREFILE=$(find ./crash/ -maxdepth 1 -name "*CoreDump*" | head -n 1) # find core file
  - echo "$COREFILE"
- - if [[ -f "$COREFILE" ]]; then gdb -c "$COREFILE" example -ex "thread apply all bt" -ex "set pagination 0" -batch; fi
+ - if [[ -f "$COREFILE" ]]; then gdb -c "$COREFILE" ../crayfish/libcrayfish.so.1.0.0 -ex "thread apply all bt" -ex "set pagination 0" -batch; fi
