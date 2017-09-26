@@ -9,10 +9,18 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install build-essential libqt4-dev qt4-qmake libgdal-dev libhdf5-serial-dev libproj-dev qgis
   - sudo apt-get install python python-sip python-qt4 python-numpy python-qgis python-nose
+  - sudo apt-get install -y gdb
 
 install:
   - cd corelib
-  - qmake
+  - qmake CONFIG+=debug
   - make
 
+before_script:
+  - ulimit -c unlimited -S       # enable core dumps
+
 script: cd ../test && nosetests -vv
+
+after_failure:
+ - COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1) # find core file
+ - if [[ -f "$COREFILE" ]]; then gdb -c "$COREFILE" example -ex "thread apply all bt" -ex "set pagination 0" -batch; fi
