@@ -15,4 +15,4 @@ install:
   - qmake
   - make
 
-script: cd ../test && nosetests
+script: cd ../test && nosetests -vv
