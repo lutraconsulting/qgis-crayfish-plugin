@@ -175,7 +175,7 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
     return hDstDS;
 }
 
-static GDALDatasetH vectorDataset(const QString& outFilename, const QString& wkt, OGRwkbGeometryType wktGeometryType, bool in_memory=false) {
+static OGRDataSourceH vectorDataset(const QString& outFilename, const QString& wkt, OGRwkbGeometryType wktGeometryType, bool in_memory=false) {
     QString outname(outFilename);
 
     OGRSFDriverH hDriver;
@@ -207,7 +207,7 @@ static GDALDatasetH vectorDataset(const QString& outFilename, const QString& wkt
 
     OGRLayerH hLayer = OGR_DS_CreateLayer( hDS, CONTOURS_LAYER_NAME, hSRS, wktGeometryType, NULL );
     if (!hLayer) {
-        GDALClose( hDS );
+        OGR_DS_Destroy( hDS );
         return 0;
     }
 
@@ -292,7 +292,7 @@ bool CrayfishGDAL::writeContourLinesSHP(const QString& outFilename, double inter
     OGRLayerH hLayer = OGR_DS_GetLayer( hVectorDS, 0);
     if (!hLayer) {
         GDALClose( hRasterDS );
-        GDALClose( hVectorDS );
+        OGR_DS_Destroy( hVectorDS );
         return false;
     }
 
@@ -309,11 +309,11 @@ bool CrayfishGDAL::writeContourLinesSHP(const QString& outFilename, double inter
         double val = OGR_F_GetFieldAsDouble(hFeature, field);
         if (val != -999) {
             OGR_F_SetFieldDouble(hFeature, OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME), val/FLOAT_TO_INT);
-            OGR_L_SetFeature(hLayer, hFeature);
+            OGRErr err = OGR_L_SetFeature(hLayer, hFeature);
         }
     }
 
-    GDALClose( hVectorDS );
+    OGR_DS_Destroy( hVectorDS );
     return res;
 }
 
@@ -331,7 +331,7 @@ static bool addContourLines(const QString& outFilename, OGRGeometryH hMultiLines
         return false;
     }
 
-    GDALDatasetH hVectorLinesDS = vectorDataset(outFilename + "_lines", wkt, wkbLineString, true);
+    OGRDataSourceH hVectorLinesDS = vectorDataset(outFilename + "_lines", wkt, wkbLineString, true);
     if (!hVectorLinesDS) {
         GDALClose( hRasterDS );
         return false;
@@ -339,14 +339,14 @@ static bool addContourLines(const QString& outFilename, OGRGeometryH hMultiLines
     OGRLayerH hLayerLines = OGR_DS_GetLayer( hVectorLinesDS, 0);
     if (!hLayerLines) {
         GDALClose( hRasterDS );
-        GDALClose( hVectorLinesDS );
+        OGR_DS_Destroy( hVectorLinesDS );
         return false;
     }
 
     res = contourLinesDataset(hLayerLines, hBand, classes, use_nodata);
     GDALClose( hRasterDS );
     if (!res) {
-        GDALClose( hVectorLinesDS );
+        OGR_DS_Destroy( hVectorLinesDS );
         return false;
     }
 
@@ -360,7 +360,7 @@ static bool addContourLines(const QString& outFilename, OGRGeometryH hMultiLines
         OGR_F_Destroy(hFeatureLineString);
     }
 
-    GDALClose( hVectorLinesDS );
+    OGR_DS_Destroy( hVectorLinesDS );
     return true;
 }
 
@@ -379,7 +379,7 @@ static bool addBoundaryLines(const QString& outFilename, OGRGeometryH hMultiLine
         return false;
     }
 
-    GDALDatasetH hVectorAreasDS = vectorDataset(outFilename + "areas", wkt, wkbPolygon, true);
+    OGRDataSourceH hVectorAreasDS = vectorDataset(outFilename + "areas", wkt, wkbPolygon, true);
     if (!hVectorAreasDS) {
         GDALClose( hRasterDS );
         return false;
@@ -387,20 +387,20 @@ static bool addBoundaryLines(const QString& outFilename, OGRGeometryH hMultiLine
     OGRLayerH hLayerAreas = OGR_DS_GetLayer( hVectorAreasDS, 0);
     if (!hLayerAreas) {
         GDALClose( hRasterDS );
-        GDALClose( hVectorAreasDS );
+        OGR_DS_Destroy( hVectorAreasDS );
         return false;
     }
 
     GDALRasterBandH hMaskBand = GDALGetRasterBand( hRasterDS, 2 );
     if (!hMaskBand) {
         GDALClose( hRasterDS );
-        GDALClose( hVectorAreasDS );
+        OGR_DS_Destroy( hVectorAreasDS );
         return false;
     }
     res = contourPolygonsDataset(hLayerAreas, hBand, hMaskBand);
     GDALClose( hRasterDS );
     if (!res) {
-        GDALClose( hVectorAreasDS );
+        OGR_DS_Destroy( hVectorAreasDS );
         return false;
     }
 
@@ -419,19 +419,19 @@ static bool addBoundaryLines(const QString& outFilename, OGRGeometryH hMultiLine
             OGR_G_AddGeometry(hMultiLinesGeom, OGR_G_Clone(hGeomIntern));
         }
     }
-    GDALClose( hVectorAreasDS );
+    OGR_DS_Destroy( hVectorAreasDS );
 
     return true;
 }
 
 static bool outputPolygonsToFile(const QString& outFilename, OGRGeometryH hContoursMultiPolygon, const QString& wkt, const Output* output, QVector<double>& classes) {
-    GDALDatasetH hVectorDS = vectorDataset(outFilename, wkt, wkbPolygon, false);
+    OGRDataSourceH hVectorDS = vectorDataset(outFilename, wkt, wkbPolygon, false);
     if (!hVectorDS) {
         return false;
     }
     OGRLayerH hLayer = OGR_DS_GetLayer( hVectorDS, 0);
     if (!hLayer) {
-        GDALClose( hVectorDS );
+        OGR_DS_Destroy( hVectorDS );
         return false;
     }
 
@@ -454,7 +454,7 @@ static bool outputPolygonsToFile(const QString& outFilename, OGRGeometryH hConto
                 OGR_G_DestroyGeometry(hGeom);
                 if( OGR_L_CreateFeature( hLayer, hFeature ) != OGRERR_NONE )
                 {
-                    GDALClose( hVectorDS );
+                    OGR_DS_Destroy( hVectorDS );
                     return false;
                 }
                 OGR_F_Destroy( hFeature );
@@ -462,7 +462,7 @@ static bool outputPolygonsToFile(const QString& outFilename, OGRGeometryH hConto
         }
     }
 
-    GDALClose( hVectorDS );
+    OGR_DS_Destroy( hVectorDS );
     if (nfeatures == 0) {
         return false;
     } else {
