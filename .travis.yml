@@ -27,6 +27,6 @@ script: cd ../test && nosetests -vv
 after_failure:
  - cat /proc/sys/kernel/core_pattern
  - ls -l /var/crash/
- - cat /var/crash/*.crash
+ - sudo cat /var/crash/*.crash
  - COREFILE=$(find /var/crash/ -maxdepth 1 -name "core*" | head -n 1) # find core file
  - if [[ -f "$COREFILE" ]]; then gdb -c "$COREFILE" example -ex "thread apply all bt" -ex "set pagination 0" -batch; fi
