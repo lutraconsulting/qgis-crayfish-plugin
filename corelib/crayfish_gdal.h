@@ -69,6 +69,13 @@ public:
       return dataMask;
   }
 
+  void multiply_by(double x)
+  {
+    for (int i = 0; i < size(); ++i)
+        if (mData[i] != -999.0f) // nodata value
+            mData[i] *= x;
+  }
+
 private:
   int mCols;
   int mRows;

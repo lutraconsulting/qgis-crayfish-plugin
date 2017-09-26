@@ -49,6 +49,7 @@ static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::n
 #define CRAYFISH_NODATA -9999
 #define CONTOURS_LAYER_NAME "contours"
 #define CONTOURS_ATTR_NAME "CVAL"
+#define FLOAT_TO_INT 1000.0
 
 static QVector<double>  generateClassification(const RawData* rd, double interval, ColorMap* cm ) {
     Q_ASSERT((interval > 1e-5) || cm);
@@ -90,6 +91,17 @@ static void classifyRawData(RawData* rd) {
             d[i] = 1.0;
         }
     }
+}
+
+static void multiply_to_get_int(RawData* rd, QVector<double>& classes) {
+    // strange GDAL bug, so creation of contour lines is not working for decimal numbers
+    // Assume that from GUI you can get at max 3 decimal places, so multiply by 1000
+    // and hope for best
+
+    for (int i=0; i<classes.size(); ++i) {
+            classes[i] *= FLOAT_TO_INT;
+        }
+    rd->multiply_by(FLOAT_TO_INT);
 }
 
 static double findClassVal(double val, QVector<double>& classes) {
@@ -255,6 +267,9 @@ bool CrayfishGDAL::writeContourLinesSHP(const QString& outFilename, double inter
 
     QVector<double> classes = generateClassification(rd, interval, cm);
 
+    /*** 0) workaround GDAL contour bug ***/
+    multiply_to_get_int(rd, classes);
+
     /*** 1) Create Raster ***/
     GDALDatasetH hRasterDS = rasterDataset(outFilename, rd, wkt, true, false);
     if (!hRasterDS) {
@@ -282,8 +297,19 @@ bool CrayfishGDAL::writeContourLinesSHP(const QString& outFilename, double inter
     /*** 3) Export Contour Lines ***/
     res = contourLinesDataset(hLayer, hBand, classes);
     GDALClose( hRasterDS );
-    GDALClose( hVectorDS );
 
+    /*** 4) workaround GDAL contour bug ***/
+    OGRFeatureH hFeature;
+    OGR_L_ResetReading(hLayer);
+    while( (hFeature = OGR_L_GetNextFeature(hLayer)) != NULL )
+    {
+        int field = OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME);
+        double val = OGR_F_GetFieldAsDouble(hFeature, field);
+        if (val != -999)
+            OGR_F_SetFieldDouble(hFeature, field, val/FLOAT_TO_INT);
+    }
+
+    GDALClose( hVectorDS );
     return res;
 }
 
@@ -413,12 +439,12 @@ static bool outputPolygonsToFile(const QString& outFilename, OGRGeometryH hConto
         OGR_G_GetPoint(hSurfacePointGeom, 0, &x, &y, &z);
         OGR_G_DestroyGeometry(hSurfacePointGeom);
         double val = output->dataSet->mesh()->valueAt(output, x, y); //very slow, but fortunately only one point per area
-        val = findClassVal(val, classes);
+        val = findClassVal(val*FLOAT_TO_INT, classes);
         if (val != CRAYFISH_NODATA)
         {
             ++nfeatures;
             OGRFeatureH hFeature = OGR_F_Create( OGR_L_GetLayerDefn( hLayer ) );
-            OGR_F_SetFieldDouble(hFeature, OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME  ), val );
+            OGR_F_SetFieldDouble(hFeature, OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME  ), val/FLOAT_TO_INT);
             OGR_F_SetGeometry( hFeature, hGeom );
             OGR_G_DestroyGeometry(hGeom);
             if( OGR_L_CreateFeature( hLayer, hFeature ) != OGRERR_NONE )
@@ -456,6 +482,9 @@ bool CrayfishGDAL::writeContourAreasSHP(const QString& outFilename, double inter
 {
     OGRGeometryH hMultiLinesGeom = OGR_G_CreateGeometry(wkbMultiLineString);
     QVector<double> classes = generateClassification(rd, interval, cm);
+
+    /*** 0) workaround GDAL contour bug ***/
+    multiply_to_get_int(rd, classes);
 
     /*** 1) Add contour Lines to hMultiLinesGeom ***/
     if (!addContourLines(outFilename, hMultiLinesGeom, classes, rd, wkt))
