@@ -551,7 +551,9 @@ class CrayfishPlugin:
                                                         filenameSHP,
                                                         crsWkt,
                                                         dlgConfig.useLines(),
-                                                        layer.colorMap() if dlgConfig.useFixedLevels() else None)
+                                                        layer.colorMap() if dlgConfig.useFixedLevels() else None,
+                                                        dlgConfig.addBoundary(),
+                                                        dlgConfig.useNodata())
 
         except OSError: # delayed loading of GDAL failed (windows only)
             QMessageBox.critical(None, "Crayfish", "Export failed due to incompatible "

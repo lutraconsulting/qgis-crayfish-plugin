@@ -63,7 +63,7 @@ CF_EXPORT int CF_LastLoadWarning();
 
 CF_EXPORT int CF_ExportGrid(OutputH output, double mupp, const char* outputFilename, const char* projWkt);
 
-CF_EXPORT int CF_ExportContours(OutputH output, double mupp, double interval, const char* outputFilename, const char* projWkt, bool useLines, ColorMapH cm);
+CF_EXPORT int CF_ExportContours(OutputH output, double mupp, double interval, const char* outputFilename, const char* projWkt, bool useLines, ColorMapH cm, bool add_boundary, bool use_nodata);
 
 // Element functions
 CF_EXPORT int CF_E_nodeCount(ElementH elem);

@@ -45,7 +45,8 @@ class CrayfishExportContoursConfigDialog(qtBaseClass, uiDialog):
         self.fixedLevelsRadio.setChecked( int(s.value("crayfish/exportContoursFixedLevels", 1)))
         self.itervalRadio.setChecked( int(s.value("crayfish/exportContoursFixedLevels", 1)) == 0 )
         self.useLinesRadio.setChecked( int(s.value("crayfish/exportContoursUseLines", 1)))
-
+        self.useLinesRadio.setChecked(int(s.value("crayfish/exportContoursAddBoundary", 1)))
+        self.useLinesRadio.setChecked(int(s.value("crayfish/exportContoursUseNodata", 1)))
 
     def saveSettings(self):
         s = QSettings()
@@ -54,6 +55,8 @@ class CrayfishExportContoursConfigDialog(qtBaseClass, uiDialog):
         s.setValue("crayfish/exportContoursAddToCanvas", 1 if self.addToCanvas() else 0)
         s.setValue("crayfish/exportContoursFixedLevels", 1 if self.useFixedLevels() else 0)
         s.setValue("crayfish/exportContoursUseLines", 1 if self.useLines() else 0)
+        s.setValue("crayfish/exportContoursAddBoundary", 1 if self.addBoundary() else 0)
+        s.setValue("crayfish/exportContoursUseNodata", 1 if self.useNodata() else 0)
 
     def resolution(self):
         return self.spinResolution.value()
@@ -72,3 +75,9 @@ class CrayfishExportContoursConfigDialog(qtBaseClass, uiDialog):
 
     def useFixedLevels(self):
         return self.fixedLevelsRadio.isChecked()
+
+    def addBoundary(self):
+        return self.chkAddBoundary.isChecked()
+
+    def useNodata(self):
+        return self.chkUseNodata.isChecked()

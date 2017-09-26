@@ -511,7 +511,7 @@ class Output(object):
   def export_grid(self, mupp, outFilename, proj4wkt):
     return self.lib.CF_ExportGrid(self.handle, ctypes.c_double(mupp), ctypes.c_char_p(outFilename), ctypes.c_char_p(proj4wkt))
 
-  def export_contours(self, mupp, interval, outFilename, proj4wkt, useLines, colorMap):
+  def export_contours(self, mupp, interval, outFilename, proj4wkt, useLines, colorMap, add_boundary, use_nodata):
     if colorMap != None:
         cm_h = colorMap.handle
         int_h = ctypes.c_double(-1.0)
@@ -528,7 +528,10 @@ class Output(object):
                                       ctypes.c_char_p(outFilename),
                                       ctypes.c_char_p(proj4wkt),
                                       ctypes.c_bool(useLines),
-                                      cm_h)
+                                      cm_h,
+                                      ctypes.c_bool(add_boundary),
+                                      ctypes.c_bool(use_nodata),
+                                      )
 
   def __repr__(self):
     return "<Output time:%f>" % self.time()

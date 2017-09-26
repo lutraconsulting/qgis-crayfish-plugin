@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>292</width>
-    <height>274</height>
+    <width>310</width>
+    <height>418</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -139,6 +139,20 @@
        <widget class="QCheckBox" name="chkAddToCanvas">
         <property name="text">
          <string>Add result to canvas</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkAddBoundary">
+        <property name="text">
+         <string>Use Boundary (Area contours)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkUseNodata">
+        <property name="text">
+         <string>Use Nodata (in GDALContourGenerate)</string>
         </property>
        </widget>
       </item>

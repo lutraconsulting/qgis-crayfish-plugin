@@ -139,7 +139,7 @@ bool Crayfish::exportRawDataToTIF(const Output* output, double mupp, const QStri
   return res;
 }
 
-bool Crayfish::exportContoursToSHP(const Output* output, double mupp, double interval, const QString& outFilename, const QString& projWkt, bool useLines, ColorMap* cm)
+bool Crayfish::exportContoursToSHP(const Output* output, double mupp, double interval, const QString& outFilename, const QString& projWkt, bool useLines, ColorMap* cm, bool add_boundary, bool use_nodata)
 {
 
 
@@ -150,10 +150,10 @@ bool Crayfish::exportContoursToSHP(const Output* output, double mupp, double int
   bool res;
   if (useLines) {
       // lines
-      res = CrayfishGDAL::writeContourLinesSHP(outFilename, interval, rd, projWkt, cm);
+      res = CrayfishGDAL::writeContourLinesSHP(outFilename, interval, rd, projWkt, cm, use_nodata);
   } else {
       //areas
-      res = CrayfishGDAL::writeContourAreasSHP(outFilename, interval, rd, projWkt, cm, output);
+      res = CrayfishGDAL::writeContourAreasSHP(outFilename, interval, rd, projWkt, cm, output, add_boundary, use_nodata);
   }
   delete rd;
 

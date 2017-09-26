@@ -218,14 +218,14 @@ static GDALDatasetH vectorDataset(const QString& outFilename, const QString& wkt
     return hDS;
 }
 
-static bool contourLinesDataset(OGRLayerH hLayer, GDALRasterBandH hBand, QVector<double>& classes) {
+static bool contourLinesDataset(OGRLayerH hLayer, GDALRasterBandH hBand, QVector<double>& classes, bool use_nodata) {
     CPLErr err = GDALContourGenerate(
                 hBand,
                 0, //dfContourInterval
                 0, //dfContourBase
                 classes.size(), //nFixedLevelCount
                 classes.data(), //padfFixedLevels
-                TRUE, //bUseNoData
+                use_nodata, //bUseNoData
                 GDAL_NODATA, //dfNoDataValue
                 hLayer,
                 -1, // ID attribute index
@@ -261,7 +261,7 @@ bool CrayfishGDAL::writeGeoTIFF(const QString& outFilename, RawData* rd, const Q
   }
 }
 
-bool CrayfishGDAL::writeContourLinesSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm)
+bool CrayfishGDAL::writeContourLinesSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm, bool use_nodata)
 {
     bool res = false;
 
@@ -295,7 +295,7 @@ bool CrayfishGDAL::writeContourLinesSHP(const QString& outFilename, double inter
     }
 
     /*** 3) Export Contour Lines ***/
-    res = contourLinesDataset(hLayer, hBand, classes);
+    res = contourLinesDataset(hLayer, hBand, classes, use_nodata);
     GDALClose( hRasterDS );
 
     /*** 4) workaround GDAL contour bug ***/
@@ -313,7 +313,7 @@ bool CrayfishGDAL::writeContourLinesSHP(const QString& outFilename, double inter
     return res;
 }
 
-static bool addContourLines(const QString& outFilename, OGRGeometryH hMultiLinesGeom, QVector<double>& classes, RawData* rd, const QString& wkt) {
+static bool addContourLines(const QString& outFilename, OGRGeometryH hMultiLinesGeom, QVector<double>& classes, RawData* rd, const QString& wkt, bool use_nodata) {
     bool res = false;
 
     // Create countour lines
@@ -339,7 +339,7 @@ static bool addContourLines(const QString& outFilename, OGRGeometryH hMultiLines
         return false;
     }
 
-    res = contourLinesDataset(hLayerLines, hBand, classes);
+    res = contourLinesDataset(hLayerLines, hBand, classes, use_nodata);
     GDALClose( hRasterDS );
     if (!res) {
         GDALClose( hVectorLinesDS );
@@ -478,7 +478,7 @@ static OGRGeometryH unionGeom(OGRGeometryH hMultiLinesGeom) {
     return hMultiLinesGeomUnion;
 }
 
-bool CrayfishGDAL::writeContourAreasSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm, const Output* output)
+bool CrayfishGDAL::writeContourAreasSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm, const Output* output, bool add_boundary, bool use_nodata)
 {
     OGRGeometryH hMultiLinesGeom = OGR_G_CreateGeometry(wkbMultiLineString);
     QVector<double> classes = generateClassification(rd, interval, cm);
@@ -487,14 +487,14 @@ bool CrayfishGDAL::writeContourAreasSHP(const QString& outFilename, double inter
     multiply_to_get_int(rd, classes);
 
     /*** 1) Add contour Lines to hMultiLinesGeom ***/
-    if (!addContourLines(outFilename, hMultiLinesGeom, classes, rd, wkt))
+    if (!addContourLines(outFilename, hMultiLinesGeom, classes, rd, wkt, use_nodata))
     {
         OGR_G_DestroyGeometry(hMultiLinesGeom);
         return false;
     }
 
     /*** 2) Add boundaries areas of active elements to hMultiLinesGeom ***/
-    if (!addBoundaryLines(outFilename, hMultiLinesGeom, rd, wkt)) {
+    if (add_boundary && !addBoundaryLines(outFilename, hMultiLinesGeom, rd, wkt)) {
         OGR_G_DestroyGeometry(hMultiLinesGeom);
         return false;
     }

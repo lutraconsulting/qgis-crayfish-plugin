@@ -86,7 +86,7 @@ class TestCrayfishExport(unittest.TestCase):
         tmpdir = tmp_dir()
         renderedFile = os.path.join(tmpdir, "4quads" + suffix + ".shp")
         print renderedFile
-        res = output.export_contours(mupp, interval, renderedFile, proj4wkt, useLines, cm)
+        res = output.export_contours(mupp, interval, renderedFile, proj4wkt, useLines, cm, True, True)
         self.assertTrue(res)
         return renderedFile
 

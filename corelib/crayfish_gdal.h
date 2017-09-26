@@ -89,8 +89,8 @@ class CrayfishGDAL
 {
 public:
   static bool writeGeoTIFF(const QString& outFilename, RawData* rd, const QString& wkt);
-  static bool writeContourLinesSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm);
-  static bool writeContourAreasSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm, const Output* output);
+  static bool writeContourLinesSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm, bool use_nodata);
+  static bool writeContourAreasSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm, const Output* output, bool add_boundary, bool use_nodata);
 };
 
 /******************************************************************************************************/
