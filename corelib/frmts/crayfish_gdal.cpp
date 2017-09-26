@@ -42,6 +42,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QRegExp>
 #include <QtAlgorithms>
 #include <math.h>
+#include <QByteArray>
 
 static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
 
@@ -200,7 +201,8 @@ static GDALDatasetH vectorDataset(const QString& outFilename, const QString& wkt
       return 0;
 
     OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
-    char * wkt_s = wkt.toAscii().data();
+    QByteArray wkt_ba = wkt.toAscii();
+    char * wkt_s = wkt_ba.data();
     OSRImportFromWkt(hSRS, ( char ** ) &wkt_s);
 
     OGRLayerH hLayer = OGR_DS_CreateLayer( hDS, CONTOURS_LAYER_NAME, hSRS, wktGeometryType, NULL );
@@ -305,8 +307,10 @@ bool CrayfishGDAL::writeContourLinesSHP(const QString& outFilename, double inter
     {
         int field = OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME);
         double val = OGR_F_GetFieldAsDouble(hFeature, field);
-        if (val != -999)
-            OGR_F_SetFieldDouble(hFeature, field, val/FLOAT_TO_INT);
+        if (val != -999) {
+            OGR_F_SetFieldDouble(hFeature, OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME), val/FLOAT_TO_INT);
+            OGR_L_SetFeature(hLayer, hFeature);
+        }
     }
 
     GDALClose( hVectorDS );
@@ -353,6 +357,7 @@ static bool addContourLines(const QString& outFilename, OGRGeometryH hMultiLines
     {
         OGRGeometryH hLineStringGeom = OGR_F_GetGeometryRef(hFeatureLineString);
         OGR_G_AddGeometry(hMultiLinesGeom, OGR_G_Clone(hLineStringGeom));
+        OGR_F_Destroy(hFeatureLineString);
     }
 
     GDALClose( hVectorLinesDS );
@@ -471,9 +476,11 @@ static OGRGeometryH unionGeom(OGRGeometryH hMultiLinesGeom) {
     if (n < 1) {
         return hMultiLinesGeomUnion;
     }
-    hMultiLinesGeomUnion = OGR_G_GetGeometryRef(hMultiLinesGeom, 0);
+    hMultiLinesGeomUnion = OGR_G_Clone(OGR_G_GetGeometryRef(hMultiLinesGeom, 0));
     for (int i=1; i< n; ++i) {
-        hMultiLinesGeomUnion = OGR_G_Union(hMultiLinesGeomUnion, OGR_G_GetGeometryRef(hMultiLinesGeom, i));
+        OGRGeometryH hMultiLinesGeomUnion2 = OGR_G_Union(hMultiLinesGeomUnion, OGR_G_GetGeometryRef(hMultiLinesGeom, i));
+        OGR_G_DestroyGeometry(hMultiLinesGeomUnion);
+        hMultiLinesGeomUnion = hMultiLinesGeomUnion2;
     }
 
     return hMultiLinesGeomUnion;
