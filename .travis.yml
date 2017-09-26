@@ -25,8 +25,10 @@ before_script:
 script: cd ../test && nosetests -vv
 
 after_failure:
+ - sleep 10 & and killall -SIGSEGV sleep
+ - cat /proc/sys/kernel/core_pattern
  - ls -l
  - ls -l ../crayfish
  - ls -l ../corelib
- - COREFILE=$(find ../crayfish/ -maxdepth 1 -name "core*" | head -n 1) # find core file
+ - COREFILE=$(find ./ -maxdepth 1 -name "core*" | head -n 1) # find core file
  - if [[ -f "$COREFILE" ]]; then gdb -c "$COREFILE" example -ex "thread apply all bt" -ex "set pagination 0" -batch; fi
