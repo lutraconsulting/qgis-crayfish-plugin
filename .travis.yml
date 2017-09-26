@@ -25,8 +25,9 @@ before_script:
 script: cd ../test && nosetests -vv
 
 after_failure:
- - sudo apport-unpack /var/crash/*.crash ./
- - ls -la .
- - COREFILE=$(find ./ -maxdepth 1 -name "*ore*" | head -n 1) # find core file
+ - mkdir -p ./crash
+ - sudo apport-unpack /var/crash/*.crash ./crash
+ - ls -la ./crash/
+ - COREFILE=$(find ./crash/ -maxdepth 1 -name "*ore*" | head -n 1) # find core file
  - echo "$COREFILE"
  - if [[ -f "$COREFILE" ]]; then gdb -c "$COREFILE" example -ex "thread apply all bt" -ex "set pagination 0" -batch; fi
