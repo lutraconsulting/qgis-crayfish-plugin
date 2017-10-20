@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
 #include "crayfish_netcdf.h"
+#include "crayfish_utils.h"
 
 #include "math.h"
 #include <stdlib.h>
@@ -655,39 +656,12 @@ static void addDatasets(Mesh* m, const Dimensions& dims, const NetCDFFile& ncFil
 
 static QDateTime parseTime(const NetCDFFile& ncFile, const Dimensions& dims, QVector<double>& times) {
     QDateTime dt;
-
+    float div_by;
     times = ncFile.readDoubleArr("time", dims.nTimesteps);
-
-    QStringList formats_supported;
-    formats_supported.append("yyyy-MM-dd HH:mm:ss");
-    formats_supported.append("yyyy-MM-dd HH:mm:s.z");
-
-    // We are trying to parse strings like
     QString units = ncFile.getAttrStr("time", "units");
-    // "seconds since 2001-05-05 00:00:00"
-    // "hours since 1900-01-01 00:00:0.0"
-    // "days since 1961-01-01 00:00:00"
-    QStringList units_list = units.split(" since ");
-    if (units_list.size() == 2) {
-        // Give me hours
-        float div_by = 1;
-        if (units_list[0] == "seconds") {
-            div_by = 3600.0;
-        } else if (units_list[0] == "minutes") {
-            div_by = 60.0;
-        } else if (units_list[0] == "days") {
-            div_by = 1.0 / 24.0;
-        }
-        for(size_t i=0; i<dims.nTimesteps; ++i) {
-            times[i] /= div_by;
-        }
-
-        // now time
-        foreach (QString fmt, formats_supported) {
-            dt =  QDateTime::fromString(units_list[1], fmt);
-            if (dt.isValid())
-                break;
-        }
+    dt = parseTimeUnits(units, &div_by);
+    for(size_t i=0; i<dims.nTimesteps; ++i) {
+        times[i] /= div_by;
     }
     return dt;
 }

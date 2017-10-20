@@ -702,6 +702,9 @@ void CrayfishGDALReader::parseRasterBands(const CrayfishGDALDataset* cfGDALDatas
            throw LoadStatus::Err_InvalidData;
        }
 
+       // Reference time
+       metadata_hash global_metadata = parseMetadata(cfGDALDataset->mHDataset);
+       parseGlobals(global_metadata);
 
        // Get metadata
        metadata_hash metadata = parseMetadata(gdalBand);
@@ -960,9 +963,6 @@ Mesh* CrayfishGDALReader::load(LoadStatus* status)
 
        // some formats like NETCFD has data stored in subdatasets
        QStringList subdatasets = parseDatasetNames(mFileName);
-
-       // parse reference time
-       // parseReferenceTime(mFileName);
 
        // First parse ALL datasets/bands to gather vector quantities
        // if case they are splitted in different subdatasets

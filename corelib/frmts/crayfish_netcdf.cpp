@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_dataset.h"
 #include "crayfish_output.h"
 #include "crayfish_gdal.h"
+#include "crayfish_utils.h"
 
 #include <QString>
 #include <QtGlobal>
@@ -37,7 +38,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 class NetCDFReader: public CrayfishGDALReader
 {
 public:
-    NetCDFReader(const QString& fileName): CrayfishGDALReader(fileName, "NETCDF"){}
+    NetCDFReader(const QString& fileName):
+        CrayfishGDALReader(fileName, "NETCDF"),
+        mTimeDiv(1.0f)
+    {}
 
     QString GDALFileName(const QString& fileName) {
         #ifdef WIN32
@@ -58,7 +62,7 @@ public:
 
        iter = metadata.find("netcdf_dim_time");
        if (iter == metadata.end()) return true; //FAILURE, skip no-time bands
-       *time = parseMetadataTime(iter.value());
+       *time = parseMetadataTime(iter.value()) / mTimeDiv;
 
        // NAME
        iter = metadata.find("long_name");
@@ -100,6 +104,22 @@ public:
 
        return false; // SUCCESS
     }
+
+    void parseGlobals(const metadata_hash& metadata){
+        metadata_hash::const_iterator iter = metadata.find("time#units");
+        if (iter != metadata.end()) {
+            QString units = iter.value();
+            mRefTime = parseTimeUnits(units, &mTimeDiv);
+        }
+    }
+
+    QDateTime getRefTime() {
+        return mRefTime;
+    }
+
+private:
+    QDateTime mRefTime; //!< reference (base) time for output's times
+    float mTimeDiv;
 };
 
 Mesh* Crayfish::loadNetCDF(const QString& fileName, LoadStatus* status)
