@@ -666,6 +666,7 @@ static QDateTime parseTime(const NetCDFFile& ncFile, const Dimensions& dims, QVe
     QString units = ncFile.getAttrStr("time", "units");
     // "seconds since 2001-05-05 00:00:00"
     // "hours since 1900-01-01 00:00:0.0"
+    // "days since 1961-01-01 00:00:00"
     QStringList units_list = units.split(" since ");
     if (units_list.size() == 2) {
         // Give me hours
@@ -674,6 +675,8 @@ static QDateTime parseTime(const NetCDFFile& ncFile, const Dimensions& dims, QVe
             div_by = 3600.0;
         } else if (units_list[0] == "minutes") {
             div_by = 60.0;
+        } else if (units_list[0] == "days") {
+            div_by = 1.0 / 24.0;
         }
         for(size_t i=0; i<dims.nTimesteps; ++i) {
             times[i] /= div_by;

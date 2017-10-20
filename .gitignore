@@ -26,4 +26,4 @@ plugin/crayfish.lib
 .idea/
 .idea/*
 .vagrant/
-
+*.autosave

@@ -961,6 +961,9 @@ Mesh* CrayfishGDALReader::load(LoadStatus* status)
        // some formats like NETCFD has data stored in subdatasets
        QStringList subdatasets = parseDatasetNames(mFileName);
 
+       // parse reference time
+       // parseReferenceTime(mFileName);
+
        // First parse ALL datasets/bands to gather vector quantities
        // if case they are splitted in different subdatasets
        foreach (QString gdal_dataset_name, subdatasets)

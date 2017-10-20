@@ -57,12 +57,26 @@ static const int CT_TIMEUNITS = 250;
 static const int CT_2D_MESHES = 3;
 static const int CT_FLOAT_SIZE = 4;
 static const int CF_FLAG_SIZE = 1;
+static const int CF_FLAG_INT_SIZE = 4;
 
 #define EXIT_WITH_ERROR(error)       {  if (status) status->mLastError = (error); return Mesh::DataSets(); }
 
 static NodeOutput* _readTimestep(float t, bool isVector, bool hasStatus, QTextStream& stream, int nodeCount, int elemCount, QVector<int>& nodeIDToIndex);
 static ElementOutput* _readTimestampElementCentered(float t, bool isVector, QTextStream& stream, int elemCount);
 
+static bool readIStat(QDataStream& in, int sflg, char* flag) {
+    if (sflg == CF_FLAG_SIZE) {
+      if( in.readRawData(flag, sflg) != sflg )
+          return true; // error
+    } else {
+      int istat;
+      if( in.readRawData( (char*)&istat, sflg) != sflg )
+          return true; // error
+      else
+          *flag = (istat == 1);
+    }
+    return false;
+}
 
 Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mesh* mesh, LoadStatus* status)
 {
@@ -130,8 +144,9 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
 
     case CT_SFLG:
       // Flag size
-      if( in.readRawData( (char*)&sflg, 4) != 4 || sflg != CF_FLAG_SIZE )
-        EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
+      if( in.readRawData( (char*)&sflg, 4) != 4 )
+        if (sflg != CF_FLAG_SIZE && sflg != CF_FLAG_INT_SIZE)
+            EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
       break;
 
     case CT_BEGSCL:
@@ -184,8 +199,9 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
 
     case CT_TS:
       // Time step!
-      if( in.readRawData( (char*)&istat, 1) != 1 )
+      if( readIStat(in, sflg, &istat) )
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
+
       if( in.readRawData( (char*)&time, 4) != 4 )
         EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
 
@@ -206,9 +222,11 @@ Mesh::DataSets Crayfish::loadBinaryDataSet(const QString& datFileName, const Mes
         char* active = o->getActive().data();
         for (int i=0; i < elemCount; i++)
         {
-          if( in.readRawData( active+i, 1) != 1 )
+          if(readIStat(in, sflg, active+i))
             EXIT_WITH_ERROR(LoadStatus::Err_UnknownFormat);
         }
+      } else {
+        memset(o->getActive().data(), 1, elemCount); // there is no status flag -> everything is active
       }
 
       float* values = o->getValues().data();

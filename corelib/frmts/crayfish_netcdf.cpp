@@ -56,7 +56,6 @@ public:
                        ) {
        metadata_hash::const_iterator iter;
 
-       // TIME
        iter = metadata.find("netcdf_dim_time");
        if (iter == metadata.end()) return true; //FAILURE, skip no-time bands
        *time = parseMetadataTime(iter.value());
