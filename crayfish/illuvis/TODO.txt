@@ -1,2 +1,0 @@
-Give option to cancel the upload
-Uploading huge files consume a lot of memory in QGIS

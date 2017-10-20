@@ -9,6 +9,8 @@ class ExportContoursAlgorithm(CfGeoAlgorithm):
     IN_CF_INTERVAL = 'CF_INT'
     IN_CF_LINES = 'CF_USE_LINES'
     OUT_CF_SHP = "CF_SHP"
+    IN_CF_BOUNDARY = 'CF_BOUNDARY'
+    IN_CF_NODATA = 'CF_NODATA'
 
     def defineCharacteristics(self):
         self.name, self.i18n_name = self.trAlgorithm('Export contours')
@@ -20,6 +22,8 @@ class ExportContoursAlgorithm(CfGeoAlgorithm):
         self.addParameter(ParameterCrs(self.IN_CF_CRS, self.tr('CRS')))
         self.addParameter(ParameterBoolean(self.IN_CF_LINES, self.tr('Use lines'), default=True))
         self.addOutput(OutputVector(self.OUT_CF_SHP, self.tr('Contours shapefile')))
+        self.addParameter(ParameterBoolean(self.IN_CF_BOUNDARY, self.tr('Add boundary'), default=True))
+        self.addParameter(ParameterBoolean(self.IN_CF_NODATA, self.tr('Use NODATA'), default=True))
 
     def processAlgorithm(self, progress):
         m = self.get_mesh(self.IN_CF_MESH)
@@ -30,12 +34,16 @@ class ExportContoursAlgorithm(CfGeoAlgorithm):
         use_lines = self.getParameterValue(self.IN_CF_LINES)
         interval = self.getParameterValue(self.IN_CF_INTERVAL)
         crs = self.getParameterValue(self.IN_CF_CRS)
+        add_boundary = self.getParameterValue(self.IN_CF_BOUNDARY)
+        use_nodata = self.getParameterValue(self.IN_CF_NODATA)
 
         res = o.export_contours(mupp,
                                 interval,
                                 outf,
                                 crs,
                                 use_lines,
-                                None)
+                                None,
+                                add_boundary,
+                                use_nodata)
         if not res:
             raise CrayfishProccessingAlgorithmError("Unable to export contours")

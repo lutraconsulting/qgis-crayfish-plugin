@@ -26,6 +26,7 @@
 
 import ctypes
 import os
+import sys
 import platform
 import weakref
 import datetime
@@ -91,6 +92,15 @@ def load_library():
     lib.CF_Mesh_dataSetAt.restype = ctypes.c_void_p
     lib.CF_Mesh_sourceCrs.restype = ctypes.c_char_p
     lib.CF_Mesh_destinationCrs.restype = ctypes.c_char_p
+    lib.CF_Mesh_calc_expression_is_valid.restype = ctypes.c_bool
+    lib.CF_Mesh_calc_expression_is_valid.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    lib.CF_Mesh_calc_derived_dataset.restype = ctypes.c_bool
+    lib.CF_Mesh_calc_derived_dataset.argtypes = [ctypes.c_void_p, # mesh
+                                                 ctypes.c_void_p, # expression
+                                                 ctypes.c_float, ctypes.c_float, # times
+                                                 ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, # bbox
+                                                 ctypes.c_bool, # add to mesh
+                                                 ctypes.c_char_p] # output filename
     lib.CF_DS_name.restype = ctypes.c_char_p
     lib.CF_DS_fileName.restype = ctypes.c_char_p
     lib.CF_DS_refTime.restype = ctypes.c_char_p
@@ -309,6 +319,30 @@ class Mesh:
   def set_destination_crs(self, dest_proj4):
     self.lib.CF_Mesh_setDestinationCrs(self.handle, ctypes.c_char_p(dest_proj4))
 
+  def calc_expression_is_valid(self, expression):
+    return self.lib.CF_Mesh_calc_expression_is_valid(self.handle, ctypes.c_char_p(expression))
+
+  def create_derived_dataset(self, expression, time_filter, spatial_filter, add_to_mesh, output_filename):
+    bigfloat = 1e30
+    xmin = spatial_filter[0] if spatial_filter[0] is not None else -bigfloat
+    xmax = spatial_filter[1] if spatial_filter[1] is not None else bigfloat
+    ymin = spatial_filter[2] if spatial_filter[2] is not None else -bigfloat
+    ymax = spatial_filter[3] if spatial_filter[3] is not None else bigfloat
+    min_time = time_filter[0] if time_filter[0] is not None else -bigfloat
+    max_time = time_filter[1] if time_filter[1] is not None else bigfloat
+
+    return self.lib.CF_Mesh_calc_derived_dataset(self.handle,
+                                                 ctypes.c_char_p(expression),
+                                                 ctypes.c_float(min_time),
+                                                 ctypes.c_float(max_time),
+                                                 ctypes.c_double(xmin),
+                                                 ctypes.c_double(xmax),
+                                                 ctypes.c_double(ymin),
+                                                 ctypes.c_double(ymax),
+                                                 ctypes.c_double(add_to_mesh),
+                                                 ctypes.c_char_p(output_filename)
+    )
+
 
 class DataSet(object):
   """ Datasets store data associated with mesh. One dataset represents
@@ -381,6 +415,12 @@ class DataSet(object):
     vmin,vmax = ctypes.c_float(), ctypes.c_float()
     self.lib.CF_DS_valueRange(self.handle, ctypes.byref(vmin), ctypes.byref(vmax))
     return (vmin.value, vmax.value)
+
+  def time_range(self):
+    # returns (float, float)
+    start = self.output(0)
+    end = self.output(self.output_count() - 1)
+    return start.time(), end.time()
 
   def time_varying(self):
     return self.output_count() > 1
@@ -471,7 +511,7 @@ class Output(object):
   def export_grid(self, mupp, outFilename, proj4wkt):
     return self.lib.CF_ExportGrid(self.handle, ctypes.c_double(mupp), ctypes.c_char_p(outFilename), ctypes.c_char_p(proj4wkt))
 
-  def export_contours(self, mupp, interval, outFilename, proj4wkt, useLines, colorMap):
+  def export_contours(self, mupp, interval, outFilename, proj4wkt, useLines, colorMap, add_boundary, use_nodata):
     if colorMap != None:
         cm_h = colorMap.handle
         int_h = ctypes.c_double(-1.0)
@@ -488,7 +528,10 @@ class Output(object):
                                       ctypes.c_char_p(outFilename),
                                       ctypes.c_char_p(proj4wkt),
                                       ctypes.c_bool(useLines),
-                                      cm_h)
+                                      cm_h,
+                                      ctypes.c_bool(add_boundary),
+                                      ctypes.c_bool(use_nodata),
+                                      )
 
   def __repr__(self):
     return "<Output time:%f>" % self.time()

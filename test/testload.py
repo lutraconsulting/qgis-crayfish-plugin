@@ -1,5 +1,6 @@
 import sys
 sys.path.append('..')
+import qgis.core # Fix sip.setapi(api, 2)
 from qgis.core import QgsGeometry
 
 import crayfish
@@ -49,7 +50,7 @@ class TestCrayfishLoad(unittest.TestCase):
     m.set_source_crs("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
     m.set_destination_crs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs") #Web Mercator
     val = m.value(o, -221164, 26333)
-    self.assertEqual(val, 0.49337500748505414)
+    self.assertEqual(val, 0.49337500333633816)
 
   def test_e4q2(self):
     # mesh with very small elements issue #188

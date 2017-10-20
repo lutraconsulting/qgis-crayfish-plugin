@@ -12,18 +12,18 @@ from osgeo import gdal, ogr
 
 TEST_DIR = os.path.join(os.path.dirname(__file__), 'data')
 RENDER_DIR = os.path.join(TEST_DIR, 'render')
-PERSIST_DATA = None
+PERSIST_DATA = False
+
 
 def tmp_dir():
     if not PERSIST_DATA:
         return tempfile.mkdtemp()
     else:
         tmp_dir = os.path.join(TEST_DIR, "tmp_output")
-        shutil.rmtree(tmp_dir)
-        os.makedirs(tmp_dir)
+        return tmp_dir
+
 
 class TestCrayfishExport(unittest.TestCase):
-
     def compare_vectors(self, shp1, shp2):
         driver = ogr.GetDriverByName("ESRI Shapefile")
 
@@ -77,15 +77,16 @@ class TestCrayfishExport(unittest.TestCase):
         self.assertTrue(res)
         return renderedFile
 
-    def export_contours(self, output, mupp, useLines, interval=-1, proj4wkt=""):
+    def export_contours(self, output, mupp, useLines, interval=-1, proj4wkt="", suffix=""):
         cm = None
         if interval == -1:
             zMin, zMax = output.z_range()
             cm = crayfish.ColorMap(zMin, zMax) # default color map
 
         tmpdir = tmp_dir()
-        renderedFile = os.path.join(tmpdir, "4quads.shp")
-        res = output.export_contours(mupp, interval, renderedFile, proj4wkt, useLines, cm)
+        renderedFile = os.path.join(tmpdir, "4quads" + suffix + ".shp")
+        print renderedFile
+        res = output.export_contours(mupp, interval, renderedFile, proj4wkt, useLines, cm, True, True)
         self.assertTrue(res)
         return renderedFile
 
@@ -97,26 +98,25 @@ class TestCrayfishExport(unittest.TestCase):
 
     def test_export_contour_lines_interval(self):
         output = self.load_4quads()
-        renderedFile = self.export_contours(output, 0.25, useLines=True, interval=0.5)
+        renderedFile = self.export_contours(output, 0.25, useLines=True, interval=0.5, suffix="_li")
         baseFile = os.path.join(RENDER_DIR, "4quads_li.shp")
-
         self.compare_vectors(baseFile, renderedFile)
 
     def test_export_contour_areas_interval(self):
         output = self.load_4quads()
-        renderedFile = self.export_contours(output, 0.25, useLines=False, interval=0.5)
+        renderedFile = self.export_contours(output, 0.25, useLines=False, interval=0.5, suffix="_ai")
         baseFile = os.path.join(RENDER_DIR, "4quads_ai.shp")
         self.compare_vectors(baseFile, renderedFile)
 
     def test_export_contour_lines_colormap(self):
         output = self.load_4quads()
-        renderedFile = self.export_contours(output, 0.25, useLines=True)
+        renderedFile = self.export_contours(output, 0.25, useLines=True, suffix="_lc")
         baseFile = os.path.join(RENDER_DIR, "4quads_lc.shp")
         self.compare_vectors(baseFile, renderedFile)
 
     def test_export_contour_areas_colormap(self):
         output = self.load_4quads()
-        renderedFile = self.export_contours(output, 0.25, useLines=False)
+        renderedFile = self.export_contours(output, 0.25, useLines=False, suffix="_ac")
         baseFile = os.path.join(RENDER_DIR, "4quads_ac.shp")
         self.compare_vectors(baseFile, renderedFile)
 

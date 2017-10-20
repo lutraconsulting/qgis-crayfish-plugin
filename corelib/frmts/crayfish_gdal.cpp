@@ -42,11 +42,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QRegExp>
 #include <QtAlgorithms>
 #include <math.h>
+#include <QByteArray>
 
 static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
 
+#define GDAL_NODATA -999
+#define CRAYFISH_NODATA -9999
 #define CONTOURS_LAYER_NAME "contours"
 #define CONTOURS_ATTR_NAME "CVAL"
+#define FLOAT_TO_INT 1000.0
 
 static QVector<double>  generateClassification(const RawData* rd, double interval, ColorMap* cm ) {
     Q_ASSERT((interval > 1e-5) || cm);
@@ -63,7 +67,7 @@ static QVector<double>  generateClassification(const RawData* rd, double interva
 
         for (int i=0; i<rd->size(); ++i) {
             double val =rd->dataAt(i);
-            if (val != -999) {
+            if (val != GDAL_NODATA) {
                 if (val < minv) minv = val;
                 if (val > maxv) maxv = val;
             }
@@ -78,32 +82,46 @@ static QVector<double>  generateClassification(const RawData* rd, double interva
     return classes;
 }
 
-static void classifyRawData(RawData* rd, QVector<double>& classes) {
+static void classifyRawData(RawData* rd) {
     Q_ASSERT(rd);
-    Q_ASSERT(classes.size() > 1);
-
     float* d = rd->data();
 
-    //////////// FILL INTO CLASSES
+    // assign 1 to all non-NODATA values
     for (int i=0; i<rd->size(); ++i) {
-        if (d[i] != -999) {
-
-            if (d[i] > classes[classes.size() - 1]) {
-                d[i] = classes[classes.size() - 1];
-            }
-            else if (d[i] < classes[0]) {
-                d[i] = classes[0];
-            } else {
-                for (int j=classes.size() - 1; j>=0; j--) {
-                    double val = classes[j];
-                    if (d[i]>val) {
-                        d[i] = val;
-                        break;
-                    }
-                }
-            }
+        if (d[i] != GDAL_NODATA) {
+            d[i] = 1.0;
         }
     }
+}
+
+static void multiply_to_get_int(RawData* rd, QVector<double>& classes) {
+    // strange GDAL bug, so creation of contour lines is not working for decimal numbers
+    // Assume that from GUI you can get at max 3 decimal places, so multiply by 1000
+    // and hope for best
+
+    for (int i=0; i<classes.size(); ++i) {
+            classes[i] *= FLOAT_TO_INT;
+        }
+    rd->multiply_by(FLOAT_TO_INT);
+}
+
+static double findClassVal(double val, QVector<double>& classes) {
+    Q_ASSERT(classes.size() > 1);
+
+    if ((is_nodata(val, CRAYFISH_NODATA)) ||
+        (val < classes[0]) ||
+        (val > classes[classes.size() - 1]))
+    {
+        return CRAYFISH_NODATA;
+    }
+
+    for (int j=classes.size() - 2; j>=1; j--) {
+        if (val > classes[j]) {
+            return classes[j];
+        }
+    }
+
+    return classes[0];
 }
 
 static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const QString& wkt, bool in_memory=false, bool add_mask_band=false) {
@@ -142,7 +160,7 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
     GDALSetProjection( hDstDS, wkt.toAscii().data() );
 
     GDALRasterBandH hBand = GDALGetRasterBand( hDstDS, 1 );
-    GDALSetRasterNoDataValue(hBand, -999);
+    GDALSetRasterNoDataValue(hBand, GDAL_NODATA);
     CPLErr err = GDALRasterIO(hBand, GF_Write, 0, 0, rd->cols(), rd->rows(),
                               rd->data(), rd->cols(), rd->rows(), GDT_Float32, 0, 0);
 
@@ -157,30 +175,39 @@ static GDALDatasetH rasterDataset(const QString& outFilename, RawData* rd, const
     return hDstDS;
 }
 
-static GDALDatasetH vectorDataset(const QString& outFilename, const QString& wkt, OGRwkbGeometryType wktGeometryType) {
-    OGRSFDriverH hDriver = OGRGetDriverByName("ESRI Shapefile");
+static OGRDataSourceH vectorDataset(const QString& outFilename, const QString& wkt, OGRwkbGeometryType wktGeometryType, bool in_memory=false) {
+    QString outname(outFilename);
+
+    OGRSFDriverH hDriver;
+    if (in_memory) {
+        outname += "_vector_memory.tmp";
+        hDriver = OGRGetDriverByName("MEMORY");
+    } else {
+        hDriver = OGRGetDriverByName("ESRI Shapefile");
+    }
     if (!hDriver)
       return 0;
 
     /* delete the file if exists, OGR_Dr_CreateDataSource cannot overwrite the existing file */
     {
-        QFile file(outFilename);
+        QFile file(outname);
         if (file.exists()) {
             file.remove();
         }
     }
 
-    OGRDataSourceH hDS = OGR_Dr_CreateDataSource( hDriver, outFilename.toAscii().data(), NULL );
+    OGRDataSourceH hDS = OGR_Dr_CreateDataSource( hDriver, outname.toAscii().data(), NULL );
     if (!hDS)
       return 0;
 
     OGRSpatialReferenceH hSRS = OSRNewSpatialReference(NULL);
-    char * wkt_s = wkt.toAscii().data();
+    QByteArray wkt_ba = wkt.toAscii();
+    char * wkt_s = wkt_ba.data();
     OSRImportFromWkt(hSRS, ( char ** ) &wkt_s);
 
     OGRLayerH hLayer = OGR_DS_CreateLayer( hDS, CONTOURS_LAYER_NAME, hSRS, wktGeometryType, NULL );
     if (!hLayer) {
-        GDALClose( hDS );
+        OGR_DS_Destroy( hDS );
         return 0;
     }
 
@@ -193,15 +220,15 @@ static GDALDatasetH vectorDataset(const QString& outFilename, const QString& wkt
     return hDS;
 }
 
-static bool contourLinesDataset(OGRLayerH hLayer, GDALRasterBandH hBand, QVector<double>& classes) {
+static bool contourLinesDataset(OGRLayerH hLayer, GDALRasterBandH hBand, QVector<double>& classes, bool use_nodata) {
     CPLErr err = GDALContourGenerate(
                 hBand,
                 0, //dfContourInterval
                 0, //dfContourBase
                 classes.size(), //nFixedLevelCount
                 classes.data(), //padfFixedLevels
-                TRUE, //bUseNoData
-                -999, //dfNoDataValue
+                use_nodata, //bUseNoData
+                GDAL_NODATA, //dfNoDataValue
                 hLayer,
                 -1, // ID attribute index
                 OGR_FD_GetFieldIndex( OGR_L_GetLayerDefn( hLayer ), CONTOURS_ATTR_NAME ),
@@ -236,17 +263,17 @@ bool CrayfishGDAL::writeGeoTIFF(const QString& outFilename, RawData* rd, const Q
   }
 }
 
-bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, bool useLines, ColorMap* cm)
+bool CrayfishGDAL::writeContourLinesSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm, bool use_nodata)
 {
     bool res = false;
 
     QVector<double> classes = generateClassification(rd, interval, cm);
 
-    /*** 1) Create Raster ***/
-    if (!useLines)
-        classifyRawData(rd, classes);
+    /*** 0) workaround GDAL contour bug ***/
+    multiply_to_get_int(rd, classes);
 
-    GDALDatasetH hRasterDS = rasterDataset(outFilename, rd, wkt, true, !useLines);
+    /*** 1) Create Raster ***/
+    GDALDatasetH hRasterDS = rasterDataset(outFilename, rd, wkt, true, false);
     if (!hRasterDS) {
         return false;
     }
@@ -257,7 +284,7 @@ bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval,
     }
 
     /*** 2) Create Vector ***/
-    GDALDatasetH hVectorDS = vectorDataset(outFilename, wkt, useLines ? wkbLineString:wkbPolygon);
+    GDALDatasetH hVectorDS = vectorDataset(outFilename, wkt, wkbLineString);
     if (!hVectorDS) {
         GDALClose( hRasterDS );
         return false;
@@ -265,28 +292,236 @@ bool CrayfishGDAL::writeContoursSHP(const QString& outFilename, double interval,
     OGRLayerH hLayer = OGR_DS_GetLayer( hVectorDS, 0);
     if (!hLayer) {
         GDALClose( hRasterDS );
-        GDALClose( hVectorDS );
+        OGR_DS_Destroy( hVectorDS );
         return false;
     }
 
-    /*** 3) Export ***/
-    if (useLines) {
-        /*** Export Contour Lines ***/
-        res = contourLinesDataset(hLayer, hBand, classes);
-    } else {
-        /*** Export Contour Areas ***/
-        GDALRasterBandH hMaskBand = GDALGetRasterBand( hRasterDS, 2 );
-        if (!hMaskBand) {
-            GDALClose( hRasterDS );
-            GDALClose( hVectorDS );
-            return false;
+    /*** 3) Export Contour Lines ***/
+    res = contourLinesDataset(hLayer, hBand, classes, use_nodata);
+    GDALClose( hRasterDS );
+
+    /*** 4) workaround GDAL contour bug ***/
+    OGRFeatureH hFeature;
+    OGR_L_ResetReading(hLayer);
+    while( (hFeature = OGR_L_GetNextFeature(hLayer)) != NULL )
+    {
+        int field = OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME);
+        double val = OGR_F_GetFieldAsDouble(hFeature, field);
+        if (val != -999) {
+            OGR_F_SetFieldDouble(hFeature, OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME), val/FLOAT_TO_INT);
+            OGRErr err = OGR_L_SetFeature(hLayer, hFeature);
         }
-        res = contourPolygonsDataset(hLayer, hBand, hMaskBand);
     }
 
-    GDALClose( hRasterDS );
-    GDALClose( hVectorDS );
+    OGR_DS_Destroy( hVectorDS );
     return res;
+}
+
+static bool addContourLines(const QString& outFilename, OGRGeometryH hMultiLinesGeom, QVector<double>& classes, RawData* rd, const QString& wkt, bool use_nodata) {
+    bool res = false;
+
+    // Create countour lines
+    GDALDatasetH hRasterDS = rasterDataset(outFilename, rd, wkt, true, false);
+    if (!hRasterDS) {
+        return false;
+    }
+    GDALRasterBandH hBand = GDALGetRasterBand( hRasterDS, 1 );
+    if (!hBand) {
+        GDALClose( hRasterDS );
+        return false;
+    }
+
+    OGRDataSourceH hVectorLinesDS = vectorDataset(outFilename + "_lines", wkt, wkbLineString, true);
+    if (!hVectorLinesDS) {
+        GDALClose( hRasterDS );
+        return false;
+    }
+    OGRLayerH hLayerLines = OGR_DS_GetLayer( hVectorLinesDS, 0);
+    if (!hLayerLines) {
+        GDALClose( hRasterDS );
+        OGR_DS_Destroy( hVectorLinesDS );
+        return false;
+    }
+
+    res = contourLinesDataset(hLayerLines, hBand, classes, use_nodata);
+    GDALClose( hRasterDS );
+    if (!res) {
+        OGR_DS_Destroy( hVectorLinesDS );
+        return false;
+    }
+
+    // Add geometries to the hMultiLinesGeom
+    OGRFeatureH hFeatureLineString;
+    OGR_L_ResetReading(hLayerLines);
+    while( (hFeatureLineString = OGR_L_GetNextFeature(hLayerLines)) != NULL )
+    {
+        OGRGeometryH hLineStringGeom = OGR_F_GetGeometryRef(hFeatureLineString);
+        OGR_G_AddGeometry(hMultiLinesGeom, OGR_G_Clone(hLineStringGeom));
+        OGR_F_Destroy(hFeatureLineString);
+    }
+
+    OGR_DS_Destroy( hVectorLinesDS );
+    return true;
+}
+
+static bool addBoundaryLines(const QString& outFilename, OGRGeometryH hMultiLinesGeom, RawData* rd, const QString& wkt) {
+    bool res = false;
+
+    classifyRawData(rd);
+
+    GDALDatasetH hRasterDS = rasterDataset(outFilename, rd, wkt, false, true);
+    if (!hRasterDS) {
+        return false;
+    }
+    GDALRasterBandH hBand = GDALGetRasterBand( hRasterDS, 1 );
+    if (!hBand) {
+        GDALClose( hRasterDS );
+        return false;
+    }
+
+    OGRDataSourceH hVectorAreasDS = vectorDataset(outFilename + "areas", wkt, wkbPolygon, true);
+    if (!hVectorAreasDS) {
+        GDALClose( hRasterDS );
+        return false;
+    }
+    OGRLayerH hLayerAreas = OGR_DS_GetLayer( hVectorAreasDS, 0);
+    if (!hLayerAreas) {
+        GDALClose( hRasterDS );
+        OGR_DS_Destroy( hVectorAreasDS );
+        return false;
+    }
+
+    GDALRasterBandH hMaskBand = GDALGetRasterBand( hRasterDS, 2 );
+    if (!hMaskBand) {
+        GDALClose( hRasterDS );
+        OGR_DS_Destroy( hVectorAreasDS );
+        return false;
+    }
+    res = contourPolygonsDataset(hLayerAreas, hBand, hMaskBand);
+    GDALClose( hRasterDS );
+    if (!res) {
+        OGR_DS_Destroy( hVectorAreasDS );
+        return false;
+    }
+
+    /*** Add areas boundaries to line layer ***/
+
+    OGRFeatureH hFeatureArea;
+    OGR_L_ResetReading(hLayerAreas);
+    while( (hFeatureArea = OGR_L_GetNextFeature(hLayerAreas)) != NULL )
+    {
+        OGRGeometryH hAreaGeom = OGR_F_GetGeometryRef(hFeatureArea);
+        // Get boundary
+        OGRGeometryH hGeom = OGR_G_ForceToMultiLineString(hAreaGeom);
+        for (int i=0; i< OGR_G_GetGeometryCount(hGeom); ++i) {
+            OGRGeometryH hGeomIntern = OGR_G_GetGeometryRef(hGeom, i);
+            Q_ASSERT(OGR_G_GetGeometryType(hGeomIntern) == wkbLineString);
+            OGR_G_AddGeometry(hMultiLinesGeom, OGR_G_Clone(hGeomIntern));
+        }
+    }
+    OGR_DS_Destroy( hVectorAreasDS );
+
+    return true;
+}
+
+static bool outputPolygonsToFile(const QString& outFilename, OGRGeometryH hContoursMultiPolygon, const QString& wkt, const Output* output, QVector<double>& classes) {
+    OGRDataSourceH hVectorDS = vectorDataset(outFilename, wkt, wkbPolygon, false);
+    if (!hVectorDS) {
+        return false;
+    }
+    OGRLayerH hLayer = OGR_DS_GetLayer( hVectorDS, 0);
+    if (!hLayer) {
+        OGR_DS_Destroy( hVectorDS );
+        return false;
+    }
+
+    int nfeatures = 0;
+    for (int i=0; i< OGR_G_GetGeometryCount(hContoursMultiPolygon); ++i) {
+        OGRGeometryH hGeom = OGR_G_Clone(OGR_G_GetGeometryRef(hContoursMultiPolygon, i));
+        OGRGeometryH hSurfacePointGeom = OGR_G_PointOnSurface(hGeom);
+        if (hSurfacePointGeom != 0) {
+            double x,y,z;
+            OGR_G_GetPoint(hSurfacePointGeom, 0, &x, &y, &z);
+            OGR_G_DestroyGeometry(hSurfacePointGeom);
+            double val = output->dataSet->mesh()->valueAt(output, x, y); //very slow, but fortunately only one point per area
+            val = findClassVal(val*FLOAT_TO_INT, classes);
+            if (val != CRAYFISH_NODATA)
+            {
+                ++nfeatures;
+                OGRFeatureH hFeature = OGR_F_Create( OGR_L_GetLayerDefn( hLayer ) );
+                OGR_F_SetFieldDouble(hFeature, OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME  ), val/FLOAT_TO_INT);
+                OGR_F_SetGeometry( hFeature, hGeom );
+                OGR_G_DestroyGeometry(hGeom);
+                if( OGR_L_CreateFeature( hLayer, hFeature ) != OGRERR_NONE )
+                {
+                    OGR_DS_Destroy( hVectorDS );
+                    return false;
+                }
+                OGR_F_Destroy( hFeature );
+            }
+        }
+    }
+
+    OGR_DS_Destroy( hVectorDS );
+    if (nfeatures == 0) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+static OGRGeometryH unionGeom(OGRGeometryH hMultiLinesGeom) {
+    OGRGeometryH hMultiLinesGeomUnion = 0;
+    int n = OGR_G_GetGeometryCount(hMultiLinesGeom);
+    if (n < 1) {
+        return hMultiLinesGeomUnion;
+    }
+    hMultiLinesGeomUnion = OGR_G_Clone(OGR_G_GetGeometryRef(hMultiLinesGeom, 0));
+    for (int i=1; i< n; ++i) {
+        OGRGeometryH hMultiLinesGeomUnion2 = OGR_G_Union(hMultiLinesGeomUnion, OGR_G_GetGeometryRef(hMultiLinesGeom, i));
+        OGR_G_DestroyGeometry(hMultiLinesGeomUnion);
+        hMultiLinesGeomUnion = hMultiLinesGeomUnion2;
+    }
+
+    return hMultiLinesGeomUnion;
+}
+
+bool CrayfishGDAL::writeContourAreasSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm, const Output* output, bool add_boundary, bool use_nodata)
+{
+    OGRGeometryH hMultiLinesGeom = OGR_G_CreateGeometry(wkbMultiLineString);
+    QVector<double> classes = generateClassification(rd, interval, cm);
+
+    /*** 0) workaround GDAL contour bug ***/
+    multiply_to_get_int(rd, classes);
+
+    /*** 1) Add contour Lines to hMultiLinesGeom ***/
+    if (!addContourLines(outFilename, hMultiLinesGeom, classes, rd, wkt, use_nodata))
+    {
+        OGR_G_DestroyGeometry(hMultiLinesGeom);
+        return false;
+    }
+
+    /*** 2) Add boundaries areas of active elements to hMultiLinesGeom ***/
+    if (add_boundary && !addBoundaryLines(outFilename, hMultiLinesGeom, rd, wkt)) {
+        OGR_G_DestroyGeometry(hMultiLinesGeom);
+        return false;
+    }
+
+    /*** 3) Make union of hMultiLinesGeom and create polygons from it ***/
+    hMultiLinesGeom = unionGeom(hMultiLinesGeom);
+    if (hMultiLinesGeom == 0){
+        return false;
+    }
+    OGRGeometryH hContoursMultiPolygon = OGR_G_Polygonize(hMultiLinesGeom);
+    OGR_G_DestroyGeometry(hMultiLinesGeom);
+
+    /*** 4) Assign range to polygons and Store to the file ***/
+    if (!outputPolygonsToFile(outFilename, hContoursMultiPolygon, wkt, output, classes)) {
+        OGR_G_DestroyGeometry(hContoursMultiPolygon);
+        return false;
+    }
+    OGR_G_DestroyGeometry(hContoursMultiPolygon);
+    return true;
 }
 
 
@@ -522,7 +757,7 @@ void CrayfishGDALReader::populateScaleForVector(NodeOutput* tos){
        if (is_nodata(tos->getValuesV()[idx].x) ||
            is_nodata(tos->getValuesV()[idx].y))
        {
-           tos->getValues()[idx] = -9999.0;
+           tos->getValues()[idx] = CRAYFISH_NODATA;
        }
        else {
            tos->getValues()[idx] = tos->getValuesV()[idx].length();
@@ -564,7 +799,7 @@ void CrayfishGDALReader::addDataToOutput(GDALRasterBandH raster_band, NodeOutput
 
            if (is_nodata(val, nodata)) {
                // store all nodata value as this hardcoded number
-               val = -9999.0;
+               val = CRAYFISH_NODATA;
            }
 
            if (is_vector)

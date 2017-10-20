@@ -69,6 +69,13 @@ public:
       return dataMask;
   }
 
+  void multiply_by(double x)
+  {
+    for (int i = 0; i < size(); ++i)
+        if (mData[i] != -999.0f) // nodata value
+            mData[i] *= x;
+  }
+
 private:
   int mCols;
   int mRows;
@@ -82,7 +89,8 @@ class CrayfishGDAL
 {
 public:
   static bool writeGeoTIFF(const QString& outFilename, RawData* rd, const QString& wkt);
-  static bool writeContoursSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, bool useLines, ColorMap* cm);
+  static bool writeContourLinesSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm, bool use_nodata);
+  static bool writeContourAreasSHP(const QString& outFilename, double interval, RawData* rd, const QString& wkt, ColorMap* cm, const Output* output, bool add_boundary, bool use_nodata);
 };
 
 /******************************************************************************************************/

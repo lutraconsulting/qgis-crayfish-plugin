@@ -36,8 +36,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_element.h"
 
 struct BBox;
-struct E4Qtmp;
-struct E4QNormalization;
 class DataSet;
 class ElementOutput;
 class Output;
@@ -87,6 +85,7 @@ struct BBox
   double maxY;
 
   bool isPointInside(double x, double y) const { return x >= minX && x <= maxX && y >= minY && y <= maxY; }
+  bool isPointInside(const QPointF& point) const { return isPointInside(point.x(), point.y()); }
   bool contains(const BBox& other) const { return other.minX >= minX && other.maxX <= maxX && other.minY >= minY && other.maxY <= maxY; }
 };
 
@@ -126,7 +125,7 @@ public:
   void addDataSet(DataSet* ds);
 
   const DataSets& dataSets() const { return mDataSets; }
-  DataSet* dataSet(const QString& name);
+  DataSet* dataSet(const QString& name) const;
 
   BBox extent() const { return mExtent; }
 
@@ -182,11 +181,7 @@ protected:
   DataSets mDataSets;  //!< pointers to datasets are owned by this class
 
   // cached data for rendering
-
-  E4Qtmp* mE4Qtmp;   //!< contains rendering information for quads
-  int* mE4QtmpIndex; //!< for conversion from element index to mE4Qtmp indexes
   BBox* mBBoxes; //! bounding boxes of elements (non-projected)
-  E4QNormalization* mE4Qnorm; //! normalization of coordinates
   TraceRendererCache* mTraceCache; //! pre-computed trace rendering
 
   // reprojection support
@@ -198,6 +193,10 @@ protected:
   Node* mProjNodes; //!< reprojected nodes
   BBox* mProjBBoxes; //!< reprojected bounding boxes of elements
   BBox mProjExtent;
+
+private:
+  bool interpolateE3T(int node1_idx, int node2_idx, int node3_idx, double x, double y, double* value, const ValueAccessor* accessor) const;
+  bool interpolateElementCenteredE3T(int elem_idx, int node1_idx, int node2_idx, int node3_idx, double x, double y, double* value, const ValueAccessor* accessor) const;
 };
 
 BBox computeExtent(const Node* nodes, int size);
