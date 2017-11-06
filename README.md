@@ -100,7 +100,7 @@ brew install homebrew/science/netcdf
 
 ### Running tests
 
-* Install all dependancies
+* Install all dependencies
 ```bash
 sudo apt-get install build-essential libqt4-dev qt4-qmake libgdal-dev libhdf5-serial-dev libproj-dev qgis
 sudo apt-get install python python-sip python-qt4 python-numpy python-qgis python-nose
