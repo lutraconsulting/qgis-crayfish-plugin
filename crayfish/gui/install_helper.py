@@ -38,7 +38,7 @@ from ..core import load_library, VersionError, libpath
 from ..buildinfo import findPlatformVersion, crayfish_zipfile
 
 # Base URL for downloading of prepared binaries
-downloadBaseUrl = 'http://www.lutraconsulting.co.uk/'
+downloadBaseUrl = 'https://www.lutraconsulting.co.uk/'
 #downloadBaseUrl = 'http://localhost:8000/'  # for testing
 
 destFolder = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir))
