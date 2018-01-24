@@ -28,6 +28,7 @@ import os
 import subprocess
 import tempfile
 
+import sip
 from PyQt4.QtCore import QSize, QRectF, Qt
 from PyQt4.QtGui import QImage, QPainter
 from PyQt4.QtXml import QDomDocument
@@ -110,7 +111,9 @@ def prep_comp(cfg, mr, time):
 
 def composition_set_time(c, time, frmt=0):
     timeItem = c.getComposerItemById("time")
+
     if timeItem is not None:
+        timeItem = sip.cast(timeItem, QgsComposerLabel)
         if frmt == 0: # hh:mm:ss
             txt = time_to_string(time)
         else:  # hh.hhh
