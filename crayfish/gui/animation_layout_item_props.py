@@ -56,13 +56,6 @@ class AnimationLayoutItemProps(qtBaseClass, uiDialog):
             self.lblLabel.setVisible(False)
             self.editLabel.setVisible(False)
 
-        # Time format
-        if props['type'] == 'time':
-            self.cboTimeFormat.setCurrentIndex(props['format'])
-        else:
-            self.lblTimeFormat.setVisible(False)
-            self.cboTimeFormat.setVisible(False)
-
         # Position
         if props['type'] != 'title':
             self.cboPosition.setCurrentIndex(props['position'])
@@ -84,8 +77,6 @@ class AnimationLayoutItemProps(qtBaseClass, uiDialog):
         p['bg_color'] = self.btnBackgroundColor.color()
         if self.prop_type == 'title':
             p['label'] = self.editLabel.text()
-        if self.prop_type == 'time':
-            p['format'] = self.cboTimeFormat.currentIndex()
         if self.prop_type != 'title':
             p['position'] = self.cboPosition.currentIndex()
         return p
@@ -115,8 +106,6 @@ class AnimationLayoutItemProps(qtBaseClass, uiDialog):
                 self.btnBackgroundColor.setColor(s.value(k, type=QColor))
             elif k == 'label':
                 self.editLabel.setText(s.value(k))
-            elif k == 'time':
-                self.cboTimeFormat.setCurrentIndex(s.value(k, type=int))
             elif k == 'position':
                 self.cboPosition.setCurrentIndex(s.value(k, type=int))
         s.endGroup()

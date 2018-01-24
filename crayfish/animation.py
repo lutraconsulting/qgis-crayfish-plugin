@@ -111,13 +111,10 @@ def prep_comp(cfg, mr, time):
     return c
 
 
-def composition_set_time(c, time, frmt=0, ds=None):
+def composition_set_time(c, time, ds=None):
     timeItem = c.getComposerItemById("time")
     if timeItem is not None:
-        if frmt == 0: # hh:mm:ss
-            txt = time_to_string(time, ds)
-        else:  # hh.hhh
-            txt = "%06.3f" % time
+        txt = time_to_string(time, ds)
         timeItem.setText(txt)
 
 
@@ -179,7 +176,7 @@ def prepare_composition(c, w,h, dpi, time, layoutcfg, ds = None):
         c.addItem(cTime)
 
         set_composer_item_label(cTime, layoutcfg['time'])
-        composition_set_time(c, time, layoutcfg['time']['format'], ds)
+        composition_set_time(c, time, ds)
         cTime.adjustSizeToText()
         set_item_pos(cTime, layoutcfg['time']['position'], c)
 
