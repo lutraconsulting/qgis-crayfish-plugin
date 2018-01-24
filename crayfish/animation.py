@@ -136,9 +136,12 @@ def set_composer_item_label(item, itemcfg):
     item.setFontColor(itemcfg['text_color'])
 
 
-def set_item_pos(item, posindex, c):
+def set_item_pos(item, posindex, c, is_legend=False):
     cw, ch = c.paperWidth(), c.paperHeight()
     r = item.rect()
+    if is_legend:
+        r = item.paintAndDetermineSize(None)
+
     if posindex == 0:  # top-left
         item.setItemPosition(0, 0)
     elif posindex == 1: # top-right
@@ -198,7 +201,7 @@ def prepare_composition(c, w,h, dpi, time, layoutcfg):
         cLegend.setFontColor(itemcfg['text_color'])
 
         cLegend.adjustBoxSize()
-        set_item_pos(cLegend, itemcfg['position'], c)
+        set_item_pos(cLegend, itemcfg['position'], c, True)
 
     return composerMap
 
