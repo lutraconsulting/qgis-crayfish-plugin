@@ -110,15 +110,14 @@ def prep_comp(cfg, mr, time):
 
 
 def composition_set_time(c, time, frmt=0):
-    timeItem = c.getComposerItemById("time")
+    for i in c.items():
+        if isinstance(i, QgsComposerLabel) and i.id() == "time":
+            if frmt == 0:  # hh:mm:ss
+                txt = time_to_string(time)
+            else:  # hh.hhh
+                txt = "%06.3f" % time
+            i.setText(txt)
 
-    if timeItem is not None:
-        timeItem = sip.cast(timeItem, QgsComposerLabel)
-        if frmt == 0: # hh:mm:ss
-            txt = time_to_string(time)
-        else:  # hh.hhh
-            txt = "%06.3f" % time
-        timeItem.setText(txt)
 
 
 def prepare_composition_from_template(c, template_path, time):
