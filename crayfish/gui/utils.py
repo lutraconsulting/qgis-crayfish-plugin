@@ -185,7 +185,7 @@ def _hours_to_HHMMSS(hours):
 def time_to_string(time, ds=None):  # time is in hours
     #  TODO remove None
     # maybe would be worth to put this as direct replacement of output.time()...
-    if ds:
+    if ds and ds.timeConfig:
         if ds.timeConfig["dt_use_absolute_time"]:
             res = ds.timeConfig["dt_reference_time"] + datetime.timedelta(hours=time)
             return res.strftime(ds.timeConfig["dt_datetime_format"])
