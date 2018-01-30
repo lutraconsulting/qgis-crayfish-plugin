@@ -54,7 +54,7 @@ class CrayfishMeshCalculator
                             Mesh *mesh, bool addToMesh);
 
     CrayfishMeshCalculator(const QString &formulaString, const QString &outputFile,
-                            const GEOSGeometry *geomFilter, float startTime, float endTime,
+                            const char* maskWkt, float startTime, float endTime,
                             Mesh *mesh, bool addToMesh);
 
     /** Starts the calculation and writes new dataset to file, returns Result */
@@ -69,7 +69,8 @@ class CrayfishMeshCalculator
 
     //! Spatial filter
     BBox mOutputExtent;
-    GEOSGeometry* mGeomFilter;
+    //! Mask filter wkt
+    const char* mMaskWkt;
 
     //! Time filter
     float mStartTime;

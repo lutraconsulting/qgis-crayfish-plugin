@@ -66,7 +66,7 @@ struct Node
 
     bool operator==(const Node& other) const { return x == other.x && y == other.y; }
     QPointF toPointF() const { return QPointF(x,y); }
-    QString toWkt() const {return QString("POINT(%1,%2)").arg(x, y); }
+    const char* toWkt() const {return QString("POINT(%1,%2)").arg(x, y).toLatin1().data(); }
     void setId(int id) {mId = id;}
     int id() const {return mId;}
 private:
@@ -88,6 +88,7 @@ struct BBox
   bool isPointInside(double x, double y) const { return x >= minX && x <= maxX && y >= minY && y <= maxY; }
   bool isPointInside(const QPointF& point) const { return isPointInside(point.x(), point.y()); }
   bool contains(const BBox& other) const { return other.minX >= minX && other.maxX <= maxX && other.minY >= minY && other.maxY <= maxY; }
+  const char* toWkt() const {return QString("POLYGON(%1,%2,%3,%4)").arg(minX,maxX, minY, maxY).toLatin1().data(); }
 };
 
 /** core Mesh data structure: nodes + elements */

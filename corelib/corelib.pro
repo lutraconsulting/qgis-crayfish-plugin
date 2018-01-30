@@ -131,9 +131,6 @@ HEADERS += crayfish.h \
 
 INCLUDEPATH += $$PWD
 
-QT += widgets
-DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x000000
-
 DESTDIR = $$PWD/../crayfish
 
 unix {

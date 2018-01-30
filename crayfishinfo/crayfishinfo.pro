@@ -4,4 +4,4 @@ TARGET = crayfishinfo
 SOURCES += main.cpp
 
 INCLUDEPATH += $$PWD/../corelib
-LIBS += -L$$PWD/../crayfish -lcrayfish
+LIBS += -L$$PWD/../crayfish -lcrayfish -lgeos_c

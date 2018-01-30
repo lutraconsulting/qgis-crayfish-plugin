@@ -8,6 +8,7 @@
 #include <functional>
 #include <math.h>
 #include <numeric>
+#include <geos_c.h>
 
 #include "crayfish_mesh.h"
 #include "crayfish_dataset.h"
@@ -53,7 +54,7 @@ private:
   void activate(NodeOutput *output, const NodeOutput *ref_output = 0) const;
   void activate(DataSet& dataset1) const;
   void populateSpatialFilter(DataSet& filter, const BBox& outputExtent) const; // create a filter from extent
-  void populateMaskFilter(DataSet &dataset1, GEOSGeometry* geom) const; // create a filter from mask
+  void populateMaskFilter(DataSet &dataset1, const char* maskWkt) const; // create a filter from mask
 
   void func1(DataSet& dataset1, std::function<float(float)> func) const;
   void func2(DataSet& dataset1, const DataSet& dataset2, std::function<float(float,float)> func) const;
@@ -102,7 +103,7 @@ public:
     void min(DataSet& dataset1, const DataSet& dataset2) const;
     void max(DataSet& dataset1, const DataSet& dataset2) const;
     void filter( DataSet& dataset1, const BBox& outputExtent ) const;
-    void filterMask(DataSet &dataset1, GEOSGeometry* geom) const;
+    void filterMask(DataSet &dataset1, const char* maskWkt) const;
     void sum_aggr(DataSet& dataset1) const;
     void min_aggr(DataSet& dataset1) const;
     void max_aggr(DataSet& dataset1) const;
