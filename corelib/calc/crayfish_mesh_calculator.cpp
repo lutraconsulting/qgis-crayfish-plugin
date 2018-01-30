@@ -96,6 +96,8 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
   }
 
   // Finalize dataset
+  // if (mGeomFilter)
+  //dsu.filterMask(*outputDataset, mGeomFilter);
   dsu.filter(*outputDataset, mOutputExtent);
   outputDataset->setMesh(mMesh);
   outputDataset->setType(DataSet::Scalar);

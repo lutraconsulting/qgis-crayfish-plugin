@@ -1,5 +1,6 @@
 #include "calc/crayfish_dataset_utils.h"
 #include "crayfish_utils.h"
+#include "geos_c.h"
 
 static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
 
@@ -120,6 +121,64 @@ void CrayfishDataSetUtils::populateSpatialFilter(DataSet& filter, const BBox& ou
         output->time = mTimes[0];
         for (int i = 0; i < mMesh->elements().size(); ++i) {
             const BBox& box = mMesh->projectedBBox(i);
+            if (outputExtent.contains(box)) {
+                output->getValues()[i] = F_TRUE;
+            } else {
+                output->getValues()[i] = F_FALSE;
+            }
+        }
+        filter.addOutput(output);
+    }
+}
+
+void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, GEOSGeometry* geomFilter) const
+{
+    filter.deleteOutputs();
+    geomFilter->getEnvelope();
+    // TODO @vsklencar
+    BBox outputExtent;
+    //GEOSIntersection_r intersection;
+
+    GEOSWKTReader *reader;
+    reader = GEOSWKTReader_create();
+    //polygon1 = GEOSWKTReader_read(reader, "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))");
+
+
+    //polygon2 = GEOSWKTReader_read(reader, "POLYGON EMPTY");
+
+    if (mOutputType == Output::TypeNode) {
+
+
+        NodeOutput* output = new NodeOutput();
+        output->init(mMesh->nodes().size(),
+                     mMesh->elements().size(),
+                     DataSet::Scalar);
+        output->time = mTimes[0];
+        for (int i = 0; i < mMesh->nodes().size(); ++i)
+        {
+            QPointF point = mMesh->projectedNode(i).toPointF();
+            QString pointWkt = mMesh->projectedNode(i).toWkt();
+            GEOSGeometry* pointGeom;
+            pointGeom = GEOSWKTReader_read(reader, pointWkt);
+
+            // TODO geomFilter
+            geomFilter.intersects();
+            // if (geomFilter.intersects(pointGeom))
+            if (outputExtent.isPointInside(point)) {
+                output->getValues()[i] = F_TRUE;
+            } else {
+                output->getValues()[i] = F_FALSE;
+            }
+        }
+        memset(output->getActive().data(), 1, mMesh->elements().size());
+        filter.addOutput(output);
+    } else {
+        ElementOutput* output = new ElementOutput();
+        output->init(mMesh->elements().size(), false);
+        output->time = mTimes[0];
+        for (int i = 0; i < mMesh->elements().size(); ++i) {
+            const BBox& box = mMesh->projectedBBox(i);
+            // TODO
             if (outputExtent.contains(box)) {
                 output->getValues()[i] = F_TRUE;
             } else {
@@ -858,6 +917,13 @@ void CrayfishDataSetUtils::max(DataSet &dataset1, const DataSet &dataset2) const
 void CrayfishDataSetUtils::filter(DataSet &dataset1, const BBox &outputExtent) const {
     DataSet filter("filter");
     populateSpatialFilter(filter, outputExtent);
+    return func2(dataset1, filter, std::bind(&CrayfishDataSetUtils::ffilter, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+// TODO @vsklencar
+void CrayfishDataSetUtils::filterMask(DataSet &dataset1, GEOSGeometry* geom) const {
+    DataSet filter("filter");
+    populateMaskFilter(filter, geom);
     return func2(dataset1, filter, std::bind(&CrayfishDataSetUtils::ffilter, this, std::placeholders::_1, std::placeholders::_2));
 }
 

@@ -34,7 +34,7 @@ win32 {
   }
 
   INCLUDEPATH += $${OSGEO_PATH}/include
-  LIBS += -L$${OSGEO_PATH}/lib -lproj_i -lgdal_i -lhdf5 -lnetcdf
+  LIBS += -L$${OSGEO_PATH}/lib -lproj_i -lgdal_i -lhdf5 -lnetcdf -lgeos_c
 
   # use delayed loading of GDAL. If the requested library version is not available
   # (e.g. due to older QGIS installation), the loading of Crayfish library will not fail,
@@ -45,7 +45,7 @@ win32 {
 
 unix:!macx {
   INCLUDEPATH += /usr/include/gdal
-  LIBS += -lproj -lgdal -lnetcdf
+  LIBS += -lproj -lgdal -lnetcdf -lgeos_c
 
   contains(QMAKE_HOST.arch, x86_64) {
     ARCH = x86_64
@@ -130,6 +130,9 @@ HEADERS += crayfish.h \
     calc/crayfish_dataset_utils.h
 
 INCLUDEPATH += $$PWD
+
+QT += widgets
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x000000
 
 DESTDIR = $$PWD/../crayfish
 

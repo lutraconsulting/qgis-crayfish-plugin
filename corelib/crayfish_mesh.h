@@ -66,6 +66,7 @@ struct Node
 
     bool operator==(const Node& other) const { return x == other.x && y == other.y; }
     QPointF toPointF() const { return QPointF(x,y); }
+    QString toWkt() const {return QString("POINT(%1,%2)").arg(x, y); }
     void setId(int id) {mId = id;}
     int id() const {return mId;}
 private:

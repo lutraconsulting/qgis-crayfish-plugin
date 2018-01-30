@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_output.h"
 #include "crayfish_renderer.h"
 #include "calc/crayfish_mesh_calculator.h"
+#include <geos_c.h>
 
 #define CF_TYPES
 typedef Mesh* MeshH;
@@ -402,6 +403,41 @@ bool CF_Mesh_calc_derived_dataset(MeshH mesh,
 
     /** Starts the calculation and writes new dataset to file, returns Result */
     CrayfishMeshCalculator::Result res = cc.processCalculation();
+    if (res == CrayfishMeshCalculator::Success) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool CF_Mesh_calc_derived_dataset_with_mask(MeshH mesh,
+                                  const char* expression,
+                                  float startTime, float endTime,
+                                  const char* geomWkt,
+                                  bool addToMesh, const char* output_filename)
+{
+    //QString aa = QString::fromAscii(geomWkt);
+    QString exp = QString::fromAscii(expression);
+    QString outputFile = QString::fromAscii(output_filename);
+
+    // TODO @vsklencar on calc create/destruct
+    initGEOS(NULL, NULL);
+    GEOSWKTReader *reader;
+    GEOSGeometry* geomFilter;
+
+    reader = GEOSWKTReader_create();
+    //polygon1 = GEOSWKTReader_read(reader, "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))");
+    geomFilter = GEOSWKTReader_read(reader, geomWkt);
+
+    // TODO @vsklencar
+    BBox extent(38144, 381599, 168700, 1687);
+
+    CrayfishMeshCalculator cc(exp, outputFile, geomFilter, startTime, endTime, mesh, addToMesh);
+
+    /** Starts the calculation and writes new dataset to file, returns Result */
+    CrayfishMeshCalculator::Result res = cc.processCalculation();
+    finishGEOS();
+
     if (res == CrayfishMeshCalculator::Success) {
         return true;
     } else {
