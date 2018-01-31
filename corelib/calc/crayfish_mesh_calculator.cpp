@@ -46,6 +46,17 @@ CrayfishMeshCalculator::CrayfishMeshCalculator(const QString &formulaString, con
 {
 }
 
+CrayfishMeshCalculator::CrayfishMeshCalculator(const QString &formulaString, const QString &outputFile, const char *maskWkt, float startTime, float endTime, Mesh *mesh, bool addToMesh)
+    : mFormulaString( formulaString )
+    , mOutputFile( outputFile )
+    , mMaskWkt( maskWkt )
+    , mStartTime( startTime )
+    , mEndTime( endTime )
+    , mMesh( mesh )
+    , mAddToMesh( addToMesh )
+{
+}
+
 CrayfishMeshCalculator::Result CrayfishMeshCalculator::expression_valid(const QString &formulaString, const Mesh *mesh) {
     QString errorString;
     CrayfishMeshCalculatorNode *calcNode = CrayfishMeshCalculatorNode::parseMeshCalcString( formulaString, errorString );

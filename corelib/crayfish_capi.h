@@ -105,6 +105,10 @@ CF_EXPORT bool CF_Mesh_calc_derived_dataset(MeshH mesh, const char* expression,
                                             float startTime, float endTime,
                                             double xmin, double xmax, double ymin, double ymax,
                                             bool addToMesh, const char* output_filename);
+CF_EXPORT bool CF_Mesh_calc_derived_dataset_with_mask(MeshH mesh, const char* expression,
+                                            float startTime, float endTime,
+                                            const char* maskWkt,
+                                            bool addToMesh, const char* output_filename);
 
 // DataSet functions
 
