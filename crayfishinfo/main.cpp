@@ -4,9 +4,97 @@
 #include <QStringList>
 #include "crayfish_capi.h"
 #include <limits>
+#include "geos_c.h"
 
 void help() {
     std::cout << "crayfishinfo mesh_file [-dDataset_file] [-eExpression] [-oOutputExpressionFilename] [-h]" << std::endl;
+}
+
+int example() {
+
+    GEOSWKTReader *reader;
+        GEOSGeometry* polygon1;
+        GEOSGeometry* polygon2;
+        const GEOSPreparedGeometry* prepared1;
+
+        initGEOS(NULL, NULL);
+
+        reader = GEOSWKTReader_create();
+
+        if ( ! reader ) {
+            std::cout << "Error while GEOS has been initializing." << std::endl;
+        }
+
+        polygon1 = GEOSWKTReader_read(reader, "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))");
+        polygon2 = GEOSWKTReader_read(reader, "POLYGON EMPTY");
+
+        char a = GEOSContains(polygon1, polygon2);
+        if (a == 0) {
+            printf("false\n");
+        } else if(a == 1) {
+            printf("true\n");
+        } else {
+            printf("error\n");
+        }
+
+        prepared1 = GEOSPrepare(polygon1);
+
+        char b = GEOSPreparedContains(prepared1, polygon2);
+        if (b == 0) {
+            printf("false\n");
+        } else if(b == 1) {
+            printf("true\n");
+        } else {
+            printf("error\n");
+        }
+
+        return 0;
+}
+
+
+int test_intersection() {
+    std::cout << "test_intersection" << std::endl;
+    initGEOS(NULL, NULL);
+    //GEOSContextHandle_t handle = GEOS_init_r();
+    GEOSGeometry* pointGeom;
+    GEOSGeometry* maskGeom;
+    GEOSWKTReader* reader = GEOSWKTReader_create();
+
+    if ( ! reader ) {
+        std::cout << "Error while GEOS has been initializing." << std::endl;
+    }
+
+    //const char* pointWkt = "Point (-200.2655785411116689 51.41663308002466692)";
+    const char* pointWkt = "Point (-2.2655785411116689 51.41663308002466692)";
+    const char* maskWkt = "Polygon ((-2.26570857780532053 51.41666399122910036, -2.26545457024735075 51.41671712371006464, -2.26533433281120766 51.41667157702460145, -2.26535121337009704 51.41648511873184191, -2.26562469704825986 51.41644586769574943, -2.26586421342017719 51.41649563566220849, -2.26570857780532053 51.41666399122910036))";
+
+    pointGeom = GEOSWKTReader_read(reader, pointWkt);
+    maskGeom = GEOSWKTReader_read(reader, maskWkt);
+
+    std::cout << "Going to test intersection." << std::endl;
+
+    GEOSGeometry* geom = GEOSIntersection(maskGeom, pointGeom);
+    std::cout << "Final geom generated." << std::endl;
+
+    char a = GEOSContains(maskGeom, pointGeom);
+      if (a == 0) {
+          printf("false\n");
+      } else if(a == 1) {
+          printf("true\n");
+      } else {
+          printf("error\n");
+      }
+
+    std::cout << "Result " << a <<std::endl;
+
+    if ( ! geom ) {
+        std::cout << "Not intersecting, an error occured." << std::endl;
+    }
+
+    GEOSWKTReader_destroy(reader);
+    //GEOS_finish_r(handle);
+
+    return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -15,6 +103,9 @@ int main(int argc, char *argv[]) {
     QStringList cmdline_args = QCoreApplication::arguments();
     std::cout << "Crayfish loader " << CF_Version() << std::endl;
     cmdline_args.takeFirst(); //Executable
+
+    test_intersection();
+    example();
 
     // parse arguments
     if (cmdline_args.length() < 1) {
