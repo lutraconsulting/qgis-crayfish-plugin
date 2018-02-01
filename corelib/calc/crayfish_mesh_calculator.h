@@ -59,6 +59,7 @@ class CrayfishMeshCalculator
 
     /** Starts the calculation and writes new dataset to file, returns Result */
     Result processCalculation();
+    Result processCalculation(const bool useMask);
     static Result expression_valid(const QString &formulaString, const Mesh *mesh);
 
   private:

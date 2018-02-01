@@ -160,9 +160,9 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
             mask_layer = self.cboLayerMask.currentLayer()
 
             # TODO @vsklencar test if polygon vector
-            if mask_layer and mask_layer.getFeatures:
-                mask_wkt = list(mask_layer.getFeatures())[0].geometry().exportToWkt()
-
+            feats = list(mask_layer.getFeatures())
+            if mask_layer and feats:
+                mask_wkt = feats[0].geometry().exportToWkt()
                 success = mesh.create_derived_dataset_mask(expression=self.formula_string(),
                                                            time_filter=self.time_filter(),
                                                            geom_wkt=mask_wkt,

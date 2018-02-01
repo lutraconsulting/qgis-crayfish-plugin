@@ -422,7 +422,7 @@ bool CF_Mesh_calc_derived_dataset_with_mask(MeshH mesh,
     CrayfishMeshCalculator cc(exp, outputFile, maskWkt, startTime, endTime, mesh, addToMesh);
 
     /** Starts the calculation and writes new dataset to file, returns Result */
-    CrayfishMeshCalculator::Result res = cc.processCalculation();
+    CrayfishMeshCalculator::Result res = cc.processCalculation(true);
 
     if (res == CrayfishMeshCalculator::Success) {
         return true;

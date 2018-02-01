@@ -77,6 +77,11 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::expression_valid(const QS
 
 CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
 {
+    return CrayfishMeshCalculator::processCalculation(false);
+}
+
+CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation(const bool useMask)
+{
   // check input
   if (mOutputFile.isEmpty()) {
         return CreateOutputError;
@@ -107,7 +112,7 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
   }
 
   // Finalize dataset
-  if (strlen(mMaskWkt) > 0) {
+  if (useMask) {
     dsu.filterMask(*outputDataset, mMaskWkt);
   } else {
     dsu.filter(*outputDataset, mOutputExtent);
