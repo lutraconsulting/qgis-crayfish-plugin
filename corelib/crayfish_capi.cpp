@@ -416,7 +416,6 @@ bool CF_Mesh_calc_derived_dataset_with_mask(MeshH mesh,
                                   const char* maskWkt,
                                   bool addToMesh, const char* output_filename)
 {
-    //QString aa = QString::fromAscii(geomWkt);
     QString exp = QString::fromAscii(expression);
     QString outputFile = QString::fromAscii(output_filename);
 
@@ -424,7 +423,6 @@ bool CF_Mesh_calc_derived_dataset_with_mask(MeshH mesh,
 
     /** Starts the calculation and writes new dataset to file, returns Result */
     CrayfishMeshCalculator::Result res = cc.processCalculation();
-    finishGEOS();
 
     if (res == CrayfishMeshCalculator::Success) {
         return true;

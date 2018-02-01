@@ -154,21 +154,29 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
     # TODO fork extend vs geom
     def on_accept_clicked(self):
         mesh = self.layer.mesh
-        geom_wkt = "Polygon ((-2.26570857780532053 51.41666399122910036, -2.26545457024735075 51.41671712371006464, -2.26533433281120766 51.41667157702460145, -2.26535121337009704 51.41648511873184191, -2.26562469704825986 51.41644586769574943, -2.26586421342017719 51.41649563566220849, -2.26570857780532053 51.41666399122910036))"
 
-        success = mesh.create_derived_dataset_mask(expression=self.formula_string(),
-                                                   time_filter=self.time_filter(),
-                                                   geom_wkt=geom_wkt,
-                                                   add_to_mesh=self.add_dataset_to_layer(),
-                                                   output_filename=self.output_filename())
+        success = None
+        if self.useMaskCb.checkState() == Qt.Checked:
+            mask_layer = self.cboLayerMask.currentLayer()
 
-        # success = mesh.create_derived_dataset(
-        #     expression=self.formula_string(),
-        #     time_filter=self.time_filter(),
-        #     spatial_filter=self.spatial_filter(),
-        #     add_to_mesh=self.add_dataset_to_layer(),
-        #     output_filename=self.output_filename()
-        # )
+            # TODO @vsklencar test if polygon vector
+            if mask_layer and mask_layer.getFeatures:
+                mask_wkt = list(mask_layer.getFeatures())[0].geometry().exportToWkt()
+
+                success = mesh.create_derived_dataset_mask(expression=self.formula_string(),
+                                                           time_filter=self.time_filter(),
+                                                           geom_wkt=mask_wkt,
+                                                           add_to_mesh=self.add_dataset_to_layer(),
+                                                           output_filename=self.output_filename())
+
+        else:
+            success = mesh.create_derived_dataset(
+                expression=self.formula_string(),
+                time_filter=self.time_filter(),
+                spatial_filter=self.spatial_filter(),
+                add_to_mesh=self.add_dataset_to_layer(),
+                output_filename=self.output_filename()
+            )
 
         if success:
             QMessageBox.information(self,

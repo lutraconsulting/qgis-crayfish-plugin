@@ -134,8 +134,8 @@ void CrayfishDataSetUtils::populateSpatialFilter(DataSet& filter, const BBox& ou
 void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const char* maskWkt) const
 {
     filter.deleteOutputs();
-    GEOSGeometry* pointGeom;
     GEOSGeometry* maskGeom;
+    initGEOS(NULL, NULL);
     GEOSWKTReader* reader = GEOSWKTReader_create();
 
     reader = GEOSWKTReader_create();
@@ -149,7 +149,6 @@ void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const char* maskW
         output->time = mTimes[0];
         for (int i = 0; i < mMesh->nodes().size(); ++i)
         {
-            QPointF point = mMesh->projectedNode(i).toPointF();
             const char* pointWkt = mMesh->projectedNode(i).toWkt();
             GEOSGeometry* pointGeom;
             pointGeom = GEOSWKTReader_read(reader, pointWkt);
@@ -185,6 +184,7 @@ void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const char* maskW
         }
         filter.addOutput(output);
     }
+    finishGEOS();
 }
 
 Output* CrayfishDataSetUtils::number(float val, float time) const {
