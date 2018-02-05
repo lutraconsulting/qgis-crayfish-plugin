@@ -172,7 +172,6 @@ void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const char* maskW
             const char* bbox = mMesh->projectedBBox(i).toWkt();
             GEOSGeometry* pointBBoxGeom = GEOSWKTReader_read(reader, bbox);
 
-            // TODO
             char a = GEOSIntersects(maskGeom, pointBBoxGeom);
               if (a == 0) {
                   output->getValues()[i] = F_FALSE;
@@ -918,7 +917,6 @@ void CrayfishDataSetUtils::filter(DataSet &dataset1, const BBox &outputExtent) c
     return func2(dataset1, filter, std::bind(&CrayfishDataSetUtils::ffilter, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-// TODO @vsklencar
 void CrayfishDataSetUtils::filterMask(DataSet &dataset1, const char* maskWkt) const {
     DataSet filter("filter");
     populateMaskFilter(filter, maskWkt);
