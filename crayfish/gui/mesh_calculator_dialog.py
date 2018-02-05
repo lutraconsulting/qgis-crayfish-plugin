@@ -190,16 +190,16 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
 
         success = None
         if self.useMaskCb.checkState() == Qt.Checked:
-
             mask_layer = self.cboLayerMask.currentLayer()
             feats = list(mask_layer.getFeatures())
             if mask_layer and feats:
                 geoms = self.combine_geometries(feats)
-                success = mesh.create_derived_dataset_mask(expression=self.formula_string(),
-                                                           time_filter=self.time_filter(),
-                                                           geom_wkt=geoms.exportToWkt(),
-                                                           add_to_mesh=self.add_dataset_to_layer(),
-                                                           output_filename=self.output_filename())
+                success = mesh.create_derived_dataset_mask(
+                    expression=self.formula_string(),
+                    time_filter=self.time_filter(),
+                    geom_wkt=geoms.exportToWkt(),
+                    add_to_mesh=self.add_dataset_to_layer(),
+                    output_filename=self.output_filename())
 
         else:
             success = mesh.create_derived_dataset(
