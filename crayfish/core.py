@@ -355,22 +355,13 @@ class Mesh:
     max_time = time_filter[1] if time_filter[1] is not None else bigfloat
 
     return self.lib.CF_Mesh_calc_derived_dataset_with_mask(self.handle,
-                                                 ctypes.c_char_p(expression),
+                                                     ctypes.c_char_p(expression),
                                                  ctypes.c_float(min_time),
                                                  ctypes.c_float(max_time),
                                                  ctypes.c_char_p(geom_wkt),
                                                  ctypes.c_double(add_to_mesh),
                                                  ctypes.c_char_p(output_filename)
                                                  )
-
-    # return self.lib.CF_Mesh_calc_derived_dataset(self.handle,
-    #                                              ctypes.c_char_p(expression),
-    #                                              ctypes.c_float(min_time),
-    #                                              ctypes.c_float(max_time),
-    #                                              ctypes.c_char_p(geom_wkt),
-    #                                              ctypes.c_double(add_to_mesh),
-    #                                              ctypes.c_char_p(output_filename)
-    # )
 
 
 class DataSet(object):

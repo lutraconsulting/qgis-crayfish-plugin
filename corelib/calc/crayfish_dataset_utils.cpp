@@ -153,7 +153,7 @@ void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const char* maskW
             GEOSGeometry* pointGeom;
             pointGeom = GEOSWKTReader_read(reader, pointWkt);
 
-            char a = GEOSContains(maskGeom, pointGeom);
+            char a = GEOSIntersects(maskGeom, pointGeom);
               if (a == 0) {
                   output->getValues()[i] = F_FALSE;
               } else if(a == 1) {
@@ -173,7 +173,7 @@ void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const char* maskW
             GEOSGeometry* pointBBoxGeom = GEOSWKTReader_read(reader, bbox);
 
             // TODO
-            char a = GEOSContains(maskGeom, pointBBoxGeom);
+            char a = GEOSIntersects(maskGeom, pointBBoxGeom);
               if (a == 0) {
                   output->getValues()[i] = F_FALSE;
               } else if(a == 1) {
