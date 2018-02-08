@@ -103,7 +103,7 @@ public:
     void min(DataSet& dataset1, const DataSet& dataset2) const;
     void max(DataSet& dataset1, const DataSet& dataset2) const;
     void filter( DataSet& dataset1, const BBox& outputExtent ) const;
-    void filterMask(DataSet &dataset1, const char* maskWkt) const;
+    void filter(DataSet &dataset1, const char* maskWkt) const;
     void sum_aggr(DataSet& dataset1) const;
     void min_aggr(DataSet& dataset1) const;
     void max_aggr(DataSet& dataset1) const;

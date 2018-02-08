@@ -354,6 +354,7 @@ class Mesh:
     min_time = time_filter[0] if time_filter[0] is not None else -bigfloat
     max_time = time_filter[1] if time_filter[1] is not None else bigfloat
 
+    # TODO @vsklencar test geom
     return self.lib.CF_Mesh_calc_derived_dataset_with_mask(self.handle,
                                                      ctypes.c_char_p(expression),
                                                  ctypes.c_float(min_time),

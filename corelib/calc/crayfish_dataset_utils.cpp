@@ -149,18 +149,17 @@ void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const char* maskW
         output->time = mTimes[0];
         for (int i = 0; i < mMesh->nodes().size(); ++i)
         {
-            const char* pointWkt = mMesh->projectedNode(i).toWkt();
+            const char* pointWkt = mMesh->projectedNode(i).toWkt().toLatin1().data();
             GEOSGeometry* pointGeom;
             pointGeom = GEOSWKTReader_read(reader, pointWkt);
 
             char a = GEOSIntersects(maskGeom, pointGeom);
-              if (a == 0) {
-                  output->getValues()[i] = F_FALSE;
-              } else if(a == 1) {
+              if (a == 1) {
                   output->getValues()[i] = F_TRUE;
               } else {
                   output->getValues()[i] = F_FALSE;
               }
+              GEOSGeom_destroy(pointGeom);
         }
         memset(output->getActive().data(), 1, mMesh->elements().size());
         filter.addOutput(output);
@@ -169,17 +168,16 @@ void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const char* maskW
         output->init(mMesh->elements().size(), false);
         output->time = mTimes[0];
         for (int i = 0; i < mMesh->elements().size(); ++i) {
-            const char* bbox = mMesh->projectedBBox(i).toWkt();
+            const char* bbox = mMesh->projectedBBox(i).toWkt().toLatin1().data();;
             GEOSGeometry* pointBBoxGeom = GEOSWKTReader_read(reader, bbox);
 
             char a = GEOSIntersects(maskGeom, pointBBoxGeom);
-              if (a == 0) {
-                  output->getValues()[i] = F_FALSE;
-              } else if(a == 1) {
-                  output->getValues()[i] = F_TRUE;
-              } else {
-                  output->getValues()[i] = F_FALSE;
-              }
+            if (a == 1) {
+                output->getValues()[i] = F_TRUE;
+            } else {
+                output->getValues()[i] = F_FALSE;
+            }
+            GEOSGeom_destroy(pointBBoxGeom);
         }
         filter.addOutput(output);
     }
@@ -917,7 +915,7 @@ void CrayfishDataSetUtils::filter(DataSet &dataset1, const BBox &outputExtent) c
     return func2(dataset1, filter, std::bind(&CrayfishDataSetUtils::ffilter, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void CrayfishDataSetUtils::filterMask(DataSet &dataset1, const char* maskWkt) const {
+void CrayfishDataSetUtils::filter(DataSet &dataset1, const char* maskWkt) const {
     DataSet filter("filter");
     populateMaskFilter(filter, maskWkt);
     return func2(dataset1, filter, std::bind(&CrayfishDataSetUtils::ffilter, this, std::placeholders::_1, std::placeholders::_2));

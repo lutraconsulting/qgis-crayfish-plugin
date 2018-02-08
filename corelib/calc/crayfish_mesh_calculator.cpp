@@ -113,12 +113,10 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation(const 
 
   // Finalize dataset
   if (useMask) {
-    dsu.filterMask(*outputDataset, mMaskWkt);
+    dsu.filter(*outputDataset, mMaskWkt);
   } else {
     dsu.filter(*outputDataset, mOutputExtent);
   }
-
-  //dsu.filter(*outputDataset, mOutputExtent);
   outputDataset->setMesh(mMesh);
   outputDataset->setType(DataSet::Scalar);
   outputDataset->setName(QFileInfo(mOutputFile).baseName());

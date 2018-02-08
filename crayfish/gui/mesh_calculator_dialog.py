@@ -30,7 +30,7 @@ from functools import partial
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from qgis._core import QgsVectorLayer, QGis, QgsMapLayer, QgsMapLayerRegistry
+from qgis.core import QgsVectorLayer, QGis, QgsMapLayer, QgsMapLayerRegistry
 
 from .utils import load_ui, time_to_string
 
@@ -172,8 +172,6 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
                     geoms = geom
                 else:
                     geoms = geoms.combine(geom)
-            else:
-                pass
 
         return geoms
 
@@ -194,21 +192,20 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
             feats = list(mask_layer.getFeatures())
             if mask_layer and feats:
                 geoms = self.combine_geometries(feats)
-                success = mesh.create_derived_dataset_mask(
-                    expression=self.formula_string(),
-                    time_filter=self.time_filter(),
-                    geom_wkt=geoms.exportToWkt(),
-                    add_to_mesh=self.add_dataset_to_layer(),
-                    output_filename=self.output_filename())
+
+                if geoms:
+                    success = mesh.create_derived_dataset_mask(
+                        expression=self.formula_string(),
+                        time_filter=self.time_filter(),
+                        geom_wkt=geoms.exportToWkt(),
+                        add_to_mesh=self.add_dataset_to_layer(),
+                        output_filename=self.output_filename())
+                else:
+                    QMessageBox.information(self, "Mesh Calculator", "Mask layer has no valid geometry, extent is used instead.")
+                    success = self.create_derived_dataset(mesh)
 
         else:
-            success = mesh.create_derived_dataset(
-                expression=self.formula_string(),
-                time_filter=self.time_filter(),
-                spatial_filter=self.spatial_filter(),
-                add_to_mesh=self.add_dataset_to_layer(),
-                output_filename=self.output_filename()
-            )
+            success = self.create_derived_dataset(mesh)
 
         if success:
             QMessageBox.information(self,
@@ -227,6 +224,15 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
                                  " that expression references existing datasets")
 
         self.close()
+
+    def create_derived_dataset(self, mesh):
+        return mesh.create_derived_dataset(
+            expression=self.formula_string(),
+            time_filter=self.time_filter(),
+            spatial_filter=self.spatial_filter(),
+            add_to_mesh=self.add_dataset_to_layer(),
+            output_filename=self.output_filename()
+        )
 
     def on_select_output_filename_clicked(self):
         s = QSettings()
