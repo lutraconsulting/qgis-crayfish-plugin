@@ -145,9 +145,7 @@ void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const char* maskW
 {
     filter.deleteOutputs();
     GEOSGeometry* maskGeom;
-    GEOSContextHandle_t cx = GEOS_init_r();
-    GEOSContext_setNoticeHandler_r(cx, &geosNoticeFunc);
-    GEOSContext_setErrorHandler_r(cx, &geosErrorFunc);
+    GEOSContextHandle_t cx = initGEOS_r(&geosNoticeFunc, &geosErrorFunc);
 
     GEOSWKTReader *reader = GEOSWKTReader_create_r(cx);
     maskGeom = GEOSWKTReader_read_r(cx, reader, maskWkt);
@@ -193,7 +191,7 @@ void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const char* maskW
         filter.addOutput(output);
     }
     GEOSWKTReader_destroy_r(cx, reader);
-    GEOS_finish_r(cx);
+    finishGEOS_r(cx);
 }
 
 Output* CrayfishDataSetUtils::number(float val, float time) const {
