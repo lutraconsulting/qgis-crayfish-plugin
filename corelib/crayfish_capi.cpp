@@ -418,8 +418,9 @@ bool CF_Mesh_calc_derived_dataset_with_mask(MeshH mesh,
 {
     QString exp = QString::fromAscii(expression);
     QString outputFile = QString::fromAscii(output_filename);
+    QString mask = QString::fromAscii(maskWkt);
 
-    CrayfishMeshCalculator cc(exp, outputFile, maskWkt, startTime, endTime, mesh, addToMesh);
+    CrayfishMeshCalculator cc(exp, outputFile, mask, startTime, endTime, mesh, addToMesh);
 
     /** Starts the calculation and writes new dataset to file, returns Result */
     CrayfishMeshCalculator::Result res = cc.processCalculation(true);

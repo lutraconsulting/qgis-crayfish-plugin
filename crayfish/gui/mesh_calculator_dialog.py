@@ -183,27 +183,28 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
             self.extendBox.setVisible(True)
             self.maskBox.setVisible(False)
 
+    def create_mask_geoms_wkt(self, mesh):
+        mask_layer = self.cboLayerMask.currentLayer()
+        feats = list(mask_layer.getFeatures())
+        if mask_layer and feats:
+            geoms = self.combine_geometries(feats)
+
+            if geoms:
+                return mesh.create_derived_dataset_mask(
+                    expression=self.formula_string(),
+                    time_filter=self.time_filter(),
+                    geom_wkt=geoms.exportToWkt(),
+                    add_to_mesh=self.add_dataset_to_layer(),
+                    output_filename=self.output_filename())
+            else:
+                QMessageBox.information(self, "Mesh Calculator",
+                                        "Mask layer has no valid geometry, extent is used instead.")
+                return self.create_derived_dataset(mesh)
+
     def on_accept_clicked(self):
         mesh = self.layer.mesh
-
-        success = None
         if self.useMaskCb.checkState() == Qt.Checked:
-            mask_layer = self.cboLayerMask.currentLayer()
-            feats = list(mask_layer.getFeatures())
-            if mask_layer and feats:
-                geoms = self.combine_geometries(feats)
-
-                if geoms:
-                    success = mesh.create_derived_dataset_mask(
-                        expression=self.formula_string(),
-                        time_filter=self.time_filter(),
-                        geom_wkt=geoms.exportToWkt(),
-                        add_to_mesh=self.add_dataset_to_layer(),
-                        output_filename=self.output_filename())
-                else:
-                    QMessageBox.information(self, "Mesh Calculator", "Mask layer has no valid geometry, extent is used instead.")
-                    success = self.create_derived_dataset(mesh)
-
+            success = self.create_mask_geoms_wkt(mesh)
         else:
             success = self.create_derived_dataset(mesh)
 

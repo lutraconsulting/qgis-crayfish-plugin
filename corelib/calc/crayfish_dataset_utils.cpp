@@ -141,14 +141,15 @@ void geosErrorFunc(const char *message, ...)
     printf("An Error occured in GEOS lib: %s\n", message);
 }
 
-void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const char* maskWkt) const
+void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const QString& maskWkt) const
 {
     filter.deleteOutputs();
     GEOSGeometry* maskGeom;
     GEOSContextHandle_t cx = initGEOS_r(&geosNoticeFunc, &geosErrorFunc);
 
     GEOSWKTReader *reader = GEOSWKTReader_create_r(cx);
-    maskGeom = GEOSWKTReader_read_r(cx, reader, maskWkt);
+    const char* mask = maskWkt.toLatin1().data();
+    maskGeom = GEOSWKTReader_read_r(cx, reader, mask);
 
     if (mOutputType == Output::TypeNode) {
         NodeOutput* output = new NodeOutput();
@@ -925,7 +926,7 @@ void CrayfishDataSetUtils::filter(DataSet &dataset1, const BBox &outputExtent) c
     return func2(dataset1, filter, std::bind(&CrayfishDataSetUtils::ffilter, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void CrayfishDataSetUtils::filter(DataSet &dataset1, const char* maskWkt) const {
+void CrayfishDataSetUtils::filter(DataSet &dataset1, const QString &maskWkt) const {
     DataSet filter("filter");
     populateMaskFilter(filter, maskWkt);
     return func2(dataset1, filter, std::bind(&CrayfishDataSetUtils::ffilter, this, std::placeholders::_1, std::placeholders::_2));

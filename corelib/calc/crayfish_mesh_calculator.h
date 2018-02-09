@@ -54,12 +54,11 @@ class CrayfishMeshCalculator
                             Mesh *mesh, bool addToMesh);
 
     CrayfishMeshCalculator(const QString &formulaString, const QString &outputFile,
-                            const char* maskWkt, float startTime, float endTime,
+                            const QString &maskWkt, float startTime, float endTime,
                             Mesh *mesh, bool addToMesh);
 
     /** Starts the calculation and writes new dataset to file, returns Result */
-    Result processCalculation();
-    Result processCalculation(const bool useMask);
+    Result processCalculation(const bool useMask = false);
     static Result expression_valid(const QString &formulaString, const Mesh *mesh);
 
   private:
@@ -71,7 +70,7 @@ class CrayfishMeshCalculator
     //! Spatial filter
     BBox mOutputExtent;
     //! Mask filter wkt
-    const char* mMaskWkt;
+    QString mMaskWkt;
 
     //! Time filter
     float mStartTime;
