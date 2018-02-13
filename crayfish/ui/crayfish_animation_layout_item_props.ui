@@ -114,7 +114,7 @@
   <customwidget>
    <class>QgsColorButton</class>
    <extends>QPushButton</extends>
-   <header>qgscolorbutton.h</header>
+   <header>qgis.gui</header>
   </customwidget>
  </customwidgets>
  <tabstops>
