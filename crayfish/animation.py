@@ -101,24 +101,25 @@ def prep_comp(cfg, mr, time):
     w,h = mr.outputSize().width(), mr.outputSize().height()
     dpi = mr.outputDpi()
     c = QgsComposition(mr)
+    #suppose to be always set below
+    dataset = None 
+    if cfg['layer'] and cfg['layer'].currentDataSet():
+        dataset = cfg['layer'].currentDataSet()
     if layoutcfg['type'] == 'file':
-        prepare_composition_from_template(c, cfg['layout']['file'], time)
+        prepare_composition_from_template(c, cfg['layout']['file'], time, dataset)
     else:  # type == 'default'
-        cm = prepare_composition(c, w, h, dpi, time, layoutcfg)
+        cm = prepare_composition(c, w, h, dpi, time, layoutcfg, ds=dataset)
     return c
 
 
-def composition_set_time(c, time, frmt=0):
-    timeItem = c.getComposerItemById("time")
-    if timeItem is not None:
-        if frmt == 0: # hh:mm:ss
-            txt = time_to_string(time)
-        else:  # hh.hhh
-            txt = "%06.3f" % time
-        timeItem.setText(txt)
+def composition_set_time(c, time, ds=None):
+    for i in c.items():
+        if isinstance(i, QgsComposerLabel) and i.id() == "time":
+            txt = time_to_string(time, ds)
+            i.setText(txt)
 
 
-def prepare_composition_from_template(c, template_path, time):
+def prepare_composition_from_template(c, template_path, time, ds):
 
     document = QDomDocument()
     document.setContent(open(template_path).read())
@@ -126,7 +127,7 @@ def prepare_composition_from_template(c, template_path, time):
 
     c.setPlotStyle(QgsComposition.Print)
 
-    composition_set_time(c, time)
+    composition_set_time(c, time, ds)
 
 
 def set_composer_item_label(item, itemcfg):
@@ -136,9 +137,12 @@ def set_composer_item_label(item, itemcfg):
     item.setFontColor(itemcfg['text_color'])
 
 
-def set_item_pos(item, posindex, c):
+def set_item_pos(item, posindex, c, is_legend=False):
     cw, ch = c.paperWidth(), c.paperHeight()
     r = item.rect()
+    if is_legend:
+        r = item.paintAndDetermineSize(None)
+
     if posindex == 0:  # top-left
         item.setItemPosition(0, 0)
     elif posindex == 1: # top-right
@@ -149,7 +153,7 @@ def set_item_pos(item, posindex, c):
         item.setItemPosition(cw-r.width(), ch-r.height())
 
 
-def prepare_composition(c, w,h, dpi, time, layoutcfg):
+def prepare_composition(c, w,h, dpi, time, layoutcfg, ds = None):
 
     c.setPlotStyle(QgsComposition.Print)
     c.setPaperSize(w*25.4/dpi, h*25.4/dpi)
@@ -176,7 +180,7 @@ def prepare_composition(c, w,h, dpi, time, layoutcfg):
         c.addItem(cTime)
 
         set_composer_item_label(cTime, layoutcfg['time'])
-        composition_set_time(c, time, layoutcfg['time']['format'])
+        composition_set_time(c, time, ds)
         cTime.adjustSizeToText()
         set_item_pos(cTime, layoutcfg['time']['position'], c)
 
@@ -198,7 +202,7 @@ def prepare_composition(c, w,h, dpi, time, layoutcfg):
         cLegend.setFontColor(itemcfg['text_color'])
 
         cLegend.adjustBoxSize()
-        set_item_pos(cLegend, itemcfg['position'], c)
+        set_item_pos(cLegend, itemcfg['position'], c, True)
 
     return composerMap
 
