@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Missing mesh file argument" << std::endl;
         help();
         return 1;
-    }   
+    }
     QString mesh_file = cmdline_args.takeFirst();
     QString dataset_file;
     QString expression;
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Mesh File: " << mesh_file.toStdString() << std::endl;
     MeshH m = CF_LoadMesh(mesh_file.toStdString().c_str());
     if (m) {
-        std::cout << "Mesh loaded: OK" << std::endl;       
+        std::cout << "Mesh loaded: OK" << std::endl;
     } else {
         std::cout << "Mesh loaded: ERR" << std::endl;
         std::cout << "Status err:" << CF_LastLoadError() <<  std::endl;

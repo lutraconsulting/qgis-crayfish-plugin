@@ -1,5 +1,6 @@
 #include "calc/crayfish_dataset_utils.h"
 #include "crayfish_utils.h"
+#include "geos_c.h"
 
 static inline bool is_nodata(float val, float nodata = -9999.0, float eps=std::numeric_limits<float>::epsilon()) {return fabs(val - nodata) < eps;}
 
@@ -128,6 +129,74 @@ void CrayfishDataSetUtils::populateSpatialFilter(DataSet& filter, const BBox& ou
         }
         filter.addOutput(output);
     }
+}
+
+void geosNoticeFunc(const char *message, ...)
+{
+    printf("Notification from GEOS lib: %s\n", message);
+}
+
+void geosErrorFunc(const char *message, ...)
+{
+    printf("An Error occured in GEOS lib: %s\n", message);
+}
+
+void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const QString& maskWkt) const
+{
+    filter.deleteOutputs();
+    GEOSGeometry* maskGeom;
+    GEOSContextHandle_t cx = initGEOS_r(&geosNoticeFunc, &geosErrorFunc);
+    GEOSWKTReader *reader = GEOSWKTReader_create_r(cx);
+
+    QByteArray maskArr = maskWkt.toAscii();
+    const char* mask = maskArr.constData();
+    maskGeom = GEOSWKTReader_read_r(cx, reader, mask);
+
+    if (mOutputType == Output::TypeNode) {
+        NodeOutput* output = new NodeOutput();
+        output->init(mMesh->nodes().size(),
+                     mMesh->elements().size(),
+                     DataSet::Scalar);
+        output->time = mTimes[0];
+        for (int i = 0; i < mMesh->nodes().size(); ++i)
+        {
+            QByteArray arr = mMesh->projectedNode(i).toWkt().toAscii();
+            const char* pointWkt = arr.constData();
+
+            GEOSGeometry* pointGeom;
+            pointGeom = GEOSWKTReader_read_r(cx, reader, pointWkt);
+
+            char a = GEOSIntersects_r(cx, maskGeom, pointGeom);
+            if (a == 1) {
+                output->getValues()[i] = F_TRUE;
+            } else {
+                output->getValues()[i] = F_FALSE;
+            }
+            GEOSGeom_destroy_r(cx, pointGeom);
+        }
+        memset(output->getActive().data(), 1, mMesh->elements().size());
+        filter.addOutput(output);
+    } else {
+        ElementOutput* output = new ElementOutput();
+        output->init(mMesh->elements().size(), false);
+        output->time = mTimes[0];
+        for (int i = 0; i < mMesh->elements().size(); ++i) {
+            QByteArray arr = mMesh->projectedBBox(i).toWkt().toAscii();
+            const char* bbox = arr.constData();
+            GEOSGeometry* pointBBoxGeom = GEOSWKTReader_read_r(cx, reader, bbox);
+
+            char a = GEOSIntersects_r(cx, maskGeom, pointBBoxGeom);
+            if (a == 1) {
+                output->getValues()[i] = F_TRUE;
+            } else {
+                output->getValues()[i] = F_FALSE;
+            }
+            GEOSGeom_destroy_r(cx, pointBBoxGeom);
+        }
+        filter.addOutput(output);
+    }
+    GEOSWKTReader_destroy_r(cx, reader);
+    finishGEOS_r(cx);
 }
 
 Output* CrayfishDataSetUtils::number(float val, float time) const {
@@ -858,6 +927,12 @@ void CrayfishDataSetUtils::max(DataSet &dataset1, const DataSet &dataset2) const
 void CrayfishDataSetUtils::filter(DataSet &dataset1, const BBox &outputExtent) const {
     DataSet filter("filter");
     populateSpatialFilter(filter, outputExtent);
+    return func2(dataset1, filter, std::bind(&CrayfishDataSetUtils::ffilter, this, std::placeholders::_1, std::placeholders::_2));
+}
+
+void CrayfishDataSetUtils::filter(DataSet &dataset1, const QString &maskWkt) const {
+    DataSet filter("filter");
+    populateMaskFilter(filter, maskWkt);
     return func2(dataset1, filter, std::bind(&CrayfishDataSetUtils::ffilter, this, std::placeholders::_1, std::placeholders::_2));
 }
 

@@ -86,5 +86,35 @@ class TestCrayfishMeshCalculator(unittest.TestCase):
 
                 j += 1
 
+    def test_storm_filter_mask(self):
+        m = crayfish.Mesh(TEST_DIR + "/NetCDF/indonesia_nc4.nc")
+        ds0 = m.dataset(m.dataset_count() - 1)
+
+        time_filter = (1008096, 100000000)
+        handle, path = tempfile.mkstemp()
+        os.close(handle)
+        expression = "\"2 metre temperature\""
+        mask_wkt = 'Polygon ((126.08338971583219745 13.63810893098781918, 184.83508119079834842 2.41348105548037495, 127.78839648173206456 -18.89910351826793544, 126.08338971583219745 13.63810893098781918))'
+        res = m.create_derived_dataset_mask(expression, time_filter, mask_wkt, True, path)
+        self.assertTrue(res)
+        m.load_data(path)
+        ds = m.dataset(m.dataset_count() - 1)
+
+        # output 0 in calculated dataset should match output 1 in original one
+        self.assertEqual(ds0.output_count() - 1, ds.output_count())
+        for i in range(ds0.output_count() - 1):
+            o = ds.output(i)
+            o0 = ds0.output(i + 1)
+
+            self.assertEqual(o.time(), o0.time())
+            j = 0
+            for val, val0 in zip(o.values(), o0.values()):
+                node = m.node(j)
+                if node.x() < 127: # filter by mask position
+                    self.assertEqual(val, -9999.0)
+                else:
+                    self.assertEqual(val, val0)
+                j += 1
+
 if __name__ == '__main__':
   unittest.main()

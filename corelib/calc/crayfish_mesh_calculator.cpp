@@ -46,6 +46,17 @@ CrayfishMeshCalculator::CrayfishMeshCalculator(const QString &formulaString, con
 {
 }
 
+CrayfishMeshCalculator::CrayfishMeshCalculator(const QString &formulaString, const QString &outputFile, const QString &maskWkt, float startTime, float endTime, Mesh *mesh, bool addToMesh)
+    : mFormulaString( formulaString )
+    , mOutputFile( outputFile )
+    , mMaskWkt( maskWkt )
+    , mStartTime( startTime )
+    , mEndTime( endTime )
+    , mMesh( mesh )
+    , mAddToMesh( addToMesh )
+{
+}
+
 CrayfishMeshCalculator::Result CrayfishMeshCalculator::expression_valid(const QString &formulaString, const Mesh *mesh) {
     QString errorString;
     CrayfishMeshCalculatorNode *calcNode = CrayfishMeshCalculatorNode::parseMeshCalcString( formulaString, errorString );
@@ -64,7 +75,7 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::expression_valid(const QS
     return Success;
 }
 
-CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
+CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation(const bool useMask)
 {
   // check input
   if (mOutputFile.isEmpty()) {
@@ -96,7 +107,11 @@ CrayfishMeshCalculator::Result CrayfishMeshCalculator::processCalculation()
   }
 
   // Finalize dataset
-  dsu.filter(*outputDataset, mOutputExtent);
+  if (useMask) {
+    dsu.filter(*outputDataset, mMaskWkt);
+  } else {
+    dsu.filter(*outputDataset, mOutputExtent);
+  }
   outputDataset->setMesh(mMesh);
   outputDataset->setType(DataSet::Scalar);
   outputDataset->setName(QFileInfo(mOutputFile).baseName());

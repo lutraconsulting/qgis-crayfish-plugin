@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "crayfish_output.h"
 #include "crayfish_renderer.h"
 #include "calc/crayfish_mesh_calculator.h"
+#include <geos_c.h>
 
 #define CF_TYPES
 typedef Mesh* MeshH;
@@ -402,6 +403,28 @@ bool CF_Mesh_calc_derived_dataset(MeshH mesh,
 
     /** Starts the calculation and writes new dataset to file, returns Result */
     CrayfishMeshCalculator::Result res = cc.processCalculation();
+    if (res == CrayfishMeshCalculator::Success) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool CF_Mesh_calc_derived_dataset_with_mask(MeshH mesh,
+                                  const char* expression,
+                                  float startTime, float endTime,
+                                  const char* maskWkt,
+                                  bool addToMesh, const char* output_filename)
+{
+    QString exp = QString::fromAscii(expression);
+    QString outputFile = QString::fromAscii(output_filename);
+    QString mask = QString::fromAscii(maskWkt);
+
+    CrayfishMeshCalculator cc(exp, outputFile, mask, startTime, endTime, mesh, addToMesh);
+
+    /** Starts the calculation and writes new dataset to file, returns Result */
+    CrayfishMeshCalculator::Result res = cc.processCalculation(true);
+
     if (res == CrayfishMeshCalculator::Success) {
         return true;
     } else {

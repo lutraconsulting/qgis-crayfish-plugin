@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <QVector>
 
 #include "crayfish_mesh.h"
+#include "geos_c.h"
 
 class CrayfishMeshCalculator
 {
@@ -52,8 +53,12 @@ class CrayfishMeshCalculator
                             const BBox &outputExtent, float startTime, float endTime,
                             Mesh *mesh, bool addToMesh);
 
+    CrayfishMeshCalculator(const QString &formulaString, const QString &outputFile,
+                            const QString &maskWkt, float startTime, float endTime,
+                            Mesh *mesh, bool addToMesh);
+
     /** Starts the calculation and writes new dataset to file, returns Result */
-    Result processCalculation();
+    Result processCalculation(const bool useMask = false);
     static Result expression_valid(const QString &formulaString, const Mesh *mesh);
 
   private:
@@ -64,6 +69,8 @@ class CrayfishMeshCalculator
 
     //! Spatial filter
     BBox mOutputExtent;
+    //! Mask filter wkt
+    QString mMaskWkt;
 
     //! Time filter
     float mStartTime;

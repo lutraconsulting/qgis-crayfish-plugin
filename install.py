@@ -45,10 +45,13 @@ def make_and_install(extra_install_args):
         run_cmd('nmake')
     elif platform.system() == "Linux":
         try:
-            run_cmd('qmake')
+	    if run_cmd('qmake -v | grep -o " 4." | wc -l'):
+	        run_cmd('qmake')
+	    else:	
+            	# Run explicitly suffixed -qt4.
+                run_cmd('qmake-qt4')
         except Exception:
-            # Handle the Fedora case (suffixed -qt4).
-            run_cmd('qmake-qt4')
+            run_cmd('qmake')
 
         run_cmd('make')
     else: #OSX
