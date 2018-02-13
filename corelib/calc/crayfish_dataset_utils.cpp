@@ -146,9 +146,10 @@ void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const QString& ma
     filter.deleteOutputs();
     GEOSGeometry* maskGeom;
     GEOSContextHandle_t cx = initGEOS_r(&geosNoticeFunc, &geosErrorFunc);
-
     GEOSWKTReader *reader = GEOSWKTReader_create_r(cx);
-    const char* mask = maskWkt.toLatin1().data();
+
+    QByteArray maskArr = maskWkt.toAscii();
+    const char* mask = maskArr.constData();
     maskGeom = GEOSWKTReader_read_r(cx, reader, mask);
 
     if (mOutputType == Output::TypeNode) {
@@ -159,17 +160,19 @@ void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const QString& ma
         output->time = mTimes[0];
         for (int i = 0; i < mMesh->nodes().size(); ++i)
         {
-            const char* pointWkt = mMesh->projectedNode(i).toWkt().toLatin1().data();
+            QByteArray arr = mMesh->projectedNode(i).toWkt().toAscii();
+            const char* pointWkt = arr.constData();
+
             GEOSGeometry* pointGeom;
             pointGeom = GEOSWKTReader_read_r(cx, reader, pointWkt);
 
             char a = GEOSIntersects_r(cx, maskGeom, pointGeom);
-              if (a == 1) {
-                  output->getValues()[i] = F_TRUE;
-              } else {
-                  output->getValues()[i] = F_FALSE;
-              }
-              GEOSGeom_destroy_r(cx, pointGeom);
+            if (a == 1) {
+                output->getValues()[i] = F_TRUE;
+            } else {
+                output->getValues()[i] = F_FALSE;
+            }
+            GEOSGeom_destroy_r(cx, pointGeom);
         }
         memset(output->getActive().data(), 1, mMesh->elements().size());
         filter.addOutput(output);
@@ -178,7 +181,8 @@ void CrayfishDataSetUtils::populateMaskFilter(DataSet& filter, const QString& ma
         output->init(mMesh->elements().size(), false);
         output->time = mTimes[0];
         for (int i = 0; i < mMesh->elements().size(); ++i) {
-            const char* bbox = mMesh->projectedBBox(i).toWkt().toLatin1().data();;
+            QByteArray arr = mMesh->projectedBBox(i).toWkt().toAscii();
+            const char* bbox = arr.constData();
             GEOSGeometry* pointBBoxGeom = GEOSWKTReader_read_r(cx, reader, bbox);
 
             char a = GEOSIntersects_r(cx, maskGeom, pointBBoxGeom);
