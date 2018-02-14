@@ -31,6 +31,7 @@ from functools import partial
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import QgsVectorLayer, QGis, QgsMapLayer, QgsMapLayerRegistry
+from qgis.gui import QgsMapLayerProxyModel
 
 from .utils import load_ui, time_to_string
 
@@ -47,6 +48,7 @@ class CrayfishMeshCalculatorDialog(qtBaseClass, uiDialog):
         uiDialog.__init__(self, parent)
 
         self.setupUi(self)
+        self.cboLayerMask.setFilters(QgsMapLayerProxyModel.PolygonLayer)
 
         self.layer = layer
 
