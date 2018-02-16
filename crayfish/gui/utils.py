@@ -206,6 +206,8 @@ def time_to_string(time, ds=None):  # time is in hours
                 return "%06.3f" % (hours / 24.)
             elif ds.timeConfig["dt_time_format"] == "%H":
                 return "%06.3f" % hours
+            elif ds.timeConfig["dt_time_format"] == "%S":
+                return "%9i" % round(hours * 3600)
             else:
                 assert(False) # should never happen
     else:
