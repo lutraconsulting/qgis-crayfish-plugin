@@ -209,6 +209,11 @@
              <string>%d</string>
             </property>
            </item>
+           <item>
+            <property name="text">
+             <string>%S</string>
+            </property>
+           </item>
           </widget>
          </item>
         </layout>
