@@ -12,7 +12,11 @@ about=The Crayfish plugin aspires to be a time explorer for various grid and vec
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=2.7.1 bug fix release
+changelog=2.7.2 New Features:
+ - Support for polygon mask in the grid calculator
+ - Support for abs time in animation
+ - Several bug fixes related to time and animation
+ <p>changelog=2.7.1 bug fix release
  - Redirect to https for downloading binaries
  <p>changelog=2.7.0 Feature release
  - Add mesh calculator (#87)
