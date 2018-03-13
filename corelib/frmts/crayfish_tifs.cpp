@@ -67,6 +67,8 @@ public:
                        const metadata_hash& metadata, QString& band_name,
                        float* time, bool* is_vector, bool* is_x
                        ) {
+       Q_UNUSED(metadata);
+
        static int err_counter = 0;
 
        QFileInfo fi = QFileInfo(cfGDALDataset->mDatasetName);

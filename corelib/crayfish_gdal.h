@@ -145,7 +145,9 @@ protected:
     virtual QString GDALFileName(const QString& fileName); /* some formats require e.g. adding driver name at the beginning */
     virtual QStringList parseDatasetNames(const QString& fileName);
     virtual QDateTime getRefTime(){return QDateTime();}
-    virtual void parseGlobals(const metadata_hash& metadata){}
+    virtual void parseGlobals(const metadata_hash& metadata){Q_UNUSED(metadata);}
+
+    void parseBandIsVector(QString& band_name, bool* is_vector, bool* is_x);
 
 private:
     typedef QMap<float, QVector<GDALRasterBandH> > timestep_map; //TIME (sorted), [X, Y]

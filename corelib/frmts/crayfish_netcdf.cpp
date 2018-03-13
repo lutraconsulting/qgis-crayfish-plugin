@@ -58,6 +58,8 @@ public:
                        const metadata_hash& metadata, QString& band_name,
                        float* time, bool* is_vector, bool* is_x
                        ) {
+       Q_UNUSED(cfGDALDataset);
+
        metadata_hash::const_iterator iter;
 
        iter = metadata.find("netcdf_dim_time");
@@ -86,21 +88,8 @@ public:
          }
        }
 
-       // VECTOR
-       if (band_name.contains("x-component")) {
-           *is_vector = true; // vector
-           *is_x =  true; //X-Axis
-       }
-       else if (band_name.contains("y-component")) {
-           *is_vector = true; // vector
-           *is_x =  false; //Y-Axis
-       } else {
-           *is_vector = false; // scalar
-           *is_x =  true; //X-Axis
-       }
-
-       band_name = band_name.replace("x-component", "")
-                            .replace("y-component", "");
+       // Parse X, Y components if present
+       parseBandIsVector(band_name, is_vector, is_x);
 
        return false; // SUCCESS
     }

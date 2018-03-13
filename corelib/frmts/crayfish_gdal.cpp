@@ -310,6 +310,7 @@ bool CrayfishGDAL::writeContourLinesSHP(const QString& outFilename, double inter
         if (val != -999) {
             OGR_F_SetFieldDouble(hFeature, OGR_F_GetFieldIndex(hFeature, CONTOURS_ATTR_NAME), val/FLOAT_TO_INT);
             OGRErr err = OGR_L_SetFeature(hLayer, hFeature);
+            Q_UNUSED(err);
         }
     }
 
@@ -1017,3 +1018,52 @@ Mesh* CrayfishGDALReader::load(LoadStatus* status)
    return mMesh;
 }
 
+void CrayfishGDALReader::parseBandIsVector(QString& band_name, bool* is_vector, bool* is_x) {
+    band_name = band_name.trimmed();
+
+    if (band_name.startsWith("u-", Qt::CaseInsensitive) ||
+        band_name.startsWith("x-", Qt::CaseInsensitive) ||
+        band_name.contains("u-component", Qt::CaseInsensitive) ||
+        band_name.contains("u component", Qt::CaseInsensitive) ||
+        band_name.contains("x-component", Qt::CaseInsensitive) ||
+        band_name.contains("x component", Qt::CaseInsensitive)) {
+        *is_vector = true; // vector
+        *is_x =  true; //X-Axis
+    }
+    else if (band_name.startsWith("v-", Qt::CaseInsensitive) ||
+             band_name.startsWith("y-", Qt::CaseInsensitive) ||
+             band_name.contains("v-component", Qt::CaseInsensitive) ||
+             band_name.contains("v component", Qt::CaseInsensitive) ||
+             band_name.contains("y-component", Qt::CaseInsensitive) ||
+             band_name.contains("y component", Qt::CaseInsensitive)) {
+        *is_vector = true; // vector
+        *is_x =  false; //Y-Axis
+    } else {
+        *is_vector = false; // scalar
+        *is_x =  true; //X-Axis
+    }
+
+    if (*is_vector) {
+        band_name = band_name.replace("u-component of", "", Qt::CaseInsensitive)
+                             .replace("v-component of", "", Qt::CaseInsensitive)
+                             .replace("x-component of", "", Qt::CaseInsensitive)
+                             .replace("y-component of", "", Qt::CaseInsensitive)
+                             .replace("u-component", "", Qt::CaseInsensitive)
+                             .replace("v-component", "", Qt::CaseInsensitive)
+                             .replace("x-component", "", Qt::CaseInsensitive)
+                             .replace("y-component", "", Qt::CaseInsensitive)
+                             .replace("u component of", "", Qt::CaseInsensitive)
+                             .replace("v component of", "", Qt::CaseInsensitive)
+                             .replace("x component of", "", Qt::CaseInsensitive)
+                             .replace("y component of", "", Qt::CaseInsensitive)
+                             .replace("u component", "", Qt::CaseInsensitive)
+                             .replace("v component", "", Qt::CaseInsensitive)
+                             .replace("x component", "", Qt::CaseInsensitive)
+                             .replace("y component", "", Qt::CaseInsensitive)
+                             .replace("u-", "", Qt::CaseInsensitive)
+                             .replace("v-", "", Qt::CaseInsensitive)
+                             .replace("x-", "", Qt::CaseInsensitive)
+                             .replace("y-", "", Qt::CaseInsensitive);
+        band_name = band_name.trimmed();
+    }
+}
