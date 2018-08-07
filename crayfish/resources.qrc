@@ -1,13 +1,6 @@
 <RCC>
     <qresource prefix="/plugins/crayfish">
-        <file>images/crayfish_viewer_add_layer.png</file>
-        <file>images/crayfish_export_raster.png</file>
-        <file>images/contour.png</file>
         <file>images/crayfish.png</file>
-        <file>images/icon_contours.png</file>
-        <file>images/icon_vectors.png</file>
-        <file>images/icon_vectors_disabled.png</file>
-        <file>images/icon_video.png</file>
         <file>images/icon_plot.svg</file>
     </qresource>
 </RCC>

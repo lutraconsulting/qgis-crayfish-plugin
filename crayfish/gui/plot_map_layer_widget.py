@@ -24,8 +24,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+
 import math
 
 from qgis.core import *
@@ -35,11 +37,11 @@ from qgis.utils import iface
 
 
 def geom2icon(geom_type):
-    if geom_type == QGis.Point:
+    if geom_type == QgsWkbTypes.Point:
         return QgsLayerItem.iconPoint()
-    elif geom_type == QGis.Polygon:
+    elif geom_type == QgsWkbTypes.Polygon:
         return QgsLayerItem.iconPolygon()
-    elif geom_type == QGis.Line:
+    elif geom_type == QgsWkbTypes.LineString:
         return QgsLayerItem.iconLine()
     else:
         return QIcon()
@@ -52,11 +54,11 @@ class MapLayerMenu(QMenu):
     def __init__(self, geom_type, parent=None):
         QMenu.__init__(self, parent)
 
-        QgsMapLayerRegistry.instance().layersAdded.connect(self.layers_added)
-        QgsMapLayerRegistry.instance().layersWillBeRemoved.connect(self.layers_will_be_removed)
+        QgsProject.instance().layersAdded.connect(self.layers_added)
+        QgsProject.instance().layersWillBeRemoved.connect(self.layers_will_be_removed)
 
         self.geom_type = geom_type
-        self.layers_added( QgsMapLayerRegistry.instance().mapLayers().values() )
+        self.layers_added( QgsProject.instance().mapLayers().values() )
 
     def layers_added(self, lst):
         for layer in lst:

@@ -1,4 +1,0 @@
-from processing.core.GeoAlgorithmExecutionException import GeoAlgorithmExecutionException
-
-class CrayfishProccessingAlgorithmError(GeoAlgorithmExecutionException):
-    pass

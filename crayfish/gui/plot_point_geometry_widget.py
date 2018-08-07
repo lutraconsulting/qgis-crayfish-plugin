@@ -24,8 +24,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+
 import math
 
 from qgis.core import *
@@ -37,25 +39,18 @@ from .plot_map_layer_widget import MapLayersWidget
 
 class PickGeometryTool(QgsMapTool):
 
-    picked = pyqtSignal(QgsPoint, bool, bool)   # point, whether clicked or just moving, whether clicked with Ctrl
+    picked = pyqtSignal(QgsPointXY, bool, bool)   # point, whether clicked or just moving, whether clicked with Ctrl
 
     def __init__(self, canvas):
         QgsMapTool.__init__(self, canvas)
 
-    def _mapPoint(self, e):
-        """ for compatibility with QGIS < 2.10 """
-        if hasattr(e, 'mapPoint'):
-            return e.mapPoint()
-        else:
-            return self.canvas().mapSettings().mapToPixel().toMapCoordinates(e.pos())
-
     def canvasMoveEvent(self, e):
         #if e.button() == Qt.LeftButton:
-        self.picked.emit(self._mapPoint(e), False, False)
+        self.picked.emit(e.mapPoint(), False, False)
 
     def canvasPressEvent(self, e):
         if e.button() == Qt.LeftButton:
-            self.picked.emit(self._mapPoint(e), True, e.modifiers() & Qt.ControlModifier)
+            self.picked.emit(e.mapPoint(), True, e.modifiers() & Qt.ControlModifier)
 
     def canvasReleaseEvent(self, e):
         pass
@@ -81,7 +76,7 @@ class PointGeometryPickerWidget(QWidget):
         self.btn_picker.setCheckable(True)
         self.btn_picker.clicked.connect(self.picker_clicked)
 
-        self.btn_layer = MapLayersWidget(QGis.Point)
+        self.btn_layer = MapLayersWidget(QgsWkbTypes.Point)
         self.btn_layer.picked_layer.connect(self.on_picked_layer)
 
         self.tool = PickGeometryTool(iface.mapCanvas())
@@ -122,7 +117,7 @@ class PointGeometryPickerWidget(QWidget):
 
     def on_picked(self, pt, clicked, with_ctrl):
 
-        geom = QgsGeometry.fromPoint(pt)
+        geom = QgsGeometry.fromPointXY(pt)
         if clicked:
             if self.temp_geometry_index == -1:
                 self.geometries.append(geom)

@@ -26,8 +26,10 @@
 
 import math
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import iface
@@ -38,8 +40,8 @@ from .utils import time_to_string
 from .plot_cf_layer_widget import CrayfishLayerWidget
 from .plot_line_geometry_widget import LineGeometryPickerWidget
 from .plot_point_geometry_widget import PointGeometryPickerWidget
-from .plot_output_widget import OutputsWidget
-from .plot_dataset_widget import DatasetsWidget
+from .plot_datasets_widget import DatasetsWidget
+from .plot_dataset_groups_widget import DatasetGroupsWidget
 
 
 class PlotTypeMenu(QMenu):
@@ -98,8 +100,8 @@ class CrayfishPlotWidget(QWidget):
         self.btn_layer = CrayfishLayerWidget()
         self.btn_layer.layer_changed.connect(self.on_layer_changed)
 
-        self.btn_dataset = DatasetsWidget()
-        self.btn_dataset.datasets_changed.connect(self.on_datasets_changed)
+        self.btn_dataset_group = DatasetGroupsWidget()
+        self.btn_dataset_group.dataset_groups_changed.connect(self.on_dataset_group_changed)
 
         self.btn_plot_type = PlotTypeWidget()
         self.btn_plot_type.plot_type_changed.connect(self.on_plot_type_changed)
@@ -110,8 +112,8 @@ class CrayfishPlotWidget(QWidget):
         self.line_picker = LineGeometryPickerWidget()
         self.line_picker.geometries_changed.connect(self.on_geometries_changed)
 
-        self.btn_output = OutputsWidget()
-        self.btn_output.outputs_changed.connect(self.on_outputs_changed)
+        self.btn_datasets = DatasetsWidget()
+        self.btn_datasets.datasets_changed.connect(self.on_datasets_changed)
 
         self.btn_options = QToolButton()
         self.btn_options.setAutoRaise(True)
@@ -127,10 +129,10 @@ class CrayfishPlotWidget(QWidget):
         self.plot.showGrid(x=True, y=True)
         self.plot.addLegend()
 
-        self.label_not_time_varying = QLabel("Current dataset is not time-varying.")
+        self.label_not_time_varying = QLabel("Current dataset group is not time-varying.")
         self.label_not_time_varying.setAlignment(Qt.AlignCenter)
 
-        self.label_no_layer = QLabel("No Crayfish layer is selected.")
+        self.label_no_layer = QLabel("No mesh layer is selected.")
         self.label_no_layer.setAlignment(Qt.AlignCenter)
 
         self.stack_layout = QStackedLayout()
@@ -141,8 +143,8 @@ class CrayfishPlotWidget(QWidget):
         hl = QHBoxLayout()
         hl.addWidget(self.btn_layer)
         hl.addWidget(self.btn_plot_type)
-        hl.addWidget(self.btn_dataset)
-        hl.addWidget(self.btn_output)
+        hl.addWidget(self.btn_dataset_group)
+        hl.addWidget(self.btn_datasets)
         hl.addWidget(self.point_picker)
         hl.addWidget(self.line_picker)
         hl.addStretch()
@@ -155,27 +157,25 @@ class CrayfishPlotWidget(QWidget):
 
         # init GUI
         self.on_plot_type_changed(self.btn_plot_type.plot_type)
-        self.on_datasets_changed(self.btn_dataset.datasets)
-
+        self.on_dataset_group_changed(self.btn_dataset_group.dataset_groups)
 
     def hideEvent(self, e):
         self.reset_widget()
         QWidget.hideEvent(self, e)
-
 
     def set_layer(self, layer):
         self.btn_layer.set_layer(layer)
 
     def on_layer_changed(self, layer):
         self.layer = layer
-        self.btn_dataset.set_layer(layer)
-        self.btn_output.set_layer(layer)
+        self.btn_dataset_group.set_layer(layer)
+        self.btn_datasets.set_layer(layer)
         self.reset_widget()
 
     def on_plot_type_changed(self, plot_type):
         self.point_picker.setVisible(plot_type == PlotTypeWidget.PLOT_TIME)
         self.line_picker.setVisible(plot_type == PlotTypeWidget.PLOT_CROSS_SECTION)
-        self.btn_output.setVisible(plot_type == PlotTypeWidget.PLOT_CROSS_SECTION)
+        self.btn_datasets.setVisible(plot_type == PlotTypeWidget.PLOT_CROSS_SECTION)
 
         if plot_type != PlotTypeWidget.PLOT_TIME:
             self.point_picker.clear_geometries()
@@ -186,28 +186,26 @@ class CrayfishPlotWidget(QWidget):
 
         self.refresh_plot()
 
-
-    def on_datasets_changed(self, lst):
+    def on_dataset_group_changed(self, lst):
         if len(lst) == 0:
-            self.btn_output.set_dataset(self.layer.currentDataSet() if self.layer is not None else None)
+            self.btn_datasets.set_dataset_group(self.layer.activeScalarDataset().group() if self.layer is not None else None)
         elif len(lst) == 1:
-            self.btn_output.set_dataset(lst[0])
+            self.btn_datasets.set_dataset_group(lst[0])
 
         self.refresh_plot()
 
-    def current_dataset(self):
-        datasets = self.btn_dataset.datasets
-        if len(datasets) == 0:
-          return self.layer.currentDataSet() if self.layer is not None else None
+    def current_dataset_group(self):
+        dataset_groups = self.btn_dataset_group.dataset_groups
+        if len(dataset_groups) == 0:
+          return self.layer.activeScalarDataset().group() if self.layer is not None else None
         else:
-          return datasets[0]
-
+          return dataset_groups[0]
 
     def on_geometries_changed(self):
         self.refresh_plot()
 
 
-    def on_outputs_changed(self, lst):
+    def on_datasets_changed(self, lst):
         self.refresh_plot()
 
     def reset_widget(self):
@@ -224,8 +222,8 @@ class CrayfishPlotWidget(QWidget):
             self.stack_layout.setCurrentWidget(self.label_no_layer)
             return
 
-        ds = self.current_dataset()
-        if plot_type == PlotTypeWidget.PLOT_TIME and ds and not ds.time_varying():
+        ds = self.current_dataset_group()
+        if plot_type == PlotTypeWidget.PLOT_TIME and self.dataset_group_is_not_time_varying(ds):
             self.stack_layout.setCurrentWidget(self.label_not_time_varying)
             return
 
@@ -258,7 +256,6 @@ class CrayfishPlotWidget(QWidget):
         self.plot.legend.items = []
         self.plot.legend.updateSize()
 
-
     def refresh_timeseries_plot(self):
         self.plot.getAxis('bottom').setLabel('Time [h]')
         # re-add curves
@@ -275,13 +272,12 @@ class CrayfishPlotWidget(QWidget):
                 marker.setCenter(geometry.asPoint())
                 self.markers.append(marker)
 
-
     def add_timeseries_plot(self, geom_pt, clr):
 
-        ds = self.current_dataset()
+        ds_group_index = self.current_dataset_group()
 
-        x, y = timeseries_plot_data(ds, geom_pt)
-        self.plot.getAxis('left').setLabel(ds.name())
+        x, y = timeseries_plot_data(self.layer, ds_group_index, geom_pt)
+        self.plot.getAxis('left').setLabel(self.dataset_group_name(ds_group_index))
         self.plot.legend.setVisible(False)
 
         valid_plot = not all(map(math.isnan, y))
@@ -290,7 +286,6 @@ class CrayfishPlotWidget(QWidget):
 
         pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
         return self.plot.plot(x=x, y=y, connect='finite', pen=pen)
-
 
     def refresh_cross_section_plot(self):
         self.plot.getAxis('bottom').setLabel('Station [m]')
@@ -303,22 +298,21 @@ class CrayfishPlotWidget(QWidget):
         if len(geometry.asPolyline()) == 0:
             return  # not a linestring?
 
-        ds = self.current_dataset()
+        ds_group_index = self.current_dataset_group()
 
-        self.plot.getAxis('left').setLabel(ds.name())
+        self.plot.getAxis('left').setLabel(self.dataset_group_name(ds_group_index))
 
-        outputs = self.btn_output.outputs
-        if len(outputs) == 0:
-            outputs = [self.layer.currentOutputForDataset(ds)]
+        dataset_indexes = self.btn_datasets.datasets
+        if len(dataset_indexes) == 0:
+            dataset_indexes = self.currentDatasetsForDatasetGroup()
 
-        self.plot.legend.setVisible(len(outputs) > 1)
+        self.plot.legend.setVisible(len(dataset_indexes) > 1)
 
         s = QSettings()
         plot_resolution = s.value('/crayfish/cross_section_resolution', 1., type=float)
 
-        for i, output in enumerate(outputs):
-
-            x,y = cross_section_plot_data(output, geometry, plot_resolution)
+        for i in dataset_indexes:
+            x,y = cross_section_plot_data(self.layer, ds_group_index, i, geometry, plot_resolution)
 
             valid_plot = not all(map(math.isnan, y))
             if not valid_plot:
@@ -326,16 +320,16 @@ class CrayfishPlotWidget(QWidget):
 
             clr = colors[i % len(colors)]
             pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
-            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=time_to_string(output.time()))
+            meta = self.layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(ds_group_index, i))
+            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=time_to_string(meta.time()))
 
-        rb = QgsRubberBand(iface.mapCanvas(), QGis.Line)
+        rb = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
         rb.setColor(colors[0])
         rb.setWidth(2)
         rb.setToGeometry(geometry, None)
         self.rubberbands.append(rb)
 
     def on_options_clicked(self):
-
         s = QSettings()
         value = s.value('/crayfish/cross_section_resolution', 1., type=float)
 
@@ -347,3 +341,29 @@ class CrayfishPlotWidget(QWidget):
         s.setValue('/crayfish/cross_section_resolution', value)
 
         self.refresh_plot()
+
+    def dataset_group_is_not_time_varying(self, dataset_group_index):
+        if dataset_group_index is None:
+            return True
+
+        if dataset_group_index < 0:
+            return True
+
+        if not self.layer or not self.layer.dataProvider():
+            return True
+
+        return self.layer.dataProvider().datasetCount(dataset_group_index) < 2
+
+    def dataset_group_name(self, group_index):
+        if group_index is None or group_index < 0 or self.layer is None or self.layer.dataProvider() is None:
+            return "current"
+        else:
+            meta = self.layer.dataProvider().datasetGroupMetadata(group_index)
+            return meta.name()
+
+    def currentDatasetsForDatasetGroup(self):
+        dataset_index = self.layer.activeScalarDataset().dataset()
+        if dataset_index < 0:
+            return []
+        else:
+            return [dataset_index]
