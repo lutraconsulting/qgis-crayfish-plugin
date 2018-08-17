@@ -188,7 +188,7 @@ class CrayfishPlotWidget(QWidget):
 
     def on_dataset_group_changed(self, lst):
         if len(lst) == 0:
-            self.btn_datasets.set_dataset_group(self.layer.activeScalarDataset().group() if self.layer is not None else None)
+            self.btn_datasets.set_dataset_group(self.layer.rendererSettings().activeScalarDataset().group() if self.layer is not None else None)
         elif len(lst) == 1:
             self.btn_datasets.set_dataset_group(lst[0])
 
@@ -197,7 +197,7 @@ class CrayfishPlotWidget(QWidget):
     def current_dataset_group(self):
         dataset_groups = self.btn_dataset_group.dataset_groups
         if len(dataset_groups) == 0:
-          return self.layer.activeScalarDataset().group() if self.layer is not None else None
+          return self.layer.rendererSettings().activeScalarDataset().group() if self.layer is not None else None
         else:
           return dataset_groups[0]
 
@@ -362,7 +362,7 @@ class CrayfishPlotWidget(QWidget):
             return meta.name()
 
     def currentDatasetsForDatasetGroup(self):
-        dataset_index = self.layer.activeScalarDataset().dataset()
+        dataset_index = self.layer.rendererSettings().activeScalarDataset().dataset()
         if dataset_index < 0:
             return []
         else:

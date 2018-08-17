@@ -54,7 +54,7 @@ class DatasetsMenu(QMenu):
             layer.activeScalarDatasetChanged.connect(self.on_current_output_time_changed)
 
         self.layer = layer
-        self.set_dataset_group(layer.activeScalarDataset().group() if layer is not None else -1)
+        self.set_dataset_group(layer.rendererSettings().activeScalarDataset().group() if layer is not None else -1)
 
     def set_dataset_group(self, dataset_group_index):
         self.dataset_group = dataset_group_index
