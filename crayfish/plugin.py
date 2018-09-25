@@ -29,7 +29,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from qgis.core import *
 from .gui.plot_widget import CrayfishPlotWidget
-
+from .gui.animation_dialog import CrayfishAnimationDialog
+from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps
 
 class CrayfishPlugin:
     def __init__(self, iface):
@@ -38,11 +39,22 @@ class CrayfishPlugin:
         self.plot_dock_widget = None
 
     def initGui(self):
-        # Add menu item
+        # Add menu items
         self.menu = self.iface.pluginMenu().addMenu(QIcon(":/plugins/crayfish/images/crayfish.png"), "Crayfish")
-        self.actionPlot = QAction(QgsApplication.getThemeIcon("/histogram.png"), "Plot", self.iface.mainWindow())
-        self.menu.addAction(self.actionPlot)
+
+
+        self.actionPlot = QAction(QgsApplication.getThemeIcon("/histogram.svg"), "Plot", self.iface.mainWindow())
         self.actionPlot.triggered.connect(self.toggle_plot)
+
+        self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/images/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
+        self.actionExportAnimation.triggered.connect(self.exportAnimation)
+
+        self.menu.addAction(self.actionPlot)
+        self.menu.addAction(self.actionExportAnimation)
+
+        # Register actions for context menu
+        self.iface.addCustomActionForLayerType(self.actionPlot, '', QgsMapLayer.MeshLayer, True)
+        self.iface.addCustomActionForLayerType(self.actionExportAnimation, '', QgsMapLayer.MeshLayer, True)
 
         # Make connections
         self.iface.layerTreeView().currentLayerChanged.connect(self.active_layer_changed)
@@ -68,6 +80,14 @@ class CrayfishPlugin:
         self.plot_dock_widget.setVisible(not self.plot_dock_widget.isVisible())
 
     def unload(self):
+        # Remove menu item
+        self.menu.removeAction(self.actionPlot)
+        self.menu.removeAction(self.actionExportAnimation)
+
+        # Remove actions for context menu
+        self.iface.removeCustomActionForLayerType(self.actionPlot)
+        self.iface.removeCustomActionForLayerType(self.actionExportAnimation)
+
         # Remove connections
         self.iface.layerTreeView().currentLayerChanged.disconnect(self.active_layer_changed)
 
@@ -76,4 +96,21 @@ class CrayfishPlugin:
         self.plot_dock_widget.close()
         self.iface.removeDockWidget(self.plot_dock_widget)
 
+    def exportAnimation(self):
+        """ export current layer's timesteps as an animation """
+        layer = self.iface.activeLayer()
+        if not layer or layer.type() != QgsMapLayer.MeshLayer:
+            QMessageBox.warning(None, "Crayfish", "Please select a Mesh Layer for export")
+            return
 
+        if not layer.dataProvider():
+            QMessageBox.warning(None, "Crayfish", "Mesh layer has invalid data provider")
+            return
+
+        grp = mesh_layer_active_dataset_group_with_maximum_timesteps(layer)
+        if (not grp) or layer.dataProvider().datasetCount(grp) < 2:
+            QMessageBox.warning(None, "Crayfish", "Please activate contours or vector rendering and use time-varying dataset for animation export")
+            return
+
+        dlg = CrayfishAnimationDialog(self.iface)
+        dlg.exec_()
