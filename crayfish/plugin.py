@@ -88,6 +88,10 @@ class CrayfishPlugin:
         self.iface.removeCustomActionForLayerType(self.actionPlot)
         self.iface.removeCustomActionForLayerType(self.actionExportAnimation)
 
+        # Remove menu
+        self.iface.pluginMenu().removeAction(self.menu)
+        self.menu = None
+
         # Remove connections
         self.iface.layerTreeView().currentLayerChanged.disconnect(self.active_layer_changed)
 

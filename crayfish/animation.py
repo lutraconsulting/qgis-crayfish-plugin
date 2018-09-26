@@ -56,6 +56,10 @@ def animation(cfg, progress_fn=None):
     time_from = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, 0)).time()
     time_to = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, count - 1)).time()
 
+  # store default values
+  default_rs = l.rendererSettings()
+
+  # animate
   imgnum = 0
   for i in range(count):
 
@@ -66,70 +70,95 @@ def animation(cfg, progress_fn=None):
     if time < time_from or time > time_to:
       continue
 
-    l.current_output_time = time
+    # Set to render next timesteps
+    rs = l.rendererSettings()
+    asd = rs.activeScalarDataset()
+    if asd.isValid():
+        rs.setActiveScalarDataset(QgsMeshDatasetIndex(asd.group(), i))
+    avd = rs.activeVectorDataset()
+    if avd.isValid():
+        rs.setActiveVectorDataset(QgsMeshDatasetIndex(avd.group(), i))
+    l.setRendererSettings(rs)
 
-    mr = QgsMapSettings()
+    # Prepare layout
+    layout = QgsPrintLayout(QgsProject.instance())
+    layout.initializeDefaults()
+    layout.setName('crayfish')
+
+    layout_page = QgsLayoutItemPage(layout)
+    layout_page.setPageSize(QgsLayoutSize(w, h, QgsUnitTypes.LayoutPixels))
+    layout_page.decodePageOrientation('Portrait')
+
+    # mr = QgsMapSettings()
     # setup map parameters
-    mr.setExtent(extent)  # only used when creating new composer map??
-    mr.setLayers(layers)
-    mr.setOutputSize(QSize(w,h)) # only used when creating new composer map
-    mr.setOutputDpi(dpi)
-    if crs is not None:
-      mr.setDestinationCrs(crs)
+    # mr.setExtent(extent)  # only used when creating new composer map??
+    # mr.setLayers(layers)
+    # mr.setOutputSize(QSize(w,h)) # only used when creating new composer map
+    # mr.setOutputDpi(dpi)
+    # if crs is not None:
+      # mr.setDestinationCrs(crs)
       # mr.setProjectionsEnabled(True)
 
-    c = prep_comp(cfg, mr, time)
+    paper = QSize(w*25.4/dpi, h*25.4/dpi) # pixels
 
-    # when using composition from template, match video's aspect ratio to paper size
-    # by updating video's width (keeping the height)
-    if cfg['layout']['type'] == 'file':
-        aspect = c.paperWidth() / c.paperHeight()
+    layoutcfg = cfg['layout']
+    if layoutcfg['type'] == 'file':
+        prepare_composition_from_template(layout, cfg['layout']['file'], time)
+        # when using composition from template, match video's aspect ratio to paper size
+        # by updating video's width (keeping the height)
+        aspect = paper.width() / paper.height()
         w = int(round(aspect * h))
-
-    image = QImage(QSize(w, h), QImage.Format_RGB32)
-    image.fill(0)
-    imagePainter = QPainter(image)
-    sourceArea = QRectF(0, 0, c.paperWidth(), c.paperHeight())
-    targetArea = QRectF(0, 0, w, h)
-    c.render(imagePainter, targetArea, sourceArea)
-    imagePainter.end()
+    else:  # type == 'default'
+        prepare_composition(layout, paper, time, layoutcfg, extent, layers, crs )
 
     imgnum += 1
-    image.save(imgfile % imgnum)
+    fname = imgfile % imgnum
+
+    layout_exporter = QgsLayoutExporter(layout)
+    image_export_settings = QgsLayoutExporter.ImageExportSettings()
+    image_export_settings.dpi = dpi
+    image_export_settings.imageSize = paper  # pixels
+
+    res = layout_exporter.exportToImage(os.path.abspath(fname), image_export_settings)
+    if res != QgsLayoutExporter.Success:
+        raise RuntimeError()
+
+    #image = QImage(QSize(w, h), QImage.Format_RGB32)
+    #image.fill(0)
+    #imagePainter = QPainter(image)
+    #sourceArea = QRectF(0, 0, paper.width(), paper.height())
+    #targetArea = QRectF(0, 0, w, h)
+    #c.render(imagePainter, targetArea, sourceArea)
+    #imagePainter.end()
+
+    # image.save(fname)
 
   if progress_fn:
     progress_fn(count, count)
 
-
-def prep_comp(cfg, mr, time):
-    layoutcfg = cfg['layout']
-    w,h = mr.outputSize().width(), mr.outputSize().height()
-    dpi = mr.outputDpi()
-    c = QgsPrintLayout(QgsProject.instance())
-
-    if layoutcfg['type'] == 'file':
-        prepare_composition_from_template(c, cfg['layout']['file'], time)
-    else:  # type == 'default'
-        cm = prepare_composition(c, w, h, dpi, time, layoutcfg)
-    return c
-
+  # restore default
+  l.setRendererSettings(default_rs)
 
 def composition_set_time(c, time):
     for i in c.items():
-        if isinstance(i, QgsComposerLabel) and i.id() == "time":
+        if isinstance(i, QgsLayoutItemLabel) and i.id() == "time":
             txt = time_to_string(time)
             i.setText(txt)
 
 
-def prepare_composition_from_template(c, template_path, time):
+def prepare_composition_from_template(layout, template_path, time):
 
     document = QDomDocument()
-    document.setContent(open(template_path).read())
-    c.loadFromTemplate(document)
+    with open(template_path) as f:
+        document.setContent(f.read())
+    #c.loadFromTemplate(document)
+    context = QgsReadWriteContext()
+    context.setPathResolver(QgsProject.instance().pathResolver())
+    context.setProjectTranslator(QgsProject.instance())
+    layout.readLayoutXml(document.documentElement(), document, context )
+    #c.setPlotStyle(QgsComposition.Print)
 
-    c.setPlotStyle(QgsComposition.Print)
-
-    composition_set_time(c, time)
+    composition_set_time(layout, time)
 
 
 def set_composer_item_label(item, itemcfg):
@@ -139,76 +168,79 @@ def set_composer_item_label(item, itemcfg):
     item.setFontColor(itemcfg['text_color'])
 
 
-def set_item_pos(item, posindex, c, is_legend=False):
-    cw, ch = c.paperWidth(), c.paperHeight()
+def set_item_pos(item, posindex, paper, is_legend=False):
+    cw, ch = paper.width(), paper.height()
     r = item.rect()
-    if is_legend:
-        r = item.paintAndDetermineSize(None)
+    # if is_legend:
+    #    r = item.paintAndDetermineSize(None)
 
     if posindex == 0:  # top-left
-        item.setItemPosition(0, 0)
+        item.attemptMove(QgsLayoutPoint(0, 0))
     elif posindex == 1: # top-right
-        item.setItemPosition(cw-r.width(),0)
+        item.attemptMove(QgsLayoutPoint(cw - r.width(), 0, QgsUnitTypes.LayoutPixels))
     elif posindex == 2: # bottom-left
-        item.setItemPosition(0, ch-r.height())
+        item.attemptMove(QgsLayoutPoint(0, ch - r.height(), QgsUnitTypes.LayoutPixels))
     else:  # bottom-right
-        item.setItemPosition(cw-r.width(), ch-r.height())
+        item.attemptMove(QgsLayoutPoint(cw - r.width(), ch - r.height(), QgsUnitTypes.LayoutPixels))
 
+def prepare_composition(layout, paper, time, layoutcfg, extent, layers, crs):
 
-def prepare_composition(c, w,h, dpi, time, layoutcfg):
+    # c.setPlotStyle(QgsComposition.Print)
+    # c.setPaperSize(w*25.4/dpi, h*25.4/dpi)
+    # c.setPrintResolution(dpi)
 
-    c.setPlotStyle(QgsComposition.Print)
-    c.setPaperSize(w*25.4/dpi, h*25.4/dpi)
-    c.setPrintResolution(dpi)
-
-    composerMap = QgsComposerMap(c, 0, 0, c.paperWidth(), c.paperHeight())
-    c.addItem(composerMap)
+    layout_map = QgsLayoutItemMap(layout) # QgsLayoutItemMap(c, 0, 0, c.paperWidth(), c.paperHeight())
+    layout_map.attemptResize(QgsLayoutSize(paper.width(), paper.height(), QgsUnitTypes.LayoutPixels))
+    layout_map.attemptMove(QgsLayoutPoint(0, 0))
+    layout_map.setLayers(layers)
+    if crs is not None:
+        layout_map.setCrs(crs)
+    layout_map.setExtent(extent)
+    layout_map.refresh()
+    layout.setReferenceMap(layout_map)
+    layout.addLayoutItem(layout_map)
 
     if 'title' in layoutcfg:
-        cTitle = QgsComposerLabel(c)
+        cTitle = QgsLayoutItemLabel(layout)
         cTitle.setId('title')
-        c.addItem(cTitle)
+        layout.addLayoutItem(cTitle)
 
         set_composer_item_label(cTitle, layoutcfg['title'])
         cTitle.setText(layoutcfg['title']['label'])
         cTitle.setHAlign(Qt.AlignCenter)
         cTitle.setVAlign(Qt.AlignCenter)
         cTitle.adjustSizeToText()
-        cTitle.setItemPosition(0,0, c.paperWidth(), cTitle.rect().height())
+        cTitle.attemptMove(QgsLayoutPoint((paper.width() -cTitle.rect().width())/2 , cTitle.rect().height(), QgsUnitTypes.LayoutPixels))
 
     if 'time' in layoutcfg:
-        cTime = QgsComposerLabel(c)
+        cTime = QgsLayoutItemLabel(layout)
         cTime.setId('time')
-        c.addItem(cTime)
+        layout.addLayoutItem(cTime)
 
         set_composer_item_label(cTime, layoutcfg['time'])
-        composition_set_time(c, time)
+        composition_set_time(layout, time)
         cTime.adjustSizeToText()
-        set_item_pos(cTime, layoutcfg['time']['position'], c)
+        set_item_pos(cTime, layoutcfg['time']['position'], paper)
 
     if 'legend' in layoutcfg:
-        cLegend = QgsComposerLegend(c)
+        cLegend = QgsLayoutItemLegend(layout)
         cLegend.setId('legend')
-        cLegend.setComposerMap(composerMap)
-        c.addItem(cLegend)
+        cLegend.setLinkedMap(layout_map)
+        layout.addLayoutItem(cLegend)
 
         itemcfg = layoutcfg['legend']
         cLegend.setBackgroundEnabled(itemcfg['bg'])
         cLegend.setBackgroundColor(itemcfg['bg_color'])
         cLegend.setTitle('')
-        for s in [QgsComposerLegendStyle.Title,
-                  QgsComposerLegendStyle.Group,
-                  QgsComposerLegendStyle.Subgroup,
-                  QgsComposerLegendStyle.SymbolLabel]:
+        for s in [QgsLegendStyle.Title,
+                  QgsLegendStyle.Group,
+                  QgsLegendStyle.Subgroup,
+                  QgsLegendStyle.SymbolLabel]:
             cLegend.setStyleFont(s, itemcfg['text_font'])
         cLegend.setFontColor(itemcfg['text_color'])
 
         cLegend.adjustBoxSize()
-        set_item_pos(cLegend, itemcfg['position'], c, True)
-
-    return composerMap
-
-
+        set_item_pos(cLegend, itemcfg['position'], paper, True)
 
 def images_to_video(tmp_img_dir= "/tmp/vid/%03d.png", output_file="/tmp/vid/test.avi", fps=10, qual=1, ffmpeg_bin="ffmpeg"):
     if qual == 0: # lossless
@@ -223,7 +255,7 @@ def images_to_video(tmp_img_dir= "/tmp/vid/%03d.png", output_file="/tmp/vid/test
     cmd += ["-r", str(fps), "-f", "avi", "-y", output_file]
 
     f = tempfile.NamedTemporaryFile(prefix="crayfish",suffix=".txt")
-    f.write(str(cmd, 'utf8') + "\n\n")
+    f.write(str.encode(" ".join(cmd) + "\n\n"))
 
     # stdin redirection is necessary in some cases on Windows
     res = subprocess.call(cmd, stdin=subprocess.PIPE, stdout=f, stderr=f)

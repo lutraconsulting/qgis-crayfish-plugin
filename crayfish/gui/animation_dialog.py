@@ -201,7 +201,9 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
 
         if self.radLayoutCustom.isChecked():
             try:
-                open(self.editTemplate.text()).read()
+                f = open(self.editTemplate.text())
+                f.read()
+                f.close()
             except IOError:
                 QMessageBox.information(self, "Export", "The custom layout template file (.qpt) does not exist or it is not accessible")
                 return

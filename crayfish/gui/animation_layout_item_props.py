@@ -86,7 +86,7 @@ class AnimationLayoutItemProps(qtBaseClass, uiDialog):
 
     def storeDefaults(self, s):
         s.beginGroup("layout/"+self.prop_type)
-        for k,v in self.props().iteritems():
+        for k,v in self.props().items():
             if k == 'type': continue
             if k == 'text_font':
                 s.setValue(k, v.toString())
