@@ -32,6 +32,8 @@ from .gui.plot_widget import CrayfishPlotWidget
 from .gui.animation_dialog import CrayfishAnimationDialog
 from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps
 
+from .resources import *
+
 class CrayfishPlugin:
     def __init__(self, iface):
         # Save reference to the QGIS interface
@@ -43,7 +45,7 @@ class CrayfishPlugin:
         self.menu = self.iface.pluginMenu().addMenu(QIcon(":/plugins/crayfish/images/crayfish.png"), "Crayfish")
 
 
-        self.actionPlot = QAction(QgsApplication.getThemeIcon("/histogram.svg"), "Plot", self.iface.mainWindow())
+        self.actionPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot.svg"), "Plot", self.iface.mainWindow())
         self.actionPlot.triggered.connect(self.toggle_plot)
 
         self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/images/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
@@ -89,7 +91,7 @@ class CrayfishPlugin:
         self.iface.removeCustomActionForLayerType(self.actionExportAnimation)
 
         # Remove menu
-        self.iface.pluginMenu().removeAction(self.menu)
+        self.iface.pluginMenu().removeAction(self.menu.menuAction())
         self.menu = None
 
         # Remove connections

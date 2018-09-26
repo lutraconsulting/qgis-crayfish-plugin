@@ -2,5 +2,6 @@
     <qresource prefix="/plugins/crayfish">
         <file>images/crayfish.png</file>
         <file>images/icon_plot.svg</file>
+        <file>images/icon_video.png</file>
     </qresource>
 </RCC>

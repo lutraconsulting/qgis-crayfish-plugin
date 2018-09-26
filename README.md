@@ -16,3 +16,7 @@ For instructions of how to install and use Crayfish, please refer to the [Crayfi
 Use QGIS3 plugin manager to install latest crayfish version.
 
 [crp]: http://www.lutraconsulting.co.uk/resources/crayfish
+
+### Developement 
+
+building of resources files `pyrcc5 -o resources.py resources.qrc`
