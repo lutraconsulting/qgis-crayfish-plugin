@@ -6,7 +6,7 @@ Crayfish (QGIS plugin)
 The Crayfish Plugin is a visualiser for temporal structured/unstructured grids in QGIS.
 
 You can use Crayfish to load the file formats supported by [MDAL](https://github.com/lutraconsulting/MDAL)
-s
+
 ### Using Crayfish
 
 For instructions of how to install and use Crayfish, please refer to the [Crayfish resources page][crp] on our website.

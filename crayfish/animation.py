@@ -35,6 +35,12 @@ from qgis.core import *
 from .gui.utils import time_to_string, mesh_layer_active_dataset_group_with_maximum_timesteps
 
 
+def _page_size(layout):
+    """ returns QgsLayoutSize """
+    main_page = layout.pageCollection().page(0)
+    return main_page.pageSize()
+
+
 def animation(cfg, progress_fn=None):
     dpi = 96
     l = cfg['layer']
@@ -54,8 +60,8 @@ def animation(cfg, progress_fn=None):
         time_from = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, 0)).time()
         time_to = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, count - 1)).time()
 
-    # store default values
-    default_rs = l.rendererSettings()
+    # store original values
+    original_rs = l.rendererSettings()
 
     # animate
     imgnum = 0
@@ -83,31 +89,26 @@ def animation(cfg, progress_fn=None):
         layout.initializeDefaults()
         layout.setName('crayfish')
 
-        layout_page = QgsLayoutItemPage(layout)
-        layout_page.setPageSize(QgsLayoutSize(w, h, QgsUnitTypes.LayoutPixels))
-        layout_page.decodePageOrientation('Portrait')
-
-        paper = QSize(w, h)
-        # paper = QSize(w*25.4/dpi, h*25.4/dpi) # mm
-
         layoutcfg = cfg['layout']
         if layoutcfg['type'] == 'file':
             prepare_composition_from_template(layout, cfg['layout']['file'], time)
             # when using composition from template, match video's aspect ratio to paper size
             # by updating video's width (keeping the height)
-            aspect = paper.width() / paper.height()
+            aspect = _page_size(layout).width() / _page_size(layout).height()
             w = int(round(aspect * h))
         else:  # type == 'default'
-            prepare_composition(layout, paper, time, layoutcfg, extent, layers, crs)
+            layout.renderContext().setDpi(dpi)
+            layout.setUnits(QgsUnitTypes.LayoutMillimeters)
+            main_page = layout.pageCollection().page(0)
+            main_page.setPageSize(QgsLayoutSize(w * 25.4 / dpi, h * 25.4 / dpi, QgsUnitTypes.LayoutMillimeters))
+            prepare_composition(layout, time, layoutcfg, extent, layers, crs)
 
         imgnum += 1
         fname = imgfile % imgnum
-
         layout_exporter = QgsLayoutExporter(layout)
         image_export_settings = QgsLayoutExporter.ImageExportSettings()
-        # image_export_settings.dpi = dpi
+        image_export_settings.dpi = dpi
         image_export_settings.imageSize = QSize(w, h)
-
         res = layout_exporter.exportToImage(os.path.abspath(fname), image_export_settings)
         if res != QgsLayoutExporter.Success:
             raise RuntimeError()
@@ -115,8 +116,8 @@ def animation(cfg, progress_fn=None):
     if progress_fn:
         progress_fn(count, count)
 
-    # restore default
-    l.setRendererSettings(default_rs)
+    # restore original settings
+    l.setRendererSettings(original_rs)
 
 
 def composition_set_time(c, time):
@@ -144,26 +145,35 @@ def set_composer_item_label(item, itemcfg):
     item.setFontColor(itemcfg['text_color'])
 
 
-def set_item_pos(item, posindex, paper, is_legend=False):
-    cw, ch = paper.width(), paper.height()
-    r = item.rect()
-    # if is_legend:
-    #    r = item.paintAndDetermineSize(None)
+class CFItemPosition:
+    TOP_CENTER = -1
+    TOP_LEFT = 0
+    TOP_RIGHT = 1
+    BOTTOM_LEFT = 2
+    BOTTOM_RIGHT = 3
 
-    if posindex == 0:  # top-left
+def set_item_pos(item, posindex, layout):
+    page_size = _page_size(layout)
+    r = item.sizeWithUnits()
+    assert (r.units() == QgsUnitTypes.LayoutMillimeters)
+    assert (page_size.units() == QgsUnitTypes.LayoutMillimeters)
+
+    if posindex == CFItemPosition.TOP_CENTER: # top-center
+        item.attemptMove(QgsLayoutPoint((page_size.width() - r.width()) / 2, r.height(), QgsUnitTypes.LayoutMillimeters))
+    elif posindex == CFItemPosition.TOP_LEFT:  # top-left
         item.attemptMove(QgsLayoutPoint(0, 0))
-    elif posindex == 1:  # top-right
-        item.attemptMove(QgsLayoutPoint(cw - r.width(), 0, QgsUnitTypes.LayoutPixels))
-    elif posindex == 2:  # bottom-left
-        item.attemptMove(QgsLayoutPoint(0, ch - r.height(), QgsUnitTypes.LayoutPixels))
-    else:  # bottom-right
-        item.attemptMove(QgsLayoutPoint(cw - r.width(), ch - r.height(), QgsUnitTypes.LayoutPixels))
+    elif posindex == CFItemPosition.TOP_RIGHT:  # top-right
+        item.attemptMove(QgsLayoutPoint(page_size.width() - r.width(), 0, QgsUnitTypes.LayoutMillimeters))
+    elif posindex == CFItemPosition.BOTTOM_LEFT:  # bottom-left
+        item.attemptMove(QgsLayoutPoint(0, page_size.height() - r.height(), QgsUnitTypes.LayoutMillimeters))
+    else: # bottom-right
+        item.attemptMove(QgsLayoutPoint(page_size.width() - r.width(), page_size.height() - r.height(), QgsUnitTypes.LayoutMillimeters))
 
 
-def prepare_composition(layout, paper, time, layoutcfg, extent, layers, crs):
+def prepare_composition(layout, time, layoutcfg, extent, layers, crs):
     layout_map = QgsLayoutItemMap(layout)
-    layout_map.attemptResize(QgsLayoutSize(paper.width(), paper.height(), QgsUnitTypes.LayoutPixels))
-    layout_map.attemptMove(QgsLayoutPoint(0, 0))
+    layout_map.attemptResize(_page_size(layout))
+    set_item_pos(layout_map, CFItemPosition.TOP_LEFT, layout)
     layout_map.setLayers(layers)
     if crs is not None:
         layout_map.setCrs(crs)
@@ -182,8 +192,7 @@ def prepare_composition(layout, paper, time, layoutcfg, extent, layers, crs):
         cTitle.setHAlign(Qt.AlignCenter)
         cTitle.setVAlign(Qt.AlignCenter)
         cTitle.adjustSizeToText()
-        cTitle.attemptMove(QgsLayoutPoint((paper.width() - cTitle.rect().width()) / 2, cTitle.rect().height(),
-                                          QgsUnitTypes.LayoutPixels))
+        set_item_pos(cTitle, CFItemPosition.TOP_CENTER, layout)
 
     if 'time' in layoutcfg:
         cTime = QgsLayoutItemLabel(layout)
@@ -193,7 +202,7 @@ def prepare_composition(layout, paper, time, layoutcfg, extent, layers, crs):
         set_composer_item_label(cTime, layoutcfg['time'])
         composition_set_time(layout, time)
         cTime.adjustSizeToText()
-        set_item_pos(cTime, layoutcfg['time']['position'], paper)
+        set_item_pos(cTime, layoutcfg['time']['position'], layout)
 
     if 'legend' in layoutcfg:
         cLegend = QgsLayoutItemLegend(layout)
@@ -213,7 +222,7 @@ def prepare_composition(layout, paper, time, layoutcfg, extent, layers, crs):
         cLegend.setFontColor(itemcfg['text_color'])
 
         cLegend.adjustBoxSize()
-        set_item_pos(cLegend, itemcfg['position'], paper, True)
+        set_item_pos(cLegend, itemcfg['position'], layout)
 
 
 def images_to_video(tmp_img_dir="/tmp/vid/%03d.png", output_file="/tmp/vid/test.avi", fps=10, qual=1,

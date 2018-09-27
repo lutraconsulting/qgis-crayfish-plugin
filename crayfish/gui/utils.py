@@ -25,9 +25,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
-import datetime
 from qgis.core import *
-from qgis.PyQt import *
+from qgis.PyQt import uic
 from qgis.utils import iface
 qgis_message_bar = iface.messageBar()
 
