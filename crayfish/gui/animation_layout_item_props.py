@@ -24,18 +24,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 
 from .utils import load_ui
 
 uiDialog, qtBaseClass = load_ui('crayfish_animation_layout_item_props')
 
+
 class AnimationLayoutItemProps(qtBaseClass, uiDialog):
 
     def __init__(self, iface, parent=None):
         qtBaseClass.__init__(self)
-        uiDialog.__init__(self, parent)
+        uiDialog.__init__(self)
         self.setupUi(self)
 
         self.btnFont.clicked.connect(self.onFontClicked)
@@ -84,7 +86,7 @@ class AnimationLayoutItemProps(qtBaseClass, uiDialog):
 
     def storeDefaults(self, s):
         s.beginGroup("layout/"+self.prop_type)
-        for k,v in self.props().iteritems():
+        for k,v in self.props().items():
             if k == 'type': continue
             if k == 'text_font':
                 s.setValue(k, v.toString())

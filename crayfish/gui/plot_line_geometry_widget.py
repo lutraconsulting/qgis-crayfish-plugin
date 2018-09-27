@@ -24,8 +24,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+
 import math
 
 from qgis.core import *
@@ -37,31 +39,24 @@ from .plot_map_layer_widget import MapLayersWidget
 
 class PickGeometryTool(QgsMapTool):
 
-    picked = pyqtSignal(list, bool)   # list of points, whether finished or still drawing
+    picked = pyqtSignal(list, bool)   # list of pointsXY, whether finished or still drawing
 
     def __init__(self, canvas):
         QgsMapTool.__init__(self, canvas)
         self.points = []
         self.capturing = False
 
-    def _mapPoint(self, e):
-        """ for compatibility with QGIS < 2.10 """
-        if hasattr(e, 'mapPoint'):
-            return e.mapPoint()
-        else:
-            return self.canvas().mapSettings().mapToPixel().toMapCoordinates(e.pos())
-
     def canvasMoveEvent(self, e):
 
         if not self.capturing:
             return
 
-        self.picked.emit(self.points + [self._mapPoint(e)], False)
+        self.picked.emit(self.points + [e.mapPoint()], False)
 
     def canvasPressEvent(self, e):
         if e.button() == Qt.LeftButton:
             self.capturing = True
-            self.points.append(self._mapPoint(e))
+            self.points.append(e.mapPoint())
             self.picked.emit(self.points, False)
         if e.button() == Qt.RightButton:
             self.picked.emit(self.points, True)
@@ -91,7 +86,7 @@ class LineGeometryPickerWidget(QWidget):
         self.btn_picker.setCheckable(True)
         self.btn_picker.clicked.connect(self.picker_clicked)
 
-        self.btn_layer = MapLayersWidget(QGis.Line)
+        self.btn_layer = MapLayersWidget(QgsWkbTypes.LineString)
         self.btn_layer.picked_layer.connect(self.on_picked_layer)
 
         self.tool = PickGeometryTool(iface.mapCanvas())
@@ -131,7 +126,7 @@ class LineGeometryPickerWidget(QWidget):
     def on_picked(self, points, finished):
 
         if len(points) >= 2:
-            self.geometries = [ QgsGeometry.fromPolyline(points) ]
+            self.geometries = [ QgsGeometry.fromPolylineXY(points) ]
         else:
             self.geometries = []
         self.geometries_changed.emit()
@@ -143,7 +138,7 @@ class LineGeometryPickerWidget(QWidget):
 
         self.stop_picking()
 
-        self.pick_layer = QgsMapLayerRegistry.instance().mapLayer(layer_id)
+        self.pick_layer = QgsProject.instance().mapLayer(layer_id)
         if not self.pick_layer:
             return
 

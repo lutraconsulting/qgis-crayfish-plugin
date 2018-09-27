@@ -29,15 +29,17 @@ import os
 import shutil
 import tempfile
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 from qgis.core import *
 
 from ..animation import animation, images_to_video
-from .utils import load_ui, time_to_string
+from .utils import load_ui, time_to_string, mesh_layer_active_dataset_group_with_maximum_timesteps
 from .install_helper import downloadFfmpeg
 
 uiDialog, qtBaseClass = load_ui('crayfish_animation_dialog_widget')
+
 
 # http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
 def which(program):
@@ -64,14 +66,15 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
     def __init__(self, iface, parent=None):
 
         qtBaseClass.__init__(self)
-        uiDialog.__init__(self, parent)
+        uiDialog.__init__(self)
         self.setupUi(self)
 
         self.l = iface.activeLayer()
-        self.r = iface.mapCanvas().mapRenderer()
+        self.r = iface.mapCanvas()
 
-        self.populateTimes(self.cboStart)
-        self.populateTimes(self.cboEnd)
+        dataset_group_index = mesh_layer_active_dataset_group_with_maximum_timesteps(self.l)
+        self.populateTimes(self.cboStart, dataset_group_index)
+        self.populateTimes(self.cboEnd, dataset_group_index)
         self.cboStart.setCurrentIndex(0)
         self.cboEnd.setCurrentIndex(self.cboEnd.count()-1)
 
@@ -97,19 +100,17 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
         self.btnBrowseTemplate.clicked.connect(self.browseTemplate)
         self.btnBrowseFfmpegPath.clicked.connect(self.browseFfmpegPath)
 
-
-    def populateTimes(self, cbo):
-        ds = self.l.currentDataSet()
+    def populateTimes(self, cbo, dataset_group_index):
         cbo.clear()
-        if ds.time_varying():
-            for output in ds.outputs():
-                cbo.addItem(time_to_string(output.time()), output.time())
-
+        if dataset_group_index:
+            for i in range(self.l.dataProvider().datasetCount(dataset_group_index)):
+                meta = self.l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, i))
+                cbo.addItem(time_to_string(meta.time()), meta.time())
 
     def browseOutput(self):
         settings = QSettings()
         lastUsedDir = settings.value("crayfishViewer/lastFolder")
-        filename = QFileDialog.getSaveFileName(self, "Output file", lastUsedDir, "AVI files (*.avi)")
+        filename, _ = QFileDialog.getSaveFileName(self, "Output file", lastUsedDir, "AVI files (*.avi)")
         if len(filename) == 0:
             return
 
@@ -120,7 +121,7 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
     def browseTemplate(self):
         settings = QSettings()
         lastUsedDir = settings.value("crayfishViewer/lastFolder")
-        filename = QFileDialog.getOpenFileName(self, "Template file (.qpt)", lastUsedDir, "QGIS templates (*.qpt)")
+        filename, _ = QFileDialog.getOpenFileName(self, "Template file (.qpt)", lastUsedDir, "QGIS templates (*.qpt)")
         if len(filename) == 0:
             return
 
@@ -128,7 +129,7 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
         settings.setValue("crayfishViewer/lastFolder", filename)
 
     def browseFfmpegPath(self):
-        filename = QFileDialog.getOpenFileName(self, "Path to FFmpeg tool", '', "FFmpeg (ffmpeg ffmpeg.exe avconv avconv.exe)")
+        filename, _ = QFileDialog.getOpenFileName(self, "Path to FFmpeg tool", '', "FFmpeg (ffmpeg ffmpeg.exe avconv avconv.exe)")
         if len(filename) == 0:
             return
         self.editFfmpegPath.setText(filename)
@@ -153,7 +154,8 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
                 "and configure path in <i>Video</i> tab to point to ffmpeg.exe.<p>"
                 "<b>Linux users:</b> Make sure FFmpeg is installed in your system - usually a package named "
                 "<tt>ffmpeg</tt>. On Debian/Ubuntu systems FFmpeg was replaced by Libav (fork of FFmpeg) "
-                "- use <tt>libav-tools</tt> package.")
+                "- use <tt>libav-tools</tt> package.<p>"
+                "<b>MacOS users:</b> Make sure FFmpeg is installed in your system <tt>brew install ffmpeg</tt>")
 
             if platform.system() != 'Windows':
                 return
@@ -199,7 +201,9 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
 
         if self.radLayoutCustom.isChecked():
             try:
-                open(self.editTemplate.text()).read()
+                f = open(self.editTemplate.text())
+                f.read()
+                f.close()
             except IOError:
                 QMessageBox.information(self, "Export", "The custom layout template file (.qpt) does not exist or it is not accessible")
                 return
@@ -222,9 +226,9 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
               'time'       : (t_start, t_end),
               'img_size'   : (w, h),
               'tmp_imgfile': img_output_tpl,
-              'layers'     : self.r.layerSet(),
+              'layers'     : self.r.layers(),
               'extent'     : self.r.extent(),
-              'crs'        : self.r.destinationCrs() if self.r.hasCrsTransformEnabled() else None,
+              'crs'        : self.r.mapSettings().destinationCrs(),
               'layout'     : {},
             }
 
@@ -361,7 +365,7 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
     def setTimeInCombo(self, cbo, time):
         best_i = -1
         best_diff = 999999.
-        for i in xrange(cbo.count()):
+        for i in range(cbo.count()):
             diff = abs(time - cbo.itemData(i))
             if diff < best_diff:
                 best_diff = diff

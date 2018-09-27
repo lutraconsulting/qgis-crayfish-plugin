@@ -24,10 +24,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 
-from qgis.core import QgsMapLayer, QgsMapLayerRegistry, QgsPluginLayer
+from qgis.core import QgsMapLayer, QgsProject, QgsMeshLayer
 
 
 class CrayfishLayerMenu(QMenu):
@@ -37,14 +38,14 @@ class CrayfishLayerMenu(QMenu):
     def __init__(self, parent=None):
         QMenu.__init__(self, parent)
 
-        QgsMapLayerRegistry.instance().layersAdded.connect(self.layers_added)
-        QgsMapLayerRegistry.instance().layersWillBeRemoved.connect(self.layers_will_be_removed)
+        QgsProject.instance().layersAdded.connect(self.layers_added)
+        QgsProject.instance().layersWillBeRemoved.connect(self.layers_will_be_removed)
 
-        self.layers_added( QgsMapLayerRegistry.instance().mapLayers().values() )
+        self.layers_added( QgsProject.instance().mapLayers().values() )
 
     def layers_added(self, lst):
         for layer in lst:
-            if not isinstance(layer, QgsPluginLayer) or layer.pluginLayerType() != 'crayfish_viewer':
+            if not isinstance(layer, QgsMeshLayer):
                 continue
             a = self.addAction(layer.name())
             a.layer_id = layer.id()
@@ -56,7 +57,7 @@ class CrayfishLayerMenu(QMenu):
                 self.removeAction(action)
 
     def triggered_action(self):
-        self.picked_layer.emit( QgsMapLayerRegistry.instance().mapLayer(self.sender().layer_id) )
+        self.picked_layer.emit( QgsProject.instance().mapLayer(self.sender().layer_id) )
 
 
 class CrayfishLayerWidget(QToolButton):
@@ -74,7 +75,8 @@ class CrayfishLayerWidget(QToolButton):
         self.setMenu(self.menu_layers)
         self.menu_layers.picked_layer.connect(self.on_picked_layer)
 
-        QgsMapLayerRegistry.instance().layersWillBeRemoved.connect(self.layers_will_be_removed)
+        QgsProject.instance().layersWillBeRemoved.connect(self.layers_will_be_removed)
+        self.set_layer(None)
 
     def set_layer(self, layer):
         self.on_picked_layer(layer)
@@ -82,8 +84,8 @@ class CrayfishLayerWidget(QToolButton):
     def on_picked_layer(self, layer):
         layer_name = layer.name() if layer is not None else "(none)"
         self.setText("Layer: " + layer_name)
-        self.layer_changed.emit(layer)
         self.layer = layer
+        self.layer_changed.emit(layer)
 
     def layers_will_be_removed(self, lst):
         if self.layer and self.layer.id() in lst:

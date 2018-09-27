@@ -1,33 +1,35 @@
-import ConfigParser
-import os
+# -*- coding: utf-8 -*-
+
+# Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
+# Copyright (C) 2016 Lutra Consulting
+
+# info at lutraconsulting dot co dot uk
+# Lutra Consulting
+# 23 Chestnut Close
+# Burgess Hill
+# West Sussex
+# RH15 8HN
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 import platform
 
-def plugin_version_str():
-    """ Return version of Python plugin from metadata as a string """
-    cfg = ConfigParser.ConfigParser()
-    cfg.read(os.path.join(os.path.dirname(__file__), 'metadata.txt'))
-    return cfg.get('general', 'version')
 
 def findPlatformVersion():
     platformVersion = platform.system()
-
-    if platformVersion == 'Linux':
-        if (platform.linux_distribution()[0] == 'Ubuntu') and (float(platform.linux_distribution()[1]) >= 15.10):
-            platformVersion = 'Xenial'
-        elif (platform.linux_distribution()[0] == 'Fedora'):
-            platformVersion = 'Fedora'
-
     if platform.architecture()[0] == '64bit':
         platformVersion += '64'
     return platformVersion
 
-def crayfish_zipfile():
-    return 'crayfish-lib-%s.zip' % plugin_version_str()
-
-def crayfish_libname():
-    if platform.system() == "Windows":
-        return "crayfish.dll"
-    elif platform.system() == "Linux":
-        return "libcrayfish.so.1"
-    else:
-        return "libcrayfish.1.0.0.dylib"

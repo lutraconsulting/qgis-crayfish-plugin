@@ -24,7 +24,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt4.QtGui import QColor
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from qgis.core import *
 
 from . import pyqtgraph as pg
 from .pyqtgraph.exporters import ImageExporter
@@ -49,49 +51,43 @@ colors = [
     QColor( "#fdbf6f" ),
 ]
 
-
-def timeseries_plot_data(ds, geometry):
+def timeseries_plot_data(layer, ds_group_index, geometry):
     """ return array with tuples defining X,Y points for plot """
+    x,y = [], []
+    if not layer:
+        return x, y
 
     pt = geometry.asPoint()
-    x,y = [], []
-
-    for output in ds.outputs():
-        t = output.time()
-
-        value = ds.mesh().value(output, pt.x(), pt.y())
-        if value == -9999.0:
-            value = float("nan")
+    for i in range(layer.dataProvider().datasetCount(ds_group_index)):
+        meta = layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(ds_group_index, i))
+        t = meta.time()
+        dataset = QgsMeshDatasetIndex(ds_group_index, i)
+        value = layer.datasetValue(dataset, pt).scalar()
         x.append(t)
         y.append(value)
 
     return x, y
 
 
-def cross_section_plot_data(output, geometry, resolution=1.):
+def cross_section_plot_data(layer, ds_group_index, ds_index, geometry, resolution=1.):
     """ return array with tuples defining X,Y points for plot """
+    x,y = [], []
+    if not layer:
+        return x, y
 
-    mesh = output.dataset().mesh()
+    dataset = QgsMeshDatasetIndex(ds_group_index, ds_index)
     offset = 0
     length = geometry.length()
-    x,y = [], []
-
     while offset < length:
         pt = geometry.interpolate(offset).asPoint()
-
-        value = mesh.value(output, pt.x(), pt.y())
-        if value == -9999.0:
-            value = float("nan")
+        value = layer.datasetValue(dataset, pt).scalar()
         x.append(offset)
         y.append(value)
-
         offset += resolution
 
     # let's make sure we include also the last point
     last_pt = geometry.asPolyline()[-1]
-    last_value = mesh.value(output, last_pt.x(), last_pt.y())
-    if last_value == -9999.0:
-        last_value = float("nan")
+    last_value = layer.datasetValue(dataset, last_pt).scalar()
     x.append(length)
     y.append(last_value)
 
