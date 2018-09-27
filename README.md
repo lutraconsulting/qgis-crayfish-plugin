@@ -7,6 +7,8 @@ The Crayfish Plugin is a visualiser for temporal structured/unstructured grids i
 
 You can use Crayfish to load the file formats supported by [MDAL](https://github.com/lutraconsulting/MDAL)
 
+Works on Windows, Linux and MacOS.
+
 ### Using Crayfish
 
 For instructions of how to install and use Crayfish, please refer to the [Crayfish resources page][crp] on our website.
@@ -16,7 +18,3 @@ For instructions of how to install and use Crayfish, please refer to the [Crayfi
 Use QGIS3 plugin manager to install latest crayfish version.
 
 [crp]: http://www.lutraconsulting.co.uk/resources/crayfish
-
-### Developement 
-
-building of resources files `pyrcc5 -o resources.py resources.qrc`
