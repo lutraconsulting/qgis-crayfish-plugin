@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 # Crayfish - A collection of tools for TUFLOW and other hydraulic modelling packages
 # Copyright (C) 2016 Lutra Consulting
@@ -29,6 +30,9 @@ import subprocess
 import tempfile
 
 from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QPainter, QImage
+from PyQt5.QtWidgets import QStyleOptionGraphicsItem
+
 from PyQt5.QtXml import QDomDocument
 
 from qgis.core import *
@@ -43,6 +47,7 @@ def _page_size(layout):
 
 def animation(cfg, progress_fn=None):
     dpi = 96
+    cfg["dpi"] = dpi
     l = cfg['layer']
     w, h = cfg['img_size']
     imgfile = cfg['tmp_imgfile']
@@ -101,7 +106,7 @@ def animation(cfg, progress_fn=None):
             layout.setUnits(QgsUnitTypes.LayoutMillimeters)
             main_page = layout.pageCollection().page(0)
             main_page.setPageSize(QgsLayoutSize(w * 25.4 / dpi, h * 25.4 / dpi, QgsUnitTypes.LayoutMillimeters))
-            prepare_composition(layout, time, layoutcfg, extent, layers, crs)
+            prepare_composition(layout, time, cfg, layoutcfg, extent, layers, crs)
 
         imgnum += 1
         fname = imgfile % imgnum
@@ -152,6 +157,7 @@ class CFItemPosition:
     BOTTOM_LEFT = 2
     BOTTOM_RIGHT = 3
 
+
 def set_item_pos(item, posindex, layout):
     page_size = _page_size(layout)
     r = item.sizeWithUnits()
@@ -170,7 +176,24 @@ def set_item_pos(item, posindex, layout):
         item.attemptMove(QgsLayoutPoint(page_size.width() - r.width(), page_size.height() - r.height(), QgsUnitTypes.LayoutMillimeters))
 
 
-def prepare_composition(layout, time, layoutcfg, extent, layers, crs):
+def fix_legend_box_size(cfg, legend):
+    # adjustBoxSize() does not work without
+    # call of the paint() function
+    w, h = cfg['img_size']
+    dpi = cfg['dpi']
+
+    image = QImage(w, h, QImage.Format_ARGB32 )
+    image.setDevicePixelRatio(dpi)
+    p = QPainter(image)
+    s = QStyleOptionGraphicsItem()
+    legend.paint(p, s, None)
+    p.end()
+
+    # Now we can adjust box size
+    legend.adjustBoxSize()
+
+
+def prepare_composition(layout, time, cfg, layoutcfg, extent, layers, crs):
     layout_map = QgsLayoutItemMap(layout)
     layout_map.attemptResize(_page_size(layout))
     set_item_pos(layout_map, CFItemPosition.TOP_LEFT, layout)
@@ -221,7 +244,7 @@ def prepare_composition(layout, time, layoutcfg, extent, layers, crs):
             cLegend.setStyleFont(s, itemcfg['text_font'])
         cLegend.setFontColor(itemcfg['text_color'])
 
-        cLegend.adjustBoxSize()
+        fix_legend_box_size(cfg, cLegend)
         set_item_pos(cLegend, itemcfg['position'], layout)
 
 
