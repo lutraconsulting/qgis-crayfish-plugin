@@ -43,14 +43,14 @@ destFolder = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir)
 
 def downloadBinPackage(packageUrl, destinationFileName):
     request = QNetworkRequest(QUrl(packageUrl))
-    request.setRawHeader('Accept-Encoding', 'gzip,deflate')
+    request.setRawHeader(QByteArray().append('Accept-Encoding'), QByteArray().append('gzip,deflate'))
 
     reply = QgsNetworkAccessManager.instance().get(request)
     evloop = QEventLoop()
     reply.finished.connect(evloop.quit)
     evloop.exec_(QEventLoop.ExcludeUserInputEvents)
-    content_type = reply.rawHeader('Content-Type')
-    if bytearray(content_type) == bytearray('application/zip'):
+    content_type = reply.rawHeader(QByteArray().append('Content-Type'))
+    if content_type == QByteArray().append('application/zip'):
         if os.path.isfile(destinationFileName):
             os.unlink(destinationFileName)
 
