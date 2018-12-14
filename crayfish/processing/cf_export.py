@@ -53,10 +53,10 @@ class ExportAlgorithm(CfGeoAlgorithm):
     OUTPUT = 'OUTPUT'
 
     def name(self):
-        return 'MeshExport'
+        return 'ExportFaces'
 
     def displayName(self):
-        return 'Mesh Export'
+        return 'Export Faces'
 
     def initAlgorithm(self, config=None):
         self.addParameter(QgsProcessingParameterMeshLayer(
@@ -91,5 +91,63 @@ class ExportAlgorithm(CfGeoAlgorithm):
         datasets = parameters[self.INPUT_DATASETS]
         timestep = parameters[self.INPUT_TIMESTEP]
 
+        groups_meta = {}
+        fields = QgsFields()
+        for groupIndex in datasets:
+            meta = dp.datasetGroupMetadata(groupIndex)
+            groups_meta[groupIndex] = meta
+            name = meta.name()
+            fields.append(QgsField(name, QVariant.Double))
+            if meta.isVector():
+                fields.append(QgsField('{}_x'.format(name), QVariant.Double))
+                fields.append(QgsField('{}_y'.format(name), QVariant.Double))
+
+
+        (sink, dest_id) = self.parameterAsSink(parameters, self.OUTPUT, context,
+                                               fields, QgsWkbTypes.Polygon, layer.crs())
+
+        if sink is None:
+            raise QgsProcessingException(self.invalidSinkError(parameters, self.OUTPUT))
+
+        mesh = QgsMesh()
+        dp.populateMesh(mesh)
+        count = mesh.faceCount()
+
+        offset = 0
+        batch_size = 100
+        while offset < count:
+            iterations = min(batch_size, count - offset)
+
+            # fetch values
+            datasets_values = {}
+            for groupIndex in datasets:
+                datasets_values[groupIndex] = dp.datasetValues(QgsMeshDatasetIndex(groupIndex, timestep), offset, iterations)
+
+            for i in range(iterations):
+                face = mesh.face(offset + i)
+                points = [mesh.vertex(v) for v in face]
+                polygon = QgsPolygon()
+                polygon.setExteriorRing(QgsLineString(points))
+                geom = QgsGeometry(polygon)
+
+                f = QgsFeature()
+                f.setGeometry(geom)
+
+                attrs = []
+                for groupIndex in datasets:
+                    value = datasets_values[groupIndex].value(i)
+                    meta = groups_meta[groupIndex]
+                    attrs.append(value.scalar())
+                    if meta.isVector():
+                        attrs.append(value.x())
+                        attrs.append(value.y())
+                f.setAttributes(attrs)
+
+                sink.addFeature(f)
+                # sink.addFeature(f, QgsFeatureSink.FastInsert)
+                feedback.setProgress(100 * ((offset + i + 1) / count))
+
+            offset += iterations
+
         feedback.setProgress(100)
-        return {}
+        return {self.OUTPUT: dest_id}
