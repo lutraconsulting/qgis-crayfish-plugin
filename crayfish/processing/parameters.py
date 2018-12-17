@@ -26,7 +26,7 @@
 
 import datetime
 
-from processing.gui.wrappers import EnumWidgetWrapper
+from processing.gui.wrappers import EnumWidgetWrapper, InvalidParameterValue
 from qgis.core import QgsProcessingParameterEnum, QgsMeshDatasetIndex
 
 
@@ -60,11 +60,13 @@ class DatasetWrapper(EnumWidgetWrapper):
 
     def postInitialize(self, wrappers):
         super(DatasetWrapper, self).postInitialize(wrappers)
-        for wrapper in wrappers:
-            # check also wrapper/param type?
-            if wrapper.parameterDefinition().name() == self.param.layer:
-                wrapper.widgetValueHasChanged.connect(self.on_change)
-                self.on_change(wrapper)
+        mesh_layer_param = self.parameterDefinition().layer
+        wrapper = next((w for w in wrappers if w.parameterDefinition().name() == mesh_layer_param), None)
+
+        if not wrapper or wrapper.parameterDefinition().type() != 'mesh':
+            raise InvalidParameterValue('Dataset parameter must be linked to QgsProcessingParameterMeshLayer')
+        wrapper.widgetValueHasChanged.connect(self.on_change)
+        self.on_change(wrapper)
 
 
 class DatasetParameter(QgsProcessingParameterEnum):
@@ -107,11 +109,15 @@ class TimestepWidgetWrapper(EnumWidgetWrapper):
 
     def postInitialize(self, wrappers):
         super(TimestepWidgetWrapper, self).postInitialize(wrappers)
-        for wrapper in wrappers:
-            # check also wrapper/param type?
-            if wrapper.parameterDefinition().name() == self.param.layer:
-                wrapper.widgetValueHasChanged.connect(self.on_change)
-                self.on_change(wrapper)
+        mesh_layer_param = self.parameterDefinition().layer
+        wrapper = next((w for w in wrappers if w.parameterDefinition().name() == mesh_layer_param), None)
+
+        if not wrapper or wrapper.parameterDefinition().type() != 'mesh':
+            raise InvalidParameterValue('Timestep parameter must be linked to QgsProcessingParameterMeshLayer')
+
+        if wrapper.parameterDefinition().name() == self.param.layer:
+            wrapper.widgetValueHasChanged.connect(self.on_change)
+            self.on_change(wrapper)
 
 
 class TimestepParameter(QgsProcessingParameterEnum):
