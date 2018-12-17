@@ -31,6 +31,7 @@ from qgis.core import *
 from .gui.plot_widget import CrayfishPlotWidget
 from .gui.animation_dialog import CrayfishAnimationDialog
 from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps
+from .processing import CrayfishProcessingProvider
 
 from .resources import *
 
@@ -39,6 +40,7 @@ class CrayfishPlugin:
         # Save reference to the QGIS interface
         self.iface = iface
         self.plot_dock_widget = None
+        self.provider = CrayfishProcessingProvider()
 
     def initGui(self):
         # Add menu items
@@ -68,6 +70,8 @@ class CrayfishPlugin:
         w = CrayfishPlotWidget(self.plot_dock_widget)
         self.plot_dock_widget.setWidget(w)
         self.plot_dock_widget.hide()
+
+        QgsApplication.processingRegistry().addProvider(self.provider)
 
     def active_layer_changed(self, layer):
         # only change layer when there is none selected
@@ -101,6 +105,8 @@ class CrayfishPlugin:
         self.layer = None
         self.plot_dock_widget.close()
         self.iface.removeDockWidget(self.plot_dock_widget)
+
+        QgsApplication.processingRegistry().removeProvider(self.provider)
 
     def exportAnimation(self):
         """ export current layer's timesteps as an animation """
