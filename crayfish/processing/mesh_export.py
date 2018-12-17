@@ -142,7 +142,6 @@ class CfMeshExportAlgorithm(QgisAlgorithm):
                 f.setGeometry(self.get_mesh_geometry(mesh, offset + i))
                 f.setAttributes(attrs)
                 sink.addFeature(f)
-                # sink.addFeature(f, QgsFeatureSink.FastInsert)
                 feedback.setProgress(100 * ((offset + i + 1) / count))
 
             offset += iterations
