@@ -1,7 +1,7 @@
 ; the next section is mandatory
 [general]
 name=Crayfish
-qgisMinimumVersion=3.3
+qgisMinimumVersion=3.5
 qgisMaximumVersion=3.99
 description=Visualiser for temporal structured/unstructured grids in QGIS
 ; category=Raster ; Did not know what my available choices where

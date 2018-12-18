@@ -38,19 +38,24 @@ class DatasetGroupType():
 class DatasetWrapper(EnumWidgetWrapper):
 
     def on_change(self, wrapper):
+        # maps selected indexes to datasets groups indexes,
+        # becasue filtering can change 1:1 relations
+        self.index_map = {}
         mesh_layer = wrapper.widgetValue()
+        all_options = []
         if mesh_layer:
             dp = mesh_layer.dataProvider()
             dataset_group_filter = self.parameterDefinition().datasetGroupFilter
-
             options = []
             for i in range(dp.datasetGroupCount()):
                 meta = dp.datasetGroupMetadata(i)
+                all_options.append(meta.name())
                 if not dataset_group_filter or dataset_group_filter(meta):
+                    self.index_map[len(options)] = i
                     options.append(meta.name())
         else:
             options = []
-        self.parameterDefinition().setOptions(options)
+        self.parameterDefinition().setOptions(all_options)
         if self.parameterDefinition().allowMultiple():
             self.widget.updateForOptions(options)
         else:
@@ -67,6 +72,12 @@ class DatasetWrapper(EnumWidgetWrapper):
             raise InvalidParameterValue('Dataset parameter must be linked to QgsProcessingParameterMeshLayer')
         wrapper.widgetValueHasChanged.connect(self.on_change)
         self.on_change(wrapper)
+
+    def widgetValue(self):
+        value = super().widgetValue()
+        if type(value) == list:
+            return list(map(lambda i: self.index_map[i], value))
+        return self.index_map.get(value, None)
 
 
 class DatasetParameter(QgsProcessingParameterEnum):
