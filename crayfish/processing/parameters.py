@@ -26,25 +26,35 @@
 
 import datetime
 
+from processing.tools import dataobjects
 from processing.gui.wrappers import EnumWidgetWrapper, InvalidParameterValue
-from qgis.core import QgsProcessingParameterEnum, QgsMeshDatasetIndex
-
-
-class DatasetGroupType():
-    DataOnFaces = 0
-    DataOnVertices = 1
+from qgis.core import (QgsProcessingParameterEnum,
+                       QgsProcessingUtils,
+                       QgsMeshDatasetIndex,
+                       QgsMeshLayer,
+                       QgsProviderRegistry,
+                       QgsDataProvider)
 
 
 class DatasetWrapper(EnumWidgetWrapper):
+    """Widget wrapper for selection of datasets groups of linked mesh layer"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.context = dataobjects.createContext()
 
     def on_change(self, wrapper):
         # maps selected indexes to datasets groups indexes,
         # becasue filtering can change 1:1 relations
         self.index_map = {}
+
         mesh_layer = wrapper.widgetValue()
         all_options = []
         if mesh_layer:
+            if type(mesh_layer) == str:
+                mesh_layer = QgsProcessingUtils.mapLayerFromString(mesh_layer, self.context)
             dp = mesh_layer.dataProvider()
+
             dataset_group_filter = self.parameterDefinition().datasetGroupFilter
             options = []
             for i in range(dp.datasetGroupCount()):
@@ -55,6 +65,8 @@ class DatasetWrapper(EnumWidgetWrapper):
                     options.append(meta.name())
         else:
             options = []
+        # set all datasets groups names as parameter options,
+        # but display only subset passed by filter
         self.parameterDefinition().setOptions(all_options)
         if self.parameterDefinition().allowMultiple():
             self.widget.updateForOptions(options)
@@ -64,17 +76,20 @@ class DatasetWrapper(EnumWidgetWrapper):
                 self.widget.addItem(opt, i)
 
     def postInitialize(self, wrappers):
-        super(DatasetWrapper, self).postInitialize(wrappers)
+        super().postInitialize(wrappers)
+        # find wrapper of mesh layer parameter and register listener for changing its value
         mesh_layer_param = self.parameterDefinition().layer
         wrapper = next((w for w in wrappers if w.parameterDefinition().name() == mesh_layer_param), None)
 
-        if not wrapper or wrapper.parameterDefinition().type() != 'mesh':
+        # if not wrapper or wrapper.parameterDefinition().type() != 'mesh':
+        if not wrapper:
             raise InvalidParameterValue('Dataset parameter must be linked to QgsProcessingParameterMeshLayer')
         wrapper.widgetValueHasChanged.connect(self.on_change)
         self.on_change(wrapper)
 
     def widgetValue(self):
         value = super().widgetValue()
+        # transform indexes of selected items (possibly filtered) to mesh datasets groups indexes
         if type(value) == list:
             return list(map(lambda i: self.index_map[i], value))
         return self.index_map.get(value, None)
@@ -82,18 +97,24 @@ class DatasetWrapper(EnumWidgetWrapper):
 
 class DatasetParameter(QgsProcessingParameterEnum):
     def __init__(self, name, description='', layer=None, allowMultiple=True, datasetGroupFilter=None, optional=False):
-        super(DatasetParameter, self).__init__(
-                name, description, defaultValue=None, allowMultiple=allowMultiple, optional=optional)
+        super().__init__(name, description, defaultValue=None, allowMultiple=allowMultiple, optional=optional)
         self.layer = layer
         self.datasetGroupFilter = datasetGroupFilter
         self.setMetadata({'widget_wrapper': DatasetWrapper})
 
 
 class TimestepWidgetWrapper(EnumWidgetWrapper):
+    """Widget wrapper for selection of timestep of linked mesh layer"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.context = dataobjects.createContext()
 
     def on_change(self, wrapper):
         mesh_layer = wrapper.widgetValue()
         if mesh_layer:
+            if type(mesh_layer) == str:
+                mesh_layer = QgsProcessingUtils.mapLayerFromString(mesh_layer, self.context)
             dp = mesh_layer.dataProvider()
 
             datasetCount = 0
@@ -119,21 +140,20 @@ class TimestepWidgetWrapper(EnumWidgetWrapper):
             self.widget.addItem(text, data)
 
     def postInitialize(self, wrappers):
-        super(TimestepWidgetWrapper, self).postInitialize(wrappers)
+        super().postInitialize(wrappers)
         mesh_layer_param = self.parameterDefinition().layer
         wrapper = next((w for w in wrappers if w.parameterDefinition().name() == mesh_layer_param), None)
 
-        if not wrapper or wrapper.parameterDefinition().type() != 'mesh':
+        # if not wrapper or wrapper.parameterDefinition().type() != 'mesh':
+        if not wrapper:
             raise InvalidParameterValue('Timestep parameter must be linked to QgsProcessingParameterMeshLayer')
 
-        if wrapper.parameterDefinition().name() == self.param.layer:
-            wrapper.widgetValueHasChanged.connect(self.on_change)
-            self.on_change(wrapper)
+        wrapper.widgetValueHasChanged.connect(self.on_change)
+        self.on_change(wrapper)
 
 
 class TimestepParameter(QgsProcessingParameterEnum):
     def __init__(self, name, description='', layer=None, optional=False):
-        super(TimestepParameter, self).__init__(
-                name, description, allowMultiple=False, defaultValue=None, optional=optional)
+        super().__init__(name, description, allowMultiple=False, defaultValue=None, optional=optional)
         self.layer = layer
         self.setMetadata({'widget_wrapper': TimestepWidgetWrapper})

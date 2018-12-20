@@ -28,7 +28,6 @@ import datetime
 
 from PyQt5.QtGui import QIcon
 from qgis.PyQt.QtCore import QVariant
-from processing.gui.wrappers import EnumWidgetWrapper
 from processing.algs.qgis.QgisAlgorithm import QgisAlgorithm
 from qgis.core import (QgsProcessing,
                        QgsProcessingException,
@@ -55,12 +54,12 @@ class CfMeshExportAlgorithm(QgisAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(QgsProcessingParameterMeshLayer(
                     self.INPUT_LAYER,
-                    'Input vector layer',
+                    'Input mesh layer',
                     optional=False))
 
         self.addParameter(DatasetParameter(
                     self.INPUT_DATASETS,
-                    'Datasets',
+                    'Dataset groups',
                     self.INPUT_LAYER,
                     datasetGroupFilter=self.filter_dataset,
                     optional=True))
@@ -73,7 +72,7 @@ class CfMeshExportAlgorithm(QgisAlgorithm):
 
         self.addParameter(QgsProcessingParameterFeatureSink(
                     self.OUTPUT,
-                    'Exported layer',
+                    'Exported vector layer',
                     type=QgsProcessing.TypeVectorPolygon))
 
 
@@ -98,6 +97,7 @@ class CfMeshExportAlgorithm(QgisAlgorithm):
 
         groups_meta = {}
         fields = QgsFields()
+        fields.append(QgsField('fid', QVariant.Int))
         for groupIndex in datasets:
             meta = dp.datasetGroupMetadata(groupIndex)
             groups_meta[groupIndex] = meta
@@ -129,7 +129,7 @@ class CfMeshExportAlgorithm(QgisAlgorithm):
                 datasets_values[groupIndex] = dp.datasetValues(QgsMeshDatasetIndex(groupIndex, timestep), offset, iterations)
 
             for i in range(iterations):
-                attrs = []
+                attrs = [offset + i]
                 for groupIndex in datasets:
                     value = datasets_values[groupIndex].value(i)
                     meta = groups_meta[groupIndex]
