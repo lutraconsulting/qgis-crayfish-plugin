@@ -24,12 +24,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from qgis.core import (QgsWkbTypes,
+from qgis.core import (QgsMeshDatasetGroupMetadata,
+                       QgsWkbTypes,
                        QgsGeometry,
                        QgsPolygon,
                        QgsLineString)
 
-from .parameters import DatasetGroupType
 from .mesh_export import CfMeshExportAlgorithm
 
 
@@ -42,7 +42,7 @@ class ExportVerticesAlgorithm(CfMeshExportAlgorithm):
         return 'Export mesh vertices'
 
     def filter_dataset(self, meta):
-        return meta.dataType() == DatasetGroupType.DataOnVertices
+        return meta.dataType() == QgsMeshDatasetGroupMetadata.DataOnVertices
 
     def export_geometry_type(self):
         return QgsWkbTypes.Point
