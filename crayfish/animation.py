@@ -55,7 +55,7 @@ def animation(cfg, progress_fn=None):
     extent = cfg['extent'] if 'extent' in cfg else l.extent()
     crs = cfg['crs'] if 'crs' in cfg else None
     dataset_group_index = mesh_layer_active_dataset_group_with_maximum_timesteps(l)
-    assert (dataset_group_index)
+    assert (dataset_group_index is not None)
     count = l.dataProvider().datasetCount(dataset_group_index)
     assert (count > 2)
 
