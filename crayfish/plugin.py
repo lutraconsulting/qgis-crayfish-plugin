@@ -120,8 +120,11 @@ class CrayfishPlugin:
             return
 
         grp = mesh_layer_active_dataset_group_with_maximum_timesteps(layer)
-        if (not grp) or layer.dataProvider().datasetCount(grp) < 2:
-            QMessageBox.warning(None, "Crayfish", "Please activate contours or vector rendering and use time-varying dataset for animation export")
+        if grp is None:
+            QMessageBox.warning(None, "Crayfish", "Please activate contours or vector rendering for animation export")
+            return
+        elif layer.dataProvider().datasetCount(grp) < 2:
+            QMessageBox.warning(None, "Crayfish", "Please  use time-varying dataset group for animation export")
             return
 
         dlg = CrayfishAnimationDialog(self.iface)
