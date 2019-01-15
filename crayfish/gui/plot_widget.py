@@ -242,6 +242,8 @@ class CrayfishPlotWidget(QWidget):
             self.point_picker.clear_geometries()
             self.point_picker.stop_picking()
 
+        self.line_picker.stop_picking()
+
         self.refresh_plot()
 
     def on_geometry_type_changed(self, geom_type):
@@ -424,8 +426,11 @@ class CrayfishPlotWidget(QWidget):
 
         split = self.dataset_group_name(ds_group_index).split('[')
         variable = split[0]
-        unit = split[1].split(']')[0]
-        self.plot.getAxis('left').setLabel('Integral of {} [{}.m]'.format(variable, unit))
+        try:
+            unit = split[1].split(']')[0]
+            self.plot.getAxis('left').setLabel('Integral of {} [{}.m]'.format(variable, unit))
+        except IndexError:
+            self.plot.getAxis('left').setLabel('Integral of {} [m]'.format(variable))
 
         s = QSettings()
         plot_resolution = s.value('/crayfish/cross_section_resolution', 1., type=float)
@@ -434,8 +439,7 @@ class CrayfishPlotWidget(QWidget):
 
         clr = colors[0 % len(colors)]
         pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
-        meta = self.layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(ds_group_index, 0))
-        p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=time_to_string(meta.time()))
+        p = self.plot.plot(x=x, y=y, connect='finite', pen=pen)
 
         rb = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
         rb.setColor(colors[0])
