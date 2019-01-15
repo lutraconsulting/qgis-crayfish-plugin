@@ -28,3 +28,5 @@ plugin/crayfish.lib
 .idea/*
 .vagrant/
 *.autosave
+.pytest_cache
+.cache

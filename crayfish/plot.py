@@ -24,13 +24,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import math
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from qgis.core import *
 
 from . import pyqtgraph as pg
 from .pyqtgraph.exporters import ImageExporter
+from .utils import integrate
 
 pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
@@ -104,39 +104,10 @@ def integral_plot_data(layer, ds_group_index, geometry, resolution=1.):
     for i in range(layer.dataProvider().datasetCount(ds_group_index)):
         meta = layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(ds_group_index, i))
         t = meta.time()
-
-        _x, _y = [], []
-        integral = 0
-        if not layer:
-            return x, y
-
-        dataset = QgsMeshDatasetIndex(ds_group_index, i)
-        offset = 0
-        length = geometry.length()
-        while offset < length:
-            pt = geometry.interpolate(offset).asPoint()
-            value = layer.datasetValue(dataset, pt).scalar()
-            # calculate parts when f(x) is continuous
-            if math.isnan(value):
-                if len(_y):
-                    # approximated integral(a,b) f(x) as (b-a)/N sum(0,N) f(x_n)
-                    integral += sum(_y)*(_x[-1]-_x[0])/len(_y)
-                _x, _y = [], []
-            else:
-                _x.append(offset)
-                _y.append(value)
-            offset += resolution
-
-        last_pt = geometry.asPolyline()[-1]
-        last_value = layer.datasetValue(dataset, last_pt).scalar()
-        if not math.isnan(last_value):
-            _x.append(length)
-            _y.append(last_value)
-
-        if len(_y):
-            integral += sum(_y)*(_x[-1]-_x[0])/len(_y)
+        cs_x, cs_y = cross_section_plot_data(layer, ds_group_index, i, geometry, resolution)
+        value = integrate(cs_x, cs_y)
         x.append(t)
-        y.append(integral)
+        y.append(value)
 
     return x, y
 
