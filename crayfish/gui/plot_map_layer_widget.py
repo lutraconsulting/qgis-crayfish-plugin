@@ -28,7 +28,6 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
-import math
 
 from qgis.core import *
 from qgis.gui import *
@@ -64,9 +63,9 @@ class MapLayerMenu(QMenu):
         for layer in lst:
             if not isinstance(layer, QgsVectorLayer):
                 continue
-            if layer.geometryType() != self.geom_type:
+            if layer.dataProvider().wkbType() != self.geom_type:
                 continue
-            a = self.addAction(geom2icon(layer.geometryType()), layer.name())
+            a = self.addAction(layer.name())
             a.layer_id = layer.id()
             a.triggered.connect(self.triggered_action)
 
@@ -77,7 +76,6 @@ class MapLayerMenu(QMenu):
 
     def triggered_action(self):
         self.picked_layer.emit(self.sender().layer_id)
-
 
 
 class MapLayersWidget(QToolButton):

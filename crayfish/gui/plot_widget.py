@@ -35,14 +35,14 @@ from qgis.gui import *
 from qgis.utils import iface
 
 from .. import pyqtgraph
-from ..plot import timeseries_plot_data, cross_section_plot_data, colors
+from ..plot import timeseries_plot_data, cross_section_plot_data, colors, integral_plot_data
 from .utils import time_to_string
 from .plot_cf_layer_widget import CrayfishLayerWidget
 from .plot_line_geometry_widget import LineGeometryPickerWidget
 from .plot_point_geometry_widget import PointGeometryPickerWidget
 from .plot_datasets_widget import DatasetsWidget
 from .plot_dataset_groups_widget import DatasetGroupsWidget
-
+from .plot_map_layer_widget import MapLayersWidget
 
 class PlotTypeMenu(QMenu):
 
@@ -90,6 +90,52 @@ class PlotTypeWidget(QToolButton):
         self.plot_type_changed.emit(plot_type)
 
 
+class GeomTypeMenu(QMenu):
+
+    geom_type_changed = pyqtSignal(int)
+
+    def __init__(self, parent=None):
+        QMenu.__init__(self, parent)
+
+        self.names = ['Point', 'Line']
+        for i, geom_type_name in enumerate(self.names):
+            a = self.addAction(geom_type_name)
+            a.geom_type = i
+            a.triggered.connect(self.on_action)
+
+    def on_action(self):
+        self.geom_type_changed.emit(self.sender().geom_type)
+
+
+class GeometryTypeWidget(QToolButton):
+
+    geometry_type_changed = pyqtSignal(int)
+
+    POINT, LINE = range(2)
+
+    def __init__(self, parent=None):
+        QToolButton.__init__(self, parent)
+
+        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setIcon(QgsApplication.getThemeIcon("/histogram.png"))
+
+        self.menu_geometry_types = GeomTypeMenu()
+
+        self.setPopupMode(QToolButton.InstantPopup)
+        self.setMenu(self.menu_geometry_types)
+        self.menu_geometry_types.geom_type_changed.connect(self.on_geometry_type_changed)
+
+        self.set_geometry_type(self.POINT)
+
+    def set_geometry_type(self, geometry_type):
+        self.on_geometry_type_changed(geometry_type)
+
+    def on_geometry_type_changed(self, geometry_type):
+        self.geometry_type = geometry_type
+        self.setText("From Map: " + self.menu_geometry_types.names[self.geometry_type])
+        self.geometry_type_changed.emit(geometry_type)
+
+
 class CrayfishPlotWidget(QWidget):
 
     def __init__(self, parent=None):
@@ -106,11 +152,20 @@ class CrayfishPlotWidget(QWidget):
         self.btn_plot_type = PlotTypeWidget()
         self.btn_plot_type.plot_type_changed.connect(self.on_plot_type_changed)
 
+        self.btn_geom_type = GeometryTypeWidget()
+        self.btn_geom_type.geometry_type_changed.connect(self.on_geometry_type_changed)
+
         self.point_picker = PointGeometryPickerWidget()
         self.point_picker.geometries_changed.connect(self.on_geometries_changed)
 
+        self.btn_from_pt_layer = MapLayersWidget(QgsWkbTypes.Point)
+        self.btn_from_pt_layer.picked_layer.connect(self.point_picker.on_picked_layer)
+
         self.line_picker = LineGeometryPickerWidget()
         self.line_picker.geometries_changed.connect(self.on_geometries_changed)
+
+        self.btn_from_line_layer = MapLayersWidget(QgsWkbTypes.LineString)
+        self.btn_from_line_layer.picked_layer.connect(self.line_picker.on_picked_layer)
 
         self.btn_datasets = DatasetsWidget()
         self.btn_datasets.datasets_changed.connect(self.on_datasets_changed)
@@ -145,8 +200,11 @@ class CrayfishPlotWidget(QWidget):
         hl.addWidget(self.btn_plot_type)
         hl.addWidget(self.btn_dataset_group)
         hl.addWidget(self.btn_datasets)
+        hl.addWidget(self.btn_geom_type)
         hl.addWidget(self.point_picker)
+        hl.addWidget(self.btn_from_pt_layer)
         hl.addWidget(self.line_picker)
+        hl.addWidget(self.btn_from_line_layer)
         hl.addStretch()
         hl.addWidget(self.btn_options)
 
@@ -157,6 +215,7 @@ class CrayfishPlotWidget(QWidget):
 
         # init GUI
         self.on_plot_type_changed(self.btn_plot_type.plot_type)
+        self.on_geometry_type_changed(self.btn_geom_type.geometry_type)
         self.on_dataset_group_changed(self.btn_dataset_group.dataset_groups)
 
     def hideEvent(self, e):
@@ -173,16 +232,30 @@ class CrayfishPlotWidget(QWidget):
         self.reset_widget()
 
     def on_plot_type_changed(self, plot_type):
-        self.point_picker.setVisible(plot_type == PlotTypeWidget.PLOT_TIME)
         self.line_picker.setVisible(plot_type == PlotTypeWidget.PLOT_CROSS_SECTION)
         self.btn_datasets.setVisible(plot_type == PlotTypeWidget.PLOT_CROSS_SECTION)
+        self.btn_geom_type.setVisible(plot_type == PlotTypeWidget.PLOT_TIME)
+        self.btn_from_pt_layer.setVisible(plot_type == PlotTypeWidget.PLOT_TIME)
+        self.btn_from_line_layer.setVisible(plot_type == PlotTypeWidget.PLOT_CROSS_SECTION)
 
         if plot_type != PlotTypeWidget.PLOT_TIME:
             self.point_picker.clear_geometries()
             self.point_picker.stop_picking()
-        if plot_type != PlotTypeWidget.PLOT_CROSS_SECTION:
+
+        self.refresh_plot()
+
+    def on_geometry_type_changed(self, geom_type):
+        self.btn_from_pt_layer.setVisible(geom_type == GeometryTypeWidget.POINT)
+        self.btn_from_line_layer.setVisible(geom_type == GeometryTypeWidget.LINE)
+
+        if geom_type != GeometryTypeWidget.POINT:
+            self.point_picker.clear_geometries()
+            self.point_picker.stop_picking()
+            self.line_picker.start_picking_map()
+        elif geom_type != GeometryTypeWidget.LINE:
             self.line_picker.clear_geometries()
             self.line_picker.stop_picking()
+            self.point_picker.start_picking_map()
 
         self.refresh_plot()
 
@@ -217,6 +290,7 @@ class CrayfishPlotWidget(QWidget):
 
     def refresh_plot(self):
         plot_type = self.btn_plot_type.plot_type
+        geom_type = self.btn_geom_type.geometry_type
 
         if self.layer is None:
             self.stack_layout.setCurrentWidget(self.label_no_layer)
@@ -231,7 +305,12 @@ class CrayfishPlotWidget(QWidget):
 
         self.clear_plot()
         if plot_type == PlotTypeWidget.PLOT_TIME:
-            self.refresh_timeseries_plot()
+            if geom_type == GeometryTypeWidget.POINT:
+                self.refresh_timeseries_plot()
+            elif geom_type == GeometryTypeWidget.LINE:
+                self.refresh_integral_plot()
+            else:
+                pass
         elif plot_type == PlotTypeWidget.PLOT_CROSS_SECTION:
             self.refresh_cross_section_plot()
 
@@ -322,6 +401,41 @@ class CrayfishPlotWidget(QWidget):
             pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
             meta = self.layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(ds_group_index, i))
             p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=time_to_string(meta.time()))
+
+        rb = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
+        rb.setColor(colors[0])
+        rb.setWidth(2)
+        rb.setToGeometry(geometry, None)
+        self.rubberbands.append(rb)
+
+    def refresh_integral_plot(self):
+        self.plot.getAxis('bottom').setLabel('Time [h]')
+
+        if len(self.line_picker.geometries) == 0:
+            return
+
+        # this can be extended for more features
+        geometry = self.line_picker.geometries[0]  # only using the first linestring
+
+        if len(geometry.asPolyline()) == 0:
+            return  # not a linestring?
+
+        ds_group_index = self.current_dataset_group()
+
+        split = self.dataset_group_name(ds_group_index).split('[')
+        variable = split[0]
+        unit = split[1].split(']')[0]
+        self.plot.getAxis('left').setLabel('Integral of {} [{}.m]'.format(variable, unit))
+
+        s = QSettings()
+        plot_resolution = s.value('/crayfish/cross_section_resolution', 1., type=float)
+
+        x, y = integral_plot_data(self.layer, ds_group_index, geometry, plot_resolution)
+
+        clr = colors[0 % len(colors)]
+        pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
+        meta = self.layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(ds_group_index, 0))
+        p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=time_to_string(meta.time()))
 
         rb = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
         rb.setColor(colors[0])
