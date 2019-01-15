@@ -67,7 +67,6 @@ class PickGeometryTool(QgsMapTool):
         pass
 
 
-
 class LineGeometryPickerWidget(QWidget):
 
     geometries_changed = pyqtSignal()
@@ -86,16 +85,12 @@ class LineGeometryPickerWidget(QWidget):
         self.btn_picker.setCheckable(True)
         self.btn_picker.clicked.connect(self.picker_clicked)
 
-        self.btn_layer = MapLayersWidget(QgsWkbTypes.LineString)
-        self.btn_layer.picked_layer.connect(self.on_picked_layer)
-
         self.tool = PickGeometryTool(iface.mapCanvas())
         self.tool.picked.connect(self.on_picked)
         self.tool.setButton(self.btn_picker)
 
         layout = QHBoxLayout()
         layout.addWidget(self.btn_picker)
-        layout.addWidget(self.btn_layer)
         self.setLayout(layout)
 
     def clear_geometries(self):

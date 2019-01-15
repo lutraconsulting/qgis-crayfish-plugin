@@ -28,13 +28,9 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
-import math
-
 from qgis.core import *
 from qgis.gui import *
 from qgis.utils import iface
-
-from .plot_map_layer_widget import MapLayersWidget
 
 
 class PickGeometryTool(QgsMapTool):
@@ -56,7 +52,6 @@ class PickGeometryTool(QgsMapTool):
         pass
 
 
-
 class PointGeometryPickerWidget(QWidget):
 
     geometries_changed = pyqtSignal()
@@ -71,23 +66,8 @@ class PointGeometryPickerWidget(QWidget):
         self.geometries = []
         self.temp_geometry_index = -1
 
-        self.btn_picker = QToolButton()
-        self.btn_picker.setText("From map")
-        self.btn_picker.setCheckable(True)
-        self.btn_picker.clicked.connect(self.picker_clicked)
-
-        self.btn_layer = MapLayersWidget(QgsWkbTypes.Point)
-        self.btn_layer.picked_layer.connect(self.on_picked_layer)
-
         self.tool = PickGeometryTool(iface.mapCanvas())
         self.tool.picked.connect(self.on_picked)
-        self.tool.setButton(self.btn_picker)
-
-        layout = QHBoxLayout()
-        layout.addWidget(self.btn_picker)
-        layout.addWidget(self.btn_layer)
-
-        self.setLayout(layout)
 
     def clear_geometries(self):
         self.geometries = []
@@ -140,7 +120,7 @@ class PointGeometryPickerWidget(QWidget):
 
         self.stop_picking()
 
-        self.pick_layer = QgsMapLayerRegistry.instance().mapLayer(layer_id)
+        self.pick_layer = QgsProject.instance().mapLayer(layer_id)
         if not self.pick_layer:
             return
 
