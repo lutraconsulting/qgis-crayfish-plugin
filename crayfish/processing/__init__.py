@@ -30,6 +30,7 @@ from qgis.core import QgsProcessingProvider
 from .export_faces import ExportFacesAlgorithm
 from .export_vertices import ExportVerticesAlgorithm
 from .calculator import MeshCalculatorAlgorithm
+from .export_raster import MeshExportRasterAlgorithm
 
 class CrayfishProcessingProvider(QgsProcessingProvider):
 
@@ -58,6 +59,7 @@ class CrayfishProcessingProvider(QgsProcessingProvider):
     def loadAlgorithms(self):
         self.alglist = [ExportFacesAlgorithm(),
                         ExportVerticesAlgorithm(),
-                        MeshCalculatorAlgorithm()]
+                        MeshCalculatorAlgorithm(),
+                        MeshExportRasterAlgorithm()]
         for alg in self.alglist:
             self.addAlgorithm(alg)
