@@ -2,7 +2,7 @@ language: python
 python:
   - '3.6'
 install:
-  - pip install pytest pytest-cov pycodestyle
+  - pip install pytest==3.7.1 pytest-cov==2.6.1 pycodestyle==2.4.0
 script:
   - pytest crayfish/tests/ --cov=crayfish --cov-report term-missing
   - pycodestyle --statistics crayfish
