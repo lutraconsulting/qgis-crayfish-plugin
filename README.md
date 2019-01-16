@@ -1,4 +1,5 @@
-[![Coverage Status](https://coveralls.io/repos/github/lutraconsulting/qgis-crayfish-plugin/badge.svg?branch=iss_366_setup_travis)](https://coveralls.io/github/lutraconsulting/qgis-crayfish-plugin?branch=master)
+[![Build Status](https://travis-ci.org/lutraconsulting/qgis-crayfish-plugin.svg?branch=master)](https://travis-ci.org/lutraconsulting/qgis-crayfish-plugin)
+[![Coverage Status](https://img.shields.io/coveralls/lutraconsulting/qgis-crayfish-plugin.svg)](https://coveralls.io/github/lutraconsulting/qgis-crayfish-plugin?branch=master)
 
 Crayfish (QGIS plugin)
 ======================
