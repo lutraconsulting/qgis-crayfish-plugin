@@ -1,0 +1,10 @@
+language: python
+python:
+  - '3.6'
+install:
+  - pip install pytest pytest-cov pycodestyle
+script:
+  - pytest crayfish/tests/ --cov=crayfish --cov-report term-missing
+  - pycodestyle --statistics crayfish
+after_success:
+  - coveralls

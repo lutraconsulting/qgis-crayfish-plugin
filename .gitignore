@@ -30,3 +30,4 @@ plugin/crayfish.lib
 *.autosave
 .pytest_cache
 .cache
+.coverage
