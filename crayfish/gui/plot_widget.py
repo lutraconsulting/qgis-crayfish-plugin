@@ -34,7 +34,16 @@ from qgis.core import *
 from qgis.gui import *
 from qgis.utils import iface
 
-from .. import pyqtgraph
+try:
+    import pyqtgraph
+except ImportError:
+    import sys
+    import os
+    this_dir = os.path.dirname(os.path.realpath(__file__))
+    path = os.path.join(this_dir, os.pardir, 'pyqtgraph-0.10.0-py2.py3-none-any.whl')
+    sys.path.append(path)
+    import pyqtgraph
+
 from ..plot import timeseries_plot_data, cross_section_plot_data, colors, integral_plot_data
 from .utils import time_to_string
 from .plot_cf_layer_widget import CrayfishLayerWidget
