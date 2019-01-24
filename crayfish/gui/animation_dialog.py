@@ -102,10 +102,12 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
 
     def populateTimes(self, cbo, dataset_group_index):
         cbo.clear()
-        if dataset_group_index:
-            for i in range(self.l.dataProvider().datasetCount(dataset_group_index)):
-                meta = self.l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, i))
-                cbo.addItem(time_to_string(meta.time()), meta.time())
+        if (dataset_group_index is None) or (dataset_group_index < 0):
+            return
+
+        for i in range(self.l.dataProvider().datasetCount(dataset_group_index)):
+            meta = self.l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, i))
+            cbo.addItem(time_to_string(meta.time()), meta.time())
 
     def browseOutput(self):
         settings = QSettings()
@@ -190,7 +192,7 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
 
         t_start = self.cboStart.itemData(self.cboStart.currentIndex())
         t_end = self.cboEnd.itemData(self.cboEnd.currentIndex())
-        if t_start > t_end:
+        if t_start is None or t_end is None or t_start > t_end:
             QMessageBox.information(self, "Export", "Please set valid time interval")
             return
 
@@ -360,7 +362,6 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
         self.widgetTitleProps.restoreDefaults(s)
         self.widgetTimeProps.restoreDefaults(s)
         self.widgetLegendProps.restoreDefaults(s)
-
 
     def setTimeInCombo(self, cbo, time):
         best_i = -1
