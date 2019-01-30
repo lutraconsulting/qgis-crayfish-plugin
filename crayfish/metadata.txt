@@ -12,7 +12,12 @@ about=The Crayfish plugin aspires to be a time explorer for various grid and vec
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=3.0.0 New Features:
+changelog=3.1.0 New Features:
+ - Processing: export algs for conversion to raster and vector
+ - Processing: support for mesh calculator
+ - Integrated plots
+ - Several bug fixes for exporting meshes containing vectors
+ <p>3.0.0 New Features:
  - Usage of QgsMeshLayer instead of Crayfish C++ library
  - Usage of pyqtgraph 0.10.0
  <p>2.7.3 New Features:
