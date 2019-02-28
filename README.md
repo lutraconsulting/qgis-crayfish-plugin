@@ -30,7 +30,7 @@ Here is the table that helps to understand where the implementation was moved an
 | identify          |       |     X     |                |
 | styling           |       |     X     |                |
 | time slider       |       |     X     |                |
-| export grid       |       |     X*    |                |
+| export grid       |       |     X     |                |
 | export contours   |       |     X*    |                |
 | trace animation   |       |     X*    |                |
 | plots             |       |           |        X       |
