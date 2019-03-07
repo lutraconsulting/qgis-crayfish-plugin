@@ -68,12 +68,19 @@ def animation(cfg, progress_fn=None):
     # store original values
     original_rs = l.rendererSettings()
 
+    # count actual timesteps to animate
+    act_count = 0
+    for i in range(count):
+        time = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, i)).time()
+        if time_from <= time <= time_to:
+            act_count += 1
+
     # animate
     imgnum = 0
     for i in range(count):
 
         if progress_fn:
-            progress_fn(i, count)
+            progress_fn(imgnum, act_count)
 
         time = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, i)).time()
         if time < time_from or time > time_to:
