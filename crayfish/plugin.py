@@ -44,8 +44,8 @@ class CrayfishPlugin:
 
     def initGui(self):
         # Add menu items
-        self.menu = self.iface.pluginMenu().addMenu(QIcon(":/plugins/crayfish/images/crayfish.png"), "Crayfish")
-
+        self.mesh_menu = self.iface.mainWindow().findChild(QMenu, 'mMeshMenu')
+        self.menu = self.mesh_menu.addMenu(QIcon(":/plugins/crayfish/images/crayfish.png"), "Crayfish")
 
         self.actionPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot.svg"), "Plot", self.iface.mainWindow())
         self.actionPlot.triggered.connect(self.toggle_plot)
@@ -95,7 +95,7 @@ class CrayfishPlugin:
         self.iface.removeCustomActionForLayerType(self.actionExportAnimation)
 
         # Remove menu
-        self.iface.pluginMenu().removeAction(self.menu.menuAction())
+        self.mesh_menu.removeAction(self.menu.menuAction())
         self.menu = None
 
         # Remove connections
