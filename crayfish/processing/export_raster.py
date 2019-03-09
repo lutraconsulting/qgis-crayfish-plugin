@@ -28,29 +28,27 @@
 import os
 from PyQt5.QtGui import QIcon
 from processing.algs.qgis.QgisAlgorithm import QgisAlgorithm
-from qgis.core import (Qgis,
-                       QgsProcessing,
-                       QgsProcessingException,
-                       QgsProcessingParameterNumber,
-                       QgsProcessingParameterMeshLayer,
-                       QgsProcessingParameterRasterDestination,
-                       QgsMesh,
-                       QgsMeshDatasetIndex,
-                       QgsRasterBlock,
-                       QgsProject,
-                       QgsMeshUtils,
-                       QgsRasterFileWriter,
-                       QgsMapToPixel,
-                       QgsProcessingParameterExtent,
-                       QgsErrorMessage
-                       )
+from qgis.core import (
+    Qgis,
+    QgsProcessingException,
+    QgsProcessingParameterNumber,
+    QgsProcessingParameterMeshLayer,
+    QgsProcessingParameterRasterDestination,
+    QgsMesh,
+    QgsMeshDatasetIndex,
+    QgsProject,
+    QgsMeshUtils,
+    QgsRasterFileWriter,
+    QgsProcessingParameterExtent,
+    QgsErrorMessage
+)
 import qgis
 from .parameters import DatasetParameter, TimestepParameter
 
 
 class MeshExportRasterAlgorithm(QgisAlgorithm):
     INPUT_LAYER = 'CRAYFISH_INPUT_LAYER'
-    INPUT_DATASET_GROUPS = 'CRAYFISH_INPUT_GROUP'
+    INPUT_DATASET_GROUP = 'CRAYFISH_INPUT_GROUP'
     INPUT_TIMESTEP = 'CRAYFISH_INPUT_TIMESTEP'
     INPUT_EXTENT = 'CRAYFISH_INPUT_EXTENT'
     OUTPUT = 'CRAYFISH_OUTPUT_RASTER'
@@ -76,17 +74,17 @@ class MeshExportRasterAlgorithm(QgisAlgorithm):
 
         self.addParameter(QgsProcessingParameterNumber(
             self.MAP_UNITS_PER_PIXEL,
-            self.tr(
-                'Map units per pixel'),
+            self.tr('Map units per pixel'),
             defaultValue=100,
             minValue=0,
             type=QgsProcessingParameterNumber.Double
         ))
 
         self.addParameter(DatasetParameter(
-                    self.INPUT_DATASET_GROUPS,
+                    self.INPUT_DATASET_GROUP,
                     'Dataset group',
                     self.INPUT_LAYER,
+                    allowMultiple=False,
                     optional=False))
 
         self.addParameter(TimestepParameter(
@@ -102,8 +100,9 @@ class MeshExportRasterAlgorithm(QgisAlgorithm):
                 'Output layer')))
 
     def processAlgorithm(self, parameters, context, feedback):
+
         layer = self.parameterAsMeshLayer(parameters, self.INPUT_LAYER, context)
-        datasets = parameters[self.INPUT_DATASET_GROUPS]
+        dataset = parameters[self.INPUT_DATASET_GROUP]
         timestep = parameters[self.INPUT_TIMESTEP]
 
         mupp = self.parameterAsDouble(
@@ -121,55 +120,51 @@ class MeshExportRasterAlgorithm(QgisAlgorithm):
             self.OUTPUT,
             context)
 
-        if not datasets:
-            raise QgsProcessingException(u'No dataset groups selected')
+        if dataset is None:
+            raise QgsProcessingException(u'No dataset group selected')
 
-        no_bands = len(datasets)
         width = extent.width()/mupp
         height = extent.height()/mupp
         map_settings = qgis.utils.iface.mapCanvas().mapSettings()
         crs = map_settings.destinationCrs()
         transform_context = QgsProject.instance().transformContext()
-        outputFormat = QgsRasterFileWriter.driverForExtension(os.path.splitext(output_layer)[1])
+        output_format = QgsRasterFileWriter.driverForExtension(os.path.splitext(output_layer)[1])
 
         rfw = QgsRasterFileWriter(output_layer)
         rfw.setOutputProviderKey('gdal')
-        rfw.setOutputFormat(outputFormat)
-        rdp = rfw.createMultiBandRaster(
+        rfw.setOutputFormat(output_format)
+        rdp = rfw.createOneBandRaster(
             Qgis.Float64,
             width,
             height,
             extent,
-            crs,
-            no_bands
+            crs
         )
         if rdp is None:
             raise QgsProcessingException(self.tr("Could not create raster output: {}").format(output_layer))
         if not rdp.isValid():
-            raise QgsProcessingException(self.tr("Could not create raster output {}: {}").format(output_layer,
-                                                                                                 rdp.error().message(
-                                                                                                     QgsErrorMessage.Text)))
-
+            raise QgsProcessingException(
+                self.tr("Could not create raster output {}: {}").format(
+                    output_layer,
+                    rdp.error().message(QgsErrorMessage.Text)
+                )
+            )
         rdp.setEditable(True)
 
-        band_index = 1 # numbered from 1
-        for groupIndex in datasets:
-            datasetIndex = QgsMeshDatasetIndex(groupIndex, timestep)
-
-            block = QgsMeshUtils.exportRasterBlock(
-                layer,
-                datasetIndex,
-                crs,
-                transform_context,
-                mupp,
-                extent
-            )
-            rdp.writeBlock(block, band_index)
-            rdp.setNoDataValue(band_index, block.noDataValue())
-            feedback.setProgress(band_index / no_bands * 100)
-            band_index =+ 1
-
+        nr_timesteps = layer.dataProvider().datasetCount(QgsMeshDatasetIndex(dataset))
+        if nr_timesteps == 1:
+            timestep = 0
+        dataset_index = QgsMeshDatasetIndex(dataset, timestep)
+        block = QgsMeshUtils.exportRasterBlock(
+            layer,
+            dataset_index,
+            crs,
+            transform_context,
+            mupp,
+            extent
+        )
+        rdp.writeBlock(block, 1)
+        rdp.setNoDataValue(1, block.noDataValue())
         rdp.setEditable(False)
-
         feedback.setProgress(100)
         return {self.OUTPUT: output_layer}
