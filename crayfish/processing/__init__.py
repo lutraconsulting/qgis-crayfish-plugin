@@ -31,6 +31,8 @@ from .export_faces import ExportFacesAlgorithm
 from .export_vertices import ExportVerticesAlgorithm
 from .calculator import MeshCalculatorAlgorithm
 from .export_raster import MeshExportRasterAlgorithm
+from .saga_flow_to_grib import SagaFlowToGribAlgorithm
+
 
 class CrayfishProcessingProvider(QgsProcessingProvider):
 
@@ -60,6 +62,7 @@ class CrayfishProcessingProvider(QgsProcessingProvider):
         self.alglist = [ExportFacesAlgorithm(),
                         ExportVerticesAlgorithm(),
                         MeshCalculatorAlgorithm(),
-                        MeshExportRasterAlgorithm()]
+                        MeshExportRasterAlgorithm(),
+                        SagaFlowToGribAlgorithm()]
         for alg in self.alglist:
             self.addAlgorithm(alg)
