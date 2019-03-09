@@ -106,13 +106,13 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
         y_block = QgsRasterBlock(Qgis.Float32, width, height)
         diag = 1. / sqrt(2)
         dir_map = {
-            0: (0, 1),
+            0: (1e-7, 1),
             1: (diag, diag),
-            2: (1, 0),
+            2: (1, 1e-7),
             3: (diag, -diag),
-            4: (0, -1),
+            4: (1e-7, -1),
             5: (-diag, -diag),
-            6: (-1, 0),
+            6: (-1, 1e-7),
             7: (-diag, diag),
             255: (0, 0)
         }
