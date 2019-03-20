@@ -105,6 +105,11 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
         x_block = QgsRasterBlock(Qgis.Float32, width, height)
         y_block = QgsRasterBlock(Qgis.Float32, width, height)
         diag = 1. / sqrt(2)
+
+        # resulting raster has no NODATA value set, which
+        # is not treated correctly in MDAL 0.2.0. See
+        # see https://github.com/lutraconsulting/MDAL/issues/104
+        # therefore set some small value to overcome the issue
         dir_map = {
             0: (1e-7, 1),
             1: (diag, diag),
