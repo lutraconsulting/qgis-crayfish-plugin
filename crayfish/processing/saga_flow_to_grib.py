@@ -36,8 +36,9 @@ from qgis.core import (
     QgsRasterBlock,
     QgsRasterFileWriter,
     QgsProcessingParameterRasterLayer,
-    QgsProcessingParameterRasterDestination,
-    QgsProcessingAlgorithm
+    QgsProcessingParameterFileDestination,
+    QgsProcessingAlgorithm,
+    QgsProcessingException
 )
 from qgis.utils import iface
 
@@ -69,16 +70,22 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
         return SagaFlowToGribAlgorithm()
 
     def initAlgorithm(self, config):
-        self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT, self.tr('Input raster')))
-        self.addParameter(QgsProcessingParameterRasterDestination(self.OUTPUT, self.tr('Resulting raster')))
+        self.addParameter(QgsProcessingParameterRasterLayer(
+            self.INPUT,
+            self.tr('Input raster')))
+
+        self.addParameter(QgsProcessingParameterFileDestination(
+            self.OUTPUT,
+            self.tr('Output file (GRIB)'),
+            self.tr('GRIB files (*.grb)'),
+            optional=False))
 
     def processAlgorithm(self, parameters, context, feedback):
         inp_rast = self.parameterAsRasterLayer(parameters, self.INPUT, context)
-        grib_filename = self.parameterAsOutputLayer(
-            parameters,
-            self.OUTPUT,
-            context
-        )
+
+        grib_filename = self.parameterAsString(parameters, self.OUTPUT, context)
+        if not grib_filename:
+            raise QgsProcessingException(self.tr('You need to specify output filename.'))
 
         idp = inp_rast.dataProvider()
         map_settings = iface.mapCanvas().mapSettings()
