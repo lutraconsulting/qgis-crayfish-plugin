@@ -99,6 +99,7 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
         self.btnBrowseOutput.clicked.connect(self.browseOutput)
         self.btnBrowseTemplate.clicked.connect(self.browseTemplate)
         self.btnBrowseFfmpegPath.clicked.connect(self.browseFfmpegPath)
+        self.btnBrowseImgTmpPath.clicked.connect(self.browseImgTmpPath)
 
     def populateTimes(self, cbo, dataset_group_index):
         cbo.clear()
@@ -135,6 +136,12 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
         if len(filename) == 0:
             return
         self.editFfmpegPath.setText(filename)
+
+    def browseImgTmpPath(self):
+        dir = QFileDialog.getExistingDirectory(self, "Path to image folder")
+        if len(dir) == 0:
+            return
+        self.editImgTmpPath.setText(dir)
 
 
     def onOK(self):
@@ -213,11 +220,16 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
         self.buttonBox.setEnabled(False)
 
         tmpdir = tempfile.mkdtemp(prefix='crayfish')
+        deleteIntermediateImages = self.radDelTmpImg.isChecked()
+
+        if not deleteIntermediateImages:
+            tmpdir = self.editImgTmpPath.text()
 
         w = self.spinWidth.value()
         h = self.spinHeight.value()
         fps = self.spinSpeed.value()
         img_output_tpl = os.path.join(tmpdir, "%03d.png")
+
         tmpl = None # path to template file to be used
 
         prog = lambda i,cnt: self.updateProgress(i, cnt)
@@ -250,7 +262,7 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
 
         ffmpeg_res, logfile = images_to_video(img_output_tpl, output_file, fps, self.quality(), ffmpeg_bin)
 
-        if ffmpeg_res:
+        if ffmpeg_res and deleteIntermediateImages:
             shutil.rmtree(tmpdir)
 
         QApplication.restoreOverrideCursor()
