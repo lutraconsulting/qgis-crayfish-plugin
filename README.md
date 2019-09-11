@@ -6,11 +6,9 @@ Crayfish (QGIS plugin)
 
 <img align="right" src="https://raw.githubusercontent.com/lutraconsulting/qgis-crayfish-plugin/master/crayfish/images/crayfish_128px.png">
 
-The Crayfish Plugin is a visualiser for temporal structured/unstructured grids in QGIS.
+The Crayfish Plugin is to extent QGIS' functionalities to handle mesh datasets. With Crayfish plugin, you can export your mesh data as a GDAL/OGR raster or vector, generate animations and plot time series.
 
-You can use Crayfish to load the file formats supported by [MDAL](https://github.com/lutraconsulting/MDAL)
-
-Works on Windows, Linux and MacOS.
+Any mesh formats supported by [MDAL](https://github.com/lutraconsulting/MDAL) can be used in Crayfish plugin. Crayfish is compatible with all the main desktop operating systems (Windows, Linux and MacOS).
 
 ### Crayfish 3 vs Crayfish 2
 
@@ -20,7 +18,7 @@ were written in C++ language and hence Crayfish 2 was shipped as C++ library and
 In QGIS 3.4 & Crayfish 3.x, the C++ library was abandoned and replaced by [MDAL](https://github.com/lutraconsulting/MDAL)
 data provider for data (format) reading and QGIS Core enhancement (QgsMeshLayer).
 
-Here is the table that helps to understand where the implementation was moved and where to report issues with Crayfish:
+Here is the table that helps to understand the new implementation and where to report issues with Crayfish:
 
 |                   | MDAL  | QGIS 3.x  |  Crayfish 3.x  |
 |-------------------|-------|-----------|----------------|
@@ -30,11 +28,12 @@ Here is the table that helps to understand where the implementation was moved an
 | identify          |       |     X     |                |
 | styling           |       |     X     |                |
 | time slider       |       |     X     |                |
-| export grid       |       |     X     |                |
-| export contours   |       |     X*    |                |
+| export grid       |       |           |        X       |
+| export contours   |       |           |        X*      |
 | trace animation   |       |     X*    |                |
 | plots             |       |           |        X       |
 | export animations |       |           |        X       |
+| mesh calculator   |       |     X     |                |
 
 `*` marks not implemented features
 
