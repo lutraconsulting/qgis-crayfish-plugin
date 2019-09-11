@@ -17,7 +17,7 @@ Works on Windows, Linux and MacOS.
 In QGIS 2.x & Crayfish 2.x all features were implemented through QGIS's plugin layer. Rendering and format reading
 were written in C++ language and hence Crayfish 2 was shipped as C++ library and QGIS python plugin.
 
-In QGIS 3.4 & Crayfish 3.x, the C++ library was abandon and replaced by [MDAL](https://github.com/lutraconsulting/MDAL)
+In QGIS 3.4 & Crayfish 3.x, the C++ library was abandoned and replaced by [MDAL](https://github.com/lutraconsulting/MDAL)
 data provider for data (format) reading and QGIS Core enhancement (QgsMeshLayer).
 
 Here is the table that helps to understand where the implementation was moved and where to report issues with Crayfish:
