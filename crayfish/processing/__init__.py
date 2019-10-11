@@ -34,6 +34,13 @@ from .export_raster import MeshExportRasterAlgorithm
 from .saga_flow_to_grib import SagaFlowToGribAlgorithm
 
 
+try:
+    from qgis.analysis import QgsMeshContours
+    from .contours import MeshContoursAlgorithm
+    have_contours = True
+except ImportError:
+    have_contours = False # pre QGIS 3.12
+
 
 class CrayfishProcessingProvider(QgsProcessingProvider):
 
@@ -65,5 +72,9 @@ class CrayfishProcessingProvider(QgsProcessingProvider):
                         MeshCalculatorAlgorithm(),
                         MeshExportRasterAlgorithm(),
                         SagaFlowToGribAlgorithm()]
+
+        if have_contours:
+            self.alglist += [MeshContoursAlgorithm()]
+
         for alg in self.alglist:
             self.addAlgorithm(alg)
