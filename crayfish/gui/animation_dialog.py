@@ -228,7 +228,7 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
         w = self.spinWidth.value()
         h = self.spinHeight.value()
         fps = self.spinSpeed.value()
-        img_output_tpl = os.path.join(tmpdir, "%03d.png")
+        img_output_tpl = os.path.join(tmpdir, "%05d.png")
 
         tmpl = None # path to template file to be used
 
