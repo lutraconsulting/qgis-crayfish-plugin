@@ -255,7 +255,7 @@ def prepare_composition(layout, time, cfg, layoutcfg, extent, layers, crs):
         set_item_pos(cLegend, itemcfg['position'], layout)
 
 
-def images_to_video(tmp_img_dir="/tmp/vid/%03d.png", output_file="/tmp/vid/test.avi", fps=10, qual=1,
+def images_to_video(tmp_img_dir="/tmp/vid/%05d.png", output_file="/tmp/vid/test.avi", fps=10, qual=1,
                     ffmpeg_bin="ffmpeg", keep_intermediate_images=False):
     if qual == 0:  # lossless
         opts = ["-vcodec", "ffv1"]
