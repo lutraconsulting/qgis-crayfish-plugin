@@ -29,7 +29,7 @@ Here is the table that helps to understand the new implementation and where to r
 | styling           |       |     X     |                |
 | time slider       |       |     X     |                |
 | export grid       |       |           |        X       |
-| export contours   |       |           |        X*      |
+| export contours   |       |           |        X       |
 | trace animation   |       |     X*    |                |
 | plots             |       |           |        X       |
 | export animations |       |           |        X       |
