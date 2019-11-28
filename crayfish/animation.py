@@ -131,6 +131,76 @@ def animation(cfg, progress_fn=None):
     # restore original settings
     l.setRendererSettings(original_rs)
 
+def traceAnimation(cfg, progress_fn=None):
+    dpi = 96
+    cfg["dpi"] = dpi
+    l = cfg['layer']
+    m = cfg['map_settings']
+    w, h = cfg['img_size']
+    fps = cfg['fps']
+    duration = cfg['duration']
+    imgfile = cfg['tmp_imgfile']
+    count = cfg['count']
+    maxSpeed = cfg['max_speed']
+    lifeTime = cfg['life_time']
+    color = cfg['color']
+    size = cfg['size']
+    tailFactor=cfg['tail_factor']
+    minTailLenght=cfg['min_tail_leght']
+    persistence=cfg['persistence']
+
+    #First, we need to obtain the image of the map without the particles and without the vector dataset rendered
+
+    # store original settings
+    original_rs = l.rendererSettings()
+
+    tmpSettings=l.rendererSettings()
+    tmpSettings.setActiveVectorDataset( QgsMeshDatasetIndex() )
+    l.setRendererSettings(tmpSettings)
+
+    m.setOutputSize( QSize(w,h) )
+    underLayerRenderer=QgsMapRendererParallelJob(m)
+
+    underLayerRenderer.start()
+    underLayerRenderer.waitForFinished()
+
+    underLayerImage=underLayerRenderer.renderedImage()
+
+    # restore original settings
+    l.setRendererSettings(original_rs)
+
+    # create an initialize the particles Renderer
+    renderContext=QgsRenderContext.fromMapSettings(m)
+    particlesRenderer=QgsMeshVectorTraceRenderer(l, renderContext)
+
+    particlesRenderer.setFPS(fps)
+    particlesRenderer.setMaxSpeedPixel(maxSpeed)
+    particlesRenderer.seedRandomParticles(count)
+    particlesRenderer.setParticlesLifeTime(lifeTime)
+    particlesRenderer.setParticlesColor(color)
+    particlesRenderer.setParticlesSize(size)
+    particlesRenderer.setTailFactor(tailFactor)
+    particlesRenderer.setMinimumTailLength(minTailLenght)
+    particlesRenderer.setTailPersitence(persistence)
+
+    framesCount=duration*fps
+    #start to increment and generate image
+    for i in range(framesCount):
+
+        if progress_fn:
+            progress_fn(i, framesCount)
+
+        particleImage = particlesRenderer.imageRendered()
+        renderImage=underLayerImage.copy()
+        painter=QPainter()
+        painter.begin(renderImage)
+        painter.drawImage(0,0,particleImage)
+        painter.end()
+        renderImage.save(imgfile % (i+1),"PNG")
+
+    if progress_fn:
+        progress_fn(framesCount, framesCount)
+
 
 def composition_set_time(c, time):
     for i in c.items():
