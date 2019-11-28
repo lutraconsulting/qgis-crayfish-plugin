@@ -175,8 +175,8 @@ def traceAnimation(cfg, progress_fn=None):
 
     particlesRenderer.setFPS(fps)
     particlesRenderer.setMaxSpeedPixel(maxSpeed)
-    particlesRenderer.seedRandomParticles(count)
     particlesRenderer.setParticlesLifeTime(lifeTime)
+    particlesRenderer.seedRandomParticles(count)
     particlesRenderer.setParticlesColor(color)
     particlesRenderer.setParticlesSize(size)
     particlesRenderer.setTailFactor(tailFactor)
@@ -196,8 +196,7 @@ def traceAnimation(cfg, progress_fn=None):
         painter.begin(renderImage)
         painter.drawImage(0,0,particleImage)
         painter.end()
-        renderImage.save(imgfile % (i+1),"PNG")
-
+        renderImage.save(imgfile% (i+1),"PNG")
     if progress_fn:
         progress_fn(framesCount, framesCount)
 
