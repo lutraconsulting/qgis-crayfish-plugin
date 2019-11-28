@@ -30,6 +30,7 @@ from PyQt5.QtCore import *
 from qgis.core import *
 from .gui.plot_widget import CrayfishPlotWidget
 from .gui.animation_dialog import CrayfishAnimationDialog
+from .gui.trace_animation_dialog import CrayfishTraceAnimationDialog
 from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps
 from .processing import CrayfishProcessingProvider
 
@@ -53,12 +54,17 @@ class CrayfishPlugin:
         self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/images/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
         self.actionExportAnimation.triggered.connect(self.exportAnimation)
 
+        self.actionExportTraceAnimation=QAction(QIcon(":/plugins/crayfish/images/icon_video.png"),"Export Trace Animation ...", self.iface.mainWindow())
+        self.actionExportTraceAnimation.triggered.connect(self.exportParticleTraceAnimation)
+
         self.menu.addAction(self.actionPlot)
         self.menu.addAction(self.actionExportAnimation)
+        self.menu.addAction(self.actionExportTraceAnimation)
 
         # Register actions for context menu
         self.iface.addCustomActionForLayerType(self.actionPlot, '', QgsMapLayer.MeshLayer, True)
         self.iface.addCustomActionForLayerType(self.actionExportAnimation, '', QgsMapLayer.MeshLayer, True)
+        self.iface.addCustomActionForLayerType(self.actionExportTraceAnimation, '', QgsMapLayer.MeshLayer, True)
 
         # Make connections
         self.iface.layerTreeView().currentLayerChanged.connect(self.active_layer_changed)
@@ -89,10 +95,12 @@ class CrayfishPlugin:
         # Remove menu item
         self.menu.removeAction(self.actionPlot)
         self.menu.removeAction(self.actionExportAnimation)
+        self.menu.removeAction(self.actionExportTraceAnimation)
 
         # Remove actions for context menu
         self.iface.removeCustomActionForLayerType(self.actionPlot)
         self.iface.removeCustomActionForLayerType(self.actionExportAnimation)
+        self.iface.removeCustomActionForLayerType(self.actionExportTraceAnimation)
 
         # Remove menu
         self.mesh_menu.removeAction(self.menu.menuAction())
@@ -129,3 +137,27 @@ class CrayfishPlugin:
 
         dlg = CrayfishAnimationDialog(self.iface)
         dlg.exec_()
+
+    def exportParticleTraceAnimation(self):
+        layer=self.iface.activeLayer()
+        if not layer or layer.type()!= QgsMapLayer.MeshLayer:
+            QMessageBox.warning(None, "Crayfish", "Please select a Mesh Layer for export")
+            return
+
+        if not layer.dataProvider():
+            QMessageBox.warning(None, "Crayfish", "Mesh layer has invalid data provider")
+            return
+
+        vectorDataset=layer.rendererSettings().activeVectorDataset()
+
+        if not vectorDataset.isValid():
+            QMessageBox.warning(None, "Crayfish", "Please activate vector rendering for trace animation export")
+            return
+
+        mapCanvas=self.iface.mapCanvas()
+
+        dlg = CrayfishTraceAnimationDialog(self.iface)
+        dlg.exec_()
+
+
+
