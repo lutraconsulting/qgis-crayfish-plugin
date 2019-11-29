@@ -34,6 +34,12 @@ from .gui.trace_animation_dialog import CrayfishTraceAnimationDialog
 from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps
 from .processing import CrayfishProcessingProvider
 
+try:
+    from qgis.core import QgsMeshVectorTraceRenderer
+    have_trace_particle_api = True
+except ImportError:
+    have_trace_particle_api = False
+
 from .resources import *
 
 class CrayfishPlugin:
@@ -148,16 +154,15 @@ class CrayfishPlugin:
             QMessageBox.warning(None, "Crayfish", "Mesh layer has invalid data provider")
             return
 
+        if not have_trace_particle_api:
+            QMessageBox.warning(None, "Crayfish", "You QGIS version does not have API for export of particle animation. Update to QGIS 3.12 or later")
+            return
+
         vectorDataset=layer.rendererSettings().activeVectorDataset()
 
         if not vectorDataset.isValid():
             QMessageBox.warning(None, "Crayfish", "Please activate vector rendering for trace animation export")
             return
 
-        mapCanvas=self.iface.mapCanvas()
-
         dlg = CrayfishTraceAnimationDialog(self.iface)
         dlg.exec_()
-
-
-

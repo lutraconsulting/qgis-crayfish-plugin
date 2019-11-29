@@ -24,7 +24,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import platform
 import os
 import shutil
 import tempfile
@@ -82,9 +81,7 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
             return
         self.editImgTmpPath.setText(dir)
 
-
     def onOK(self):
-
         ffmpeg_bin=handle_ffmpeg(self)
         if (ffmpeg_bin==""):
             return;
@@ -119,9 +116,7 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
         minTailLenght=self.spinMinTailLenght.value()
         persistence=self.spinPersistence.value()
 
-
         tmpl = None # path to template file to be used
-
         prog = lambda i,cnt: self.updateProgress(i, cnt)
 
         QApplication.setOverrideCursor(Qt.WaitCursor)
@@ -168,7 +163,6 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
 
         self.accept()
 
-
     def quality(self):
         if self.radQualBest.isChecked():
             return 0
@@ -176,7 +170,6 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
             return 2
         else:         # high
             return 1
-
 
     def setQuality(self, qual):
         if qual == 0:
@@ -186,13 +179,11 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
         else:
             self.radQualHigh.setChecked(True)
 
-
     def updateProgress(self, i, cnt):
         """ callback from animation routine """
         self.progress.setMaximum(cnt)
         self.progress.setValue(i)
         qApp.processEvents()
-
 
     def storeDefaults(self):
         s = QSettings()
@@ -216,7 +207,6 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
         s.setValue("tail_factor", self.spinTailFactor.value())
         s.setValue("min_tail_lenght", self.spinMinTailLenght.value())
         s.setValue("persistence", self.spinPersistence.value())
-
 
     def restoreDefaults(self):
         s = QSettings()
@@ -256,6 +246,3 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
                 self.spinMinTailLenght.setValue(s.value(k, type=int))
             elif k == "persistence":
                 self.spinPersistence.setValue(s.value(k, type=float))
-
-
-
