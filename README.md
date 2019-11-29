@@ -30,12 +30,10 @@ Here is the table that helps to understand the new implementation and where to r
 | time slider       |       |     X     |                |
 | export grid       |       |           |        X       |
 | export contours   |       |           |        X       |
-| trace animation   |       |     X*    |                |
+| trace animation   |       |           |        X       |
 | plots             |       |           |        X       |
 | export animations |       |           |        X       |
 | mesh calculator   |       |     X     |                |
-
-`*` marks not implemented features
 
 ### Using Crayfish
 
