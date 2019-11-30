@@ -35,7 +35,7 @@ from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps
 from .processing import CrayfishProcessingProvider
 
 try:
-    from qgis.core import QgsMeshVectorTraceRenderer
+    from qgis.core import QgsMeshVectorTraceAnimationGenerator
     have_trace_particle_api = True
 except ImportError:
     have_trace_particle_api = False

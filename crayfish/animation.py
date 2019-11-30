@@ -171,7 +171,7 @@ def traceAnimation(cfg, progress_fn=None):
 
     # create an initialize the particles Renderer
     renderContext=QgsRenderContext.fromMapSettings(m)
-    particlesRenderer=QgsMeshVectorTraceRenderer(l, renderContext)
+    particlesRenderer=QgsMeshVectorTraceAnimationGenerator(l, renderContext)
 
     particlesRenderer.setFPS(fps)
     particlesRenderer.setMaxSpeedPixel(maxSpeed)
