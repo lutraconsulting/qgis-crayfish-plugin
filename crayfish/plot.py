@@ -135,3 +135,29 @@ def export_plot(plt, filename, width=None, height=None):
     if width is not None: e.parameters()['width'] = width
     if height is not None: e.parameters()['height'] = height
     e.export(filename)
+
+
+def plot_3d_data(layer, ds_group_index, ds_dataset_index, geom_pt):
+    """ return array with tuples defining X,Y points for plot """
+    average = None
+    x,y = [], []
+    if not layer:
+        return x, y, average
+
+    ds = QgsMeshDatasetIndex(ds_group_index, ds_dataset_index)
+    pt = geom_pt.asPoint()
+    block = layer.dataset3dValue(ds, pt)
+    if block.isValid():
+        nvols = block.volumesCount()
+        extrusions = block.verticalLevels()
+
+        for i in range(nvols):
+            ext = extrusions[i] + ( extrusions[i+1] - extrusions[i] ) / 2.0
+            val = block.value(i).scalar()
+            x.append(val)
+            y.append(ext)
+
+        averageVal = layer.datasetValue(ds, pt)
+        average = averageVal.scalar()
+
+    return x, y, average
