@@ -3,5 +3,6 @@
         <file>images/crayfish.png</file>
         <file>images/icon_plot.svg</file>
         <file>images/icon_video.png</file>
+        <file>images/icon_plot_3d.svg</file>
     </qresource>
 </RCC>

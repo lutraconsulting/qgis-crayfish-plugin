@@ -40,6 +40,12 @@ try:
 except ImportError:
     have_trace_particle_api = False
 
+try:
+    from qgis.core import QgsMesh3dDataBlock
+    have_3d_api = True
+except ImportError:
+    have_3d_api = False
+
 from .resources import *
 
 class CrayfishPlugin:
@@ -47,6 +53,7 @@ class CrayfishPlugin:
         # Save reference to the QGIS interface
         self.iface = iface
         self.plot_dock_widget = None
+        self.plot_dock_3d_widget = None
         self.provider = CrayfishProcessingProvider()
 
     def initGui(self):
@@ -57,6 +64,9 @@ class CrayfishPlugin:
         self.actionPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot.svg"), "Plot", self.iface.mainWindow())
         self.actionPlot.triggered.connect(self.toggle_plot)
 
+        self.action3DPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot_3d.svg"), "3D Plot", self.iface.mainWindow())
+        self.action3DPlot.triggered.connect(self.toggle_3d_plot)
+
         self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/images/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
         self.actionExportAnimation.triggered.connect(self.exportAnimation)
 
@@ -64,11 +74,13 @@ class CrayfishPlugin:
         self.actionExportTraceAnimation.triggered.connect(self.exportParticleTraceAnimation)
 
         self.menu.addAction(self.actionPlot)
+        self.menu.addAction(self.action3DPlot)
         self.menu.addAction(self.actionExportAnimation)
         self.menu.addAction(self.actionExportTraceAnimation)
 
         # Register actions for context menu
         self.iface.addCustomActionForLayerType(self.actionPlot, '', QgsMapLayer.MeshLayer, True)
+        self.iface.addCustomActionForLayerType(self.action3DPlot, '', QgsMapLayer.MeshLayer, True)
         self.iface.addCustomActionForLayerType(self.actionExportAnimation, '', QgsMapLayer.MeshLayer, True)
         self.iface.addCustomActionForLayerType(self.actionExportTraceAnimation, '', QgsMapLayer.MeshLayer, True)
 
@@ -97,14 +109,34 @@ class CrayfishPlugin:
     def toggle_plot(self):
         self.plot_dock_widget.setVisible(not self.plot_dock_widget.isVisible())
 
+    def toggle_3d_plot(self):
+        if have_3d_api:
+            if self.plot_dock_3d_widget is None:
+                from .gui.plot_3d_widget import CrayfishPlot3dWidget
+                # Create widget
+                self.plot_dock_3d_widget = QDockWidget("Crayfish 3D Plot")
+                self.plot_dock_3d_widget.setObjectName("CrayfishPlot3dDock")
+                self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_3d_widget)
+                w = CrayfishPlot3dWidget(self.plot_dock_3d_widget)
+                self.plot_dock_3d_widget.setWidget(w)
+                self.plot_dock_3d_widget.hide()
+
+            self.plot_dock_3d_widget.setVisible(not self.plot_dock_3d_widget.isVisible())
+        else:
+            QMessageBox.warning(None, "Crayfish",
+                                "You QGIS version does not have API for 3d stacked meshes. Update to QGIS 3.12 or later")
+
+
     def unload(self):
         # Remove menu item
         self.menu.removeAction(self.actionPlot)
+        self.menu.removeAction(self.action3DPlot)
         self.menu.removeAction(self.actionExportAnimation)
         self.menu.removeAction(self.actionExportTraceAnimation)
 
         # Remove actions for context menu
         self.iface.removeCustomActionForLayerType(self.actionPlot)
+        self.iface.removeCustomActionForLayerType(self.action3DPlot)
         self.iface.removeCustomActionForLayerType(self.actionExportAnimation)
         self.iface.removeCustomActionForLayerType(self.actionExportTraceAnimation)
 
@@ -119,6 +151,12 @@ class CrayfishPlugin:
         self.layer = None
         self.plot_dock_widget.close()
         self.iface.removeDockWidget(self.plot_dock_widget)
+        self.plot_dock_widget = None
+
+        if self.plot_dock_3d_widget is not None:
+            self.plot_dock_3d_widget.close()
+            self.iface.removeDockWidget(self.plot_dock_3d_widget)
+            self.plot_dock_3d_widget = None
 
         QgsApplication.processingRegistry().removeProvider(self.provider)
 
