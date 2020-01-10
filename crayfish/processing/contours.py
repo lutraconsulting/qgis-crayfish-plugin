@@ -106,11 +106,13 @@ class MeshContoursAlgorithm(QgisAlgorithm):
         self.addParameter(QgsProcessingParameterNumber(
                     self.INPUT_MIN,
                     self.tr('Minimum contour level'),
+                    type=QgsProcessingParameterNumber.Double,
                     optional=True))
 
         self.addParameter(QgsProcessingParameterNumber(
                     self.INPUT_MAX,
                     self.tr('Maximum contour level'),
+                    type=QgsProcessingParameterNumber.Double,
                     optional=True))
 
         self.addParameter(QgsProcessingParameterString(
