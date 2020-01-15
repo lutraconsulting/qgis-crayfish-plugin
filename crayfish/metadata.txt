@@ -16,6 +16,7 @@ changelog=3.2.1 Bug Fixes:
  - Processing dialog for export contours
  - Fix formatting of exported contours attributes
  - Use QgsMeshLayer's format time to format time
+ - Add selection of driver and group name to the processing calculator
  <p>3.2.0 New Features
  - See 3D stacked mesh plot
  - Export contour lines and polygons (processing)

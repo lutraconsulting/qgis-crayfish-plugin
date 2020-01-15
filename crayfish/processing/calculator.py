@@ -33,10 +33,18 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterString,
                        QgsProcessingParameterExtent,
+                       QgsProcessingParameterEnum,
                        QgsMesh,
                        QgsMeshDatasetIndex)
 from qgis.analysis import QgsMeshCalculator
 from .parameters import TimestepParameter
+from qgis.core import QgsProviderRegistry
+
+try:
+    from qgis.core import QgsMeshDriverMetadata
+    have_qgis310_api = False
+except ImportError:
+    have_qgis310_api = True
 
 
 class MeshCalculatorAlgorithm(QgisAlgorithm):
@@ -46,6 +54,8 @@ class MeshCalculatorAlgorithm(QgisAlgorithm):
     INPUT_FORMULA = 'CRAYFISH_INPUT_FORMULA'
     INPUT_EXTENT = 'CRAYFISH_INPUT_EXTENT'
     OUTPUT_FILE = 'CRAYFISH_OUTPUT_FILE'
+    OUTPUT_GROUP = 'CRAYFISH_OUTPUT_GROUP'
+    OUTPUT_DRIVER = 'CRAYFISH_OUTPUT_DRIVER'
 
     def name(self):
         return 'CrayfishMeshCalculator'
@@ -55,6 +65,20 @@ class MeshCalculatorAlgorithm(QgisAlgorithm):
 
     def icon(self):
         return QIcon(":/plugins/crayfish/images/crayfish.png")
+
+    def meshWriteDrivers(self):
+        assert( not have_qgis310_api)
+        meshDrivers = []
+        providerMetadata = QgsProviderRegistry.instance().providerMetadata("mdal")
+        if providerMetadata:
+            allDrivers = providerMetadata.meshDriversMetadata()
+            for meta in allDrivers:
+                if (meta.capabilities() & QgsMeshDriverMetadata.MeshDriverCapability.CanWriteFaceDatasets) or (
+                        meta.capabilities() & QgsMeshDriverMetadata.MeshDriverCapability.CanWriteVertexDatasets):
+                    meshDrivers += [meta.name()]
+        else:
+            meshDrivers = ["DAT"]
+        return meshDrivers
 
     def initAlgorithm(self, config=None):
         self.addParameter(QgsProcessingParameterMeshLayer(
@@ -86,12 +110,32 @@ class MeshCalculatorAlgorithm(QgisAlgorithm):
                     self.INPUT_LAYER,
                     optional=False))
 
-        # only dat file exporter is implemented in MDAL
-        self.addParameter(QgsProcessingParameterFileDestination(
-                    self.OUTPUT_FILE,
-                    'Exported dataset group file',
-                    'binary DAT (*.dat)',
-                    ))
+        if have_qgis310_api:
+            # only dat file exporter is implemented in MDAL
+            self.addParameter(QgsProcessingParameterFileDestination(
+                        self.OUTPUT_FILE,
+                        'Exported dataset group file',
+                        'binary DAT (*.dat)',
+                        ))
+        else:
+            self.addParameter(QgsProcessingParameterFileDestination(
+                        self.OUTPUT_FILE,
+                        'Exported dataset group file',
+                        'MDAL file (*.*)',
+                        ))
+
+            self.addParameter(QgsProcessingParameterString(
+                self.OUTPUT_GROUP,
+                'Name of the exported dataset group'
+            ))
+
+            self.drivers = self.meshWriteDrivers()
+            self.addParameter(QgsProcessingParameterEnum(
+                self.OUTPUT_DRIVER,
+                'Driver to write results with',
+                self.drivers
+            ))
+
 
     def processAlgorithm(self, parameters, context, feedback):
         layer = self.parameterAsMeshLayer(parameters, self.INPUT_LAYER, context)
@@ -101,13 +145,27 @@ class MeshCalculatorAlgorithm(QgisAlgorithm):
         formula = self.parameterAsString(parameters, self.INPUT_FORMULA, context)
         outputFile = self.parameterAsFileOutput(parameters, self.OUTPUT_FILE, context)
 
-        calculator = QgsMeshCalculator(
-            formula,
-            outputFile,
-            extent,
-            startDatasetIndex,
-            endDatasetIndex,
-            layer)
+        if have_qgis310_api:
+            calculator = QgsMeshCalculator(
+                formula,
+                outputFile,
+                extent,
+                startDatasetIndex,
+                endDatasetIndex,
+                layer)
+        else:
+            outputDriver = self.drivers[parameters[self.OUTPUT_DRIVER]]
+            outputGroup = self.parameterAsString(parameters, self.OUTPUT_GROUP, context)
+
+            calculator = QgsMeshCalculator(
+                formula,
+                outputDriver,
+                outputGroup,
+                outputFile,
+                extent,
+                startDatasetIndex,
+                endDatasetIndex,
+                layer)
 
         res = calculator.processCalculation( feedback )
         if res != QgsMeshCalculator.Success:
