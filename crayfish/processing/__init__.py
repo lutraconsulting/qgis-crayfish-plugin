@@ -32,7 +32,8 @@ from .export_vertices import ExportVerticesAlgorithm
 from .calculator import MeshCalculatorAlgorithm
 from .export_raster import MeshExportRasterAlgorithm
 from .saga_flow_to_grib import SagaFlowToGribAlgorithm
-
+from .export_2d_timeseries_plot import Export2dTimeseriesPlotAlgorithm
+from .export_2d_crosssection_plot import Export2dCrossSectionPlotAlgorithm
 
 try:
     from qgis.analysis import QgsMeshContours
@@ -71,7 +72,9 @@ class CrayfishProcessingProvider(QgsProcessingProvider):
                         ExportVerticesAlgorithm(),
                         MeshCalculatorAlgorithm(),
                         MeshExportRasterAlgorithm(),
-                        SagaFlowToGribAlgorithm()]
+                        SagaFlowToGribAlgorithm(),
+                        Export2dTimeseriesPlotAlgorithm(),
+                        Export2dCrossSectionPlotAlgorithm()]
 
         if have_contours:
             self.alglist += [MeshContoursAlgorithm()]
