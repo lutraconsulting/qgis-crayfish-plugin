@@ -56,7 +56,7 @@ from qgis.analysis import (
 )
 
 from .parameters import DatasetParameter, TimestepParameter
-
+from ..utils import decimalPrecision
 
 class MeshContoursAlgorithm(QgisAlgorithm):
     INPUT_LAYER = 'CRAYFISH_INPUT_LAYER'
@@ -170,9 +170,9 @@ class MeshContoursAlgorithm(QgisAlgorithm):
             index = QgsMeshDatasetIndex(groupIndex, timestep)
             datasetMeta = dp.datasetMetadata(index)
             time = datasetMeta.time()
-            for i in range(len(levels)-1):
-                lower_val = levels[i]
-                upper_val = levels[i+1]
+            for j in range(len(levels)-1):
+                lower_val = levels[j]
+                upper_val = levels[j+1]
                 # fetch values
                 geom = runner.exportPolygons(index,
                                              lower_val, upper_val,
@@ -201,12 +201,16 @@ class MeshContoursAlgorithm(QgisAlgorithm):
             interval = self.parameterAsDouble(parameters, self.INPUT_STEP, context)
             minimal = self.parameterAsDouble(parameters, self.INPUT_MIN, context)
             maximal = self.parameterAsDouble(parameters, self.INPUT_MAX, context)
-
             if (interval is None) or (minimal is None) or (maximal is None):
                 raise QgsProcessingException("Either levels or internal must be entered")
 
             if (minimal >= maximal) or (interval <= 0):
                 raise QgsProcessingException("Invalid input values minimal < maximal")
+            precision = max(
+                decimalPrecision(minimal),
+                decimalPrecision(maximal),
+                decimalPrecision(interval)
+            )
 
             ret = []
             value = minimal
@@ -219,8 +223,11 @@ class MeshContoursAlgorithm(QgisAlgorithm):
         else:
             ret = []
             levels = levels.split(",")
+            precision = 0
             for level in levels:
                 try:
+                    val = float(level)
+                    precision = max(precision, decimalPrecision(val))
                     ret += [float(level)]
                 except ValueError:
                     raise QgsProcessingException("Invalid format for level values, must be comma separated list")
@@ -228,18 +235,19 @@ class MeshContoursAlgorithm(QgisAlgorithm):
         if len(ret) < 1:
             raise QgsProcessingException("At least one contour level is required")
 
-        return ret
+        return ret, precision
 
     def processAlgorithm(self, parameters, context, feedback):
         layer = self.parameterAsMeshLayer(parameters, self.INPUT_LAYER, context)
-        levels = self._parse_levels(parameters, context)
+        levels, precision = self._parse_levels(parameters, context)
         datasets = parameters[self.INPUT_DATASETS]
         timestep = parameters[self.INPUT_TIMESTEP]
-
         fields_line = QgsFields()
         fields_line.append(QgsField("group", QVariant.String))
         fields_line.append(QgsField("time", QVariant.Double))
-        fields_line.append(QgsField("value", QVariant.Double))
+        valueField = QgsField("value", QVariant.Double)
+        valueField.setPrecision(precision)
+        fields_line.append(valueField)
 
         (sink_line, dest_id_line) = self.parameterAsSink(parameters,
                                                self.OUTPUT_LINE,
@@ -254,8 +262,12 @@ class MeshContoursAlgorithm(QgisAlgorithm):
         fields_poly = QgsFields()
         fields_poly.append(QgsField("group", QVariant.String))
         fields_poly.append(QgsField("time", QVariant.Double))
-        fields_poly.append(QgsField("min_value", QVariant.Double))
-        fields_poly.append(QgsField("max_value", QVariant.Double))
+        minValueField = QgsField("min_value", QVariant.Double)
+        minValueField.setPrecision(precision)
+        fields_poly.append(minValueField)
+        maxValueField = QgsField("max_value", QVariant.Double)
+        maxValueField.setPrecision(precision)
+        fields_poly.append(maxValueField)
         (sink_poly, dest_id_poly) = self.parameterAsSink(parameters,
                                                self.OUTPUT_POLY,
                                                context,
@@ -266,7 +278,7 @@ class MeshContoursAlgorithm(QgisAlgorithm):
         if sink_poly is None:
             raise QgsProcessingException(self.invalidSinkError(parameters, self.OUTPUT_POLY))
 
-        total = len(datasets) * len(levels)
+        total = 2 * len(datasets) * len(levels)
         runner = QgsMeshContours(layer)
         dp = layer.dataProvider()
 
