@@ -209,7 +209,7 @@ class CrayfishPlot3dWidget(QWidget):
         ds = QgsMeshDatasetIndex(ds_group_index, ds_dataset_index)
         meta = self.layer.dataProvider().datasetMetadata(ds)
         grpmeta = self.layer.dataProvider().datasetGroupMetadata(ds_group_index)
-        name = grpmeta.name() + " @ " + time_to_string(meta.time())
+        name = grpmeta.name() + " @ " + time_to_string(self.layer, meta.time())
         self.plot.setTitle(name)
         self.plot.legend.setVisible(True)
 

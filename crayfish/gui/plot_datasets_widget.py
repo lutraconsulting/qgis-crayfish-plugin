@@ -76,7 +76,7 @@ class DatasetsMenu(QMenu):
 
         for i in range(self.layer.dataProvider().datasetCount(dataset_group_index)):
             meta = self.layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, i))
-            a = self.addAction(time_to_string(meta.time()))
+            a = self.addAction(time_to_string(self.layer, meta.time()))
             a.dataset_index = i
             a.setCheckable(True)
             a.triggered.connect(self.on_action)
@@ -126,7 +126,7 @@ class DatasetsWidget(QToolButton):
             meta = self.menu_datasets.layer.dataProvider().datasetMetadata(
                 QgsMeshDatasetIndex(self.menu_datasets.dataset_group, lst[0])
             )
-            self.setText("Time: " + time_to_string(meta.time()))
+            self.setText("Time: " + time_to_string(self.menu_datasets.layer, meta.time()))
         else:
             self.setText("Time: [multiple]")
 

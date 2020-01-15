@@ -43,17 +43,10 @@ def float_safe(txt):
         return 0.
 
 
-def _hours_to_HHMMSS(hours):
-    seconds = round(hours * 3600.0, 2)
-    m, s = divmod(seconds, 60)
-    h, m = divmod(m, 60)
-    return "%02d:%02d:%05.2f" % (h, m, s)
-
-
-def time_to_string(time):  # time is in hours
-    # TODO time formatting!
-    return _hours_to_HHMMSS(time)
-
+def time_to_string(layer, time):  # time is in hours
+    if not layer or layer.type() != QgsMapLayer.MeshLayer:
+        raise Exception("unable to format time " + time)
+    return layer.formatTime(time)
 
 def mesh_layer_active_dataset_group_with_maximum_timesteps(layer):
     """ returns active dataset group with maximum datasets and the number of datasets """

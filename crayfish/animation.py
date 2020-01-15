@@ -85,7 +85,7 @@ def animation(cfg, progress_fn=None):
         time = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, i)).time()
         if time < time_from or time > time_to:
             continue
-
+        formattedTime = l.formatTime(time)
         # Set to render next timesteps
         rs = l.rendererSettings()
         asd = rs.activeScalarDataset()
@@ -103,7 +103,7 @@ def animation(cfg, progress_fn=None):
 
         layoutcfg = cfg['layout']
         if layoutcfg['type'] == 'file':
-            prepare_composition_from_template(layout, cfg['layout']['file'], time)
+            prepare_composition_from_template(layout, cfg['layout']['file'], formattedTime)
             # when using composition from template, match video's aspect ratio to paper size
             # by updating video's width (keeping the height)
             aspect = _page_size(layout).width() / _page_size(layout).height()
@@ -113,7 +113,7 @@ def animation(cfg, progress_fn=None):
             layout.setUnits(QgsUnitTypes.LayoutMillimeters)
             main_page = layout.pageCollection().page(0)
             main_page.setPageSize(QgsLayoutSize(w * 25.4 / dpi, h * 25.4 / dpi, QgsUnitTypes.LayoutMillimeters))
-            prepare_composition(layout, time, cfg, layoutcfg, extent, layers, crs)
+            prepare_composition(layout, formattedTime, cfg, layoutcfg, extent, layers, crs)
 
         imgnum += 1
         fname = imgfile % imgnum
@@ -201,14 +201,13 @@ def traceAnimation(cfg, progress_fn=None):
         progress_fn(framesCount, framesCount)
 
 
-def composition_set_time(c, time):
+def composition_set_time(c, formattedTime):
     for i in c.items():
         if isinstance(i, QgsLayoutItemLabel) and i.id() == "time":
-            txt = time_to_string(time)
-            i.setText(txt)
+            i.setText(formattedTime)
 
 
-def prepare_composition_from_template(layout, template_path, time):
+def prepare_composition_from_template(layout, template_path, formattedTime):
     document = QDomDocument()
     with open(template_path) as f:
         document.setContent(f.read())
@@ -216,7 +215,7 @@ def prepare_composition_from_template(layout, template_path, time):
     context.setPathResolver(QgsProject.instance().pathResolver())
     context.setProjectTranslator(QgsProject.instance())
     layout.readLayoutXml(document.documentElement(), document, context)
-    composition_set_time(layout, time)
+    composition_set_time(layout, formattedTime)
 
 
 def set_composer_item_label(item, itemcfg):

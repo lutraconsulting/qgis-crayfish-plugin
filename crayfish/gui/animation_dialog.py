@@ -86,7 +86,7 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
 
         for i in range(self.l.dataProvider().datasetCount(dataset_group_index)):
             meta = self.l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, i))
-            cbo.addItem(time_to_string(meta.time()), meta.time())
+            cbo.addItem(time_to_string(self.l, meta.time()), meta.time())
 
     def browseOutput(self):
         settings = QSettings()

@@ -1,7 +1,7 @@
 ; the next section is mandatory
 [general]
 name=Crayfish
-qgisMinimumVersion=3.6
+qgisMinimumVersion=3.10
 qgisMaximumVersion=3.99
 description=Visualiser for temporal structured/unstructured grids in QGIS
 ; category=Raster ; Did not know what my available choices where
@@ -14,6 +14,8 @@ about=The Crayfish plugin aspires to be a time explorer for various grid and vec
 ; start of optional metadata
 changelog=3.2.1 Bug Fixes:
  - Processing dialog for export contours
+ - Fix formatting of exported contours attributes
+ - Use QgsMeshLayer's format time to format time
  <p>3.2.0 New Features
  - See 3D stacked mesh plot
  - Export contour lines and polygons (processing)

@@ -411,7 +411,7 @@ class CrayfishPlotWidget(QWidget):
             clr = colors[i % len(colors)]
             pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
             meta = self.layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(ds_group_index, i))
-            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=time_to_string(meta.time()))
+            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=time_to_string(self.layer, meta.time()))
 
         rb = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
         rb.setColor(colors[0])
