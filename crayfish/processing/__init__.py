@@ -69,6 +69,8 @@ class CrayfishProcessingProvider(QgsProcessingProvider):
                         SagaFlowToGribAlgorithm(),
                         Export2dTimeseriesPlotAlgorithm(),
                         Export2dCrossSectionPlotAlgorithm()]
+        if have_edge_mesh:
+            self.alglist += [ExportEdgesAlgorithm()]
 
         self.alglist += [MeshContoursAlgorithm()]
 
