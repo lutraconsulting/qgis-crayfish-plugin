@@ -65,8 +65,12 @@ def animation(cfg, progress_fn=None):
         time_from = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, 0)).time()
         time_to = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, count - 1)).time()
 
-    # store original values
+    # store original layer state
     original_rs = l.rendererSettings()
+    isTemporalActive=l.temporalProperties().isActive()
+    originalStaticScalarDataset=l.staticScalarDatasetIndex()
+    originalStaticVectorDataset=l.staticVectorDatasetIndex()
+
 
     # count actual timesteps to animate
     act_count = 0
@@ -77,6 +81,7 @@ def animation(cfg, progress_fn=None):
 
     # animate
     imgnum = 0
+    l.temporalProperties().setIsActive(False)
     for i in range(count):
 
         if progress_fn:
@@ -88,13 +93,12 @@ def animation(cfg, progress_fn=None):
         formattedTime = l.formatTime(time)
         # Set to render next timesteps
         rs = l.rendererSettings()
-        asd = rs.activeScalarDataset()
-        if asd.isValid():
-            rs.setActiveScalarDataset(QgsMeshDatasetIndex(asd.group(), i))
-        avd = rs.activeVectorDataset()
-        if avd.isValid():
-            rs.setActiveVectorDataset(QgsMeshDatasetIndex(avd.group(), i))
-        l.setRendererSettings(rs)
+        asg = rs.activeScalarDatasetGroup()
+        if asg >= 0:
+            l.setStaticScalarDatasetIndex(QgsMeshDatasetIndex(asg, i))
+        avg = rs.activeVectorDatasetGroup()
+        if avg >= 0:
+            l.setStaticVectorDatasetIndex(QgsMeshDatasetIndex(avg, i))
 
         # Prepare layout
         layout = QgsPrintLayout(QgsProject.instance())
@@ -128,7 +132,10 @@ def animation(cfg, progress_fn=None):
     if progress_fn:
         progress_fn(count, count)
 
-    # restore original settings
+    # restore original layer state
+    l.setStaticScalarDatasetIndex(originalStaticScalarDataset)
+    l.setStaticVectorDatasetIndex(originalStaticVectorDataset)
+    l.temporalProperties().setIsActive(isTemporalActive)
     l.setRendererSettings(original_rs)
 
 def traceAnimation(cfg, progress_fn=None):
@@ -153,9 +160,12 @@ def traceAnimation(cfg, progress_fn=None):
 
     # store original settings
     original_rs = l.rendererSettings()
+    isTemporalActive = l.temporalProperties().isActive()
+    originalStaticScalarDataset = l.staticScalarDatasetIndex()
+    originalStaticVectorDataset = l.staticVectorDatasetIndex()
 
     tmpSettings=l.rendererSettings()
-    tmpSettings.setActiveVectorDataset( QgsMeshDatasetIndex() )
+    tmpSettings.setActiveVectorDatasetGroup( -1 )
     l.setRendererSettings(tmpSettings)
 
     m.setOutputSize( QSize(w,h) )
@@ -167,6 +177,9 @@ def traceAnimation(cfg, progress_fn=None):
     underLayerImage=underLayerRenderer.renderedImage()
 
     # restore original settings
+    l.setStaticScalarDatasetIndex(originalStaticScalarDataset)
+    l.setStaticVectorDatasetIndex(originalStaticVectorDataset)
+    l.temporalProperties().setIsActive(isTemporalActive)
     l.setRendererSettings(original_rs)
 
     # create an initialize the particles Renderer
@@ -199,7 +212,6 @@ def traceAnimation(cfg, progress_fn=None):
         renderImage.save(imgfile% (i+1),"PNG")
     if progress_fn:
         progress_fn(framesCount, framesCount)
-
 
 def composition_set_time(c, formattedTime):
     for i in c.items():

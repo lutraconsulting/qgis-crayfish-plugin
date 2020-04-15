@@ -55,15 +55,14 @@ def mesh_layer_active_dataset_group_with_maximum_timesteps(layer):
 
     if layer and layer.dataProvider() and layer.type() == QgsMapLayer.MeshLayer:
         rendererSettings = layer.rendererSettings()
-        asd = rendererSettings.activeScalarDataset()
+        group_index = rendererSettings.activeScalarDatasetGroup()
 
-        if asd.isValid():
-            group_index = asd.group()
-            timesteps = layer.dataProvider().datasetCount(asd.group())
+        if group_index >= 0:
+            timesteps = layer.dataProvider().datasetCount(group_index)
 
-        avd = rendererSettings.activeVectorDataset()
-        if avd.isValid():
-            avd_timesteps = layer.dataProvider().datasetCount(avd.group())
+        vector_group_index = rendererSettings.activeVectorDatasetGroup()
+        if vector_group_index>=0:
+            avd_timesteps = layer.dataProvider().datasetCount(vector_group_index)
             if avd_timesteps > timesteps:
                 group_index = avd.group()
 

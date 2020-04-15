@@ -196,9 +196,9 @@ class CrayfishPlugin:
             QMessageBox.warning(None, "Crayfish", "You QGIS version does not have API for export of particle animation. Update to QGIS 3.12 or later")
             return
 
-        vectorDataset=layer.rendererSettings().activeVectorDataset()
+        vectorDatasetGroup=layer.rendererSettings().activeVectorDatasetGroup()
 
-        if not vectorDataset.isValid():
+        if vectorDatasetGroup < 0:
             QMessageBox.warning(None, "Crayfish", "Please activate vector rendering for trace animation export")
             return
 
