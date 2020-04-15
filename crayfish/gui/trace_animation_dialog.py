@@ -58,6 +58,7 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
         self.btnBrowseOutput.clicked.connect(self.browseOutput)
         self.btnBrowseFfmpegPath.clicked.connect(self.browseFfmpegPath)
         self.btnBrowseImgTmpPath.clicked.connect(self.browseImgTmpPath)
+        self.layerColorSettingsCheckBox.clicked.connect(self.onLayerColorSettings)
 
     def browseOutput(self):
         settings = QSettings()
@@ -108,6 +109,7 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
 
         #Particles Settings
         color=self.particleColorButton.color()
+        colorLayerSettings=self.layerColorSettingsCheckBox.isChecked()
         size=self.spinSize.value()
         count=self.spinCount.value()
         lifeTime=self.spinLifeTime.value()
@@ -128,6 +130,7 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
               'duration'   : duration,
               'map_settings': self.r.mapSettings(),
               'color'      : color,
+              'colorLayerSettings': colorLayerSettings,
               'size'       : size,
               'count'      : count,
               'life_time'  : lifeTime,
@@ -162,6 +165,9 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
         self.storeDefaults()
 
         self.accept()
+
+    def onLayerColorSettings(self):
+        self.particleColorButton.setEnabled(not self.layerColorSettingsCheckBox.isChecked())
 
     def quality(self):
         if self.radQualBest.isChecked():
@@ -200,6 +206,7 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
         # particle tab
         color=self.particleColorButton.color()
         s.setValue("color", color)
+        s.setValue("layerColorSettings", self.layerColorSettingsCheckBox.isChecked())
         s.setValue("size", self.spinSize.value())
         s.setValue("count", self.spinCount.value())
         s.setValue("lifeTime", self.spinLifeTime.value())
@@ -232,6 +239,8 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
             elif k == "color":
                 color=QColor(s.value(k))
                 self.particleColorButton.setColor(color)
+            elif k == "layerColorSettings":
+                self.layerColorSettingsCheckBox.setChecked(s.value(k,type=bool))
             elif k == "size":
                 self.spinSize.setValue(s.value(k, type=float))
             elif k == "count":
