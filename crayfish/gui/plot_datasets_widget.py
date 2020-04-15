@@ -99,8 +99,9 @@ class DatasetsMenu(QMenu):
         self.datasets_changed.emit([])
 
     def on_current_output_time_changed(self):
-        if self.action_current.isChecked():
-            self.datasets_changed.emit([])  # re-emit
+        if self.dataset_group > -1:
+            if self.action_current.isChecked():
+                self.datasets_changed.emit([])  # re-emit
 
 
 class DatasetsWidget(QToolButton):
