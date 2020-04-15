@@ -53,7 +53,7 @@ class DatasetGroupsMenu(QMenu):
         self.action_current.triggered.connect(self.triggered_action_current)
         self.addSeparator()
 
-        layer.activeScalarDatasetChanged.connect(self.on_current_dataset_changed)
+        layer.activeScalarDatasetGroupChanged.connect(self.on_current_dataset_changed)
 
         for i in range(layer.dataProvider().datasetGroupCount()):
             a = self.addAction(layer.dataProvider().datasetGroupMetadata(i).name())
@@ -81,7 +81,7 @@ class DatasetGroupsMenu(QMenu):
             return
 
         if self.layer is not None:
-            self.layer.activeScalarDatasetChanged.disconnect(self.on_current_dataset_changed)
+            self.layer.activeScalarDatasetGroupChanged.disconnect(self.on_current_dataset_changed)
 
         self.populate_actions(layer)
 
