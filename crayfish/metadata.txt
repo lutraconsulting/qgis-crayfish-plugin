@@ -1,11 +1,11 @@
 ; the next section is mandatory
 [general]
 name=Crayfish
-qgisMinimumVersion=3.10
+qgisMinimumVersion=3.13
 qgisMaximumVersion=3.99
 description=Visualiser for temporal structured/unstructured grids in QGIS
 ; category=Raster ; Did not know what my available choices where
-version=3.2.1
+version=3.2.2
 author=Lutra Consulting
 email=info@lutraconsulting.co.uk
 about=The Crayfish plugin aspires to be a time explorer for various grid and vector datasets within QGIS supported by MDAL. This allows users to flick quickly through the various output steps in the result files and to create animations.
