@@ -54,6 +54,8 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
 
         self.restoreDefaults()
 
+        self.onLayerColorSettings()
+
         self.buttonBox.accepted.connect(self.onOK)
         self.btnBrowseOutput.clicked.connect(self.browseOutput)
         self.btnBrowseFfmpegPath.clicked.connect(self.browseFfmpegPath)
