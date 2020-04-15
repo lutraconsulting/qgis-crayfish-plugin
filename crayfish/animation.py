@@ -151,6 +151,7 @@ def traceAnimation(cfg, progress_fn=None):
     maxSpeed = cfg['max_speed']
     lifeTime = cfg['life_time']
     color = cfg['color']
+    colorLayerSettings=cfg['colorLayerSettings']
     size = cfg['size']
     tailFactor=cfg['tail_factor']
     minTailLenght=cfg['min_tail_leght']
@@ -190,7 +191,8 @@ def traceAnimation(cfg, progress_fn=None):
     particlesRenderer.setMaxSpeedPixel(maxSpeed)
     particlesRenderer.setParticlesLifeTime(lifeTime)
     particlesRenderer.seedRandomParticles(count)
-    particlesRenderer.setParticlesColor(color)
+    if not colorLayerSettings:
+        particlesRenderer.setParticlesColor(color)
     particlesRenderer.setParticlesSize(size)
     particlesRenderer.setTailFactor(tailFactor)
     particlesRenderer.setMinimumTailLength(minTailLenght)
