@@ -27,6 +27,8 @@
 from PyQt5.QtGui import *
 from qgis.core import QgsProcessingProvider
 
+from .contours import MeshContoursAlgorithm
+
 from .export_faces import ExportFacesAlgorithm
 from .export_vertices import ExportVerticesAlgorithm
 from .calculator import MeshCalculatorAlgorithm
@@ -34,14 +36,6 @@ from .export_raster import MeshExportRasterAlgorithm
 from .saga_flow_to_grib import SagaFlowToGribAlgorithm
 from .export_2d_timeseries_plot import Export2dTimeseriesPlotAlgorithm
 from .export_2d_crosssection_plot import Export2dCrossSectionPlotAlgorithm
-
-try:
-    from qgis.analysis import QgsMeshContours
-    from .contours import MeshContoursAlgorithm
-    have_contours = True
-except ImportError:
-    have_contours = False # pre QGIS 3.12
-
 
 class CrayfishProcessingProvider(QgsProcessingProvider):
 
@@ -76,8 +70,7 @@ class CrayfishProcessingProvider(QgsProcessingProvider):
                         Export2dTimeseriesPlotAlgorithm(),
                         Export2dCrossSectionPlotAlgorithm()]
 
-        if have_contours:
-            self.alglist += [MeshContoursAlgorithm()]
+        self.alglist += [MeshContoursAlgorithm()]
 
         for alg in self.alglist:
             self.addAlgorithm(alg)
