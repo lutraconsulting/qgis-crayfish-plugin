@@ -32,11 +32,11 @@ import tempfile
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QPainter, QImage
 from PyQt5.QtWidgets import QStyleOptionGraphicsItem
-
 from PyQt5.QtXml import QDomDocument
 
 from qgis.core import *
-from .gui.utils import time_to_string, mesh_layer_active_dataset_group_with_maximum_timesteps
+from qgis._3d import *
+from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps
 
 
 def _page_size(layout):

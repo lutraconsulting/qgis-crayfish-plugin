@@ -33,19 +33,6 @@ from .gui.animation_dialog import CrayfishAnimationDialog
 from .gui.trace_animation_dialog import CrayfishTraceAnimationDialog
 from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps
 from .processing import CrayfishProcessingProvider
-
-try:
-    from qgis.core import QgsMeshVectorTraceAnimationGenerator
-    have_trace_particle_api = True
-except ImportError:
-    have_trace_particle_api = False
-
-try:
-    from qgis.core import QgsMesh3dDataBlock
-    have_3d_api = True
-except ImportError:
-    have_3d_api = False
-
 from .resources import *
 
 class CrayfishPlugin:
@@ -110,21 +97,18 @@ class CrayfishPlugin:
         self.plot_dock_widget.setVisible(not self.plot_dock_widget.isVisible())
 
     def toggle_3d_plot(self):
-        if have_3d_api:
-            if self.plot_dock_3d_widget is None:
-                from .gui.plot_3d_widget import CrayfishPlot3dWidget
-                # Create widget
-                self.plot_dock_3d_widget = QDockWidget("Crayfish 3D Plot")
-                self.plot_dock_3d_widget.setObjectName("CrayfishPlot3dDock")
-                self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_3d_widget)
-                w = CrayfishPlot3dWidget(self.plot_dock_3d_widget)
-                self.plot_dock_3d_widget.setWidget(w)
-                self.plot_dock_3d_widget.hide()
 
-            self.plot_dock_3d_widget.setVisible(not self.plot_dock_3d_widget.isVisible())
-        else:
-            QMessageBox.warning(None, "Crayfish",
-                                "You QGIS version does not have API for 3d stacked meshes. Update to QGIS 3.12 or later")
+        if self.plot_dock_3d_widget is None:
+            from .gui.plot_3d_widget import CrayfishPlot3dWidget
+            # Create widget
+            self.plot_dock_3d_widget = QDockWidget("Crayfish 3D Plot")
+            self.plot_dock_3d_widget.setObjectName("CrayfishPlot3dDock")
+            self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_3d_widget)
+            w = CrayfishPlot3dWidget(self.plot_dock_3d_widget)
+            self.plot_dock_3d_widget.setWidget(w)
+            self.plot_dock_3d_widget.hide()
+
+        self.plot_dock_3d_widget.setVisible(not self.plot_dock_3d_widget.isVisible())
 
 
     def unload(self):
@@ -190,10 +174,6 @@ class CrayfishPlugin:
 
         if not layer.dataProvider():
             QMessageBox.warning(None, "Crayfish", "Mesh layer has invalid data provider")
-            return
-
-        if not have_trace_particle_api:
-            QMessageBox.warning(None, "Crayfish", "You QGIS version does not have API for export of particle animation. Update to QGIS 3.12 or later")
             return
 
         vectorDatasetGroup=layer.rendererSettings().activeVectorDatasetGroup()
