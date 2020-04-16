@@ -155,6 +155,10 @@ class CrayfishPlugin:
             QMessageBox.warning(None, "Crayfish", "Mesh layer has invalid data provider")
             return
 
+        if not layer.temporalProperties().isActive():
+            QMessageBox.warning(None, "Crayfish", "Mesh layer is not temporal")
+            return
+
         grp = mesh_layer_active_dataset_group_with_maximum_timesteps(layer)
         if grp is None:
             QMessageBox.warning(None, "Crayfish", "Please activate contours or vector rendering for animation export")
