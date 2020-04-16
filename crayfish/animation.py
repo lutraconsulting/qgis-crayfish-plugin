@@ -65,12 +65,6 @@ def animation(cfg, progress_fn=None):
         time_from = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, 0)).time()
         time_to = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, count - 1)).time()
 
-    # store original layer state
-    original_rs = l.rendererSettings()
-    isTemporalActive=l.temporalProperties().isActive()
-    originalStaticScalarDataset=l.staticScalarDatasetIndex()
-    originalStaticVectorDataset=l.staticVectorDatasetIndex()
-
 
     # count actual timesteps to animate
     act_count = 0
@@ -79,9 +73,11 @@ def animation(cfg, progress_fn=None):
         if time_from <= time <= time_to:
             act_count += 1
 
+    # Reference time
+    referenceTime=l.temporalProperties().referenceTime()
+
     # animate
     imgnum = 0
-    l.temporalProperties().setIsActive(False)
     for i in range(count):
 
         if progress_fn:
@@ -90,15 +86,9 @@ def animation(cfg, progress_fn=None):
         time = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, i)).time()
         if time < time_from or time > time_to:
             continue
-        formattedTime = l.formatTime(time)
-        # Set to render next timesteps
-        rs = l.rendererSettings()
-        asg = rs.activeScalarDatasetGroup()
-        if asg >= 0:
-            l.setStaticScalarDatasetIndex(QgsMeshDatasetIndex(asg, i))
-        avg = rs.activeVectorDatasetGroup()
-        if avg >= 0:
-            l.setStaticVectorDatasetIndex(QgsMeshDatasetIndex(avg, i))
+
+        currentTime=referenceTime.addMSecs(time*3600*1000)
+        formattedTime=currentTime.toString("yyyy-MM-dd HH:mm:ss")
 
         # Prepare layout
         layout = QgsPrintLayout(QgsProject.instance())
@@ -119,6 +109,12 @@ def animation(cfg, progress_fn=None):
             main_page.setPageSize(QgsLayoutSize(w * 25.4 / dpi, h * 25.4 / dpi, QgsUnitTypes.LayoutMillimeters))
             prepare_composition(layout, formattedTime, cfg, layoutcfg, extent, layers, crs)
 
+        #Set timerange for map layouts
+        timeRange = QgsDateTimeRange(currentTime, currentTime.addSecs(1))
+        for layoutItem in layout.items():
+            if isinstance(layoutItem, QgsLayoutItemMap): # or isinstance(layoutItem, QgsLayoutItem3DMap): (commented because not found in API)
+                layoutItem.setTemporalRange(timeRange)
+
         imgnum += 1
         fname = imgfile % imgnum
         layout_exporter = QgsLayoutExporter(layout)
@@ -132,11 +128,6 @@ def animation(cfg, progress_fn=None):
     if progress_fn:
         progress_fn(count, count)
 
-    # restore original layer state
-    l.setStaticScalarDatasetIndex(originalStaticScalarDataset)
-    l.setStaticVectorDatasetIndex(originalStaticVectorDataset)
-    l.temporalProperties().setIsActive(isTemporalActive)
-    l.setRendererSettings(original_rs)
 
 def traceAnimation(cfg, progress_fn=None):
     dpi = 96
@@ -161,9 +152,6 @@ def traceAnimation(cfg, progress_fn=None):
 
     # store original settings
     original_rs = l.rendererSettings()
-    isTemporalActive = l.temporalProperties().isActive()
-    originalStaticScalarDataset = l.staticScalarDatasetIndex()
-    originalStaticVectorDataset = l.staticVectorDatasetIndex()
 
     tmpSettings=l.rendererSettings()
     tmpSettings.setActiveVectorDatasetGroup( -1 )
@@ -178,9 +166,6 @@ def traceAnimation(cfg, progress_fn=None):
     underLayerImage=underLayerRenderer.renderedImage()
 
     # restore original settings
-    l.setStaticScalarDatasetIndex(originalStaticScalarDataset)
-    l.setStaticVectorDatasetIndex(originalStaticVectorDataset)
-    l.temporalProperties().setIsActive(isTemporalActive)
     l.setRendererSettings(original_rs)
 
     # create an initialize the particles Renderer
