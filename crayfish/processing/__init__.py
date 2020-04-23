@@ -31,6 +31,7 @@ from .contours import MeshContoursAlgorithm
 
 from .export_faces import ExportFacesAlgorithm
 from .export_vertices import ExportVerticesAlgorithm
+from .export_edges import ExportEdgesAlgorithm
 from .calculator import MeshCalculatorAlgorithm
 from .export_raster import MeshExportRasterAlgorithm
 from .saga_flow_to_grib import SagaFlowToGribAlgorithm
@@ -69,9 +70,8 @@ class CrayfishProcessingProvider(QgsProcessingProvider):
                         SagaFlowToGribAlgorithm(),
                         Export2dTimeseriesPlotAlgorithm(),
                         Export2dCrossSectionPlotAlgorithm()]
-        if have_edge_mesh:
-            self.alglist += [ExportEdgesAlgorithm()]
 
+        self.alglist += [ExportEdgesAlgorithm()]
         self.alglist += [MeshContoursAlgorithm()]
 
         for alg in self.alglist:
