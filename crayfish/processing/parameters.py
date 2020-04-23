@@ -131,7 +131,7 @@ class TimestepWidgetWrapper(EnumWidgetWrapper):
                     index = QgsMeshDatasetIndex(groupWithMaximumDatasets, i)
                     meta = dp.datasetMetadata(index)
                     time = meta.time()
-                    options.append((str(datetime.timedelta(hours=time)), i))
+                    options.append((mesh_layer.formatTime(time), i))
         else:
             options = []
         self.parameterDefinition().setOptions([t for t, v in options])
