@@ -52,7 +52,7 @@ class ExportEdgesAlgorithm(CfMeshExportAlgorithm):
 
     def get_mesh_geometry(self, mesh, index):
         edge = mesh.edge(index)
-        start_point = mesh.vertex(edge.first)
-        end_point = mesh.vertex(edge.second)
+        start_point = mesh.vertex(edge[0])
+        end_point = mesh.vertex(edge[1])
         line = QgsLineString(start_point, end_point)
         return QgsGeometry(line)
