@@ -62,7 +62,7 @@ colors = [
     QColor( "#fdbf6f" ),
 ]
 
-def timeseries_plot_data(layer, ds_group_index, geometry):
+def timeseries_plot_data(layer, ds_group_index, geometry, searchradius=0):
     """ return array with tuples defining X,Y points for plot """
     x,y = [], []
     if not layer:
@@ -73,7 +73,7 @@ def timeseries_plot_data(layer, ds_group_index, geometry):
         meta = layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(ds_group_index, i))
         t = meta.time()
         dataset = QgsMeshDatasetIndex(ds_group_index, i)
-        value = layer.datasetValue(dataset, pt).scalar()
+        value = layer.datasetValue(dataset, pt,searchradius).scalar()
         x.append(t)
         y.append(value)
 
@@ -118,6 +118,45 @@ def integral_plot_data(layer, ds_group_index, geometry, resolution=1.):
         value = integrate(cs_x, cs_y)
         x.append(t)
         y.append(value)
+
+    return x, y
+
+def profile_1D_plot_data(layer, dataset_group_index, dataset_index,profile):
+    """ return array with tuples defining X,Y points for plot """
+    x, y = [], []
+    if not layer or len(profile)<2:
+        return x, y
+
+    groupMeta = layer.dataProvider().datasetGroupMetadata(dataset_group_index)
+    isOnVertices = groupMeta.dataType() == QgsMeshDatasetGroupMetadata.DataOnVertices
+    layerDataSetIndex = QgsMeshDatasetIndex(dataset_group_index,dataset_index)
+
+    totalLength=0
+    #append first x,y if on vertices
+    p1 = profile[0]
+    p2 = profile[1]
+    length = p1.distance(p2)
+    searchRadius=length/100
+    if isOnVertices:
+        x.append(0)
+        y.append(layer.dataset1dValue(layerDataSetIndex,p1,searchRadius).scalar())
+        totalLength=length
+
+
+    for i in range(len(profile)-1):
+        p1 = profile[i]
+        p2 = profile[i+1]
+        length = p1.distance(p2)
+        searchRadius = length / 100
+        if isOnVertices:
+            x.append(totalLength+length)
+            y.append(layer.dataset1dValue(layerDataSetIndex, p2, searchRadius).scalar())
+        else:
+            x.append(totalLength + length/2)
+            midPoint=QgsPointXY((p1.x()+p2.x())/2 , (p1.y()+p2.y())/2)
+            y.append(layer.dataset1dValue(layerDataSetIndex,midPoint,searchRadius).scalar())
+
+        totalLength=totalLength+length
 
     return x, y
 
