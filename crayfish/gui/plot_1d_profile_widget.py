@@ -87,7 +87,6 @@ class Profile1DPickerWidget(QToolButton):
         self.profileTrace = []
 
         self.firstVertex = QgsPointXY()
-        self.secondVertex = QgsPointXY()
         self.firstVertexMarker = None
         self.profileHighlight = None
 
@@ -97,7 +96,6 @@ class Profile1DPickerWidget(QToolButton):
 
     def clear_geometries(self):
         self.firstVertex = QgsPointXY()
-        self.secondVertex = QgsPointXY()
         self.temporaryTrace = []
         self.profileTrace = []
         self.clear_marker()
