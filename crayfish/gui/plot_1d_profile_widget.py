@@ -146,13 +146,23 @@ class Profile1DPickerWidget(QToolButton):
                     lastVertex = self.firstVertex
                 else:
                     lastVertex = self.profileTrace[-1]
-                newTrace = self.tracer.findShortestPath(lastVertex, vertexMapPosition)[0]
+                traceResult= self.tracer.findShortestPath(lastVertex, vertexMapPosition)
+                if not traceResult[1]==QgsTracer.ErrNone:
+                    self.updateMarker()
+                    self.geometry_changed.emit()
+                    return
+                newTrace=traceResult[0]
                 newTrace.pop(0)
                 self.profileTrace.extend(newTrace)
                 self.firstVertex = vertexMapPosition
                 self.temporaryTrace=[]
             else:
-                self.temporaryTrace = self.tracer.findShortestPath(self.firstVertex, vertexMapPosition)[0]
+                traceResult = self.tracer.findShortestPath(self.firstVertex, vertexMapPosition)
+                if not traceResult[1] == QgsTracer.ErrNone:
+                    self.updateMarker()
+                    self.geometry_changed.emit()
+                    return
+                self.temporaryTrace=traceResult[0]
                 if not len(self.profileTrace) == 0:  # If a trace exists before the temporary one,
                     self.temporaryTrace.pop(0)       # remove the first element to avoid duplicate vertex
 
