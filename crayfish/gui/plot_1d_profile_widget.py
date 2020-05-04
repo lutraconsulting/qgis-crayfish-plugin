@@ -133,7 +133,7 @@ class Profile1DPickerWidget(QToolButton):
             return;
 
         searchradius=self.tool.searchRadiusMU(iface.mapCanvas())
-        vertexMapPosition=self.meshLayer.snapOnVertex(point,searchradius)
+        vertexMapPosition=self.meshLayer.snapOnElement(QgsMesh.Vertex,point,searchradius)
 
         if not self.tracer.isPointSnapped(vertexMapPosition):
             return;

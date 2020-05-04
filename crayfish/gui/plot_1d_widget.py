@@ -108,7 +108,7 @@ class Plot1dPointGeometryPickerWidget(PointGeometryPickerWidget):
         if self.meshLayer is None:
             return
         searchRadius=self.tool.searchRadiusMU(iface.mapCanvas())
-        projectedPoint=self.meshLayer.snapOnEdge(pt,searchRadius)
+        projectedPoint=self.meshLayer.snapOnElement(QgsMesh.Edge,pt,searchRadius)
 
         if projectedPoint.isEmpty():
             return
