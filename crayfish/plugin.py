@@ -41,6 +41,7 @@ class CrayfishPlugin:
         self.iface = iface
         self.plot_dock_widget = None
         self.plot_dock_3d_widget = None
+        self.plot_dock_1d_widget = None
         self.provider = CrayfishProcessingProvider()
 
     def initGui(self):
@@ -54,6 +55,10 @@ class CrayfishPlugin:
         self.action3DPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot_3d.svg"), "3D Plot", self.iface.mainWindow())
         self.action3DPlot.triggered.connect(self.toggle_3d_plot)
 
+        self.action1DPlot = QAction("1D Plot",
+                                    self.iface.mainWindow())
+        self.action1DPlot.triggered.connect(self.toggle_1d_plot)
+
         self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/images/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
         self.actionExportAnimation.triggered.connect(self.exportAnimation)
 
@@ -62,12 +67,14 @@ class CrayfishPlugin:
 
         self.menu.addAction(self.actionPlot)
         self.menu.addAction(self.action3DPlot)
+        self.menu.addAction(self.action1DPlot)
         self.menu.addAction(self.actionExportAnimation)
         self.menu.addAction(self.actionExportTraceAnimation)
 
         # Register actions for context menu
         self.iface.addCustomActionForLayerType(self.actionPlot, '', QgsMapLayer.MeshLayer, True)
         self.iface.addCustomActionForLayerType(self.action3DPlot, '', QgsMapLayer.MeshLayer, True)
+        self.iface.addCustomActionForLayerType(self.action1DPlot, '', QgsMapLayer.MeshLayer, True)
         self.iface.addCustomActionForLayerType(self.actionExportAnimation, '', QgsMapLayer.MeshLayer, True)
         self.iface.addCustomActionForLayerType(self.actionExportTraceAnimation, '', QgsMapLayer.MeshLayer, True)
 
@@ -109,6 +116,20 @@ class CrayfishPlugin:
             self.plot_dock_3d_widget.hide()
 
         self.plot_dock_3d_widget.setVisible(not self.plot_dock_3d_widget.isVisible())
+
+    def toggle_1d_plot(self):
+
+        if self.plot_dock_1d_widget is None:
+            from .gui.plot_1d_widget import CrayfishPlot1dWidget
+            # Create widget
+            self.plot_dock_1d_widget = QDockWidget("Crayfish 1D Plot")
+            self.plot_dock_1d_widget.setObjectName("CrayfishPlot1dDock")
+            self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_1d_widget)
+            w = CrayfishPlot1dWidget(self.plot_dock_1d_widget)
+            self.plot_dock_1d_widget.setWidget(w)
+            self.plot_dock_1d_widget.hide()
+
+        self.plot_dock_1d_widget.setVisible(not self.plot_dock_1d_widget.isVisible())
 
 
     def unload(self):
