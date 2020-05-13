@@ -32,6 +32,7 @@ from .contours import MeshContoursAlgorithm
 from .export_faces import ExportFacesAlgorithm
 from .export_vertices import ExportVerticesAlgorithm
 from .export_edges import ExportEdgesAlgorithm
+from .gridded_export import ExportGriddedValues
 from .calculator import MeshCalculatorAlgorithm
 from .export_raster import MeshExportRasterAlgorithm
 from .saga_flow_to_grib import SagaFlowToGribAlgorithm
@@ -67,6 +68,7 @@ class CrayfishProcessingProvider(QgsProcessingProvider):
                         ExportVerticesAlgorithm(),
                         MeshCalculatorAlgorithm(),
                         MeshExportRasterAlgorithm(),
+                        ExportGriddedValues(),
                         SagaFlowToGribAlgorithm(),
                         Export2dTimeseriesPlotAlgorithm(),
                         Export2dCrossSectionPlotAlgorithm()]
