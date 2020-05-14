@@ -30,10 +30,10 @@ from qgis.core import (QgsMeshDatasetGroupMetadata,
                        QgsPolygon,
                        QgsLineString)
 
-from .mesh_export import CfMeshExportAlgorithm
+from .mesh_export import CfMeshExportMesh
 
 
-class ExportFacesAlgorithm(CfMeshExportAlgorithm):
+class ExportFacesAlgorithm(CfMeshExportMesh):
 
     def name(self):
         return 'CrayfishExportMeshFaces'
