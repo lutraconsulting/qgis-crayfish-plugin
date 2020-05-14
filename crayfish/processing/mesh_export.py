@@ -166,9 +166,9 @@ class CfMeshExportMesh(CfMeshExportAlgorithm):
                     'Exported vector layer',
                     type=QgsProcessing.TypeVectorPolygon))
 
-    def populateFeatures(self,parameters,sink, layer, datasets, exportVectorOption, feedback):
+    def populateFeatures(self,parameters,sink, layer, datasets, exportVectorOption, context, feedback):
 
-        dataProvider = layer.dataProvider
+        dataProvider = layer.dataProvider()
         mesh = QgsMesh()
         dataProvider.populateMesh(mesh)
         count = self.export_objects_count(mesh)
