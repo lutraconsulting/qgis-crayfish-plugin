@@ -28,15 +28,16 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
-from qgis.core import QgsMapLayer, QgsProject, QgsMeshLayer
+from qgis.core import QgsMapLayer, QgsProject, QgsMeshLayer, QgsMesh
 
 
 class CrayfishLayerMenu(QMenu):
 
     picked_layer = pyqtSignal(QgsMapLayer)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, meshType=QgsMesh.Face):
         QMenu.__init__(self, parent)
+        self.meshType = meshType
 
         QgsProject.instance().layersAdded.connect(self.layers_added)
         QgsProject.instance().layersWillBeRemoved.connect(self.layers_will_be_removed)
@@ -45,7 +46,7 @@ class CrayfishLayerMenu(QMenu):
 
     def layers_added(self, lst):
         for layer in lst:
-            if not isinstance(layer, QgsMeshLayer):
+            if not isinstance(layer, QgsMeshLayer) or not self.checkMeshType(layer):
                 continue
             a = self.addAction(layer.name())
             a.layer_id = layer.id()
@@ -59,17 +60,25 @@ class CrayfishLayerMenu(QMenu):
     def triggered_action(self):
         self.picked_layer.emit( QgsProject.instance().mapLayer(self.sender().layer_id) )
 
+    def checkMeshType(self,layer):
+        dataProvider=layer.dataProvider()
+        containsEdge=dataProvider.contains(QgsMesh.Edge)
+        containsFace=dataProvider.contains(QgsMesh.Face)
+        return self.meshType =="" \
+               or (containsEdge and self.meshType==QgsMesh.Edge)\
+               or (containsFace and self.meshType==QgsMesh.Face)
+
 
 class CrayfishLayerWidget(QToolButton):
 
     layer_changed = pyqtSignal(QgsMapLayer)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, meshType=QgsMesh.Face):
         QToolButton.__init__(self, parent)
 
         self.layer = None
 
-        self.menu_layers = CrayfishLayerMenu()
+        self.menu_layers = CrayfishLayerMenu(meshType=meshType)
 
         self.setPopupMode(QToolButton.InstantPopup)
         self.setMenu(self.menu_layers)
