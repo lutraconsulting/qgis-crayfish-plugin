@@ -123,7 +123,7 @@ class CrayfishPlot1dWidget(QWidget):
 
         self.layer = None
 
-        self.btn_layer = CrayfishLayerWidget()
+        self.btn_layer = CrayfishLayerWidget(meshType=QgsMesh.Edge)
         self.btn_layer.layer_changed.connect(self.on_layer_changed)
 
         self.btn_dataset_group = DatasetGroupsWidget()
