@@ -62,7 +62,7 @@ class CrayfishPlot3dWidget(QWidget):
         self.btn_layer = CrayfishLayerWidget()
         self.btn_layer.layer_changed.connect(self.on_layer_changed)
 
-        self.btn_dataset_group = DatasetGroupsWidget()
+        self.btn_dataset_group = DatasetGroupsWidget(datasetType=QgsMeshDatasetGroupMetadata.DataOnVolumes)
         self.btn_dataset_group.dataset_groups_changed.connect(self.on_dataset_group_changed)
 
         self.point_picker = PointGeometryPickerWidget()

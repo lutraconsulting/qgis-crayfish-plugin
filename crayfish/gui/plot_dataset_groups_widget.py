@@ -33,11 +33,12 @@ class DatasetGroupsMenu(QMenu):
 
     dataset_groups_changed = pyqtSignal(list)  # emits empty list when "current" is selected
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, datasetType=None):
         QMenu.__init__(self, parent)
 
         self.layer = None
         self.action_current = None
+        self.datasetType = datasetType
 
     def populate_actions(self, layer):
 
@@ -56,10 +57,12 @@ class DatasetGroupsMenu(QMenu):
         layer.activeScalarDatasetGroupChanged.connect(self.on_current_dataset_changed)
 
         for i in range(layer.dataProvider().datasetGroupCount()):
-            a = self.addAction(layer.dataProvider().datasetGroupMetadata(i).name())
-            a.group_index = i
-            a.setCheckable(True)
-            a.triggered.connect(self.triggered_action)
+            meta = layer.dataProvider().datasetGroupMetadata(i)
+            if self.datasetType is None or meta.dataType()==self.datasetType:
+                a = self.addAction(meta.name())
+                a.group_index = i
+                a.setCheckable(True)
+                a.triggered.connect(self.triggered_action)
 
     def triggered_action(self):
         for a in self.actions():
@@ -90,13 +93,13 @@ class DatasetGroupsWidget(QToolButton):
 
     dataset_groups_changed = pyqtSignal(list)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, datasetType=None):
         QToolButton.__init__(self, parent)
 
         self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.setIcon(QIcon(QPixmap(":/plugins/crayfish/images/icon_contours.png")))
 
-        self.menu_datasets = DatasetGroupsMenu()
+        self.menu_datasets = DatasetGroupsMenu(datasetType=datasetType)
 
         self.setPopupMode(QToolButton.InstantPopup)
         self.setMenu(self.menu_datasets)
