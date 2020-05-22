@@ -113,9 +113,10 @@ class ExportGriddedValues(CfMeshExportAlgorithm):
             meta = dataProvider.datasetGroupMetadata(groupIndex)
             group_meta[groupIndex] = meta
 
+        id=0
         for xi in range(pointXCount):
             for yi in range(pointYCount):
-                attrs = []
+                attrs = [id]
                 x = extent.xMinimum() + xi * gridSpacing
                 y = extent.yMinimum() + yi * gridSpacing
                 point = QgsPointXY(x, y)
@@ -134,6 +135,7 @@ class ExportGriddedValues(CfMeshExportAlgorithm):
                 f.setGeometry(geometry)
                 f.setAttributes(attrs)
                 sink.addFeature(f)
+                id=id+1;
             feedback.setProgress(100 * (xi / pointXCount))
 
         feedback.setProgress(100)
