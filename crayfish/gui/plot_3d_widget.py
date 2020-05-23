@@ -47,7 +47,7 @@ except ImportError:
 
 from ..plot import colors, plot_3d_data
 from .utils import time_to_string
-from .plot_cf_layer_widget import CrayfishLayerWidget
+from .plot_cf_layer_widget import CrayfishLayer3dWidget
 from .plot_point_geometry_widget import PointGeometryPickerWidget
 from .plot_datasets_widget import DatasetsWidget
 from .plot_dataset_groups_widget import DatasetGroupsWidget
@@ -59,7 +59,7 @@ class CrayfishPlot3dWidget(QWidget):
 
         self.layer = None
 
-        self.btn_layer = CrayfishLayerWidget()
+        self.btn_layer = CrayfishLayer3dWidget()
         self.btn_layer.layer_changed.connect(self.on_layer_changed)
 
         self.btn_dataset_group = DatasetGroupsWidget(datasetType=QgsMeshDatasetGroupMetadata.DataOnVolumes)

@@ -29,15 +29,14 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 from qgis.core import QgsMapLayer, QgsProject, QgsMeshLayer, QgsMesh
-
+from .utils import *
 
 class CrayfishLayerMenu(QMenu):
 
     picked_layer = pyqtSignal(QgsMapLayer)
 
-    def __init__(self, parent=None, meshType=QgsMesh.Face):
+    def __init__(self, parent=None):
         QMenu.__init__(self, parent)
-        self.meshType = meshType
 
         QgsProject.instance().layersAdded.connect(self.layers_added)
         QgsProject.instance().layersWillBeRemoved.connect(self.layers_will_be_removed)
@@ -46,7 +45,7 @@ class CrayfishLayerMenu(QMenu):
 
     def layers_added(self, lst):
         for layer in lst:
-            if not isinstance(layer, QgsMeshLayer) or not self.checkMeshType(layer):
+            if not self.layerFilter(layer):
                 continue
             a = self.addAction(layer.name())
             a.layer_id = layer.id()
@@ -68,6 +67,9 @@ class CrayfishLayerMenu(QMenu):
                or (containsEdge and self.meshType==QgsMesh.Edge)\
                or (containsFace and self.meshType==QgsMesh.Face)
 
+    def layerFilter(self,layer):
+        raise NotImplementedError
+
 
 class CrayfishLayerWidget(QToolButton):
 
@@ -78,7 +80,7 @@ class CrayfishLayerWidget(QToolButton):
 
         self.layer = None
 
-        self.menu_layers = CrayfishLayerMenu(meshType=meshType)
+        self.setupMenu()
 
         self.setPopupMode(QToolButton.InstantPopup)
         self.setMenu(self.menu_layers)
@@ -99,3 +101,60 @@ class CrayfishLayerWidget(QToolButton):
     def layers_will_be_removed(self, lst):
         if self.layer and self.layer.id() in lst:
             self.set_layer(None)
+
+    def setupMenu(self):
+        raise NotImplementedError
+
+
+class CrayfishLayer1dMenu(CrayfishLayerMenu):
+
+    def __init__(self,parent=None):
+        CrayfishLayerMenu.__init__(self,parent)
+
+    def layerFilter(self, layer):
+        return isLayer1d(layer)
+
+
+class CrayfishLayer1dWidget(CrayfishLayerWidget):
+
+    def __init__(self, parent=None):
+        CrayfishLayerWidget.__init__(self,parent)
+
+    def setupMenu(self):
+        self.menu_layers = CrayfishLayer1dMenu()
+
+
+class CrayfishLayer2dMenu(CrayfishLayerMenu):
+
+    def __init__(self, parent=None):
+        CrayfishLayerMenu.__init__(self,parent)
+
+    def layerFilter(self, layer):
+        return isLayer2d(layer)
+
+
+class CrayfishLayer2dWidget(CrayfishLayerWidget):
+
+    def __init__(self, parent=None):
+        CrayfishLayerWidget.__init__(self,parent)
+
+    def setupMenu(self):
+        self.menu_layers = CrayfishLayer2dMenu()
+
+
+class CrayfishLayer3dMenu(CrayfishLayerMenu):
+
+    def __init__(self, parent=None):
+        CrayfishLayerMenu.__init__(self,parent)
+
+    def layerFilter(self, layer):
+        return isLayer3d(layer)
+
+
+class CrayfishLayer3dWidget(CrayfishLayerWidget):
+
+    def __init__(self, parent=None):
+        CrayfishLayerWidget.__init__(self,parent)
+
+    def setupMenu(self):
+        self.menu_layers = CrayfishLayer3dMenu()
