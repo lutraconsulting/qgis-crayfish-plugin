@@ -46,7 +46,7 @@ except ImportError:
 
 from ..plot import timeseries_plot_data, cross_section_plot_data, colors, integral_plot_data
 from .utils import time_to_string
-from .plot_cf_layer_widget import CrayfishLayerWidget
+from .plot_cf_layer_widget import CrayfishLayer2dWidget
 from .plot_line_geometry_widget import LineGeometryPickerWidget
 from .plot_point_geometry_widget import PointGeometryPickerWidget
 from .plot_datasets_widget import DatasetsWidget
@@ -152,7 +152,7 @@ class CrayfishPlotWidget(QWidget):
 
         self.layer = None
 
-        self.btn_layer = CrayfishLayerWidget()
+        self.btn_layer = CrayfishLayer2dWidget()
         self.btn_layer.layer_changed.connect(self.on_layer_changed)
 
         self.btn_dataset_group = DatasetGroupsWidget()

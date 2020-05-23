@@ -31,7 +31,7 @@ from qgis.core import *
 from .gui.plot_widget import CrayfishPlotWidget
 from .gui.animation_dialog import CrayfishAnimationDialog
 from .gui.trace_animation_dialog import CrayfishTraceAnimationDialog
-from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps
+from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps, isLayer1d, isLayer2d, isLayer3d
 from .processing import CrayfishProcessingProvider
 from .resources import *
 
@@ -44,6 +44,11 @@ class CrayfishPlugin:
         self.plot_dock_1d_widget = None
         self.provider = CrayfishProcessingProvider()
 
+        QgsProject.instance().layersAdded.connect(self.layers_added)
+        QgsProject.instance().layersAdded.connect(self.updateActionEnabled)
+        QgsProject.instance().layersRemoved.connect(self.updateActionEnabled)
+        self.layers_added(QgsProject.instance().mapLayers().values())
+
     def initGui(self):
         # Add menu items
         self.mesh_menu = self.iface.mainWindow().findChild(QMenu, 'mMeshMenu')
@@ -52,8 +57,8 @@ class CrayfishPlugin:
         self.action1DPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot_1d.svg"),"1D Plot", self.iface.mainWindow())
         self.action1DPlot.triggered.connect(self.toggle_1d_plot)
 
-        self.actionPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot.svg"), "2D Plot", self.iface.mainWindow())
-        self.actionPlot.triggered.connect(self.toggle_plot)
+        self.action2DPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot.svg"), "2D Plot", self.iface.mainWindow())
+        self.action2DPlot.triggered.connect(self.toggle_plot)
 
         self.action3DPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot_3d.svg"), "3D Plot", self.iface.mainWindow())
         self.action3DPlot.triggered.connect(self.toggle_3d_plot)
@@ -65,15 +70,15 @@ class CrayfishPlugin:
         self.actionExportTraceAnimation.triggered.connect(self.exportParticleTraceAnimation)
 
         self.menu.addAction(self.action1DPlot)
-        self.menu.addAction(self.actionPlot)
+        self.menu.addAction(self.action2DPlot)
         self.menu.addAction(self.action3DPlot)
         self.menu.addAction(self.actionExportAnimation)
         self.menu.addAction(self.actionExportTraceAnimation)
 
         # Register actions for context menu
-        self.iface.addCustomActionForLayerType(self.action1DPlot, '', QgsMapLayer.MeshLayer, True)
-        self.iface.addCustomActionForLayerType(self.actionPlot, '', QgsMapLayer.MeshLayer, True)
-        self.iface.addCustomActionForLayerType(self.action3DPlot, '', QgsMapLayer.MeshLayer, True)
+        self.iface.addCustomActionForLayerType(self.action1DPlot, '', QgsMapLayer.MeshLayer, False)
+        self.iface.addCustomActionForLayerType(self.action2DPlot, '', QgsMapLayer.MeshLayer, False)
+        self.iface.addCustomActionForLayerType(self.action3DPlot, '', QgsMapLayer.MeshLayer, False)
         self.iface.addCustomActionForLayerType(self.actionExportAnimation, '', QgsMapLayer.MeshLayer, True)
         self.iface.addCustomActionForLayerType(self.actionExportTraceAnimation, '', QgsMapLayer.MeshLayer, True)
 
@@ -81,7 +86,7 @@ class CrayfishPlugin:
         self.iface.layerTreeView().currentLayerChanged.connect(self.active_layer_changed)
 
         # Create widget
-        self.plot_dock_widget = QDockWidget("Crayfish Plot")
+        self.plot_dock_widget = QDockWidget("Crayfish 2D Plot")
         self.plot_dock_widget.setObjectName("CrayfishPlotDock")
         self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_widget)
         w = CrayfishPlotWidget(self.plot_dock_widget)
@@ -90,6 +95,8 @@ class CrayfishPlugin:
 
         QgsApplication.processingRegistry().addProvider(self.provider)
 
+        self.updateActionEnabled()
+
     def active_layer_changed(self, layer):
         # only change layer when there is none selected
         if self.plot_dock_widget.widget().layer:
@@ -97,7 +104,15 @@ class CrayfishPlugin:
 
         # only assign layer when active layer is a mesh layer
         if layer and layer.type() == QgsMapLayer.MeshLayer:
-            self.plot_dock_widget.widget().set_layer(layer)
+            dataProvider=layer.dataProvider()
+            if dataProvider.contains(QgsMesh.Face):
+                self.plot_dock_widget.widget().set_layer(layer)
+
+            if self.plot_dock_1d_widget is not None and dataProvider.contains(QgsMesh.Edge):
+                self.plot_dock_1d_widget.widget().set_layer(layer)
+
+            if self.plot_dock_3d_widget is not None and isLayer3d(layer):
+                self.plot_dock_3d_widget.widget().set_layer(layer)
 
     def toggle_plot(self):
         self.plot_dock_widget.setVisible(not self.plot_dock_widget.isVisible())
@@ -134,14 +149,14 @@ class CrayfishPlugin:
     def unload(self):
         # Remove menu item
         self.menu.removeAction(self.action1DPlot)
-        self.menu.removeAction(self.actionPlot)
+        self.menu.removeAction(self.action2DPlot)
         self.menu.removeAction(self.action3DPlot)
         self.menu.removeAction(self.actionExportAnimation)
         self.menu.removeAction(self.actionExportTraceAnimation)
 
         # Remove actions for context menu
         self.iface.removeCustomActionForLayerType(self.action1DPlot)
-        self.iface.removeCustomActionForLayerType(self.actionPlot)
+        self.iface.removeCustomActionForLayerType(self.action2DPlot)
         self.iface.removeCustomActionForLayerType(self.action3DPlot)
         self.iface.removeCustomActionForLayerType(self.actionExportAnimation)
         self.iface.removeCustomActionForLayerType(self.actionExportTraceAnimation)
@@ -215,3 +230,33 @@ class CrayfishPlugin:
 
         dlg = CrayfishTraceAnimationDialog(self.iface)
         dlg.exec_()
+
+    def layers_added(self, lst):
+
+        for layer in lst:
+            if isLayer1d(layer):
+                self.iface.addCustomActionForLayer(self.action1DPlot, layer)
+            if isLayer2d(layer):
+                self.iface.addCustomActionForLayer(self.action2DPlot, layer)
+            if isLayer3d(layer):
+                self.iface.addCustomActionForLayer(self.action3DPlot, layer)
+
+    def updateActionEnabled(self):
+        layers = QgsProject.instance().mapLayers().values()
+
+        enabled = len(layers)!=0
+        self.actionExportAnimation.setEnabled(enabled)
+        self.actionExportTraceAnimation.setEnabled(enabled)
+
+        self.action1DPlot.setEnabled(False)
+        self.action2DPlot.setEnabled(False)
+        self.action3DPlot.setEnabled(False)
+
+        for layer in layers:
+            if isLayer1d(layer):
+                self.action1DPlot.setEnabled(True)
+            if isLayer2d(layer):
+                self.action2DPlot.setEnabled(True)
+            if isLayer3d(layer):
+                self.action3DPlot.setEnabled(True)
+

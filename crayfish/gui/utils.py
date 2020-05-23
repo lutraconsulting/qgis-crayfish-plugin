@@ -145,3 +145,48 @@ def handle_ffmpeg(dialog):
         s.setValue("ffmpeg_path", ffmpeg_bin)
 
     return ffmpeg_bin
+
+def isLayer3d(layer):
+    if layer is None:
+        return False
+
+    if layer.type()!=QgsMapLayerType.MeshLayer:
+        return
+
+    dataProvider=layer.dataProvider()
+    if dataProvider is None:
+        return False
+
+    datasetGroupCount=dataProvider.datasetGroupCount()
+    for i in range(datasetGroupCount):
+        meta=dataProvider.datasetGroupMetadata(i)
+        if meta.dataType()==QgsMeshDatasetGroupMetadata.DataOnVolumes:
+            return True
+
+    return False
+
+def isLayer1d(layer):
+    if layer is None:
+        return False
+
+    if layer.type()!=QgsMapLayerType.MeshLayer:
+        return
+
+    dataProvider=layer.dataProvider()
+    if dataProvider.contains(QgsMesh.Edge):
+        return True
+    else:
+        return False
+
+def isLayer2d(layer):
+    if layer is None:
+        return False
+
+    if layer.type()!=QgsMapLayerType.MeshLayer:
+        return
+    
+    dataProvider = layer.dataProvider()
+    if dataProvider.contains(QgsMesh.Face):
+        return True
+    else:
+        return False
