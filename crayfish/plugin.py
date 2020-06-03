@@ -44,6 +44,10 @@ class CrayfishPlugin:
         self.plot_dock_1d_widget = None
         self.provider = CrayfishProcessingProvider()
 
+        self.action1DPlot = None
+        self.action2DPlot = None
+        self.action3DPlot = None
+
         QgsProject.instance().layersAdded.connect(self.layers_added)
         QgsProject.instance().layersAdded.connect(self.updateActionEnabled)
         QgsProject.instance().layersRemoved.connect(self.updateActionEnabled)
@@ -234,11 +238,11 @@ class CrayfishPlugin:
     def layers_added(self, lst):
 
         for layer in lst:
-            if isLayer1d(layer):
+            if isLayer1d(layer) and self.action1DPlot is not None:
                 self.iface.addCustomActionForLayer(self.action1DPlot, layer)
-            if isLayer2d(layer):
+            if isLayer2d(layer) and self.action2DPlot is not None:
                 self.iface.addCustomActionForLayer(self.action2DPlot, layer)
-            if isLayer3d(layer):
+            if isLayer3d(layer) and self.action3DPlot is not None:
                 self.iface.addCustomActionForLayer(self.action3DPlot, layer)
 
     def updateActionEnabled(self):

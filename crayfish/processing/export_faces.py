@@ -28,7 +28,9 @@ from qgis.core import (QgsMeshDatasetGroupMetadata,
                        QgsWkbTypes,
                        QgsGeometry,
                        QgsPolygon,
-                       QgsLineString)
+                       QgsLineString,
+                       QgsProcessingException,
+                       QgsMesh)
 
 from .mesh_export import CfMeshExportMesh
 
@@ -56,3 +58,9 @@ class ExportFacesAlgorithm(CfMeshExportMesh):
         polygon = QgsPolygon()
         polygon.setExteriorRing(QgsLineString(points))
         return QgsGeometry(polygon)
+
+    def testLayer(self,layer):
+        super().testLayer(layer)
+        dataProvider=layer.dataProvider()
+        if not dataProvider.contains(QgsMesh.Face):
+            raise QgsProcessingException("Mesh layer must contain faces")

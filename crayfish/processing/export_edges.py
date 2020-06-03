@@ -28,7 +28,9 @@ from qgis.core import (QgsMeshDatasetGroupMetadata,
                        QgsWkbTypes,
                        QgsGeometry,
                        QgsPolygon,
-                       QgsLineString)
+                       QgsLineString,
+                       QgsMesh,
+                       QgsProcessingException)
 
 from .mesh_export import CfMeshExportMesh
 
@@ -56,3 +58,9 @@ class ExportEdgesAlgorithm(CfMeshExportMesh):
         end_point = mesh.vertex(edge[1])
         line = QgsLineString(start_point, end_point)
         return QgsGeometry(line)
+
+    def testLayer(self,layer):
+        super().testLayer(layer)
+        dataProvider=layer.dataProvider()
+        if not dataProvider.contains(QgsMesh.Edge):
+            raise QgsProcessingException("Mesh layer must contain edges")
