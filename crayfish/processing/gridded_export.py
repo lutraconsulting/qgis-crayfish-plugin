@@ -135,7 +135,13 @@ class ExportGriddedValues(CfMeshExportAlgorithm):
                 f.setGeometry(geometry)
                 f.setAttributes(attrs)
                 sink.addFeature(f)
-                id=id+1;
+                id=id+1
             feedback.setProgress(100 * (xi / pointXCount))
 
         feedback.setProgress(100)
+
+    def testLayer(self,layer):
+        super().testLayer(layer)
+        dataProvider=layer.dataProvider()
+        if not dataProvider.contains(QgsMesh.Face):
+            raise QgsProcessingException("Mesh layer must contain faces")

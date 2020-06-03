@@ -33,7 +33,9 @@ from qgis.core import (QgsProcessingParameterEnum,
                        QgsMeshDatasetIndex,
                        QgsMeshLayer,
                        QgsProviderRegistry,
-                       QgsDataProvider)
+                       QgsDataProvider,
+                       QgsMapLayerType,
+                       QgsProcessingException)
 
 
 class DatasetWrapper(EnumWidgetWrapper):
@@ -53,6 +55,10 @@ class DatasetWrapper(EnumWidgetWrapper):
         if mesh_layer:
             if type(mesh_layer) == str:
                 mesh_layer = QgsProcessingUtils.mapLayerFromString(mesh_layer, self.context)
+
+            if mesh_layer.type() != QgsMapLayerType.MeshLayer:
+                return
+
             dp = mesh_layer.dataProvider()
 
             dataset_group_filter = self.parameterDefinition().datasetGroupFilter
@@ -112,9 +118,13 @@ class TimestepWidgetWrapper(EnumWidgetWrapper):
 
     def on_change(self, wrapper):
         mesh_layer = wrapper.widgetValue()
+        self.widget.clear()
         if mesh_layer:
             if type(mesh_layer) == str:
                 mesh_layer = QgsProcessingUtils.mapLayerFromString(mesh_layer, self.context)
+
+            if mesh_layer.type() != QgsMapLayerType.MeshLayer:
+                return
             dp = mesh_layer.dataProvider()
 
             datasetCount = 0
@@ -135,7 +145,6 @@ class TimestepWidgetWrapper(EnumWidgetWrapper):
         else:
             options = []
         self.parameterDefinition().setOptions([t for t, v in options])
-        self.widget.clear()
         for text, data in options:
             self.widget.addItem(text, data)
 

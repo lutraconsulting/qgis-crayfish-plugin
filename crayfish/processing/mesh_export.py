@@ -37,7 +37,8 @@ from qgis.core import (QgsProcessing,
                        QgsFields,
                        QgsField,
                        QgsMesh,
-                       QgsMeshDatasetIndex)
+                       QgsMeshDatasetIndex,
+                       QgsMapLayerType)
 
 from .parameters import DatasetParameter, TimestepParameter
 
@@ -56,6 +57,7 @@ class CfMeshExportAlgorithm(QgisAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         layer = self.parameterAsMeshLayer(parameters, self.INPUT_LAYER, context)
+        self.testLayer(layer)
         dp = layer.dataProvider()
 
         # parameterAsEnums doesn't work with updated options
@@ -99,6 +101,10 @@ class CfMeshExportAlgorithm(QgisAlgorithm):
 
     def populateFeatures(self, parameters, sink, layer, datasets, exportVectorOption, context, feedback):
         raise NotImplementedError
+
+    def testLayer(self,layer):
+        if layer.type()!=QgsMapLayerType.MeshLayer:
+            raise QgsProcessingException("Layer is not a mesh")
 
     def vectorValue(self, datasetValue, option):   # option : 0 cartesian, 1: polar, 2 : both
         vector=[]
