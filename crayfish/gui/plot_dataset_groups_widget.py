@@ -40,12 +40,11 @@ class DatasetGroupsMenu(QMenu):
         self.action_current = None
         self.datasetType = datasetType
 
-    def populate_actions(self, layer):
+    def populate_actions(self):
 
-        self.layer = layer
         self.clear()
 
-        if layer is None or layer.dataProvider() is None:
+        if self.layer is None or self.layer.dataProvider() is None:
             return
 
         self.action_current = self.addAction("[current]")
@@ -54,10 +53,10 @@ class DatasetGroupsMenu(QMenu):
         self.action_current.triggered.connect(self.triggered_action_current)
         self.addSeparator()
 
-        layer.activeScalarDatasetGroupChanged.connect(self.on_current_dataset_changed)
 
-        for i in range(layer.dataProvider().datasetGroupCount()):
-            meta = layer.dataProvider().datasetGroupMetadata(i)
+
+        for i in range(self.layer.dataProvider().datasetGroupCount()):
+            meta = self.layer.dataProvider().datasetGroupMetadata(i)
             if self.datasetType is None or meta.dataType()==self.datasetType:
                 a = self.addAction(meta.name())
                 a.group_index = i
@@ -85,8 +84,15 @@ class DatasetGroupsMenu(QMenu):
 
         if self.layer is not None:
             self.layer.activeScalarDatasetGroupChanged.disconnect(self.on_current_dataset_changed)
+            self.layer.dataChanged.disconnect(self.populate_actions)
 
-        self.populate_actions(layer)
+        self.layer = layer
+
+        if self.layer is not None:
+            self.layer.activeScalarDatasetGroupChanged.connect(self.on_current_dataset_changed)
+            self.layer.dataChanged.connect(self.populate_actions)
+
+        self.populate_actions()
 
 
 class DatasetGroupsWidget(QToolButton):
