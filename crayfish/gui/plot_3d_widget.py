@@ -243,8 +243,13 @@ class CrayfishPlot3dWidget(QWidget):
             return meta.name()
 
     def currentDatasetsForDatasetGroup(self):
-        timeRange=iface.mapCanvas().temporalRange()
-        dataset_index = self.layer.activeScalarDatasetAtTime(timeRange).dataset()
+        dataset_group=self.current_dataset_group()
+        if self.layer.temporalProperties().isActive and iface.mapCanvas().mapSettings().isTemporal():
+            timeRange=iface.mapCanvas().temporalRange()
+            dataset_index = self.layer.datasetIndexAtTime(timeRange,dataset_group).dataset()
+        else:
+            dataset_index = self.layer.staticScalarDatasetIndex().dataset()
+
         if dataset_index < 0:
             return []
         else:
