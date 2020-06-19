@@ -30,6 +30,9 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from qgis.core import *
 
+from PyQt5.Qt import PYQT_VERSION_STR
+from packaging import version
+
 try:
     import pyqtgraph as pg
     from pyqtgraph.exporters import ImageExporter
@@ -64,6 +67,8 @@ colors = [
     QColor( "#fdbf6f" ),
 ]
 
+pyqtGraphAcceptNaN=version.parse(PYQT_VERSION_STR)<version.parse("3.13.1")
+
 def timeseries_plot_data(layer, ds_group_index, geometry, searchradius=0):
     """ return array with tuples defining X,Y points for plot """
     x,y = [], []
@@ -76,9 +81,11 @@ def timeseries_plot_data(layer, ds_group_index, geometry, searchradius=0):
         t = meta.time()
         dataset = QgsMeshDatasetIndex(ds_group_index, i)
         value = layer.datasetValue(dataset, pt,searchradius).scalar()
-        if not math.isnan(value):
-            x.append(t)
-            y.append(value)
+        if not pyqtGraphAcceptNaN and math.isnan(value):
+            value=0;
+
+        x.append(t)
+        y.append(value)
 
     return x, y
 
@@ -95,32 +102,8 @@ def cross_section_plot_data(layer, ds_group_index, ds_index, geometry, resolutio
     while offset < length:
         pt = geometry.interpolate(offset).asPoint()
         value = layer.datasetValue(dataset, pt).scalar()
-        if not math.isnan(value):
-            x.append(offset)
-            y.append(value)
-        offset += resolution
-
-    # let's make sure we include also the last point
-    last_pt = geometry.asPolyline()[-1]
-    last_value = layer.datasetValue(dataset, last_pt).scalar()
-    if not math.isnan(last_value):
-        x.append(length)
-        y.append(last_value)
-
-    return x,y
-
-def cross_section_plot_data_with_inactive_value(layer, ds_group_index, ds_index, geometry, resolution=1.):
-    """ return array with tuples defining X,Y points for plot including NaN value (do not be used for direct plotting)"""
-    x,y = [], []
-    if not layer:
-        return x, y
-
-    dataset = QgsMeshDatasetIndex(ds_group_index, ds_index)
-    offset = 0
-    length = geometry.length()
-    while offset < length:
-        pt = geometry.interpolate(offset).asPoint()
-        value = layer.datasetValue(dataset, pt).scalar()
+        if not pyqtGraphAcceptNaN and math.isnan(value):
+            value = 0;
         x.append(offset)
         y.append(value)
         offset += resolution
@@ -128,11 +111,14 @@ def cross_section_plot_data_with_inactive_value(layer, ds_group_index, ds_index,
     # let's make sure we include also the last point
     last_pt = geometry.asPolyline()[-1]
     last_value = layer.datasetValue(dataset, last_pt).scalar()
+
+    if not pyqtGraphAcceptNaN and math.isnan(last_value):
+        last_value = 0;
+
     x.append(length)
     y.append(last_value)
 
-    return x, y
-
+    return x,y
 
 def integral_plot_data(layer, ds_group_index, geometry, resolution=1.):
     """ return array with tuples defining X,Y points for plot """
@@ -143,7 +129,7 @@ def integral_plot_data(layer, ds_group_index, geometry, resolution=1.):
     for i in range(layer.dataProvider().datasetCount(ds_group_index)):
         meta = layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(ds_group_index, i))
         t = meta.time()
-        cs_x, cs_y = cross_section_plot_data_with_inactive_value(layer, ds_group_index, i, geometry, resolution)
+        cs_x, cs_y = cross_section_plot_data(layer, ds_group_index, i, geometry, resolution)
         value = integrate(cs_x, cs_y)
         x.append(t)
         y.append(value)
