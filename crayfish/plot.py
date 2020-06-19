@@ -67,6 +67,7 @@ colors = [
     QColor( "#fdbf6f" ),
 ]
 
+# see https://github.com/pyqtgraph/pyqtgraph/issues/1057
 pyqtGraphAcceptNaN=version.parse(PYQT_VERSION_STR)<version.parse("3.13.1")
 
 def timeseries_plot_data(layer, ds_group_index, geometry, searchradius=0):
