@@ -24,9 +24,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import math
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from qgis.core import *
+
+from PyQt5.Qt import PYQT_VERSION_STR
+from packaging import version
 
 try:
     import pyqtgraph as pg
@@ -62,6 +67,9 @@ colors = [
     QColor( "#fdbf6f" ),
 ]
 
+# see https://github.com/pyqtgraph/pyqtgraph/issues/1057
+pyqtGraphAcceptNaN=version.parse(PYQT_VERSION_STR)<version.parse("3.13.1")
+
 def timeseries_plot_data(layer, ds_group_index, geometry, searchradius=0):
     """ return array with tuples defining X,Y points for plot """
     x,y = [], []
@@ -74,6 +82,9 @@ def timeseries_plot_data(layer, ds_group_index, geometry, searchradius=0):
         t = meta.time()
         dataset = QgsMeshDatasetIndex(ds_group_index, i)
         value = layer.datasetValue(dataset, pt,searchradius).scalar()
+        if not pyqtGraphAcceptNaN and math.isnan(value):
+            value=0;
+
         x.append(t)
         y.append(value)
 
@@ -92,6 +103,8 @@ def cross_section_plot_data(layer, ds_group_index, ds_index, geometry, resolutio
     while offset < length:
         pt = geometry.interpolate(offset).asPoint()
         value = layer.datasetValue(dataset, pt).scalar()
+        if not pyqtGraphAcceptNaN and math.isnan(value):
+            value = 0;
         x.append(offset)
         y.append(value)
         offset += resolution
@@ -99,11 +112,14 @@ def cross_section_plot_data(layer, ds_group_index, ds_index, geometry, resolutio
     # let's make sure we include also the last point
     last_pt = geometry.asPolyline()[-1]
     last_value = layer.datasetValue(dataset, last_pt).scalar()
+
+    if not pyqtGraphAcceptNaN and math.isnan(last_value):
+        last_value = 0;
+
     x.append(length)
     y.append(last_value)
 
-    return x, y
-
+    return x,y
 
 def integral_plot_data(layer, ds_group_index, geometry, resolution=1.):
     """ return array with tuples defining X,Y points for plot """

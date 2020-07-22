@@ -376,10 +376,6 @@ class CrayfishPlotWidget(QWidget):
         self.plot.getAxis('left').setLabel(self.dataset_group_name(ds_group_index))
         self.plot.legend.setVisible(False)
 
-        valid_plot = not all(map(math.isnan, y))
-        if not valid_plot:
-            return
-
         pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
         return self.plot.plot(x=x, y=y, connect='finite', pen=pen)
 
