@@ -36,7 +36,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterEnum,
                        QgsMesh,
                        QgsMeshDatasetIndex)
-from qgis.analysis import QgsMeshCalculator
+from qgis.core import QgsMeshCalculator
 from .parameters import TimestepParameter
 from qgis.core import QgsProviderRegistry
 from qgis.core import QgsMeshDriverMetadata
