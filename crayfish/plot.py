@@ -31,7 +31,6 @@ from PyQt5.QtGui import *
 from qgis.core import *
 
 from PyQt5.Qt import PYQT_VERSION_STR
-from packaging import version
 
 try:
     import pyqtgraph as pg
@@ -66,9 +65,17 @@ colors = [
     QColor( "#fb9a99" ),
     QColor( "#fdbf6f" ),
 ]
+def check_if_PyQt_version_is_before(M,m,r):
+    strVersion=PYQT_VERSION_STR
+    num=strVersion.split('.')
+    numM=int(num[0])
+    numm = int(num[1])
+    numr = int(num[2])
+    return  numM < M or (numM == M and numm < m) or (numM == M and numm < m and numr < r)
+
 
 # see https://github.com/pyqtgraph/pyqtgraph/issues/1057
-pyqtGraphAcceptNaN=version.parse(PYQT_VERSION_STR)<version.parse("3.13.1")
+pyqtGraphAcceptNaN = check_if_PyQt_version_is_before(5, 13, 1)
 
 def timeseries_plot_data(layer, ds_group_index, geometry, searchradius=0):
     """ return array with tuples defining X,Y points for plot """
@@ -104,7 +111,7 @@ def cross_section_plot_data(layer, ds_group_index, ds_index, geometry, resolutio
         pt = geometry.interpolate(offset).asPoint()
         value = layer.datasetValue(dataset, pt).scalar()
         if not pyqtGraphAcceptNaN and math.isnan(value):
-            value = 0;
+            value = 0
         x.append(offset)
         y.append(value)
         offset += resolution
@@ -114,7 +121,7 @@ def cross_section_plot_data(layer, ds_group_index, ds_index, geometry, resolutio
     last_value = layer.datasetValue(dataset, last_pt).scalar()
 
     if not pyqtGraphAcceptNaN and math.isnan(last_value):
-        last_value = 0;
+        last_value = 0
 
     x.append(length)
     y.append(last_value)
