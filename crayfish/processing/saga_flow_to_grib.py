@@ -148,6 +148,8 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
         res_tif = gdal.Open(grib_filename + '.tif')
         grib_driver = gdal.GetDriverByName('GRIB')
         grib = grib_driver.CreateCopy(grib_filename, res_tif)
+        if grib is None:
+            raise QgsProcessingException(self.tr('Unable to convert to grib file'))
         band_names = ('x-flow', 'y-flow')
         for i in range(2):
             band_nr = i + 1
