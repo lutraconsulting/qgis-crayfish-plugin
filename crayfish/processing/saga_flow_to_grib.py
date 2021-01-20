@@ -168,8 +168,4 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
         grib = None
         res_tif = None
 
-        # cleanup the tmp file
-        if os.path.exists(grib_filename + '.tif'):
-            os.remove(grib_filename + '.tif')
-
         return {self.OUTPUT: grib_filename}
