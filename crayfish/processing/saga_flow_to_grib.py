@@ -27,6 +27,7 @@
 
 from math import sqrt
 from osgeo import gdal
+import os
 
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtGui import QIcon
@@ -88,8 +89,7 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
             raise QgsProcessingException(self.tr('You need to specify output filename.'))
 
         idp = inp_rast.dataProvider()
-        map_settings = iface.mapCanvas().mapSettings()
-        crs = map_settings.destinationCrs()
+        crs = idp.crs()
         outputFormat = QgsRasterFileWriter.driverForExtension('.tif')
 
         height = inp_rast.height()
@@ -145,11 +145,15 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
         rdp.setEditable(False)
 
         # rewrite the resulting raster as GRIB using GDAL for setting metadata
-        res_tif = gdal.Open(grib_filename + '.tif')
-        grib_driver = gdal.GetDriverByName('GRIB')
-        grib = grib_driver.CreateCopy(grib_filename, res_tif)
-        if grib is None:
-            raise QgsProcessingException(self.tr('Unable to convert to grib file'))
+        gdal.UseExceptions()
+        try:
+            res_tif = gdal.Open(grib_filename + '.tif')
+            grib_driver = gdal.GetDriverByName('GRIB')
+            grib = grib_driver.CreateCopy(grib_filename, res_tif)
+        except Exception as e:
+            raise QgsProcessingException('Unable to convert to grib file with GDAL: ' + str(e))
+        gdal.DontUseExceptions()
+
         band_names = ('x-flow', 'y-flow')
         for i in range(2):
             band_nr = i + 1
@@ -162,4 +166,9 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
             grib_band.WriteArray(res_tif_band_array)
             feedback.setProgress(band_nr * 50)
         grib = None
+
+        # cleanup the tmp file
+        if os.path.exists(grib_filename + '.tif'):
+            os.remove(grib_filename + '.tif')
+
         return {self.OUTPUT: grib_filename}
