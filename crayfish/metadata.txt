@@ -11,8 +11,7 @@ about=The Crayfish plugin contains set of advanced tool for the QGIS Mesh Layer 
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=
- <p>3.5.0 Bug Fixes and New Features:
+changelog=3.5.0 Bug Fixes and New Features:
  - Fix invalid ffmpeg download url
  - Fix SAGA processing algorithms
  - Moved the processing algorithms to QGIS main repository
