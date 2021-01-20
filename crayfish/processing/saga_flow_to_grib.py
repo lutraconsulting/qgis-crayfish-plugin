@@ -166,6 +166,7 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
             grib_band.WriteArray(res_tif_band_array)
             feedback.setProgress(band_nr * 50)
         grib = None
+        res_tif = None
 
         # cleanup the tmp file
         if os.path.exists(grib_filename + '.tif'):
