@@ -28,12 +28,12 @@ Here is the table that helps to understand the new implementation and where to r
 | identify          |       |     X     |                |
 | styling           |       |     X     |                |
 | time slider       |       |     X     |                |
-| export grid       |       |           |        X       |
-| export contours   |       |           |        X       |
+| export grid       |       |     X     |                |
+| export contours   |       |     X     |                |
 | trace animation   |       |           |        X       |
 | plots             |       |           |        X       |
 | export animations |       |           |        X       |
-| mesh calculator   |       |     X     |                |
+| mesh calculator   |       |     X     |        X       |
 
 ### Using Crayfish
 
