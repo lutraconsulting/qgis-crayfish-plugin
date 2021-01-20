@@ -1,18 +1,22 @@
 ; the next section is mandatory
 [general]
 name=Crayfish
-qgisMinimumVersion=3.16
+qgisMinimumVersion=3.17
 qgisMaximumVersion=3.99
-description=Visualiser for temporal structured/unstructured grids in QGIS
-; category=Raster ; Did not know what my available choices where
-version=3.4.6
+description=Tools for mesh layers QGIS
+version=3.5.0
 author=Lutra Consulting
 email=info@lutraconsulting.co.uk
-about=The Crayfish plugin aspires to be a time explorer for various grid and vector datasets within QGIS supported by MDAL. This allows users to flick quickly through the various output steps in the result files and to create animations.
+about=The Crayfish plugin contains set of advanced tool for the QGIS Mesh Layer as plots and animations.
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=3.4.6 Bug Fix release
+changelog=
+ <p>3.5.0 Bug Fixes and New Features:
+ - Fix invalid ffmpeg download url
+ - Fix SAGA processing algorithms
+ - Moved the processing algorithms to QGIS main repository
+ <p>3.4.6 Bug Fix release
  - Fix missing package "packaging" on Windows
  <p>3.4.5 Bug Fix release
  - Minor fix for loading plugin #463
