@@ -39,7 +39,7 @@ except ImportError:
     import sys
     import os
     this_dir = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(this_dir, 'pyqtgraph-0.10.0-py2.py3-none-any.whl')
+    path = os.path.join(this_dir, 'pyqtgraph-0.11.1-py2.py3-none-any.whl')
     sys.path.append(path)
     import pyqtgraph as pg
     from pyqtgraph.exporters import ImageExporter
