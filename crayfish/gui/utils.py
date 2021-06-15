@@ -66,7 +66,7 @@ def mesh_layer_active_dataset_group_with_maximum_timesteps(layer):
         if vector_group_index>=0:
             avd_timesteps = layer.dataProvider().datasetCount(vector_group_index)
             if avd_timesteps > timesteps:
-                group_index = avd.group()
+                group_index = vector_group_index
 
     return group_index
 
