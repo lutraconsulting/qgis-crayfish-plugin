@@ -4,14 +4,16 @@ name=Crayfish
 qgisMinimumVersion=3.18
 qgisMaximumVersion=3.99
 description=Tools for mesh layers QGIS
-version=3.5.1
+version=3.5.2
 author=Lutra Consulting
 email=info@lutraconsulting.co.uk
 about=The Crayfish plugin contains set of advanced tool for the QGIS Mesh Layer as plots and animations.
 ; end of mandatory metadata
 
 ; start of optional metadata
-changelog=3.5.1 Bug Fixes:
+changelog=3.5.2 Bug Fixes:
+ - fix export animation of vector datasets
+ <p>3.5.1 Bug Fixes:
  - Support for Python 3.9.x
  - Usage of pyqtgraph 0.11.1
  <p>3.5.0 Bug Fixes and New Features:
