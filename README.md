@@ -6,7 +6,7 @@ Crayfish (QGIS plugin)
 
 <img align="right" src="https://raw.githubusercontent.com/lutraconsulting/qgis-crayfish-plugin/master/crayfish/images/crayfish_128px.png">
 
-The Crayfish Plugin is to extent QGIS' functionalities to handle mesh datasets. With Crayfish plugin, you can export your mesh data as a GDAL/OGR raster or vector, generate animations and plot time series.
+The Crayfish Plugin is to extend QGIS' functionalities to handle mesh datasets. With Crayfish plugin, you can export your mesh data as a GDAL/OGR raster or vector, generate animations and plot time series.
 
 Any mesh formats supported by [MDAL](https://github.com/lutraconsulting/MDAL) can be used in Crayfish plugin. Crayfish is compatible with all the main desktop operating systems (Windows, Linux and MacOS).
 
