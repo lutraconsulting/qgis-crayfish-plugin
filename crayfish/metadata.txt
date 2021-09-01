@@ -13,6 +13,7 @@ about=The Crayfish plugin contains set of advanced tool for the QGIS Mesh Layer 
 ; start of optional metadata
 changelog=3.5.3 Bug Fixes:
  - fix support for QGIS 3.20 on Windows
+ - Usage of pyqtgraph 0.12.2
  <p>3.5.2 Bug Fixes:
  - fix export animation of vector datasets
  <p>3.5.1 Bug Fixes:
