@@ -34,16 +34,10 @@ from qgis.core import *
 from qgis.gui import *
 from qgis.utils import iface
 
-
 try:
     import pyqtgraph
 except ImportError:
-    import sys
-    import os
-    this_dir = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(this_dir, os.pardir, 'pyqtgraph-0.11.1-py2.py3-none-any.whl')
-    sys.path.append(path)
-    import pyqtgraph
+    import crayfish.pyqtgraph_0_12_2 as pyqtgraph
 
 from ..plot import colors, plot_3d_data
 from .utils import time_to_string
