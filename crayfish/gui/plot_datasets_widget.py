@@ -48,13 +48,13 @@ class DatasetsMenu(QMenu):
             return
 
         if self.layer is not None:
-            self.layer.activeScalarDatasetChanged.disconnect(self.on_current_output_time_changed)
+            self.layer.activeScalarDatasetGroupChanged.disconnect(self.on_current_output_time_changed)
 
         if layer is not None:
-            layer.activeScalarDatasetChanged.connect(self.on_current_output_time_changed)
+            layer.activeScalarDatasetGroupChanged.connect(self.on_current_output_time_changed)
 
         self.layer = layer
-        self.set_dataset_group(layer.rendererSettings().activeScalarDataset().group() if layer is not None else -1)
+        self.set_dataset_group(layer.rendererSettings().activeScalarDatasetGroup() if layer is not None else -1)
 
     def set_dataset_group(self, dataset_group_index):
         self.dataset_group = dataset_group_index
@@ -76,7 +76,7 @@ class DatasetsMenu(QMenu):
 
         for i in range(self.layer.dataProvider().datasetCount(dataset_group_index)):
             meta = self.layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, i))
-            a = self.addAction(time_to_string(meta.time()))
+            a = self.addAction(time_to_string(self.layer, meta.time()))
             a.dataset_index = i
             a.setCheckable(True)
             a.triggered.connect(self.on_action)
@@ -99,8 +99,9 @@ class DatasetsMenu(QMenu):
         self.datasets_changed.emit([])
 
     def on_current_output_time_changed(self):
-        if self.action_current.isChecked():
-            self.datasets_changed.emit([])  # re-emit
+        if self.dataset_group > -1:
+            if self.action_current.isChecked():
+                self.datasets_changed.emit([])  # re-emit
 
 
 class DatasetsWidget(QToolButton):
@@ -126,7 +127,7 @@ class DatasetsWidget(QToolButton):
             meta = self.menu_datasets.layer.dataProvider().datasetMetadata(
                 QgsMeshDatasetIndex(self.menu_datasets.dataset_group, lst[0])
             )
-            self.setText("Time: " + time_to_string(meta.time()))
+            self.setText("Time: " + time_to_string(self.menu_datasets.layer, meta.time()))
         else:
             self.setText("Time: [multiple]")
 

@@ -6,23 +6,21 @@ Crayfish (QGIS plugin)
 
 <img align="right" src="https://raw.githubusercontent.com/lutraconsulting/qgis-crayfish-plugin/master/crayfish/images/crayfish_128px.png">
 
-The Crayfish Plugin is a visualiser for temporal structured/unstructured grids in QGIS.
+The Crayfish Plugin is to extend QGIS' functionalities to handle mesh datasets. With Crayfish plugin, you can export your mesh data as a GDAL/OGR raster or vector, generate animations and plot time series.
 
-You can use Crayfish to load the file formats supported by [MDAL](https://github.com/lutraconsulting/MDAL)
-
-Works on Windows, Linux and MacOS.
+Any mesh formats supported by [MDAL](https://github.com/lutraconsulting/MDAL) can be used in Crayfish plugin. Crayfish is compatible with all the main desktop operating systems (Windows, Linux and MacOS).
 
 ### Crayfish 3 vs Crayfish 2
 
-In QGIS 2.x & Crayfish 2.x all features were implemented through QGIS's plugin layer. Rendering and format reading 
-were written in C++ language and hence Crayfish 2 was shipped as C++ library and QGIS python plugin. 
+In QGIS 2.x & Crayfish 2.x all features were implemented through QGIS's plugin layer. Rendering and format reading
+were written in C++ language and hence Crayfish 2 was shipped as C++ library and QGIS python plugin.
 
-In QGIS 3.4 & Crayfish 3.x, the C++ library was abandon and replaced by [MDAL](https://github.com/lutraconsulting/MDAL) 
-data provider for data (format) reading and QGIS Core enhancement (QgsMeshLayer). 
- 
-Here is the table that helps to understand where the implementation was moved and where to report issues with Crayfish:
+In QGIS 3.4 & Crayfish 3.x, the C++ library was abandoned and replaced by [MDAL](https://github.com/lutraconsulting/MDAL)
+data provider for data (format) reading and QGIS Core enhancement (QgsMeshLayer).
 
-|                   | MDAL  | QGIS 3.x  |  Crayfish 3.x  | 
+Here is the table that helps to understand the new implementation and where to report issues with Crayfish:
+
+|                   | MDAL  | QGIS 3.x  |  Crayfish 3.x  |
 |-------------------|-------|-----------|----------------|
 | grid input        |   X   |           |                |
 | data input        |   X   |           |                |
@@ -31,28 +29,27 @@ Here is the table that helps to understand where the implementation was moved an
 | styling           |       |     X     |                |
 | time slider       |       |     X     |                |
 | export grid       |       |     X     |                |
-| export contours   |       |     X*    |                |
-| trace animation   |       |     X*    |                |
+| export contours   |       |     X     |                |
+| trace animation   |       |           |        X       |
 | plots             |       |           |        X       |
 | export animations |       |           |        X       |
-
-`*` marks not implemented features
+| mesh calculator   |       |     X     |        X       |
 
 ### Using Crayfish
 
 For instructions of how to install and use Crayfish, please refer to the [Crayfish resources page][crp] on our website.
 
-* load mesh layer with data source manager in QGIS 
-* load datasets from properties panel in QGIS 
+* load mesh layer with data source manager in QGIS
+* load datasets from properties panel in QGIS
 * style and browse with styling panel (f7)
 * use plots and export animations with Crayfish plugin
 
 ### Installing
 
-Use QGIS3 plugin manager to install latest crayfish version.
+Use QGIS plugin manager to install the latest crayfish version.
 
-[crp]: http://www.lutraconsulting.co.uk/resources/crayfish
+[crp]: https://www.lutraconsulting.co.uk/projects/crayfish
 
-### Developement 
+### Developement
 
-Please refer to QGIS official plugin development cookbook and practises.
+Please refer to the QGIS official plugin development cookbook and practises.

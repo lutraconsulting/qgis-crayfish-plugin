@@ -27,6 +27,7 @@
 
 from math import sqrt
 from osgeo import gdal
+import os
 
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtGui import QIcon
@@ -36,8 +37,9 @@ from qgis.core import (
     QgsRasterBlock,
     QgsRasterFileWriter,
     QgsProcessingParameterRasterLayer,
-    QgsProcessingParameterRasterDestination,
-    QgsProcessingAlgorithm
+    QgsProcessingParameterFileDestination,
+    QgsProcessingAlgorithm,
+    QgsProcessingException
 )
 from qgis.utils import iface
 
@@ -69,20 +71,25 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
         return SagaFlowToGribAlgorithm()
 
     def initAlgorithm(self, config):
-        self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT, self.tr('Input raster')))
-        self.addParameter(QgsProcessingParameterRasterDestination(self.OUTPUT, self.tr('Resulting raster')))
+        self.addParameter(QgsProcessingParameterRasterLayer(
+            self.INPUT,
+            self.tr('Input raster')))
+
+        self.addParameter(QgsProcessingParameterFileDestination(
+            self.OUTPUT,
+            self.tr('Output file (GRIB)'),
+            self.tr('GRIB files (*.grb)'),
+            optional=False))
 
     def processAlgorithm(self, parameters, context, feedback):
         inp_rast = self.parameterAsRasterLayer(parameters, self.INPUT, context)
-        grib_filename = self.parameterAsOutputLayer(
-            parameters,
-            self.OUTPUT,
-            context
-        )
+
+        grib_filename = self.parameterAsString(parameters, self.OUTPUT, context)
+        if not grib_filename:
+            raise QgsProcessingException(self.tr('You need to specify output filename.'))
 
         idp = inp_rast.dataProvider()
-        map_settings = iface.mapCanvas().mapSettings()
-        crs = map_settings.destinationCrs()
+        crs = idp.crs()
         outputFormat = QgsRasterFileWriter.driverForExtension('.tif')
 
         height = inp_rast.height()
@@ -105,6 +112,11 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
         x_block = QgsRasterBlock(Qgis.Float32, width, height)
         y_block = QgsRasterBlock(Qgis.Float32, width, height)
         diag = 1. / sqrt(2)
+
+        # resulting raster has no NODATA value set, which
+        # is not treated correctly in MDAL 0.2.0. See
+        # see https://github.com/lutraconsulting/MDAL/issues/104
+        # therefore set some small value to overcome the issue
         dir_map = {
             0: (1e-7, 1),
             1: (diag, diag),
@@ -133,9 +145,15 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
         rdp.setEditable(False)
 
         # rewrite the resulting raster as GRIB using GDAL for setting metadata
-        res_tif = gdal.Open(grib_filename + '.tif')
-        grib_driver = gdal.GetDriverByName('GRIB')
-        grib = grib_driver.CreateCopy(grib_filename, res_tif)
+        gdal.UseExceptions()
+        try:
+            res_tif = gdal.Open(grib_filename + '.tif')
+            grib_driver = gdal.GetDriverByName('GRIB')
+            grib = grib_driver.CreateCopy(grib_filename, res_tif)
+        except Exception as e:
+            raise QgsProcessingException('Unable to convert to grib file with GDAL: ' + str(e))
+        gdal.DontUseExceptions()
+
         band_names = ('x-flow', 'y-flow')
         for i in range(2):
             band_nr = i + 1
@@ -148,4 +166,6 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
             grib_band.WriteArray(res_tif_band_array)
             feedback.setProgress(band_nr * 50)
         grib = None
+        res_tif = None
+
         return {self.OUTPUT: grib_filename}

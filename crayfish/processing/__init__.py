@@ -27,13 +27,8 @@
 from PyQt5.QtGui import *
 from qgis.core import QgsProcessingProvider
 
-from .export_faces import ExportFacesAlgorithm
-from .export_vertices import ExportVerticesAlgorithm
 from .calculator import MeshCalculatorAlgorithm
-from .export_raster import MeshExportRasterAlgorithm
 from .saga_flow_to_grib import SagaFlowToGribAlgorithm
-
-
 
 class CrayfishProcessingProvider(QgsProcessingProvider):
 
@@ -60,10 +55,8 @@ class CrayfishProcessingProvider(QgsProcessingProvider):
         QgsProcessingProvider.unload(self)
 
     def loadAlgorithms(self):
-        self.alglist = [ExportFacesAlgorithm(),
-                        ExportVerticesAlgorithm(),
-                        MeshCalculatorAlgorithm(),
-                        MeshExportRasterAlgorithm(),
+        self.alglist = [MeshCalculatorAlgorithm(),
                         SagaFlowToGribAlgorithm()]
+
         for alg in self.alglist:
             self.addAlgorithm(alg)

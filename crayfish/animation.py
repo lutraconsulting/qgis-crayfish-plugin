@@ -32,11 +32,11 @@ import tempfile
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QPainter, QImage
 from PyQt5.QtWidgets import QStyleOptionGraphicsItem
-
 from PyQt5.QtXml import QDomDocument
 
 from qgis.core import *
-from .gui.utils import time_to_string, mesh_layer_active_dataset_group_with_maximum_timesteps
+from qgis._3d import *
+from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps
 
 
 def _page_size(layout):
@@ -65,8 +65,6 @@ def animation(cfg, progress_fn=None):
         time_from = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, 0)).time()
         time_to = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, count - 1)).time()
 
-    # store original values
-    original_rs = l.rendererSettings()
 
     # count actual timesteps to animate
     act_count = 0
@@ -74,6 +72,9 @@ def animation(cfg, progress_fn=None):
         time = l.dataProvider().datasetMetadata(QgsMeshDatasetIndex(dataset_group_index, i)).time()
         if time_from <= time <= time_to:
             act_count += 1
+
+    # Reference time
+    referenceTime=l.temporalProperties().referenceTime()
 
     # animate
     imgnum = 0
@@ -86,15 +87,8 @@ def animation(cfg, progress_fn=None):
         if time < time_from or time > time_to:
             continue
 
-        # Set to render next timesteps
-        rs = l.rendererSettings()
-        asd = rs.activeScalarDataset()
-        if asd.isValid():
-            rs.setActiveScalarDataset(QgsMeshDatasetIndex(asd.group(), i))
-        avd = rs.activeVectorDataset()
-        if avd.isValid():
-            rs.setActiveVectorDataset(QgsMeshDatasetIndex(avd.group(), i))
-        l.setRendererSettings(rs)
+        currentTime=referenceTime.addMSecs(time*3600*1000)
+        formattedTime=currentTime.toString("yyyy-MM-dd HH:mm:ss")
 
         # Prepare layout
         layout = QgsPrintLayout(QgsProject.instance())
@@ -103,7 +97,7 @@ def animation(cfg, progress_fn=None):
 
         layoutcfg = cfg['layout']
         if layoutcfg['type'] == 'file':
-            prepare_composition_from_template(layout, cfg['layout']['file'], time)
+            prepare_composition_from_template(layout, cfg['layout']['file'], formattedTime)
             # when using composition from template, match video's aspect ratio to paper size
             # by updating video's width (keeping the height)
             aspect = _page_size(layout).width() / _page_size(layout).height()
@@ -113,7 +107,13 @@ def animation(cfg, progress_fn=None):
             layout.setUnits(QgsUnitTypes.LayoutMillimeters)
             main_page = layout.pageCollection().page(0)
             main_page.setPageSize(QgsLayoutSize(w * 25.4 / dpi, h * 25.4 / dpi, QgsUnitTypes.LayoutMillimeters))
-            prepare_composition(layout, time, cfg, layoutcfg, extent, layers, crs)
+            prepare_composition(layout, formattedTime, cfg, layoutcfg, extent, layers, crs)
+
+        #Set timerange for map layouts
+        timeRange = QgsDateTimeRange(currentTime, currentTime.addSecs(1))
+        for layoutItem in layout.items():
+            if isinstance(layoutItem, QgsLayoutItemMap): # or isinstance(layoutItem, QgsLayoutItem3DMap): (commented because not found in API)
+                layoutItem.setTemporalRange(timeRange)
 
         imgnum += 1
         fname = imgfile % imgnum
@@ -128,18 +128,85 @@ def animation(cfg, progress_fn=None):
     if progress_fn:
         progress_fn(count, count)
 
+
+def traceAnimation(cfg, progress_fn=None):
+    dpi = 96
+    cfg["dpi"] = dpi
+    l = cfg['layer']
+    m = cfg['map_settings']
+    w, h = cfg['img_size']
+    fps = cfg['fps']
+    duration = cfg['duration']
+    imgfile = cfg['tmp_imgfile']
+    count = cfg['count']
+    maxSpeed = cfg['max_speed']
+    lifeTime = cfg['life_time']
+    color = cfg['color']
+    colorLayerSettings=cfg['colorLayerSettings']
+    size = cfg['size']
+    tailFactor=cfg['tail_factor']
+    minTailLenght=cfg['min_tail_leght']
+    persistence=cfg['persistence']
+
+    #First, we need to obtain the image of the map without the particles and without the vector dataset rendered
+
+    # store original settings
+    original_rs = l.rendererSettings()
+
+    tmpSettings=l.rendererSettings()
+    tmpSettings.setActiveVectorDatasetGroup( -1 )
+    l.setRendererSettings(tmpSettings)
+
+    m.setOutputSize( QSize(w,h) )
+    underLayerRenderer=QgsMapRendererParallelJob(m)
+
+    underLayerRenderer.start()
+    underLayerRenderer.waitForFinished()
+
+    underLayerImage=underLayerRenderer.renderedImage()
+
     # restore original settings
     l.setRendererSettings(original_rs)
 
+    # create an initialize the particles Renderer
+    renderContext=QgsRenderContext.fromMapSettings(m)
+    particlesRenderer=QgsMeshVectorTraceAnimationGenerator(l, renderContext)
 
-def composition_set_time(c, time):
+    particlesRenderer.setFPS(fps)
+    particlesRenderer.setMaxSpeedPixel(maxSpeed)
+    particlesRenderer.setParticlesLifeTime(lifeTime)
+    particlesRenderer.seedRandomParticles(count)
+    if not colorLayerSettings:
+        particlesRenderer.setParticlesColor(color)
+    particlesRenderer.setParticlesSize(size)
+    particlesRenderer.setTailFactor(tailFactor)
+    particlesRenderer.setMinimumTailLength(minTailLenght)
+    particlesRenderer.setTailPersitence(persistence)
+
+    framesCount=duration*fps
+    #start to increment and generate image
+    for i in range(framesCount):
+
+        if progress_fn:
+            progress_fn(i, framesCount)
+
+        particleImage = particlesRenderer.imageRendered()
+        renderImage=underLayerImage.copy()
+        painter=QPainter()
+        painter.begin(renderImage)
+        painter.drawImage(0,0,particleImage)
+        painter.end()
+        renderImage.save(imgfile% (i+1),"PNG")
+    if progress_fn:
+        progress_fn(framesCount, framesCount)
+
+def composition_set_time(c, formattedTime):
     for i in c.items():
         if isinstance(i, QgsLayoutItemLabel) and i.id() == "time":
-            txt = time_to_string(time)
-            i.setText(txt)
+            i.setText(formattedTime)
 
 
-def prepare_composition_from_template(layout, template_path, time):
+def prepare_composition_from_template(layout, template_path, formattedTime):
     document = QDomDocument()
     with open(template_path) as f:
         document.setContent(f.read())
@@ -147,7 +214,7 @@ def prepare_composition_from_template(layout, template_path, time):
     context.setPathResolver(QgsProject.instance().pathResolver())
     context.setProjectTranslator(QgsProject.instance())
     layout.readLayoutXml(document.documentElement(), document, context)
-    composition_set_time(layout, time)
+    composition_set_time(layout, formattedTime)
 
 
 def set_composer_item_label(item, itemcfg):
@@ -255,8 +322,8 @@ def prepare_composition(layout, time, cfg, layoutcfg, extent, layers, crs):
         set_item_pos(cLegend, itemcfg['position'], layout)
 
 
-def images_to_video(tmp_img_dir="/tmp/vid/%03d.png", output_file="/tmp/vid/test.avi", fps=10, qual=1,
-                    ffmpeg_bin="ffmpeg"):
+def images_to_video(tmp_img_dir="/tmp/vid/%05d.png", output_file="/tmp/vid/test.avi", fps=10, qual=1,
+                    ffmpeg_bin="ffmpeg", keep_intermediate_images=False):
     if qual == 0:  # lossless
         opts = ["-vcodec", "ffv1"]
     else:
@@ -273,7 +340,7 @@ def images_to_video(tmp_img_dir="/tmp/vid/%03d.png", output_file="/tmp/vid/test.
 
     # stdin redirection is necessary in some cases on Windows
     res = subprocess.call(cmd, stdin=subprocess.PIPE, stdout=f, stderr=f)
-    if res != 0:
-        f.delete = False  # keep the file on error
+    if (res != 0) or keep_intermediate_images:
+        f.delete = False  # keep the file on error or when defined to keep
 
     return res == 0, f.name

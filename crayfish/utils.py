@@ -26,6 +26,18 @@
 
 import math
 
+def decimalPrecision(x):
+    """
+        get number od decimal places for float x
+    """
+    if isinstance(x, float):
+        try:
+            return len(str(x).split('.')[1])
+        except:
+            return 0
+    else:
+        return 0
+
 
 def integrate(x, y):
     """

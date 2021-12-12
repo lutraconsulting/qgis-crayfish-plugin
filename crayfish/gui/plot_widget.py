@@ -37,16 +37,11 @@ from qgis.utils import iface
 try:
     import pyqtgraph
 except ImportError:
-    import sys
-    import os
-    this_dir = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(this_dir, os.pardir, 'pyqtgraph-0.10.0-py2.py3-none-any.whl')
-    sys.path.append(path)
-    import pyqtgraph
+    import crayfish.pyqtgraph_0_12_2 as pyqtgraph
 
 from ..plot import timeseries_plot_data, cross_section_plot_data, colors, integral_plot_data
 from .utils import time_to_string
-from .plot_cf_layer_widget import CrayfishLayerWidget
+from .plot_cf_layer_widget import CrayfishLayer2dWidget
 from .plot_line_geometry_widget import LineGeometryPickerWidget
 from .plot_point_geometry_widget import PointGeometryPickerWidget
 from .plot_datasets_widget import DatasetsWidget
@@ -152,7 +147,7 @@ class CrayfishPlotWidget(QWidget):
 
         self.layer = None
 
-        self.btn_layer = CrayfishLayerWidget()
+        self.btn_layer = CrayfishLayer2dWidget()
         self.btn_layer.layer_changed.connect(self.on_layer_changed)
 
         self.btn_dataset_group = DatasetGroupsWidget()
@@ -227,6 +222,8 @@ class CrayfishPlotWidget(QWidget):
         self.on_geometry_type_changed(self.btn_geom_type.geometry_type)
         self.on_dataset_group_changed(self.btn_dataset_group.dataset_groups)
 
+        iface.mapCanvas().temporalRangeChanged.connect(self.on_canvas_time_range_changed)
+
     def hideEvent(self, e):
         self.reset_widget()
         QWidget.hideEvent(self, e)
@@ -272,7 +269,7 @@ class CrayfishPlotWidget(QWidget):
 
     def on_dataset_group_changed(self, lst):
         if len(lst) == 0:
-            self.btn_datasets.set_dataset_group(self.layer.rendererSettings().activeScalarDataset().group() if self.layer is not None else None)
+            self.btn_datasets.set_dataset_group(self.layer.rendererSettings().activeScalarDatasetGroup() if self.layer is not None else None)
         elif len(lst) == 1:
             self.btn_datasets.set_dataset_group(lst[0])
 
@@ -281,7 +278,7 @@ class CrayfishPlotWidget(QWidget):
     def current_dataset_group(self):
         dataset_groups = self.btn_dataset_group.dataset_groups
         if len(dataset_groups) == 0:
-          return self.layer.rendererSettings().activeScalarDataset().group() if self.layer is not None else None
+          return self.layer.rendererSettings().activeScalarDatasetGroup() if self.layer is not None else None
         else:
           return dataset_groups[0]
 
@@ -291,6 +288,10 @@ class CrayfishPlotWidget(QWidget):
 
     def on_datasets_changed(self, lst):
         self.refresh_plot()
+
+    def on_canvas_time_range_changed(self):
+        if len(self.btn_datasets.datasets) == 0:
+            self.refresh_plot()
 
     def reset_widget(self):
         self.point_picker.clear_geometries()
@@ -370,10 +371,6 @@ class CrayfishPlotWidget(QWidget):
         self.plot.getAxis('left').setLabel(self.dataset_group_name(ds_group_index))
         self.plot.legend.setVisible(False)
 
-        valid_plot = not all(map(math.isnan, y))
-        if not valid_plot:
-            return
-
         pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
         return self.plot.plot(x=x, y=y, connect='finite', pen=pen)
 
@@ -393,7 +390,8 @@ class CrayfishPlotWidget(QWidget):
         self.plot.getAxis('left').setLabel(self.dataset_group_name(ds_group_index))
 
         dataset_indexes = self.btn_datasets.datasets
-        if len(dataset_indexes) == 0:
+        isCurrentDataset = len(dataset_indexes) == 0
+        if isCurrentDataset:
             dataset_indexes = self.currentDatasetsForDatasetGroup()
 
         self.plot.legend.setVisible(len(dataset_indexes) > 1)
@@ -408,10 +406,13 @@ class CrayfishPlotWidget(QWidget):
             if not valid_plot:
                 continue
 
-            clr = colors[i % len(colors)]
+            colorIndex = i
+            if isCurrentDataset : #current dataset, used same color for all dataset for animation
+                colorIndex = 0
+            clr = colors[colorIndex % len(colors)]
             pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
             meta = self.layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(ds_group_index, i))
-            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=time_to_string(meta.time()))
+            p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=time_to_string(self.layer, meta.time()))
 
         rb = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
         rb.setColor(colors[0])
@@ -489,7 +490,13 @@ class CrayfishPlotWidget(QWidget):
             return meta.name()
 
     def currentDatasetsForDatasetGroup(self):
-        dataset_index = self.layer.rendererSettings().activeScalarDataset().dataset()
+        dataset_group = self.current_dataset_group()
+        if self.layer.temporalProperties().isActive and iface.mapCanvas().mapSettings().isTemporal():
+            timeRange = iface.mapCanvas().temporalRange()
+            dataset_index = self.layer.datasetIndexAtTime(timeRange, dataset_group).dataset()
+        else:
+            dataset_index = self.layer.staticScalarDatasetIndex().dataset()
+
         if dataset_index < 0:
             return []
         else:

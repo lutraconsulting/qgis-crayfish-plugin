@@ -25,10 +25,17 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import platform
+
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 from qgis.core import *
 from qgis.PyQt import uic
 from qgis.utils import iface
 qgis_message_bar = iface.messageBar()
+
+from .install_helper import downloadFfmpeg
 
 def float_safe(txt):
     """ convert to float, return 0 if conversion is not possible """
@@ -38,17 +45,10 @@ def float_safe(txt):
         return 0.
 
 
-def _hours_to_HHMMSS(hours):
-    seconds = round(hours * 3600.0, 2)
-    m, s = divmod(seconds, 60)
-    h, m = divmod(m, 60)
-    return "%02d:%02d:%05.2f" % (h, m, s)
-
-
-def time_to_string(time):  # time is in hours
-    # TODO time formatting!
-    return _hours_to_HHMMSS(time)
-
+def time_to_string(layer, time):  # time is in hours
+    if not layer or layer.type() != QgsMapLayer.MeshLayer:
+        raise Exception("unable to format time " + time)
+    return layer.formatTime(time)
 
 def mesh_layer_active_dataset_group_with_maximum_timesteps(layer):
     """ returns active dataset group with maximum datasets and the number of datasets """
@@ -57,17 +57,16 @@ def mesh_layer_active_dataset_group_with_maximum_timesteps(layer):
 
     if layer and layer.dataProvider() and layer.type() == QgsMapLayer.MeshLayer:
         rendererSettings = layer.rendererSettings()
-        asd = rendererSettings.activeScalarDataset()
+        group_index = rendererSettings.activeScalarDatasetGroup()
 
-        if asd.isValid():
-            group_index = asd.group()
-            timesteps = layer.dataProvider().datasetCount(asd.group())
+        if group_index >= 0:
+            timesteps = layer.dataProvider().datasetCount(group_index)
 
-        avd = rendererSettings.activeVectorDataset()
-        if avd.isValid():
-            avd_timesteps = layer.dataProvider().datasetCount(avd.group())
+        vector_group_index = rendererSettings.activeVectorDatasetGroup()
+        if vector_group_index>=0:
+            avd_timesteps = layer.dataProvider().datasetCount(vector_group_index)
             if avd_timesteps > timesteps:
-                group_index = avd.group()
+                group_index = vector_group_index
 
     return group_index
 
@@ -76,3 +75,120 @@ def load_ui(name):
                           '..', 'ui',
                           name + '.ui')
     return uic.loadUiType(ui_file)
+
+# http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
+def which(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
+
+def handle_ffmpeg(dialog):
+    if dialog.radFfmpegSystem.isChecked():
+        ffmpeg_bin = "ffmpeg"
+        # debian systems use avconv (fork of ffmpeg)
+        if which(ffmpeg_bin) is None:
+            ffmpeg_bin = "avconv"
+    else:
+        ffmpeg_bin = dialog.editFfmpegPath.text()  # custom path
+
+    if which(ffmpeg_bin) is None:
+        QMessageBox.warning(dialog, "FFmpeg missing",
+                            "The tool for video creation (<a href=\"http://en.wikipedia.org/wiki/FFmpeg\">FFmpeg</a>) "
+                            "is missing. Please check your FFmpeg configuration in <i>Video</i> tab.<p>"
+                            "<b>Windows users:</b> Let Crayfish plugin download FFmpeg automatically or "
+                            "<a href=\"https://download.osgeo.org/osgeo4w/x86_64/release/ffmpeg/\">download</a> FFmpeg manually "
+                            "and configure path in <i>Video</i> tab to point to ffmpeg.exe.<p>"
+                            "<b>Linux users:</b> Make sure FFmpeg is installed in your system - usually a package named "
+                            "<tt>ffmpeg</tt>. On Debian/Ubuntu systems FFmpeg was replaced by Libav (fork of FFmpeg) "
+                            "- use <tt>libav-tools</tt> package.<p>"
+                            "<b>MacOS users:</b> Make sure FFmpeg is installed in your system <tt>brew install ffmpeg</tt>")
+
+        if platform.system() != 'Windows':
+            return
+
+        # special treatment for Windows users!
+        # offer automatic download and installation from Lutra web.
+        # Official distribution is not used because:
+        # 1. packages use 7zip compression (need extra software)
+        # 2. packages contain extra binaries we do not need
+
+        reply = QMessageBox.question(dialog,
+                                     'Download FFmpeg',
+                                     "Would you like to download and auto-configure FFmpeg?\n\n"
+                                     "The download may take some time (~13 MB).\n"
+                                     "FFmpeg will be downloaded to Crayfish plugin's directory.",
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        if reply != QMessageBox.Yes:
+            return
+
+        ffmpeg_bin = downloadFfmpeg(dialog)
+        if not ffmpeg_bin:
+            return
+
+        # configure the path automatically
+        dialog.radFfmpegCustom.setChecked(True)
+        dialog.editFfmpegPath.setText(ffmpeg_bin)
+        s = QSettings()
+        s.beginGroup("crayfishViewer/trace_animation")
+        s.setValue("ffmpeg", "custom")
+        s.setValue("ffmpeg_path", ffmpeg_bin)
+
+    return ffmpeg_bin
+
+def isLayer3d(layer):
+    if layer is None:
+        return False
+
+    if layer.type()!=QgsMapLayerType.MeshLayer:
+        return
+
+    dataProvider=layer.dataProvider()
+    if dataProvider is None:
+        return False
+
+    datasetGroupCount=dataProvider.datasetGroupCount()
+    for i in range(datasetGroupCount):
+        meta=dataProvider.datasetGroupMetadata(i)
+        if meta.dataType()==QgsMeshDatasetGroupMetadata.DataOnVolumes:
+            return True
+
+    return False
+
+def isLayer1d(layer):
+    if layer is None:
+        return False
+
+    if layer.type()!=QgsMapLayerType.MeshLayer:
+        return
+
+    dataProvider=layer.dataProvider()
+    if dataProvider.contains(QgsMesh.Edge):
+        return True
+    else:
+        return False
+
+def isLayer2d(layer):
+    if layer is None:
+        return False
+
+    if layer.type()!=QgsMapLayerType.MeshLayer:
+        return
+    
+    dataProvider = layer.dataProvider()
+    if dataProvider.contains(QgsMesh.Face):
+        return True
+    else:
+        return False

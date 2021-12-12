@@ -24,21 +24,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import math
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from qgis.core import *
+
+from PyQt5.Qt import PYQT_VERSION_STR
 
 try:
     import pyqtgraph as pg
     from pyqtgraph.exporters import ImageExporter
 except ImportError:
-    import sys
-    import os
-    this_dir = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(this_dir, 'pyqtgraph-0.10.0-py2.py3-none-any.whl')
-    sys.path.append(path)
-    import pyqtgraph as pg
-    from pyqtgraph.exporters import ImageExporter
+    import crayfish.pyqtgraph_0_12_2 as pg
+    from crayfish.pyqtgraph_0_12_2.exporters import ImageExporter
 
 from .utils import integrate
 
@@ -61,8 +60,19 @@ colors = [
     QColor( "#fb9a99" ),
     QColor( "#fdbf6f" ),
 ]
+def check_if_PyQt_version_is_before(M,m,r):
+    strVersion=PYQT_VERSION_STR
+    num=strVersion.split('.')
+    numM=int(num[0])
+    numm = int(num[1])
+    numr = int(num[2])
+    return  numM < M or (numM == M and numm < m) or (numM == M and numm < m and numr < r)
 
-def timeseries_plot_data(layer, ds_group_index, geometry):
+
+# see https://github.com/pyqtgraph/pyqtgraph/issues/1057
+pyqtGraphAcceptNaN = check_if_PyQt_version_is_before(5, 13, 1)
+
+def timeseries_plot_data(layer, ds_group_index, geometry, searchradius=0):
     """ return array with tuples defining X,Y points for plot """
     x,y = [], []
     if not layer:
@@ -73,7 +83,10 @@ def timeseries_plot_data(layer, ds_group_index, geometry):
         meta = layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(ds_group_index, i))
         t = meta.time()
         dataset = QgsMeshDatasetIndex(ds_group_index, i)
-        value = layer.datasetValue(dataset, pt).scalar()
+        value = layer.datasetValue(dataset, pt,searchradius).scalar()
+        if not pyqtGraphAcceptNaN and math.isnan(value):
+            value=0;
+
         x.append(t)
         y.append(value)
 
@@ -92,6 +105,8 @@ def cross_section_plot_data(layer, ds_group_index, ds_index, geometry, resolutio
     while offset < length:
         pt = geometry.interpolate(offset).asPoint()
         value = layer.datasetValue(dataset, pt).scalar()
+        if not pyqtGraphAcceptNaN and math.isnan(value):
+            value = 0
         x.append(offset)
         y.append(value)
         offset += resolution
@@ -99,11 +114,14 @@ def cross_section_plot_data(layer, ds_group_index, ds_index, geometry, resolutio
     # let's make sure we include also the last point
     last_pt = geometry.asPolyline()[-1]
     last_value = layer.datasetValue(dataset, last_pt).scalar()
+
+    if not pyqtGraphAcceptNaN and math.isnan(last_value):
+        last_value = 0
+
     x.append(length)
     y.append(last_value)
 
-    return x, y
-
+    return x,y
 
 def integral_plot_data(layer, ds_group_index, geometry, resolution=1.):
     """ return array with tuples defining X,Y points for plot """
@@ -121,6 +139,45 @@ def integral_plot_data(layer, ds_group_index, geometry, resolution=1.):
 
     return x, y
 
+def profile_1D_plot_data(layer, dataset_group_index, dataset_index,profile):
+    """ return array with tuples defining X,Y points for plot """
+    x, y = [], []
+    if not layer or len(profile)<2:
+        return x, y
+
+    groupMeta = layer.dataProvider().datasetGroupMetadata(dataset_group_index)
+    isOnVertices = groupMeta.dataType() == QgsMeshDatasetGroupMetadata.DataOnVertices
+    layerDataSetIndex = QgsMeshDatasetIndex(dataset_group_index,dataset_index)
+
+    totalLength=0
+    #append first x,y if on vertices
+    p1 = profile[0]
+    p2 = profile[1]
+    length = p1.distance(p2)
+    searchRadius=length/100
+    if isOnVertices:
+        x.append(0)
+        y.append(layer.dataset1dValue(layerDataSetIndex,p1,searchRadius).scalar())
+        totalLength=length
+
+
+    for i in range(len(profile)-1):
+        p1 = profile[i]
+        p2 = profile[i+1]
+        length = p1.distance(p2)
+        searchRadius = length / 100
+        if isOnVertices:
+            x.append(totalLength+length)
+            y.append(layer.dataset1dValue(layerDataSetIndex, p2, searchRadius).scalar())
+        else:
+            x.append(totalLength + length/2)
+            midPoint=QgsPointXY((p1.x()+p2.x())/2 , (p1.y()+p2.y())/2)
+            y.append(layer.dataset1dValue(layerDataSetIndex,midPoint,searchRadius).scalar())
+
+        totalLength=totalLength+length
+
+    return x, y
+
 
 def show_plot(*args, **kwargs):
     """ Open a new window with a plot and return the plot widget.
@@ -135,3 +192,29 @@ def export_plot(plt, filename, width=None, height=None):
     if width is not None: e.parameters()['width'] = width
     if height is not None: e.parameters()['height'] = height
     e.export(filename)
+
+
+def plot_3d_data(layer, ds_group_index, ds_dataset_index, geom_pt):
+    """ return array with tuples defining X,Y points for plot """
+    average = None
+    x,y = [], []
+    if not layer:
+        return x, y, average
+
+    ds = QgsMeshDatasetIndex(ds_group_index, ds_dataset_index)
+    pt = geom_pt.asPoint()
+    block = layer.dataset3dValue(ds, pt)
+    if block.isValid():
+        nvols = block.volumesCount()
+        extrusions = block.verticalLevels()
+
+        for i in range(nvols):
+            ext = extrusions[i] + ( extrusions[i+1] - extrusions[i] ) / 2.0
+            val = block.value(i).scalar()
+            x.append(val)
+            y.append(ext)
+
+        averageVal = layer.datasetValue(ds, pt)
+        average = averageVal.scalar()
+
+    return x, y, average
