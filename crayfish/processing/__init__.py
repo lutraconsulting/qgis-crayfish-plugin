@@ -29,6 +29,7 @@ from qgis.core import QgsProcessingProvider
 
 from .calculator import MeshCalculatorAlgorithm
 from .saga_flow_to_grib import SagaFlowToGribAlgorithm
+from .pcraster_flow_to_grib import PcrasterFlowToGribAlgorithm
 
 class CrayfishProcessingProvider(QgsProcessingProvider):
 
@@ -56,7 +57,8 @@ class CrayfishProcessingProvider(QgsProcessingProvider):
 
     def loadAlgorithms(self):
         self.alglist = [MeshCalculatorAlgorithm(),
-                        SagaFlowToGribAlgorithm()]
+                        SagaFlowToGribAlgorithm(),
+                        PcrasterFlowToGribAlgorithm()]
 
         for alg in self.alglist:
             self.addAlgorithm(alg)
