@@ -226,7 +226,7 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
             elif k == 'height':
                 self.spinHeight.setValue(s.value(k,type=int))
             elif k == 'duration':
-                self.spinDuration.setValue(s.value(k,type=float))
+                self.spinDuration.setValue(s.value(k,type=int))
             elif k == 'fps':
                 self.spinSpeed.setValue(s.value(k,type=int))
             elif k == 'quality':
