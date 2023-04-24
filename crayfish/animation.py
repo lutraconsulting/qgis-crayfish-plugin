@@ -87,7 +87,7 @@ def animation(cfg, progress_fn=None):
         if time < time_from or time > time_to:
             continue
 
-        currentTime=referenceTime.addMSecs(time*3600*1000)
+        currentTime=referenceTime.addMSecs(int(time)*3600*1000)
         formattedTime=currentTime.toString("yyyy-MM-dd HH:mm:ss")
 
         # Prepare layout
