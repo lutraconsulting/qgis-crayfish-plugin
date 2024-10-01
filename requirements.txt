@@ -1,0 +1,12 @@
+bottleneck
+colorcet
+cupy
+h5py
+numba
+PyQt6
+pyqtgraph
+PySide2
+PySide6
+shiboken2
+shiboken6
+test2
