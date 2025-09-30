@@ -38,7 +38,7 @@ from qgis.utils import iface
 try:
     import pyqtgraph
 except ImportError:
-    import crayfish.pyqtgraph_0_12_2 as pyqtgraph
+    import crayfish.pyqtgraph_0_13_7 as pyqtgraph
 
 from ..plot import timeseries_plot_data, cross_section_plot_data, colors, profile_1D_plot_data
 from .utils import time_to_string

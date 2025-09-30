@@ -36,8 +36,8 @@ try:
     import pyqtgraph as pg
     from pyqtgraph.exporters import ImageExporter
 except ImportError:
-    import crayfish.pyqtgraph_0_12_2 as pg
-    from crayfish.pyqtgraph_0_12_2.exporters import ImageExporter
+    import crayfish.pyqtgraph_0_13_7 as pg
+    from crayfish.pyqtgraph_0_13_7.exporters import ImageExporter
 
 from .utils import integrate
 
