@@ -29,8 +29,8 @@ from math import sqrt
 from osgeo import gdal
 import os
 
-from PyQt5.QtCore import QCoreApplication
-from PyQt5.QtGui import QIcon
+from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtGui import QIcon
 
 from qgis.core import (
     Qgis,
@@ -100,7 +100,7 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
         rfw.setOutputProviderKey('gdal')
         rfw.setOutputFormat(outputFormat)
         rdp = rfw.createMultiBandRaster(
-            Qgis.Float32,
+            Qgis.DataType.Float32,
             width,
             height,
             idp.extent(),
@@ -109,8 +109,8 @@ class SagaFlowToGribAlgorithm(QgsProcessingAlgorithm):
         )
 
         rdp.setEditable(True)
-        x_block = QgsRasterBlock(Qgis.Float32, width, height)
-        y_block = QgsRasterBlock(Qgis.Float32, width, height)
+        x_block = QgsRasterBlock(Qgis.DataType.Float32, width, height)
+        y_block = QgsRasterBlock(Qgis.DataType.Float32, width, height)
         diag = 1. / sqrt(2)
 
         # resulting raster has no NODATA value set, which

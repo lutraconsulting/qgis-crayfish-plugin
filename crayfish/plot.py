@@ -26,11 +26,11 @@
 
 import math
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
 from qgis.core import *
 
-from PyQt5.Qt import PYQT_VERSION_STR
+from qgis.PyQt.Qt import PYQT_VERSION_STR
 
 try:
     import pyqtgraph as pg
@@ -146,7 +146,7 @@ def profile_1D_plot_data(layer, dataset_group_index, dataset_index,profile):
         return x, y
 
     groupMeta = layer.dataProvider().datasetGroupMetadata(dataset_group_index)
-    isOnVertices = groupMeta.dataType() == QgsMeshDatasetGroupMetadata.DataOnVertices
+    isOnVertices = groupMeta.dataType() == QgsMeshDatasetGroupMetadata.DataType.DataOnVertices
     layerDataSetIndex = QgsMeshDatasetIndex(dataset_group_index,dataset_index)
 
     totalLength=0

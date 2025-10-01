@@ -24,9 +24,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 
 
 from qgis.core import *
@@ -36,11 +36,11 @@ from qgis.utils import iface
 
 
 def geom2icon(geom_type):
-    if geom_type == QgsWkbTypes.Point:
+    if geom_type == QgsWkbTypes.Type.Point:
         return QgsLayerItem.iconPoint()
-    elif geom_type == QgsWkbTypes.Polygon:
+    elif geom_type == QgsWkbTypes.Type.Polygon:
         return QgsLayerItem.iconPolygon()
-    elif geom_type == QgsWkbTypes.LineString:
+    elif geom_type == QgsWkbTypes.Type.LineString:
         return QgsLayerItem.iconLine()
     else:
         return QIcon()
@@ -85,13 +85,13 @@ class MapLayersWidget(QToolButton):
     def __init__(self, geom_type, parent=None):
         QToolButton.__init__(self, parent)
 
-        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setIcon(geom2icon(geom_type))
 
         self.menu_layers = MapLayerMenu(geom_type)
 
         self.setText("From layer")
-        self.setPopupMode(QToolButton.InstantPopup)
+        self.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.setMenu(self.menu_layers)
         self.menu_layers.picked_layer.connect(self.picked_layer)
 

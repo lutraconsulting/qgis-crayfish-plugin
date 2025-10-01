@@ -24,7 +24,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt5.QtGui import *
+from qgis.PyQt.QtGui import *
 from qgis.core import QgsProcessingProvider
 
 from .calculator import MeshCalculatorAlgorithm

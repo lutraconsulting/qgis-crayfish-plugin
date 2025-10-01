@@ -24,7 +24,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt5.QtGui import QIcon
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtCore import QVariant
 from processing.algs.qgis.QgisAlgorithm import QgisAlgorithm
 from qgis.core import (QgsProcessing,
@@ -145,7 +145,7 @@ class MeshCalculatorAlgorithm(QgisAlgorithm):
             layer)
 
         res = calculator.processCalculation( feedback )
-        if res != QgsMeshCalculator.Success:
+        if res != QgsMeshCalculator.Result.Success:
             raise QgsProcessingException("Could not calculate output group (err: {})".format(res))
 
         feedback.setProgress(100)

@@ -26,9 +26,9 @@
 
 import math
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 
 from qgis.core import *
 from qgis.gui import *
@@ -56,7 +56,7 @@ class CrayfishPlot3dWidget(QWidget):
         self.btn_layer = CrayfishLayer3dWidget()
         self.btn_layer.layer_changed.connect(self.on_layer_changed)
 
-        self.btn_dataset_group = DatasetGroupsWidget(datasetType=QgsMeshDatasetGroupMetadata.DataOnVolumes)
+        self.btn_dataset_group = DatasetGroupsWidget(datasetType=QgsMeshDatasetGroupMetadata.DataType.DataOnVolumes)
         self.btn_dataset_group.dataset_groups_changed.connect(self.on_dataset_group_changed)
 
         self.point_picker = PointGeometryPickerWidget()
@@ -76,7 +76,7 @@ class CrayfishPlot3dWidget(QWidget):
         self.plot.addLegend()
 
         self.label_no_layer = QLabel("No mesh layer is selected.")
-        self.label_no_layer.setAlignment(Qt.AlignCenter)
+        self.label_no_layer.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.stack_layout = QStackedLayout()
         self.stack_layout.addWidget(self.gw)

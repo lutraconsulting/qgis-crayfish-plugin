@@ -29,10 +29,10 @@ import os
 import subprocess
 import tempfile
 
-from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QPainter, QImage
-from PyQt5.QtWidgets import QStyleOptionGraphicsItem
-from PyQt5.QtXml import QDomDocument
+from qgis.PyQt.QtCore import QSize, Qt
+from qgis.PyQt.QtGui import QPainter, QImage
+from qgis.PyQt.QtWidgets import QStyleOptionGraphicsItem
+from qgis.PyQt.QtXml import QDomDocument
 
 from qgis.core import *
 from qgis._3d import *
@@ -104,9 +104,9 @@ def animation(cfg, progress_fn=None):
             w = int(round(aspect * h))
         else:  # type == 'default'
             layout.renderContext().setDpi(dpi)
-            layout.setUnits(QgsUnitTypes.LayoutMillimeters)
+            layout.setUnits(QgsUnitTypes.LayoutUnit.LayoutMillimeters)
             main_page = layout.pageCollection().page(0)
-            main_page.setPageSize(QgsLayoutSize(w * 25.4 / dpi, h * 25.4 / dpi, QgsUnitTypes.LayoutMillimeters))
+            main_page.setPageSize(QgsLayoutSize(w * 25.4 / dpi, h * 25.4 / dpi, QgsUnitTypes.LayoutUnit.LayoutMillimeters))
             prepare_composition(layout, formattedTime, cfg, layoutcfg, extent, layers, crs)
 
         #Set timerange for map layouts
@@ -122,7 +122,7 @@ def animation(cfg, progress_fn=None):
         image_export_settings.dpi = dpi
         image_export_settings.imageSize = QSize(w, h)
         res = layout_exporter.exportToImage(os.path.abspath(fname), image_export_settings)
-        if res != QgsLayoutExporter.Success:
+        if res != QgsLayoutExporter.ExportResult.Success:
             raise RuntimeError()
 
     if progress_fn:
@@ -235,19 +235,19 @@ class CFItemPosition:
 def set_item_pos(item, posindex, layout):
     page_size = _page_size(layout)
     r = item.sizeWithUnits()
-    assert (r.units() == QgsUnitTypes.LayoutMillimeters)
-    assert (page_size.units() == QgsUnitTypes.LayoutMillimeters)
+    assert (r.units() == QgsUnitTypes.LayoutUnit.LayoutMillimeters)
+    assert (page_size.units() == QgsUnitTypes.LayoutUnit.LayoutMillimeters)
 
     if posindex == CFItemPosition.TOP_CENTER: # top-center
-        item.attemptMove(QgsLayoutPoint((page_size.width() - r.width()) / 2, r.height(), QgsUnitTypes.LayoutMillimeters))
+        item.attemptMove(QgsLayoutPoint((page_size.width() - r.width()) / 2, r.height(), QgsUnitTypes.LayoutUnit.LayoutMillimeters))
     elif posindex == CFItemPosition.TOP_LEFT:  # top-left
         item.attemptMove(QgsLayoutPoint(0, 0))
     elif posindex == CFItemPosition.TOP_RIGHT:  # top-right
-        item.attemptMove(QgsLayoutPoint(page_size.width() - r.width(), 0, QgsUnitTypes.LayoutMillimeters))
+        item.attemptMove(QgsLayoutPoint(page_size.width() - r.width(), 0, QgsUnitTypes.LayoutUnit.LayoutMillimeters))
     elif posindex == CFItemPosition.BOTTOM_LEFT:  # bottom-left
-        item.attemptMove(QgsLayoutPoint(0, page_size.height() - r.height(), QgsUnitTypes.LayoutMillimeters))
+        item.attemptMove(QgsLayoutPoint(0, page_size.height() - r.height(), QgsUnitTypes.LayoutUnit.LayoutMillimeters))
     else: # bottom-right
-        item.attemptMove(QgsLayoutPoint(page_size.width() - r.width(), page_size.height() - r.height(), QgsUnitTypes.LayoutMillimeters))
+        item.attemptMove(QgsLayoutPoint(page_size.width() - r.width(), page_size.height() - r.height(), QgsUnitTypes.LayoutUnit.LayoutMillimeters))
 
 
 def fix_legend_box_size(cfg, legend):
@@ -256,7 +256,7 @@ def fix_legend_box_size(cfg, legend):
     w, h = cfg['img_size']
     dpi = cfg['dpi']
 
-    image = QImage(w, h, QImage.Format_ARGB32 )
+    image = QImage(w, h, QImage.Format.Format_ARGB32 )
     image.setDevicePixelRatio(dpi)
     p = QPainter(image)
     s = QStyleOptionGraphicsItem()
@@ -286,8 +286,8 @@ def prepare_composition(layout, time, cfg, layoutcfg, extent, layers, crs):
 
         set_composer_item_label(cTitle, layoutcfg['title'])
         cTitle.setText(layoutcfg['title']['label'])
-        cTitle.setHAlign(Qt.AlignCenter)
-        cTitle.setVAlign(Qt.AlignCenter)
+        cTitle.setHAlign(Qt.AlignmentFlag.AlignCenter)
+        cTitle.setVAlign(Qt.AlignmentFlag.AlignCenter)
         cTitle.adjustSizeToText()
         set_item_pos(cTitle, CFItemPosition.TOP_CENTER, layout)
 
@@ -311,10 +311,10 @@ def prepare_composition(layout, time, cfg, layoutcfg, extent, layers, crs):
         cLegend.setBackgroundEnabled(itemcfg['bg'])
         cLegend.setBackgroundColor(itemcfg['bg_color'])
         cLegend.setTitle('')
-        for s in [QgsLegendStyle.Title,
-                  QgsLegendStyle.Group,
-                  QgsLegendStyle.Subgroup,
-                  QgsLegendStyle.SymbolLabel]:
+        for s in [QgsLegendStyle.Style.Title,
+                  QgsLegendStyle.Style.Group,
+                  QgsLegendStyle.Style.Subgroup,
+                  QgsLegendStyle.Style.SymbolLabel]:
             cLegend.setStyleFont(s, itemcfg['text_font'])
         cLegend.setFontColor(itemcfg['text_color'])
 

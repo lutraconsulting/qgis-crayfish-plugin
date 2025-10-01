@@ -28,9 +28,9 @@ import os
 import shutil
 import tempfile
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 from qgis.core import *
 
 from ..animation import animation, images_to_video
@@ -165,7 +165,7 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
 
         prog = lambda i,cnt: self.updateProgress(i, cnt)
 
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
 
         d = { 'layer'      : self.l,
               'time'       : (t_start, t_end),
@@ -238,7 +238,7 @@ class CrayfishAnimationDialog(qtBaseClass, uiDialog):
         """ callback from animation routine """
         self.progress.setMaximum(cnt)
         self.progress.setValue(i)
-        qApp.processEvents()
+        QApplication.instance().processEvents()
 
 
     def storeDefaults(self):

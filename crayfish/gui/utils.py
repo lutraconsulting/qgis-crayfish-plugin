@@ -27,9 +27,9 @@
 import os
 import platform
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 from qgis.core import *
 from qgis.PyQt import uic
 from qgis.utils import iface
@@ -46,7 +46,7 @@ def float_safe(txt):
 
 
 def time_to_string(layer, time):  # time is in hours
-    if not layer or layer.type() != QgsMapLayer.MeshLayer:
+    if not layer or layer.type() != QgsMapLayer.LayerType.MeshLayer:
         raise Exception("unable to format time " + time)
     return layer.formatTime(time)
 
@@ -55,7 +55,7 @@ def mesh_layer_active_dataset_group_with_maximum_timesteps(layer):
     group_index = None
     timesteps = 0
 
-    if layer and layer.dataProvider() and layer.type() == QgsMapLayer.MeshLayer:
+    if layer and layer.dataProvider() and layer.type() == QgsMapLayer.LayerType.MeshLayer:
         rendererSettings = layer.rendererSettings()
         group_index = rendererSettings.activeScalarDatasetGroup()
 
@@ -130,8 +130,8 @@ def handle_ffmpeg(dialog):
                                      "Would you like to download and auto-configure FFmpeg?\n\n"
                                      "The download may take some time (~13 MB).\n"
                                      "FFmpeg will be downloaded to Crayfish plugin's directory.",
-                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-        if reply != QMessageBox.Yes:
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.Yes)
+        if reply != QMessageBox.StandardButton.Yes:
             return
 
         ffmpeg_bin = downloadFfmpeg(dialog)
@@ -162,7 +162,7 @@ def isLayer3d(layer):
     datasetGroupCount=dataProvider.datasetGroupCount()
     for i in range(datasetGroupCount):
         meta=dataProvider.datasetGroupMetadata(i)
-        if meta.dataType()==QgsMeshDatasetGroupMetadata.DataOnVolumes:
+        if meta.dataType()==QgsMeshDatasetGroupMetadata.DataType.DataOnVolumes:
             return True
 
     return False
@@ -175,7 +175,7 @@ def isLayer1d(layer):
         return
 
     dataProvider=layer.dataProvider()
-    if dataProvider.contains(QgsMesh.Edge):
+    if dataProvider.contains(QgsMesh.ElementType.Edge):
         return True
     else:
         return False
@@ -188,7 +188,7 @@ def isLayer2d(layer):
         return
     
     dataProvider = layer.dataProvider()
-    if dataProvider.contains(QgsMesh.Face):
+    if dataProvider.contains(QgsMesh.ElementType.Face):
         return True
     else:
         return False

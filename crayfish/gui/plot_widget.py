@@ -26,9 +26,9 @@
 
 import math
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 
 from qgis.core import *
 from qgis.gui import *
@@ -74,12 +74,12 @@ class PlotTypeWidget(QToolButton):
     def __init__(self, parent=None):
         QToolButton.__init__(self, parent)
 
-        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setIcon(QgsApplication.getThemeIcon("/histogram.png"))
 
         self.menu_plot_types = PlotTypeMenu()
 
-        self.setPopupMode(QToolButton.InstantPopup)
+        self.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.setMenu(self.menu_plot_types)
         self.menu_plot_types.plot_type_changed.connect(self.on_plot_type_changed)
 
@@ -120,12 +120,12 @@ class GeometryTypeWidget(QToolButton):
     def __init__(self, parent=None):
         QToolButton.__init__(self, parent)
 
-        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setIcon(QgsApplication.getThemeIcon("/histogram.png"))
 
         self.menu_geometry_types = GeomTypeMenu()
 
-        self.setPopupMode(QToolButton.InstantPopup)
+        self.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.setMenu(self.menu_geometry_types)
         self.menu_geometry_types.geom_type_changed.connect(self.on_geometry_type_changed)
 
@@ -162,13 +162,13 @@ class CrayfishPlotWidget(QWidget):
         self.point_picker = PointGeometryPickerWidget()
         self.point_picker.geometries_changed.connect(self.on_geometries_changed)
 
-        self.btn_from_pt_layer = MapLayersWidget(QgsWkbTypes.Point)
+        self.btn_from_pt_layer = MapLayersWidget(QgsWkbTypes.Type.Point)
         self.btn_from_pt_layer.picked_layer.connect(self.point_picker.on_picked_layer)
 
         self.line_picker = LineGeometryPickerWidget()
         self.line_picker.geometries_changed.connect(self.on_geometries_changed)
 
-        self.btn_from_line_layer = MapLayersWidget(QgsWkbTypes.LineString)
+        self.btn_from_line_layer = MapLayersWidget(QgsWkbTypes.Type.LineString)
         self.btn_from_line_layer.picked_layer.connect(self.line_picker.on_picked_layer)
 
         self.btn_datasets = DatasetsWidget()
@@ -189,10 +189,10 @@ class CrayfishPlotWidget(QWidget):
         self.plot.addLegend()
 
         self.label_not_time_varying = QLabel("Current dataset group is not time-varying.")
-        self.label_not_time_varying.setAlignment(Qt.AlignCenter)
+        self.label_not_time_varying.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.label_no_layer = QLabel("No mesh layer is selected.")
-        self.label_no_layer.setAlignment(Qt.AlignCenter)
+        self.label_no_layer.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.stack_layout = QStackedLayout()
         self.stack_layout.addWidget(self.gw)
@@ -415,7 +415,7 @@ class CrayfishPlotWidget(QWidget):
             meta = self.layer.dataProvider().datasetMetadata(QgsMeshDatasetIndex(ds_group_index, i))
             p = self.plot.plot(x=x, y=y, connect='finite', pen=pen, name=time_to_string(self.layer, meta.time()))
 
-        rb = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
+        rb = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.GeometryType.PointGeometry)
         rb.setColor(colors[0])
         rb.setWidth(2)
         rb.setToGeometry(geometry, None)
@@ -452,7 +452,7 @@ class CrayfishPlotWidget(QWidget):
         pen = pyqtgraph.mkPen(color=clr, width=2, cosmetic=True)
         p = self.plot.plot(x=x, y=y, connect='finite', pen=pen)
 
-        rb = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
+        rb = QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.GeometryType.PointGeometry)
         rb.setColor(colors[0])
         rb.setWidth(2)
         rb.setToGeometry(geometry, None)

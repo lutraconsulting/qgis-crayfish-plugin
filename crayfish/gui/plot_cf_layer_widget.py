@@ -24,9 +24,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 
 from qgis.core import QgsMapLayer, QgsProject, QgsMeshLayer, QgsMesh
 from .utils import *
@@ -61,11 +61,11 @@ class CrayfishLayerMenu(QMenu):
 
     def checkMeshType(self,layer):
         dataProvider=layer.dataProvider()
-        containsEdge=dataProvider.contains(QgsMesh.Edge)
-        containsFace=dataProvider.contains(QgsMesh.Face)
+        containsEdge=dataProvider.contains(QgsMesh.ElementType.Edge)
+        containsFace=dataProvider.contains(QgsMesh.ElementType.Face)
         return self.meshType =="" \
-               or (containsEdge and self.meshType==QgsMesh.Edge)\
-               or (containsFace and self.meshType==QgsMesh.Face)
+               or (containsEdge and self.meshType==QgsMesh.ElementType.Edge)\
+               or (containsFace and self.meshType==QgsMesh.ElementType.Face)
 
     def layerFilter(self,layer):
         raise NotImplementedError
@@ -75,14 +75,14 @@ class CrayfishLayerWidget(QToolButton):
 
     layer_changed = pyqtSignal(QgsMapLayer)
 
-    def __init__(self, parent=None, meshType=QgsMesh.Face):
+    def __init__(self, parent=None, meshType=QgsMesh.ElementType.Face):
         QToolButton.__init__(self, parent)
 
         self.layer = None
 
         self.setupMenu()
 
-        self.setPopupMode(QToolButton.InstantPopup)
+        self.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.setMenu(self.menu_layers)
         self.menu_layers.picked_layer.connect(self.on_picked_layer)
 
