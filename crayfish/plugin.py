@@ -61,19 +61,19 @@ class CrayfishPlugin:
         self.mesh_menu = self.iface.mainWindow().findChild(QMenu, 'mMeshMenu')
         self.menu = self.mesh_menu.addMenu(QIcon(os.path.join(IMAGES_DIR, "crayfish.png")), "Crayfish")
 
-        self.action1DPlot = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_plot_1d.svg"),"1D Plot", self.iface.mainWindow())
+        self.action1DPlot = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_plot_1d.svg")),"1D Plot", self.iface.mainWindow())
         self.action1DPlot.triggered.connect(self.toggle_1d_plot)
 
-        self.action2DPlot = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_plot.svg"), "2D Plot", self.iface.mainWindow())
+        self.action2DPlot = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_plot.svg")), "2D Plot", self.iface.mainWindow())
         self.action2DPlot.triggered.connect(self.toggle_plot)
 
-        self.action3DPlot = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_plot_3d.svg"), "3D Plot", self.iface.mainWindow())
+        self.action3DPlot = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_plot_3d.svg")), "3D Plot", self.iface.mainWindow())
         self.action3DPlot.triggered.connect(self.toggle_3d_plot)
 
-        self.actionExportAnimation = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_video.png"), "Export Animation ...", self.iface.mainWindow())
+        self.actionExportAnimation = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_video.png")), "Export Animation ...", self.iface.mainWindow())
         self.actionExportAnimation.triggered.connect(self.exportAnimation)
 
-        self.actionExportTraceAnimation=QAction(QIcon(os.path.join(IMAGES_DIR, "icon_video.png"), "Export Trace Animation ...", self.iface.mainWindow())
+        self.actionExportTraceAnimation=QAction(QIcon(os.path.join(IMAGES_DIR, "icon_video.png")), "Export Trace Animation ...", self.iface.mainWindow())
         self.actionExportTraceAnimation.triggered.connect(self.exportParticleTraceAnimation)
 
         self.menu.addAction(self.action1DPlot)
