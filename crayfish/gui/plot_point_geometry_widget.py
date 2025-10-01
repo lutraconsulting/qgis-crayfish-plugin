@@ -46,7 +46,7 @@ class PickGeometryTool(QgsMapTool):
 
     def canvasPressEvent(self, e):
         if e.button() == Qt.MouseButton.LeftButton:
-            self.picked.emit(e.mapPoint(), True, e.modifiers() & Qt.KeyboardModifier.ControlModifier)
+            self.picked.emit(e.mapPoint(), True, bool(e.modifiers() & Qt.KeyboardModifier.ControlModifier))
 
     def canvasReleaseEvent(self, e):
         pass
