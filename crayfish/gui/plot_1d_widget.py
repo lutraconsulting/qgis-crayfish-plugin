@@ -151,7 +151,7 @@ class CrayfishPlot1dWidget(QWidget):
 
         self.markers = []      # for points
 
-        self.gw = pyqtgraph.GraphicsWindow()
+        self.gw = pyqtgraph.GraphicsLayoutWidget()
         self.plot = self.gw.addPlot()
         self.plot.showGrid(x=True, y=True)
         self.plot.addLegend()
@@ -183,6 +183,7 @@ class CrayfishPlot1dWidget(QWidget):
         l.addLayout(hl)
         l.addLayout(self.stack_layout)
         self.setLayout(l)
+        self.gw.show()
 
         # init GUI
         self.on_plot_type_changed(self.btn_plot_type.plot_type)

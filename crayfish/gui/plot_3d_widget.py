@@ -70,7 +70,7 @@ class CrayfishPlot3dWidget(QWidget):
 
         self.markers = []  # for point
 
-        self.gw = pyqtgraph.GraphicsWindow()
+        self.gw = pyqtgraph.GraphicsLayoutWidget()
         self.plot = self.gw.addPlot()
         self.plot.showGrid(x=True, y=True)
         self.plot.addLegend()
@@ -94,6 +94,7 @@ class CrayfishPlot3dWidget(QWidget):
         l.addLayout(hl)
         l.addLayout(self.stack_layout)
         self.setLayout(l)
+        self.gw.show()
 
         # init GUI
         self.on_dataset_group_changed(self.btn_dataset_group.dataset_groups)
