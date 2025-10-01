@@ -9,8 +9,5 @@
 ###########################################################################
 
 set -e
-cd crayfish
-pyrcc5 -o resources.py resources.qrc
-cd ..
 
 rm -f crayfish.zip && cd crayfish && git archive --prefix=crayfish/ -o ../crayfish.zip HEAD

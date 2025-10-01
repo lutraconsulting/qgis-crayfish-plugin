@@ -24,6 +24,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import os
 from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtGui import *
 from qgis.PyQt.QtCore import *
@@ -33,7 +34,6 @@ from .gui.animation_dialog import CrayfishAnimationDialog
 from .gui.trace_animation_dialog import CrayfishTraceAnimationDialog
 from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps, isLayer1d, isLayer2d, isLayer3d
 from .processing import CrayfishProcessingProvider
-from .resources import *
 
 class CrayfishPlugin:
     def __init__(self, iface):
@@ -54,23 +54,26 @@ class CrayfishPlugin:
         self.layers_added(QgsProject.instance().mapLayers().values())
 
     def initGui(self):
+        # Base path for the images directory
+        IMAGES_DIR = os.path.join(os.path.dirname(__file__), "images")
+
         # Add menu items
         self.mesh_menu = self.iface.mainWindow().findChild(QMenu, 'mMeshMenu')
-        self.menu = self.mesh_menu.addMenu(QIcon(":/plugins/crayfish/images/crayfish.png"), "Crayfish")
+        self.menu = self.mesh_menu.addMenu(QIcon(os.path.join(IMAGES_DIR, "crayfish.png")), "Crayfish")
 
-        self.action1DPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot_1d.svg"),"1D Plot", self.iface.mainWindow())
+        self.action1DPlot = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_plot_1d.svg"),"1D Plot", self.iface.mainWindow())
         self.action1DPlot.triggered.connect(self.toggle_1d_plot)
 
-        self.action2DPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot.svg"), "2D Plot", self.iface.mainWindow())
+        self.action2DPlot = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_plot.svg"), "2D Plot", self.iface.mainWindow())
         self.action2DPlot.triggered.connect(self.toggle_plot)
 
-        self.action3DPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot_3d.svg"), "3D Plot", self.iface.mainWindow())
+        self.action3DPlot = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_plot_3d.svg"), "3D Plot", self.iface.mainWindow())
         self.action3DPlot.triggered.connect(self.toggle_3d_plot)
 
-        self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/images/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
+        self.actionExportAnimation = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_video.png"), "Export Animation ...", self.iface.mainWindow())
         self.actionExportAnimation.triggered.connect(self.exportAnimation)
 
-        self.actionExportTraceAnimation=QAction(QIcon(":/plugins/crayfish/images/icon_video.png"),"Export Trace Animation ...", self.iface.mainWindow())
+        self.actionExportTraceAnimation=QAction(QIcon(os.path.join(IMAGES_DIR, "icon_video.png"), "Export Trace Animation ...", self.iface.mainWindow())
         self.actionExportTraceAnimation.triggered.connect(self.exportParticleTraceAnimation)
 
         self.menu.addAction(self.action1DPlot)
