@@ -30,7 +30,7 @@ from qgis.PyQt.QtWidgets import *
 from qgis.PyQt.QtGui import *
 from qgis.core import *
 
-from qgis.PyQt.Qt import PYQT_VERSION_STR
+from qgis.PyQt.QtCore import PYQT_VERSION_STR
 
 try:
     import pyqtgraph as pg
