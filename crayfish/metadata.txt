@@ -219,3 +219,5 @@ experimental=False
 
 ; deprecated flag (applies to the whole plugin and not only to the uploaded version)
 deprecated=False
+
+supportsQt6=True
