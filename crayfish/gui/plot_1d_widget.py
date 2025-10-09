@@ -342,7 +342,7 @@ class CrayfishPlot1dWidget(QWidget):
 
         #add vertical lines on vertices position
         s=0
-        pen=pyqtgraph.mkPen(color=(200,100,0), style=QtCore.Qt.DashDotLine)
+        pen=pyqtgraph.mkPen(color=(200,100,0), style=Qt.PenStyle.DashDotLine)
         if self.chckBox_verticalLine.isChecked():
             for i in range(len(profile) - 1):
                 p1 = profile[i]
