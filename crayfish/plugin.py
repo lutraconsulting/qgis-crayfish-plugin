@@ -24,16 +24,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+import os
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 from qgis.core import *
 from .gui.plot_widget import CrayfishPlotWidget
 from .gui.animation_dialog import CrayfishAnimationDialog
 from .gui.trace_animation_dialog import CrayfishTraceAnimationDialog
 from .gui.utils import mesh_layer_active_dataset_group_with_maximum_timesteps, isLayer1d, isLayer2d, isLayer3d
 from .processing import CrayfishProcessingProvider
-from .resources import *
 
 class CrayfishPlugin:
     def __init__(self, iface):
@@ -54,23 +54,26 @@ class CrayfishPlugin:
         self.layers_added(QgsProject.instance().mapLayers().values())
 
     def initGui(self):
+        # Base path for the images directory
+        IMAGES_DIR = os.path.join(os.path.dirname(__file__), "images")
+
         # Add menu items
         self.mesh_menu = self.iface.mainWindow().findChild(QMenu, 'mMeshMenu')
-        self.menu = self.mesh_menu.addMenu(QIcon(":/plugins/crayfish/images/crayfish.png"), "Crayfish")
+        self.menu = self.mesh_menu.addMenu(QIcon(os.path.join(IMAGES_DIR, "crayfish.png")), "Crayfish")
 
-        self.action1DPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot_1d.svg"),"1D Plot", self.iface.mainWindow())
+        self.action1DPlot = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_plot_1d.svg")),"1D Plot", self.iface.mainWindow())
         self.action1DPlot.triggered.connect(self.toggle_1d_plot)
 
-        self.action2DPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot.svg"), "2D Plot", self.iface.mainWindow())
+        self.action2DPlot = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_plot.svg")), "2D Plot", self.iface.mainWindow())
         self.action2DPlot.triggered.connect(self.toggle_plot)
 
-        self.action3DPlot = QAction(QIcon(":/plugins/crayfish/images/icon_plot_3d.svg"), "3D Plot", self.iface.mainWindow())
+        self.action3DPlot = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_plot_3d.svg")), "3D Plot", self.iface.mainWindow())
         self.action3DPlot.triggered.connect(self.toggle_3d_plot)
 
-        self.actionExportAnimation = QAction(QIcon(":/plugins/crayfish/images/icon_video.png"), "Export Animation ...", self.iface.mainWindow())
+        self.actionExportAnimation = QAction(QIcon(os.path.join(IMAGES_DIR, "icon_video.png")), "Export Animation ...", self.iface.mainWindow())
         self.actionExportAnimation.triggered.connect(self.exportAnimation)
 
-        self.actionExportTraceAnimation=QAction(QIcon(":/plugins/crayfish/images/icon_video.png"),"Export Trace Animation ...", self.iface.mainWindow())
+        self.actionExportTraceAnimation=QAction(QIcon(os.path.join(IMAGES_DIR, "icon_video.png")), "Export Trace Animation ...", self.iface.mainWindow())
         self.actionExportTraceAnimation.triggered.connect(self.exportParticleTraceAnimation)
 
         self.menu.addAction(self.action1DPlot)
@@ -80,11 +83,11 @@ class CrayfishPlugin:
         self.menu.addAction(self.actionExportTraceAnimation)
 
         # Register actions for context menu
-        self.iface.addCustomActionForLayerType(self.action1DPlot, '', QgsMapLayer.MeshLayer, False)
-        self.iface.addCustomActionForLayerType(self.action2DPlot, '', QgsMapLayer.MeshLayer, False)
-        self.iface.addCustomActionForLayerType(self.action3DPlot, '', QgsMapLayer.MeshLayer, False)
-        self.iface.addCustomActionForLayerType(self.actionExportAnimation, '', QgsMapLayer.MeshLayer, True)
-        self.iface.addCustomActionForLayerType(self.actionExportTraceAnimation, '', QgsMapLayer.MeshLayer, True)
+        self.iface.addCustomActionForLayerType(self.action1DPlot, '', QgsMapLayer.LayerType.MeshLayer, False)
+        self.iface.addCustomActionForLayerType(self.action2DPlot, '', QgsMapLayer.LayerType.MeshLayer, False)
+        self.iface.addCustomActionForLayerType(self.action3DPlot, '', QgsMapLayer.LayerType.MeshLayer, False)
+        self.iface.addCustomActionForLayerType(self.actionExportAnimation, '', QgsMapLayer.LayerType.MeshLayer, True)
+        self.iface.addCustomActionForLayerType(self.actionExportTraceAnimation, '', QgsMapLayer.LayerType.MeshLayer, True)
 
         # Make connections
         self.iface.layerTreeView().currentLayerChanged.connect(self.active_layer_changed)
@@ -92,7 +95,7 @@ class CrayfishPlugin:
         # Create widget
         self.plot_dock_widget = QDockWidget("Crayfish 2D Plot")
         self.plot_dock_widget.setObjectName("CrayfishPlotDock")
-        self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_widget)
+        self.iface.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.plot_dock_widget)
         w = CrayfishPlotWidget(self.plot_dock_widget)
         self.plot_dock_widget.setWidget(w)
         self.plot_dock_widget.hide()
@@ -107,12 +110,12 @@ class CrayfishPlugin:
             return
 
         # only assign layer when active layer is a mesh layer
-        if layer and layer.type() == QgsMapLayer.MeshLayer:
+        if layer and layer.type() == QgsMapLayer.LayerType.MeshLayer:
             dataProvider=layer.dataProvider()
-            if dataProvider.contains(QgsMesh.Face):
+            if dataProvider.contains(QgsMesh.ElementType.Face):
                 self.plot_dock_widget.widget().set_layer(layer)
 
-            if self.plot_dock_1d_widget is not None and dataProvider.contains(QgsMesh.Edge):
+            if self.plot_dock_1d_widget is not None and dataProvider.contains(QgsMesh.ElementType.Edge):
                 self.plot_dock_1d_widget.widget().set_layer(layer)
 
             if self.plot_dock_3d_widget is not None and isLayer3d(layer):
@@ -128,7 +131,7 @@ class CrayfishPlugin:
             # Create widget
             self.plot_dock_3d_widget = QDockWidget("Crayfish 3D Plot")
             self.plot_dock_3d_widget.setObjectName("CrayfishPlot3dDock")
-            self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_3d_widget)
+            self.iface.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.plot_dock_3d_widget)
             w = CrayfishPlot3dWidget(self.plot_dock_3d_widget)
             self.plot_dock_3d_widget.setWidget(w)
             self.plot_dock_3d_widget.hide()
@@ -142,7 +145,7 @@ class CrayfishPlugin:
             # Create widget
             self.plot_dock_1d_widget = QDockWidget("Crayfish 1D Plot")
             self.plot_dock_1d_widget.setObjectName("CrayfishPlot1dDock")
-            self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.plot_dock_1d_widget)
+            self.iface.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.plot_dock_1d_widget)
             w = CrayfishPlot1dWidget(self.plot_dock_1d_widget)
             self.plot_dock_1d_widget.setWidget(w)
             self.plot_dock_1d_widget.hide()
@@ -193,7 +196,7 @@ class CrayfishPlugin:
     def exportAnimation(self):
         """ export current layer's timesteps as an animation """
         layer = self.iface.activeLayer()
-        if not layer or layer.type() != QgsMapLayer.MeshLayer:
+        if not layer or layer.type() != QgsMapLayer.LayerType.MeshLayer:
             QMessageBox.warning(None, "Crayfish", "Please select a Mesh Layer for export")
             return
 
@@ -214,11 +217,11 @@ class CrayfishPlugin:
             return
 
         dlg = CrayfishAnimationDialog(self.iface)
-        dlg.exec_()
+        dlg.exec()
 
     def exportParticleTraceAnimation(self):
         layer=self.iface.activeLayer()
-        if not layer or layer.type()!= QgsMapLayer.MeshLayer:
+        if not layer or layer.type()!= QgsMapLayer.LayerType.MeshLayer:
             QMessageBox.warning(None, "Crayfish", "Please select a Mesh Layer for export")
             return
 
@@ -233,7 +236,7 @@ class CrayfishPlugin:
             return
 
         dlg = CrayfishTraceAnimationDialog(self.iface)
-        dlg.exec_()
+        dlg.exec()
 
     def layers_added(self, lst):
 

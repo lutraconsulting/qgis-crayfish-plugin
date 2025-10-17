@@ -28,9 +28,9 @@ import os
 import shutil
 import tempfile
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 from qgis.core import *
 from qgis.gui import *
 
@@ -123,7 +123,7 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
         tmpl = None # path to template file to be used
         prog = lambda i,cnt: self.updateProgress(i, cnt)
 
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
 
         d = { 'layer'      : self.l,
               'img_size'   : (w, h),
@@ -191,7 +191,7 @@ class CrayfishTraceAnimationDialog(qtBaseClass, uiDialog):
         """ callback from animation routine """
         self.progress.setMaximum(cnt)
         self.progress.setValue(i)
-        qApp.processEvents()
+        QApplication.instance().processEvents()
 
     def storeDefaults(self):
         s = QSettings()

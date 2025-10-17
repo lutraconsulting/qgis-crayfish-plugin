@@ -24,9 +24,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 
 import math
 
@@ -49,10 +49,10 @@ class PickProfileTool(QgsMapTool):
 
 
     def canvasPressEvent(self, e):
-        if e.button() == Qt.LeftButton:
-            self.picked.emit(e.mapPoint(), False, e.modifiers() & Qt.ControlModifier)
+        if e.button() == Qt.MouseButton.LeftButton:
+            self.picked.emit(e.mapPoint(), False, bool(e.modifiers() & Qt.KeyboardModifier.ControlModifier))
             self.capturing = True
-        if e.button() == Qt.RightButton:
+        if e.button() == Qt.MouseButton.RightButton:
             self.picked.emit(e.mapPoint(), True, False)
             self.capturing = False
 
@@ -133,7 +133,7 @@ class Profile1DPickerWidget(QToolButton):
             return;
 
         searchradius=self.tool.searchRadiusMU(iface.mapCanvas())
-        vertexMapPosition=self.meshLayer.snapOnElement(QgsMesh.Vertex,point,searchradius)
+        vertexMapPosition=self.meshLayer.snapOnElement(QgsMesh.ElementType.Vertex,point,searchradius)
 
         if not self.tracer.isPointSnapped(vertexMapPosition):
             return;
@@ -147,7 +147,7 @@ class Profile1DPickerWidget(QToolButton):
                 else:
                     lastVertex = self.profileTrace[-1]
                 traceResult= self.tracer.findShortestPath(lastVertex, vertexMapPosition)
-                if not traceResult[1]==QgsTracer.ErrNone:
+                if not traceResult[1]==QgsTracer.PathError.ErrNone:
                     self.updateMarker()
                     self.geometry_changed.emit()
                     return
@@ -158,7 +158,7 @@ class Profile1DPickerWidget(QToolButton):
                 self.temporaryTrace=[]
             else:
                 traceResult = self.tracer.findShortestPath(self.firstVertex, vertexMapPosition)
-                if not traceResult[1] == QgsTracer.ErrNone:
+                if not traceResult[1] == QgsTracer.PathError.ErrNone:
                     self.updateMarker()
                     self.geometry_changed.emit()
                     return
@@ -181,7 +181,7 @@ class Profile1DPickerWidget(QToolButton):
 
         mesh = QgsMesh()
 
-        if meshLayer.dataProvider().contains(QgsMesh.Edge):
+        if meshLayer.dataProvider().contains(QgsMesh.ElementType.Edge):
             meshLayer.dataProvider().populateMesh(mesh)
 
         self.vectorLayer = QgsVectorLayer("linestringZ", "meshLayer", "memory")
@@ -223,7 +223,7 @@ class Profile1DPickerWidget(QToolButton):
         self.clear_marker()
         if not self.firstVertex.isEmpty():
             self.firstVertexMarker = QgsVertexMarker(iface.mapCanvas())
-            self.firstVertexMarker.setIconType(QgsVertexMarker.ICON_CIRCLE)
+            self.firstVertexMarker.setIconType(QgsVertexMarker.IconType.ICON_CIRCLE)
             self.firstVertexMarker.setPenWidth(2)
             self.firstVertexMarker.setFillColor(QColor(150, 150, 0, 150))
             self.firstVertexMarker.setCenter(self.firstVertex)

@@ -26,9 +26,9 @@
 
 import math
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 
 from qgis.core import *
 from qgis.gui import *
@@ -37,7 +37,7 @@ from qgis.utils import iface
 try:
     import pyqtgraph
 except ImportError:
-    import crayfish.pyqtgraph_0_12_2 as pyqtgraph
+    import crayfish.pyqtgraph_0_13_7 as pyqtgraph
 
 from ..plot import colors, plot_3d_data
 from .utils import time_to_string
@@ -56,7 +56,7 @@ class CrayfishPlot3dWidget(QWidget):
         self.btn_layer = CrayfishLayer3dWidget()
         self.btn_layer.layer_changed.connect(self.on_layer_changed)
 
-        self.btn_dataset_group = DatasetGroupsWidget(datasetType=QgsMeshDatasetGroupMetadata.DataOnVolumes)
+        self.btn_dataset_group = DatasetGroupsWidget(datasetType=QgsMeshDatasetGroupMetadata.DataType.DataOnVolumes)
         self.btn_dataset_group.dataset_groups_changed.connect(self.on_dataset_group_changed)
 
         self.point_picker = PointGeometryPickerWidget()
@@ -70,13 +70,13 @@ class CrayfishPlot3dWidget(QWidget):
 
         self.markers = []  # for point
 
-        self.gw = pyqtgraph.GraphicsWindow()
+        self.gw = pyqtgraph.GraphicsLayoutWidget()
         self.plot = self.gw.addPlot()
         self.plot.showGrid(x=True, y=True)
         self.plot.addLegend()
 
         self.label_no_layer = QLabel("No mesh layer is selected.")
-        self.label_no_layer.setAlignment(Qt.AlignCenter)
+        self.label_no_layer.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.stack_layout = QStackedLayout()
         self.stack_layout.addWidget(self.gw)
@@ -94,6 +94,7 @@ class CrayfishPlot3dWidget(QWidget):
         l.addLayout(hl)
         l.addLayout(self.stack_layout)
         self.setLayout(l)
+        self.gw.show()
 
         # init GUI
         self.on_dataset_group_changed(self.btn_dataset_group.dataset_groups)

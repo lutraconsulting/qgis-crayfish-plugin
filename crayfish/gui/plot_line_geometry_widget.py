@@ -24,9 +24,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 
 import math
 
@@ -54,11 +54,11 @@ class PickGeometryTool(QgsMapTool):
         self.picked.emit(self.points + [e.mapPoint()], False)
 
     def canvasPressEvent(self, e):
-        if e.button() == Qt.LeftButton:
+        if e.button() == Qt.MouseButton.LeftButton:
             self.capturing = True
             self.points.append(e.mapPoint())
             self.picked.emit(self.points, False)
-        if e.button() == Qt.RightButton:
+        if e.button() == Qt.MouseButton.RightButton:
             self.picked.emit(self.points, True)
             self.capturing = False
             self.points = []

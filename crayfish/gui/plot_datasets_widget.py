@@ -24,9 +24,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 from qgis.core import QgsMeshDatasetIndex
 
 from .utils import time_to_string
@@ -113,7 +113,7 @@ class DatasetsWidget(QToolButton):
 
         self.menu_datasets = DatasetsMenu()
 
-        self.setPopupMode(QToolButton.InstantPopup)
+        self.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.setMenu(self.menu_datasets)
         self.menu_datasets.datasets_changed.connect(self.on_datasets_changed)
 

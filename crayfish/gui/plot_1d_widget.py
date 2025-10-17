@@ -26,9 +26,9 @@
 
 import math
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 
 from qgis.core import *
 from qgis.gui import *
@@ -38,7 +38,7 @@ from qgis.utils import iface
 try:
     import pyqtgraph
 except ImportError:
-    import crayfish.pyqtgraph_0_12_2 as pyqtgraph
+    import crayfish.pyqtgraph_0_13_7 as pyqtgraph
 
 from ..plot import timeseries_plot_data, cross_section_plot_data, colors, profile_1D_plot_data
 from .utils import time_to_string
@@ -76,12 +76,12 @@ class PlotTypeWidget(QToolButton):
     def __init__(self, parent=None):
         QToolButton.__init__(self, parent)
 
-        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setIcon(QgsApplication.getThemeIcon("/histogram.png"))
 
         self.menu_plot_types = Plot1dTypeMenu()
 
-        self.setPopupMode(QToolButton.InstantPopup)
+        self.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.setMenu(self.menu_plot_types)
         self.menu_plot_types.plot_type_changed.connect(self.on_plot_type_changed)
         self.set_plot_type(self.PLOT_TIME)
@@ -104,7 +104,7 @@ class Plot1dPointGeometryPickerWidget(PointGeometryPickerWidget):
         if self.meshLayer is None:
             return
         searchRadius=self.tool.searchRadiusMU(iface.mapCanvas())
-        projectedPoint=self.meshLayer.snapOnElement(QgsMesh.Edge,pt,searchRadius)
+        projectedPoint=self.meshLayer.snapOnElement(QgsMesh.ElementType.Edge,pt,searchRadius)
 
         if projectedPoint.isEmpty():
             return
@@ -135,7 +135,7 @@ class CrayfishPlot1dWidget(QWidget):
         self.point_picker = Plot1dPointGeometryPickerWidget()
         self.point_picker.geometries_changed.connect(self.refresh_plot)
 
-        self.btn_from_pt_layer = MapLayersWidget(QgsWkbTypes.Point)
+        self.btn_from_pt_layer = MapLayersWidget(QgsWkbTypes.Type.Point)
         self.btn_from_pt_layer.picked_layer.connect(self.point_picker.on_picked_layer)
 
         self.profile_picker = Profile1DPickerWidget()
@@ -151,16 +151,16 @@ class CrayfishPlot1dWidget(QWidget):
 
         self.markers = []      # for points
 
-        self.gw = pyqtgraph.GraphicsWindow()
+        self.gw = pyqtgraph.GraphicsLayoutWidget()
         self.plot = self.gw.addPlot()
         self.plot.showGrid(x=True, y=True)
         self.plot.addLegend()
 
         self.label_not_time_varying = QLabel("Current dataset group is not time-varying.")
-        self.label_not_time_varying.setAlignment(Qt.AlignCenter)
+        self.label_not_time_varying.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.label_no_layer = QLabel("No mesh layer is selected.")
-        self.label_no_layer.setAlignment(Qt.AlignCenter)
+        self.label_no_layer.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.stack_layout = QStackedLayout()
         self.stack_layout.addWidget(self.gw)
@@ -183,6 +183,7 @@ class CrayfishPlot1dWidget(QWidget):
         l.addLayout(hl)
         l.addLayout(self.stack_layout)
         self.setLayout(l)
+        self.gw.show()
 
         # init GUI
         self.on_plot_type_changed(self.btn_plot_type.plot_type)
@@ -341,7 +342,7 @@ class CrayfishPlot1dWidget(QWidget):
 
         #add vertical lines on vertices position
         s=0
-        pen=pyqtgraph.mkPen(color=(200,100,0), style=QtCore.Qt.DashDotLine)
+        pen=pyqtgraph.mkPen(color=(200,100,0), style=Qt.PenStyle.DashDotLine)
         if self.chckBox_verticalLine.isChecked():
             for i in range(len(profile) - 1):
                 p1 = profile[i]

@@ -27,10 +27,10 @@
 import os
 import zipfile
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtNetwork import QNetworkRequest
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtNetwork import QNetworkRequest
 from qgis.core import QgsNetworkAccessManager
 
 from ..buildinfo import findPlatformVersion
@@ -48,7 +48,7 @@ def downloadBinPackage(packageUrl, destinationFileName):
     reply = QgsNetworkAccessManager.instance().get(request)
     evloop = QEventLoop()
     reply.finished.connect(evloop.quit)
-    evloop.exec_(QEventLoop.ExcludeUserInputEvents)
+    evloop.exec(QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents)
     content_type = reply.rawHeader(b'Content-Type')
     if content_type == b'application/zip':
         if os.path.isfile(destinationFileName):
@@ -58,7 +58,7 @@ def downloadBinPackage(packageUrl, destinationFileName):
         destinationFile.write(bytearray(reply.readAll()))
         destinationFile.close()
     else:
-        ret_code = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+        ret_code = reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute)
         raise IOError("{} {}".format(ret_code, packageUrl))
 
 def downloadFfmpeg(parent_widget=None):
@@ -67,17 +67,17 @@ def downloadFfmpeg(parent_widget=None):
     ffmpegZipPath = os.path.join(destFolder, ffmpegZip)
     ffmpegUrl = downloadBaseUrl+'downloads/'+ffmpegZip
 
-    qApp.setOverrideCursor(QCursor(Qt.WaitCursor))
+    QApplication.instance().setOverrideCursor(QCursor(Qt.CursorShape.WaitCursor))
     try:
         downloadBinPackage(ffmpegUrl, ffmpegZipPath)
         z = zipfile.ZipFile(ffmpegZipPath)
         z.extractall(destFolder)
         z.close()
         os.unlink(ffmpegZipPath)
-        qApp.restoreOverrideCursor()
+        QApplication.instance().restoreOverrideCursor()
         return os.path.join(destFolder, 'ffmpeg.exe')
     except IOError as err:
-        qApp.restoreOverrideCursor()
+        QApplication.instance().restoreOverrideCursor()
         QMessageBox.critical(parent_widget,
           'Could Not Download FFmpeg',
           "Download of FFmpeg failed. Please try again or contact us for "

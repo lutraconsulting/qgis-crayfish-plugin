@@ -24,9 +24,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtCore import *
 
 
 class DatasetGroupsMenu(QMenu):
@@ -102,12 +102,12 @@ class DatasetGroupsWidget(QToolButton):
     def __init__(self, parent=None, datasetType=None):
         QToolButton.__init__(self, parent)
 
-        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setIcon(QIcon(QPixmap(":/plugins/crayfish/images/icon_contours.png")))
 
         self.menu_datasets = DatasetGroupsMenu(datasetType=datasetType)
 
-        self.setPopupMode(QToolButton.InstantPopup)
+        self.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.setMenu(self.menu_datasets)
         self.menu_datasets.dataset_groups_changed.connect(self.on_dataset_groups_changed)
 

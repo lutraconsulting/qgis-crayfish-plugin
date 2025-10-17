@@ -26,18 +26,18 @@
 
 import math
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
+from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import *
 from qgis.core import *
 
-from PyQt5.Qt import PYQT_VERSION_STR
+from qgis.PyQt.QtCore import PYQT_VERSION_STR
 
 try:
     import pyqtgraph as pg
     from pyqtgraph.exporters import ImageExporter
 except ImportError:
-    import crayfish.pyqtgraph_0_12_2 as pg
-    from crayfish.pyqtgraph_0_12_2.exporters import ImageExporter
+    import crayfish.pyqtgraph_0_13_7 as pg
+    from crayfish.pyqtgraph_0_13_7.exporters import ImageExporter
 
 from .utils import integrate
 
@@ -146,7 +146,7 @@ def profile_1D_plot_data(layer, dataset_group_index, dataset_index,profile):
         return x, y
 
     groupMeta = layer.dataProvider().datasetGroupMetadata(dataset_group_index)
-    isOnVertices = groupMeta.dataType() == QgsMeshDatasetGroupMetadata.DataOnVertices
+    isOnVertices = groupMeta.dataType() == QgsMeshDatasetGroupMetadata.DataType.DataOnVertices
     layerDataSetIndex = QgsMeshDatasetIndex(dataset_group_index,dataset_index)
 
     totalLength=0
